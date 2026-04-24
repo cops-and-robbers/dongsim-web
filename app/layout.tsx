@@ -5,7 +5,7 @@ import Footer from "@/components/layout/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://dongsim-web.vercel.app"),
+  metadataBase: new URL("https://dongsim.vercel.app"),
   title: {
     default: "경찰과 도둑 | 동심지킴이",
     template: "%s | 경찰과 도둑",
