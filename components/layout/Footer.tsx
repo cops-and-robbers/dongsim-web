@@ -111,7 +111,7 @@ export default function Footer() {
           <p className="text-xs text-slate-400 dark:text-slate-500">
             © {year} {BRAND.fullName}. All rights reserved.
           </p>
-          <ul className="flex items-center gap-5 text-xs">
+          <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
             <li>
               <Link
                 href="/terms"
@@ -126,6 +126,22 @@ export default function Footer() {
                 className="text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               >
                 개인정보처리방침
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/location"
+                className="text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              >
+                위치정보 이용약관
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/marketing"
+                className="text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              >
+                마케팅 정보 수신 동의
               </Link>
             </li>
           </ul>
