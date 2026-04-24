@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { NAV_ITEMS } from "@/lib/constants";
 
@@ -19,6 +19,8 @@ export default function MobileMenu() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [prevPath, setPrevPath] = useState(pathname);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   if (prevPath !== pathname) {
     setPrevPath(pathname);
@@ -33,12 +35,23 @@ export default function MobileMenu() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (panelRef.current?.contains(target)) return;
+      if (buttonRef.current?.contains(target)) return;
+      close();
+    };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
   }, [open]);
 
   const panel = (
     <div
+      ref={panelRef}
       id="mobile-menu-panel"
       role="dialog"
       aria-modal="false"
@@ -67,6 +80,7 @@ export default function MobileMenu() {
   return (
     <>
       <button
+        ref={buttonRef}
         type="button"
         onClick={toggle}
         aria-label={open ? "메뉴 닫기" : "메뉴 열기"}
