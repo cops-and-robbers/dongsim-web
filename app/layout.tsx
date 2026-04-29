@@ -7,7 +7,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 const SITE_URL = "https://dongsim.vercel.app";
 const SITE_NAME = "경찰과 도둑";
 const SITE_DESCRIPTION =
-  "GPS 기반 오프라인 술래잡기 게임. 실제로 뛰어다니며 즐기는 경찰과 도둑 놀이를 앱이 자동으로 관리합니다.";
+  "경찰과 도둑(경도) — GPS 기반 오프라인 술래잡기 게임. 실제로 뛰어다니며 즐기는 경찰과 도둑 놀이를 앱이 자동으로 관리합니다.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   keywords: [
     "경찰과 도둑",
+    "경도",
+    "경도 게임",
     "동심지킴이",
     "GPS 술래잡기",
     "위치 기반 게임",
@@ -44,7 +46,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `${SITE_NAME} | 동심지킴이`,
     description:
-      "GPS와 실시간 지도로 더 짜릿해진 오프라인 경찰과 도둑. 친구들과 밖에서 뛰어노세요.",
+      "경찰과 도둑(경도) — GPS와 실시간 지도로 더 짜릿해진 오프라인 술래잡기. 친구들과 밖에서 뛰어노세요.",
     url: SITE_URL,
     siteName: SITE_NAME,
     type: "website",
@@ -104,7 +106,7 @@ const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: SITE_NAME,
-  alternateName: "동심지킴이",
+  alternateName: ["경도", "동심지킴이", "Cops and Robbers"],
   url: SITE_URL,
   description: SITE_DESCRIPTION,
   inLanguage: "ko-KR",

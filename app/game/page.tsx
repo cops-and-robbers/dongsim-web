@@ -7,7 +7,7 @@ import { GAME_FEATURES } from "@/lib/constants";
 export const metadata: Metadata = {
   title: "게임 소개",
   description:
-    "GPS와 실시간 지도가 진행을 관리하는 위치 기반 경찰과 도둑. 지도에 구역 그리기, 발자국 추적, QR 체포, 팀 채팅까지 4가지 핵심 기능을 소개합니다.",
+    "경찰과 도둑(경도) — GPS와 실시간 지도가 진행을 관리하는 위치 기반 술래잡기. 지도에 구역 그리기, 발자국 추적, QR 체포, 팀 채팅까지 4가지 핵심 기능을 소개합니다.",
   alternates: { canonical: "/game" },
   openGraph: {
     title: "게임 소개 | 경찰과 도둑",

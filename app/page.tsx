@@ -9,7 +9,7 @@ const mobileApplicationSchema = {
   "@context": "https://schema.org",
   "@type": "MobileApplication",
   name: "경찰과 도둑",
-  alternateName: "Cops and Robbers",
+  alternateName: ["경도", "Cops and Robbers"],
   applicationCategory: "GameApplication",
   applicationSubCategory: "LocationBasedGame",
   operatingSystem: "iOS, Android",
