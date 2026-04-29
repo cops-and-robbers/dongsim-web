@@ -12,12 +12,29 @@ export const metadata: Metadata = {
   },
   description:
     "GPS 기반 오프라인 술래잡기 게임. 실제로 뛰어다니며 즐기는 경찰과 도둑 놀이를 앱이 자동으로 관리합니다.",
+  keywords: [
+    "경찰과 도둑",
+    "동심지킴이",
+    "GPS 술래잡기",
+    "위치 기반 게임",
+    "오프라인 게임",
+    "공원 게임",
+    "야외 게임",
+    "친구 게임",
+    "Cops and Robbers",
+  ],
   openGraph: {
     title: "경찰과 도둑 | 동심지킴이",
     description:
       "GPS와 실시간 지도로 더 짜릿해진 오프라인 경찰과 도둑. 친구들과 밖에서 뛰어놀세요.",
     type: "website",
     locale: "ko_KR",
+  },
+  verification: {
+    google: "GPbIm3ZTSF5v1WoLOqTqYOypdgnf1m-kt5TWt2tgUfE",
+    other: {
+      "naver-site-verification": "6f930a0d25d522a92d5de563f945492f2fa6c461",
+    },
   },
 };
 
