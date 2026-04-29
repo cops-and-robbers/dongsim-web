@@ -6,7 +6,16 @@ import TeamGridSection from "@/components/team/TeamGridSection";
 export const metadata: Metadata = {
   title: "팀 소개",
   description:
-    "동심지킴이 — 오프라인 놀이를 디지털로 더 재밌게 만드는 인디 게임 스튜디오. 미션, 가치, 팀원을 소개합니다.",
+    "동심지킴이 — 추억의 게임에서 가치를 찾는 인디 게임 스튜디오. 우리가 일하는 방식과 함께 만드는 사람들을 소개합니다.",
+  alternates: { canonical: "/team" },
+  openGraph: {
+    title: "팀 소개 | 동심지킴이",
+    description:
+      "추억의 게임에서 가치를 발견합니다. 친구들과 뛰놀던 그 추억을 더 재미있고 더 편하게 이어가요.",
+    url: "/team",
+    type: "profile",
+    locale: "ko_KR",
+  },
 };
 
 export default function TeamPage() {
