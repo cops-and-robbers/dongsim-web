@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "경찰과 도둑 | 동심지킴이",
     description:
-      "GPS와 실시간 지도로 더 짜릿해진 오프라인 경찰과 도둑. 친구들과 밖에서 뛰어놀세요.",
+      "GPS와 실시간 지도로 더 짜릿해진 오프라인 경찰과 도둑. 친구들과 밖에서 뛰어노세요.",
     type: "website",
     locale: "ko_KR",
   },
