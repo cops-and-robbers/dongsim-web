@@ -40,6 +40,17 @@ export default function HomePage() {
           __html: JSON.stringify(mobileApplicationSchema),
         }}
       />
+      <header className="sr-only">
+        <h2>
+          경찰과 도둑(경도) — 동심지킴이의 GPS 기반 오프라인 술래잡기 게임
+        </h2>
+        <p>
+          흔히 &lsquo;경도&rsquo;로 줄여 부르는 경찰과 도둑을 스마트폰으로 다시
+          즐기세요. 동심지킴이가 만든 위치 기반 친구 게임으로, 공원에서 직접
+          뛰며 구역 그리기, 발자국 추적, QR 체포, 팀 채팅까지 앱 하나로
+          진행합니다.
+        </p>
+      </header>
       <HeroSection />
       <CharactersSection />
       <HowItWorksSection />
