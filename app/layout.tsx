@@ -21,7 +21,9 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   keywords: [
     "경찰과 도둑",
+    "경찰과 도둑 앱",
     "경도",
+    "경도 앱",
     "경도 게임",
     "동심지킴이",
     "GPS 술래잡기",
