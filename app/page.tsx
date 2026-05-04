@@ -25,7 +25,7 @@ const gameSchema = {
       applicationCategory: "GameApplication",
       operatingSystem: "iOS, Android",
       inLanguage: "ko-KR",
-      url: "https://dongsim.vercel.app",
+      url: "https://copsnro66ers.site",
       installUrl: APP_LINKS.appStore,
       downloadUrl: [APP_LINKS.appStore, APP_LINKS.googlePlay],
       offers: {
@@ -36,7 +36,7 @@ const gameSchema = {
       author: {
         "@type": "Organization",
         name: "동심지킴이",
-        url: "https://dongsim.vercel.app",
+        url: "https://copsnro66ers.site",
       },
     },
     {
@@ -49,7 +49,7 @@ const gameSchema = {
       description:
         "GPS 기반 오프라인 술래잡기 게임. 친구들과 공원에서 직접 뛰며 즐기는 경찰과 도둑 놀이를 앱이 실시간으로 관리합니다.",
       inLanguage: "ko-KR",
-      url: "https://dongsim.vercel.app",
+      url: "https://copsnro66ers.site",
       installUrl: APP_LINKS.appStore,
       downloadUrl: [APP_LINKS.appStore, APP_LINKS.googlePlay],
       offers: {
@@ -60,7 +60,7 @@ const gameSchema = {
       author: {
         "@type": "Organization",
         name: "동심지킴이",
-        url: "https://dongsim.vercel.app",
+        url: "https://copsnro66ers.site",
       },
     },
   ],

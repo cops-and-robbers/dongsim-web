@@ -7,7 +7,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 
 const GTM_ID = "GTM-WG4J7BXL";
 
-const SITE_URL = "https://dongsim.vercel.app";
+const SITE_URL = "https://copsnro66ers.site";
 const SITE_NAME = "경찰과 도둑";
 const SITE_DESCRIPTION =
   "경찰과 도둑(경도) — GPS 기반 오프라인 술래잡기 게임. 실제로 뛰어다니며 즐기는 경찰과 도둑 놀이를 앱이 자동으로 관리합니다.";
@@ -86,9 +86,9 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   verification: {
-    google: "GPbIm3ZTSF5v1WoLOqTqYOypdgnf1m-kt5TWt2tgUfE",
+    google: "EM3kJB3fS-BFeyM4ZUps2_vema1a9ZDCeGbLfnhOkNk",
     other: {
-      "naver-site-verification": "6f930a0d25d522a92d5de563f945492f2fa6c461",
+      "naver-site-verification": "5e0fd8064fc8996b8716790efeafbb9385e3e420",
     },
   },
 };

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://dongsim.vercel.app";
+const BASE_URL = "https://copsnro66ers.site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
