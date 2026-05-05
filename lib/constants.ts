@@ -74,15 +74,36 @@ export const TEAM_MEMBERS: TeamMember[] = [
   },
 ];
 
-export const QA_MEMBERS = [
-  "안금서",
-  "남해윤",
-  "손건우",
-  "송혜정",
-  "신혜빈",
-  "이진",
-  "정창우",
-  "허석준",
+export type HelperRole = "infrastructure" | "qa";
+
+export type Helper = {
+  name: string;
+  role: HelperRole;
+  participationCount: number;
+};
+
+/**
+ * 도움 주신 분들 — 발자국 카운트 = participationCount.
+ * 인프라 제공자는 별도 spotlight로 노출.
+ * 정렬: infrastructure 먼저, 그다음 참여 횟수 내림차순, 같은 횟수 안에선 입력 순서.
+ */
+export const HELPERS: Helper[] = [
+  { name: "신지훈", role: "infrastructure", participationCount: 1 },
+  { name: "남해윤", role: "qa", participationCount: 2 },
+  { name: "송혜정", role: "qa", participationCount: 2 },
+  { name: "이진", role: "qa", participationCount: 2 },
+  { name: "안금서", role: "qa", participationCount: 1 },
+  { name: "손건우", role: "qa", participationCount: 1 },
+  { name: "신혜빈", role: "qa", participationCount: 1 },
+  { name: "정창우", role: "qa", participationCount: 1 },
+  { name: "허석준", role: "qa", participationCount: 1 },
+  { name: "서현진", role: "qa", participationCount: 1 },
+  { name: "오동현", role: "qa", participationCount: 1 },
+  { name: "최승훈", role: "qa", participationCount: 1 },
+  { name: "김민욱", role: "qa", participationCount: 1 },
+  { name: "정명준", role: "qa", participationCount: 1 },
+  { name: "강대현", role: "qa", participationCount: 1 },
+  { name: "심 혁", role: "qa", participationCount: 1 },
 ];
 
 export const HOW_STEPS = [
