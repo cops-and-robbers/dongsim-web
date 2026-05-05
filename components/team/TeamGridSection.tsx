@@ -11,7 +11,7 @@ import {
   type TeamMember,
   type Helper,
 } from "@/lib/constants";
-import { SHOEPRINT_PATH } from "@/lib/svg-paths";
+import Footprint from "@/components/icons/Footprint";
 
 function GithubIcon() {
   return (
@@ -363,27 +363,6 @@ export default function TeamGridSection() {
   );
 }
 
-function Footprint({
-  size = 14,
-  rotate = 0,
-}: {
-  size?: number;
-  rotate?: number;
-}) {
-  return (
-    <svg
-      viewBox="0 0 28 28"
-      width={size}
-      height={size}
-      className="shrink-0 fill-current"
-      style={{ transform: `rotate(${rotate}deg)` }}
-      aria-hidden="true"
-    >
-      <path d={SHOEPRINT_PATH} />
-    </svg>
-  );
-}
-
 function FootprintGroup({ count }: { count: number }) {
   return (
     <span
@@ -439,12 +418,35 @@ function BackerEntry({ helper }: { helper: Helper }) {
 }
 
 function HelperItem({ helper }: { helper: Helper }) {
+  const nameClass =
+    "text-base font-semibold text-slate-700 transition-colors group-hover:text-slate-900 dark:text-slate-100 dark:group-hover:text-white";
+
+  const inner = (
+    <>
+      <FootprintGroup count={helper.participationCount} />
+      <span className={nameClass}>{helper.name}</span>
+    </>
+  );
+
+  if (helper.github) {
+    return (
+      <li>
+        <a
+          href={helper.github}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`${helper.name} GitHub`}
+          className="group inline-flex items-center justify-center gap-2 rounded-md outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-blue dark:focus-visible:outline-brand-green"
+        >
+          {inner}
+        </a>
+      </li>
+    );
+  }
+
   return (
     <li className="group flex cursor-default items-center justify-center gap-2 transition-transform duration-200 hover:-translate-y-0.5">
-      <FootprintGroup count={helper.participationCount} />
-      <span className="text-base font-semibold text-slate-700 transition-colors group-hover:text-slate-900 dark:text-slate-100 dark:group-hover:text-white">
-        {helper.name}
-      </span>
+      {inner}
     </li>
   );
 }

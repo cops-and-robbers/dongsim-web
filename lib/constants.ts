@@ -80,6 +80,7 @@ export type Helper = {
   name: string;
   role: HelperRole;
   participationCount: number;
+  github?: string;
 };
 
 /**
@@ -89,9 +90,24 @@ export type Helper = {
  */
 export const HELPERS: Helper[] = [
   { name: "신지훈", role: "infrastructure", participationCount: 1 },
-  { name: "남해윤", role: "qa", participationCount: 2 },
-  { name: "송혜정", role: "qa", participationCount: 2 },
-  { name: "이진", role: "qa", participationCount: 2 },
+  {
+    name: "남해윤",
+    role: "qa",
+    participationCount: 2,
+    github: "https://github.com/haeyoon1",
+  },
+  {
+    name: "송혜정",
+    role: "qa",
+    participationCount: 2,
+    github: "https://github.com/Songhyejeong",
+  },
+  {
+    name: "이진",
+    role: "qa",
+    participationCount: 2,
+    github: "https://github.com/2Jin1031",
+  },
   { name: "안금서", role: "qa", participationCount: 1 },
   { name: "손건우", role: "qa", participationCount: 1 },
   { name: "신혜빈", role: "qa", participationCount: 1 },

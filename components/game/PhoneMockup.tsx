@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ReactNode } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { SHOEPRINT_PATH } from "@/lib/svg-paths";
+import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
 
 type FrameProps = {
   children: ReactNode;
