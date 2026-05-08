@@ -8,7 +8,7 @@ export default function TeamHeroSection() {
         <ScrollReveal animation="fadeInUp">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-blue dark:text-brand-green">
-              동심지킴이
+              동심지키미
             </p>
             <h1 className="mt-4 text-balance text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl md:text-6xl lg:text-7xl dark:text-white">
               추억의 게임에서

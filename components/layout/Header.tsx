@@ -15,7 +15,7 @@ export default function Header() {
         >
           <Image
             src="/brand/logo-v5.png"
-            alt="경찰과 도둑(경도) 로고 — 동심지킴이 GPS 술래잡기 게임"
+            alt="경찰과 도둑(경도) 로고 — 동심지키미 GPS 술래잡기 게임"
             width={32}
             height={32}
             priority

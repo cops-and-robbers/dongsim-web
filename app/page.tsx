@@ -35,7 +35,7 @@ const gameSchema = {
       },
       author: {
         "@type": "Organization",
-        name: "동심지킴이",
+        name: "동심지키미",
         url: "https://copsnro66ers.site",
       },
     },
@@ -59,7 +59,7 @@ const gameSchema = {
       },
       author: {
         "@type": "Organization",
-        name: "동심지킴이",
+        name: "동심지키미",
         url: "https://copsnro66ers.site",
       },
     },
@@ -77,11 +77,11 @@ export default function HomePage() {
       />
       <header className="sr-only">
         <h2>
-          경찰과 도둑(경도) — 동심지킴이의 GPS 기반 오프라인 술래잡기 게임
+          경찰과 도둑(경도) — 동심지키미의 GPS 기반 오프라인 술래잡기 게임
         </h2>
         <p>
           흔히 &lsquo;경도&rsquo;로 줄여 부르는 경찰과 도둑을 스마트폰으로 다시
-          즐기세요. 동심지킴이가 만든 위치 기반 친구 게임으로, 공원에서 직접
+          즐기세요. 동심지키미가 만든 위치 기반 친구 게임으로, 공원에서 직접
           뛰며 구역 그리기, 발자국 추적, QR 체포, 팀 채팅까지 앱 하나로
           진행합니다.
         </p>
@@ -89,7 +89,7 @@ export default function HomePage() {
         <h3>경찰과 도둑이란 어떤 게임인가요?</h3>
         <p>
           경찰과 도둑은 한국에서 오랫동안 사랑받아 온 추억의 술래잡기 놀이예요.
-          동심지킴이는 이 추억의 게임을 GPS 기반 모바일 앱으로 되살려, 친구들과
+          동심지키미는 이 추억의 게임을 GPS 기반 모바일 앱으로 되살려, 친구들과
           공원이나 야외에서 실제로 뛰면서 즐길 수 있도록 만들었습니다. 별명으로
           &lsquo;경도&rsquo;라고도 부릅니다.
         </p>

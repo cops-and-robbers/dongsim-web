@@ -15,7 +15,7 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} | 동심지킴이`,
+    default: `${SITE_NAME} | 동심지키미`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "경도",
     "경도 앱",
     "경도 게임",
-    "동심지킴이",
+    "동심지키미",
     "GPS 술래잡기",
     "위치 기반 게임",
     "오프라인 게임",
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
     "Cops and Robbers",
   ],
   applicationName: SITE_NAME,
-  authors: [{ name: "동심지킴이" }],
-  creator: "동심지킴이",
-  publisher: "동심지킴이",
+  authors: [{ name: "동심지키미" }],
+  creator: "동심지키미",
+  publisher: "동심지키미",
   category: "game",
   formatDetection: {
     telephone: false,
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: `${SITE_NAME} | 동심지킴이`,
+    title: `${SITE_NAME} | 동심지키미`,
     description:
       "경찰과 도둑(경도) — GPS와 실시간 지도로 더 짜릿해진 오프라인 술래잡기. 친구들과 밖에서 뛰어노세요.",
     url: SITE_URL,
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} | 동심지킴이`,
+    title: `${SITE_NAME} | 동심지키미`,
     description: SITE_DESCRIPTION,
   },
   robots: {
@@ -96,8 +96,8 @@ export const metadata: Metadata = {
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "동심지킴이",
-  alternateName: "팀 동심지킴이",
+  name: "동심지키미",
+  alternateName: "팀 동심지키미",
   url: SITE_URL,
   logo: `${SITE_URL}/brand/logo-v5.png`,
   email: "copsnro66ers@gmail.com",
@@ -111,13 +111,13 @@ const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: SITE_NAME,
-  alternateName: ["경도", "동심지킴이", "Cops and Robbers"],
+  alternateName: ["경도", "동심지키미", "Cops and Robbers"],
   url: SITE_URL,
   description: SITE_DESCRIPTION,
   inLanguage: "ko-KR",
   publisher: {
     "@type": "Organization",
-    name: "동심지킴이",
+    name: "동심지키미",
     url: SITE_URL,
   },
 };

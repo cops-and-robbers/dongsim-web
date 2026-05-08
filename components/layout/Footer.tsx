@@ -39,7 +39,7 @@ export default function Footer() {
             <div className="flex items-center gap-2">
               <Image
                 src="/brand/logo-v5.png"
-                alt="경찰과 도둑(경도) 로고 — 동심지킴이"
+                alt="경찰과 도둑(경도) 로고 — 동심지키미"
                 width={32}
                 height={32}
                 className="h-8 w-8 rounded-lg"
@@ -65,7 +65,7 @@ export default function Footer() {
                 href={BRAND.github}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="동심지킴이 GitHub"
+                aria-label="동심지키미 GitHub"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-900 hover:text-white dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white dark:hover:text-app-black"
               >
                 <GithubIcon />

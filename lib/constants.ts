@@ -5,7 +5,7 @@ export const APP_LINKS = {
 };
 
 export const BRAND = {
-  fullName: "동심지킴이",
+  fullName: "동심지키미",
   tagline: "추억의 게임에서 가치를 찾습니다",
   email: "copsnro66ers@gmail.com",
   game: "경찰과 도둑",
