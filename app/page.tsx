@@ -75,7 +75,8 @@ export default function HomePage() {
           __html: JSON.stringify(gameSchema),
         }}
       />
-      <header className="sr-only">
+      <HeroSection />
+      <section className="sr-only" aria-label="경찰과 도둑(경도) 게임 소개">
         <h2>
           경찰과 도둑(경도) — 동심지키미의 GPS 기반 오프라인 술래잡기 게임
         </h2>
@@ -121,8 +122,7 @@ export default function HomePage() {
           App Store와 Google Play 양쪽에서 &lsquo;경찰과 도둑&rsquo;으로 검색해
           무료로 다운로드할 수 있습니다.
         </p>
-      </header>
-      <HeroSection />
+      </section>
       <CharactersSection />
       <HowItWorksSection />
       <FeaturesSection />
