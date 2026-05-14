@@ -22,10 +22,18 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (team === "robber") {
+    const isDark = team === "robber";
+    if (isDark) {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
+    }
+
+    const metaThemeColor = document.querySelector<HTMLMetaElement>(
+      'meta[name="theme-color"]'
+    );
+    if (metaThemeColor) {
+      metaThemeColor.content = isDark ? "#080a0c" : "#ffffff";
     }
   }, [team]);
 
