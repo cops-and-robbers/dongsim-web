@@ -9,6 +9,14 @@ export const metadata: Metadata = {
   title: "위치정보 이용약관",
   description:
     "경찰과 도둑(Cops and Robbers) 위치기반서비스 이용약관입니다. 위치정보의 수집·이용·제공과 이용자의 권리를 안내합니다.",
+  keywords: [
+    "위치정보 이용약관",
+    "위치기반서비스 이용약관",
+    "경찰과 도둑 위치정보",
+    "경도 위치정보",
+    "GPS 위치정보 수집 동의",
+    "동심지키미 위치정보",
+  ],
   alternates: { canonical: "/location" },
   openGraph: {
     title: "위치정보 이용약관 | 경찰과 도둑",
