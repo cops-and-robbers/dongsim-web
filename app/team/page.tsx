@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     "동심지키미 — 추억의 게임에서 가치를 찾는 인디 게임 스튜디오. 우리가 일하는 방식과 함께 만드는 사람들을 소개합니다.",
   alternates: { canonical: "/team" },
   openGraph: {
-    title: "팀 소개 | 동심지키미",
+    title: "팀 소개 | 경찰과 도둑",
     description:
       "추억의 게임에서 가치를 발견합니다. 친구들과 뛰놀던 그 추억을 더 재미있고 더 편하게 이어가요.",
     url: "/team",

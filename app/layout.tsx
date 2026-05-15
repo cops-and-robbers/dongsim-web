@@ -15,7 +15,7 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} | 동심지키미`,
+    default: SITE_NAME,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: `${SITE_NAME} | 동심지키미`,
+    title: SITE_NAME,
     description:
       "경찰과 도둑(경도) — GPS와 실시간 지도로 더 짜릿해진 오프라인 술래잡기. 친구들과 밖에서 뛰어노세요.",
     url: SITE_URL,
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} | 동심지키미`,
+    title: SITE_NAME,
     description: SITE_DESCRIPTION,
   },
   robots: {
