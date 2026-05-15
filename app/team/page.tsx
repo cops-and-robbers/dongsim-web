@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import TeamHeroSection from "@/components/team/TeamHeroSection";
 import MissionVisionSection from "@/components/team/MissionVisionSection";
 import TeamGridSection from "@/components/team/TeamGridSection";
+import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 
 export const metadata: Metadata = {
   title: "팀 소개",
@@ -21,6 +22,12 @@ export const metadata: Metadata = {
 export default function TeamPage() {
   return (
     <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "홈", path: "/" },
+          { name: "팀 소개", path: "/team" },
+        ]}
+      />
       <TeamHeroSection />
       <MissionVisionSection />
       <TeamGridSection />

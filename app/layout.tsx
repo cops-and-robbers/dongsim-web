@@ -12,10 +12,10 @@ const pretendard = localFont({
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
+import { SITE_URL } from "@/lib/constants";
 
 const GTM_ID = "GTM-WG4J7BXL";
 
-const SITE_URL = "https://copsnro66ers.site";
 const SITE_NAME = "경찰과 도둑";
 const SITE_DESCRIPTION =
   "경찰과 도둑(경도) — GPS 기반 오프라인 술래잡기 게임. 실제로 뛰어다니며 즐기는 경찰과 도둑 놀이를 앱이 자동으로 관리합니다.";

@@ -1,3 +1,5 @@
+export const SITE_URL = "https://copsnro66ers.site";
+
 export const APP_LINKS = {
   googlePlay:
     "https://play.google.com/store/apps/details?id=com.elipair.copsandrobbers",

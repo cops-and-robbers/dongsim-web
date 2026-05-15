@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PolicyRenderer, {
   type PolicyData,
 } from "@/components/policy/PolicyRenderer";
+import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import privacyData from "@/lib/policies/privacy.json";
 
 export const metadata: Metadata = {
@@ -21,5 +22,15 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  return <PolicyRenderer data={privacyData as PolicyData} />;
+  return (
+    <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "홈", path: "/" },
+          { name: "개인정보처리방침", path: "/privacy" },
+        ]}
+      />
+      <PolicyRenderer data={privacyData as PolicyData} />
+    </>
+  );
 }

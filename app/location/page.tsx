@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PolicyRenderer, {
   type PolicyData,
 } from "@/components/policy/PolicyRenderer";
+import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import locationData from "@/lib/policies/location.json";
 
 export const metadata: Metadata = {
@@ -20,5 +21,15 @@ export const metadata: Metadata = {
 };
 
 export default function LocationPage() {
-  return <PolicyRenderer data={locationData as PolicyData} />;
+  return (
+    <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "홈", path: "/" },
+          { name: "위치정보 이용약관", path: "/location" },
+        ]}
+      />
+      <PolicyRenderer data={locationData as PolicyData} />
+    </>
+  );
 }

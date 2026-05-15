@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PolicyRenderer, {
   type PolicyData,
 } from "@/components/policy/PolicyRenderer";
+import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import termsData from "@/lib/policies/terms.json";
 
 export const metadata: Metadata = {
@@ -20,5 +21,15 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
-  return <PolicyRenderer data={termsData as PolicyData} />;
+  return (
+    <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "홈", path: "/" },
+          { name: "이용약관", path: "/terms" },
+        ]}
+      />
+      <PolicyRenderer data={termsData as PolicyData} />
+    </>
+  );
 }

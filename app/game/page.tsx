@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import GameHeroSection from "@/components/game/GameHeroSection";
 import FeatureBlock from "@/components/game/FeatureBlock";
 import CtaSection from "@/components/home/CtaSection";
+import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import { GAME_FEATURES } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -22,6 +23,12 @@ export const metadata: Metadata = {
 export default function GamePage() {
   return (
     <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: "홈", path: "/" },
+          { name: "게임 소개", path: "/game" },
+        ]}
+      />
       <GameHeroSection />
       <div className="bg-white transition-colors duration-500 dark:bg-app-black">
         {GAME_FEATURES.map((feature, i) => (
