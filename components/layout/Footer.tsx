@@ -125,7 +125,7 @@ export default function Footer() {
                 href="/privacy"
                 className="text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               >
-                개인정보처리방침
+                개인정보 처리방침
               </Link>
             </li>
             <li>
