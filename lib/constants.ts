@@ -14,6 +14,7 @@ export const BRAND = {
   appVersion: "v1.7.4",
   instagram: "https://www.instagram.com/cops._.robbers",
   github: "https://github.com/cops-and-robbers",
+  youtube: "https://www.youtube.com/channel/UCUmCD4Lg4jc95ShNBPxSdDA",
 };
 
 export const NAV_ITEMS = [
