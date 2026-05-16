@@ -401,11 +401,27 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function BackerEntry({ helper }: { helper: Helper }) {
+  const name = (
+    <p className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+      {helper.name}
+    </p>
+  );
+
   return (
     <div className="flex flex-col items-center gap-2">
-      <p className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
-        {helper.name}
-      </p>
+      {helper.github ? (
+        <a
+          href={helper.github}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`${helper.name} GitHub`}
+          className="rounded-md outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-blue dark:focus-visible:outline-brand-green"
+        >
+          {name}
+        </a>
+      ) : (
+        name
+      )}
       <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500">
         <span className="h-px w-6 bg-current" aria-hidden="true" />
         <span className="text-[11px] font-semibold uppercase tracking-[0.22em]">
