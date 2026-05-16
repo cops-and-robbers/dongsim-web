@@ -92,7 +92,12 @@ export type Helper = {
  * 정렬: infrastructure 먼저, 그다음 참여 횟수 내림차순, 같은 횟수 안에선 입력 순서.
  */
 export const HELPERS: Helper[] = [
-  { name: "신지훈", role: "infrastructure", participationCount: 1 },
+  {
+    name: "신지훈",
+    role: "infrastructure",
+    participationCount: 1,
+    github: "https://github.com/developowl",
+  },
   {
     name: "남해윤",
     role: "qa",
