@@ -3,7 +3,7 @@ import CharactersSection from "@/components/home/CharactersSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import CtaSection from "@/components/home/CtaSection";
-import { APP_LINKS } from "@/lib/constants";
+import { APP_LINKS, SITE_URL } from "@/lib/constants";
 
 const gameSchema = {
   "@context": "https://schema.org",
@@ -141,6 +141,17 @@ const gameSchema = {
         url: "https://copsnro66ers.site",
       },
     },
+    {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/#webpage`,
+      url: SITE_URL,
+      name: "경찰과 도둑",
+      inLanguage: "ko-KR",
+      speakable: {
+        "@type": "SpeakableSpecification",
+        cssSelector: ["#game-intro"],
+      },
+    },
   ],
 };
 
@@ -154,7 +165,11 @@ export default function HomePage() {
         }}
       />
       <HeroSection />
-      <section className="sr-only" aria-label="경찰과 도둑(경도) 게임 소개">
+      <section
+        id="game-intro"
+        className="sr-only"
+        aria-label="경찰과 도둑(경도) 게임 소개"
+      >
         <h2>
           경찰과 도둑(경도) — 동심지키미의 GPS 기반 오프라인 술래잡기 게임
         </h2>
