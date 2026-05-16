@@ -224,3 +224,53 @@ export const GAME_FEATURES: GameFeature[] = [
     mockup: "chat",
   },
 ];
+
+export type FaqItem = {
+  question: string;
+  answer: string;
+  link?: { label: string; href: string };
+};
+
+export const GAME_FAQ: FaqItem[] = [
+  {
+    question: "몇 명이서 할 수 있나요?",
+    answer:
+      "최대 50명까지 가능합니다. 경찰 팀과 도둑 팀으로 나눠서 진행합니다.",
+  },
+  {
+    question: "한 판에 얼마나 걸리나요?",
+    answer: "기본 30분이고, 방장이 더 짧게도 길게도 정할 수 있습니다.",
+  },
+  {
+    question: "도둑 위치는 경찰한테 어떻게 공개되나요?",
+    answer:
+      "방장이 정한 주기마다 도둑의 위치가 경찰 지도에 발자국으로 표시됩니다.",
+  },
+  {
+    question: "경찰은 도둑을 어떻게 잡나요?",
+    answer: "도둑을 따라잡은 뒤, 도둑 화면의 QR을 스캔하면 체포됩니다.",
+  },
+  {
+    question: "감옥에 갇히면 끝인가요?",
+    answer: "아닙니다. 갇혀도 팀원이 구해주면 다시 도망칠 수 있습니다.",
+  },
+  {
+    question: "같은 팀끼리만 대화할 수 있나요?",
+    answer:
+      "경찰과 도둑의 채팅방이 분리되어 있어, 상대 팀은 대화를 볼 수 없습니다.",
+  },
+  {
+    question: "아이폰과 안드로이드가 같이 할 수 있나요?",
+    answer: "네, 기종과 관계없이 함께 플레이할 수 있습니다.",
+  },
+  {
+    question: "위치 정보는 안전하게 처리되나요?",
+    answer:
+      "게임이 진행되는 동안에만 위치를 수집하고, 게임이 끝나면 멈춥니다. 자세한 내용은 위치정보 이용약관에서 확인할 수 있습니다.",
+    link: { label: "위치정보 이용약관 보기", href: "/location" },
+  },
+  {
+    question: "무료인가요?",
+    answer: "네, 무료로 다운로드하여 플레이할 수 있습니다.",
+  },
+];

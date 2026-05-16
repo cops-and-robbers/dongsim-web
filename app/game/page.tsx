@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import GameHeroSection from "@/components/game/GameHeroSection";
 import FeatureBlock from "@/components/game/FeatureBlock";
+import GameFaqSection from "@/components/game/GameFaqSection";
 import CtaSection from "@/components/home/CtaSection";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
-import { GAME_FEATURES } from "@/lib/constants";
+import { GAME_FEATURES, GAME_FAQ } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "게임 소개",
@@ -34,9 +35,26 @@ export const metadata: Metadata = {
   },
 };
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: GAME_FAQ.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
+};
+
 export default function GamePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <BreadcrumbJsonLd
         items={[
           { name: "홈", path: "/" },
@@ -62,6 +80,7 @@ export default function GamePage() {
           </div>
         ))}
       </div>
+      <GameFaqSection />
       <CtaSection />
     </>
   );
