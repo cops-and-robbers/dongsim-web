@@ -91,7 +91,7 @@ const gameSchema = {
       name: "경찰과 도둑",
       alternateName: ["경도", "경도 게임", "Cops and Robbers"],
       description:
-        "GPS 기반 오프라인 술래잡기 게임. 친구들과 공원에서 직접 뛰며 즐기는 경찰과 도둑(경도) 놀이를 앱이 실시간으로 관리합니다.",
+        "GPS 기반 오프라인 술래잡기 게임. 친구들과 밖에서 직접 뛰며 놀던 그 놀이를 이제 앱과 함께 즐기세요.",
       genre: ["Action", "Multiplayer", "Location-based", "Outdoor"],
       playMode: "MultiPlayer",
       numberOfPlayers: {
@@ -125,7 +125,7 @@ const gameSchema = {
       applicationSubCategory: "LocationBasedGame",
       operatingSystem: "iOS, Android",
       description:
-        "GPS 기반 오프라인 술래잡기 게임. 친구들과 공원에서 직접 뛰며 즐기는 경찰과 도둑 놀이를 앱이 실시간으로 관리합니다.",
+        "GPS 기반 오프라인 술래잡기 게임. 친구들과 밖에서 직접 뛰며 놀던 그 놀이를 이제 앱과 함께 즐기세요.",
       inLanguage: "ko-KR",
       url: "https://copsnro66ers.site",
       installUrl: APP_LINKS.appStore,
