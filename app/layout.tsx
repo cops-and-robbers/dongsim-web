@@ -18,7 +18,7 @@ const GTM_ID = "GTM-WG4J7BXL";
 
 const SITE_NAME = "경찰과 도둑";
 const SITE_DESCRIPTION =
-  "경찰과 도둑(경도) — GPS 기반 오프라인 술래잡기 게임. 실제로 뛰어다니며 즐기는 경찰과 도둑 놀이를 앱이 자동으로 관리합니다.";
+  "경찰과 도둑(경도) — GPS 기반 오프라인 술래잡기 게임. 친구들과 밖에서 직접 뛰며 놀던 그 놀이를 이제 앱과 함께 즐기세요.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
