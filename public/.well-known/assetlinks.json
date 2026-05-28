@@ -1,0 +1,14 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.elipair.copsandrobbers",
+      "sha256_cert_fingerprints": [
+        "1B:FD:BA:21:2B:48:0D:A2:3E:C3:0D:01:00:9B:39:B4:13:9F:40:12:4C:E6:58:70:6E:EC:52:B9:9D:C6:CF:F8",
+        "6C:BB:2B:91:93:DD:47:0B:26:E2:B8:07:85:E9:31:F4:B6:FD:18:6C:D1:65:13:3C:D4:B2:CB:0E:26:5E:0B:8D",
+        "1C:A8:98:D4:62:FB:DC:95:AD:41:1F:86:37:DE:7D:C9:B7:DD:6A:7E:17:82:99:DE:37:91:C2:B9:24:A6:FF:91"
+      ]
+    }
+  }
+]

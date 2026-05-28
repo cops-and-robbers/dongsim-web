@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["5FZ789N4RT.com.elipair.copsandrobbers"],
+        "components": [
+          {
+            "/": "/join/*",
+            "comment": "Matches invite join links"
+          }
+        ]
+      }
+    ]
+  }
+}
