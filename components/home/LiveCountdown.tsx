@@ -5,22 +5,19 @@ import GameResultModal from "./GameResultModal";
 
 const INITIAL_SECONDS = 30 * 60;
 
+/**
+ * Hero 게임 장면 속 "남은 시간" 칩.
+ * 카운트다운이 끝까지(0) 가면 승리 모달을 띄운다.
+ * (별도로 /team 페이지의 숨은 캐릭터 잡기 이스터에그도 결과 모달을 띄운다.)
+ */
 export default function LiveCountdown() {
   const [seconds, setSeconds] = useState(INITIAL_SECONDS);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // 0이 되면 승리 모달
   if (seconds === 0 && !modalOpen) {
     setModalOpen(true);
   }
-
-  useEffect(() => {
-    if (
-      new URLSearchParams(window.location.search).get("result") === "open"
-    ) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSeconds(0);
-    }
-  }, []);
 
   useEffect(() => {
     if (modalOpen || seconds === 0) return;
@@ -30,13 +27,13 @@ export default function LiveCountdown() {
     return () => clearInterval(id);
   }, [modalOpen, seconds]);
 
-  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
-  const ss = String(seconds % 60).padStart(2, "0");
-
   const handleClose = () => {
     setModalOpen(false);
     setSeconds(INITIAL_SECONDS);
   };
+
+  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const ss = String(seconds % 60).padStart(2, "0");
 
   return (
     <>
@@ -48,7 +45,12 @@ export default function LiveCountdown() {
           {mm}:{ss}
         </p>
       </div>
-      <GameResultModal open={modalOpen} onClose={handleClose} />
+      <GameResultModal
+        open={modalOpen}
+        onClose={handleClose}
+        outcome="win"
+        showToggle={false}
+      />
     </>
   );
 }
