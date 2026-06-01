@@ -51,10 +51,11 @@ export default function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Image
-                src="/brand/logo-v5.png"
-                alt="경찰과 도둑(경도) 로고 — 동심지키미"
+                src="/brand/dongsim-logo.svg"
+                alt="동심지키미 로고"
                 width={32}
                 height={32}
+                unoptimized
                 className="h-8 w-8 rounded-lg"
               />
               <p className="text-base font-bold text-slate-900 dark:text-white">

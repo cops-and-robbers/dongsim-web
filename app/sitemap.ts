@@ -13,7 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
       images: [
         `${BASE_URL}/opengraph-image.png`,
-        `${BASE_URL}/brand/logo-v5.png`,
+        `${BASE_URL}/brand/logo.svg`,
         `${BASE_URL}/brand/app-icon.png`,
         `${BASE_URL}/characters/police.svg`,
         `${BASE_URL}/characters/robber.svg`,

@@ -111,7 +111,7 @@ const organizationSchema = {
   name: "동심지키미",
   alternateName: "팀 동심지키미",
   url: SITE_URL,
-  logo: `${SITE_URL}/brand/logo-v5.png`,
+  logo: `${SITE_URL}/brand/app-icon.png`,
   email: "copsnro66ers@gmail.com",
   sameAs: [
     "https://www.instagram.com/cops._.robbers",
