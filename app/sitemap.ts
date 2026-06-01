@@ -25,8 +25,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.9,
       images: [
-        `${BASE_URL}/characters/police-intro.svg`,
-        `${BASE_URL}/characters/robber-intro.svg`,
+        `${BASE_URL}/characters/police-chase.svg`,
+        `${BASE_URL}/characters/robber-flee.svg`,
         `${BASE_URL}/icons/police-badge.svg`,
         `${BASE_URL}/icons/robber-badge.svg`,
         `${BASE_URL}/icons/shoeprint.svg`,

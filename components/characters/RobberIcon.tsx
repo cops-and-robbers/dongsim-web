@@ -9,9 +9,10 @@ export default function RobberIcon({ className }: Props) {
     <Image
       src="/characters/robber.svg"
       alt="도둑 캐릭터"
-      width={220}
-      height={205}
+      width={160}
+      height={145}
       priority
+      unoptimized
       className={`object-contain ${className ?? ""}`}
     />
   );

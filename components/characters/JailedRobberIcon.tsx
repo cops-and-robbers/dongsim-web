@@ -9,8 +9,9 @@ export default function JailedRobberIcon({ className }: Props) {
     <Image
       src="/characters/robber-jailed.svg"
       alt="감옥에 갇힌 도둑 캐릭터"
-      width={247}
-      height={238}
+      width={140}
+      height={116}
+      unoptimized
       className={`object-contain ${className ?? ""}`}
     />
   );
