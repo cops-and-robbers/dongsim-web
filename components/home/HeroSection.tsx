@@ -1,10 +1,25 @@
+import Image from "next/image";
 import Container from "@/components/ui/Container";
 import DownloadButtons from "@/components/ui/DownloadButtons";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-import CopIcon from "@/components/characters/CopIcon";
-import RobberIcon from "@/components/characters/RobberIcon";
+import CopChaseIcon from "@/components/characters/CopChaseIcon";
+import RobberFleeIcon from "@/components/characters/RobberFleeIcon";
 import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
 import LiveCountdown from "./LiveCountdown";
+
+// 생쥐 발자국 트레일 — 작은 발바닥이 좌·우 교차로 촘촘히 찍히며 도둑을 향해 이어진다.
+const HERO_TRACKS = [
+  { x: 189, y: 114, s: 11, r: 116, o: 0.18, d: 380 },
+  { x: 219, y: 132, s: 12, r: 126, o: 0.27, d: 450 },
+  { x: 226, y: 166, s: 13, r: 116, o: 0.36, d: 520 },
+  { x: 256, y: 184, s: 14, r: 126, o: 0.45, d: 590 },
+  { x: 262, y: 218, s: 15, r: 116, o: 0.54, d: 660 },
+  { x: 292, y: 237, s: 16, r: 126, o: 0.63, d: 730 },
+  { x: 299, y: 271, s: 17, r: 116, o: 0.72, d: 800 },
+  { x: 329, y: 289, s: 18, r: 126, o: 0.81, d: 870 },
+  { x: 336, y: 323, s: 19, r: 116, o: 0.9, d: 940 },
+  { x: 366, y: 341, s: 20, r: 126, o: 0.97, d: 1010 },
+];
 
 function GameScene() {
   return (
@@ -75,48 +90,16 @@ function GameScene() {
         />
 
         <g className="text-slate-800 dark:text-brand-green">
-          <g
-            className="hero-anim-step"
-            transform="translate(200 115) rotate(128)"
-            style={{ animationDelay: "450ms" }}
-          >
-            <use href="#hero-sp" width="22" height="22" opacity="0.2" />
-          </g>
-          <g
-            className="hero-anim-step"
-            transform="translate(228 160) rotate(125)"
-            style={{ animationDelay: "550ms" }}
-          >
-            <use href="#hero-sp" width="24" height="24" opacity="0.35" />
-          </g>
-          <g
-            className="hero-anim-step"
-            transform="translate(252 205) rotate(120)"
-            style={{ animationDelay: "650ms" }}
-          >
-            <use href="#hero-sp" width="26" height="26" opacity="0.5" />
-          </g>
-          <g
-            className="hero-anim-step"
-            transform="translate(282 250) rotate(115)"
-            style={{ animationDelay: "750ms" }}
-          >
-            <use href="#hero-sp" width="28" height="28" opacity="0.65" />
-          </g>
-          <g
-            className="hero-anim-step"
-            transform="translate(314 292) rotate(112)"
-            style={{ animationDelay: "850ms" }}
-          >
-            <use href="#hero-sp" width="30" height="30" opacity="0.82" />
-          </g>
-          <g
-            className="hero-anim-step"
-            transform="translate(346 330) rotate(108)"
-            style={{ animationDelay: "950ms" }}
-          >
-            <use href="#hero-sp" width="32" height="32" opacity="0.95" />
-          </g>
+          {HERO_TRACKS.map((p, i) => (
+            <g
+              key={i}
+              className="hero-anim-step"
+              transform={`translate(${p.x} ${p.y}) rotate(${p.r})`}
+              style={{ animationDelay: `${p.d}ms` }}
+            >
+              <use href="#hero-sp" width={p.s} height={p.s} opacity={p.o} />
+            </g>
+          ))}
         </g>
       </svg>
 
@@ -125,13 +108,13 @@ function GameScene() {
           className="hero-anim-char w-[42%]"
           style={{ animationDelay: "1050ms" }}
         >
-          <CopIcon className="h-auto w-full" />
+          <CopChaseIcon className="h-auto w-full" />
         </div>
         <div
           className="hero-anim-char w-[44%]"
           style={{ animationDelay: "1150ms" }}
         >
-          <RobberIcon className="h-auto w-full" />
+          <RobberFleeIcon className="h-auto w-full" />
         </div>
       </div>
 
@@ -165,7 +148,29 @@ export default function HeroSection() {
                 </span>
               </p>
 
-              <div className="mt-10">
+              <div className="mt-10 flex flex-col gap-5">
+                <div className="inline-flex w-fit items-center gap-3.5 rounded-2xl bg-slate-50/80 p-2 pr-5 ring-1 ring-slate-200/70 backdrop-blur dark:bg-white/6 dark:ring-white/10">
+                  <Image
+                    src="/brand/app-icon.png"
+                    alt="경찰과 도둑 앱 아이콘"
+                    width={52}
+                    height={52}
+                    className="h-13 w-13 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10"
+                  />
+                  <div className="leading-tight">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      경찰과 도둑
+                    </p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="rounded-full bg-brand-blue/10 px-2 py-0.5 text-[11px] font-bold text-brand-blue dark:bg-brand-green/15 dark:text-brand-green">
+                        무료
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        iOS · Android
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 <DownloadButtons />
               </div>
 
