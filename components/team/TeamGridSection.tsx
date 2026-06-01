@@ -12,6 +12,7 @@ import {
   type Helper,
 } from "@/lib/constants";
 import Footprint from "@/components/icons/Footprint";
+import HiddenCharacter from "@/components/hunt/HiddenCharacter";
 
 function GithubIcon() {
   return (
@@ -330,7 +331,18 @@ function MobileTeamList() {
 
 export default function TeamGridSection() {
   return (
-    <section className="bg-white py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black">
+    <section className="relative bg-white py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black">
+      <HiddenCharacter
+        id="grid1"
+        pose="peek"
+        flip
+        className="right-[8%] top-7 h-11 w-14"
+      />
+      <HiddenCharacter
+        id="grid2"
+        pose="peek"
+        className="left-[14%] bottom-7 h-11 w-14"
+      />
       <Container>
         <ScrollReveal animation="fadeInUp">
           <div className="max-w-2xl">

@@ -12,6 +12,7 @@ const pretendard = localFont({
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
+import HuntProvider from "@/components/hunt/HuntProvider";
 import { SITE_URL } from "@/lib/constants";
 
 const GTM_ID = "GTM-WG4J7BXL";
@@ -170,9 +171,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
         <ThemeProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <HuntProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </HuntProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,5 +1,6 @@
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import HiddenCharacter from "@/components/hunt/HiddenCharacter";
 
 export default function MissionVisionSection() {
   const principles = [
@@ -14,7 +15,12 @@ export default function MissionVisionSection() {
   ];
 
   return (
-    <section className="bg-slate-50 py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black-900">
+    <section className="relative bg-slate-50 py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black-900">
+      <HiddenCharacter
+        id="mv1"
+        pose="peek"
+        className="left-[8%] top-7 h-11 w-14"
+      />
       <Container>
         <ScrollReveal animation="fadeInUp">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">

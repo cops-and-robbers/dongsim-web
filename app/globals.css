@@ -245,6 +245,20 @@ body {
   }
 }
 
+/* Hidden character: a tiny startled twitch on hover */
+@keyframes hunt-twitch {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  35% {
+    transform: translateY(-1.5px) rotate(-3deg);
+  }
+  70% {
+    transform: translateY(0) rotate(2deg);
+  }
+}
+
 /* QR scan line: single sweep top-to-bottom when viewed */
 .mockup-qr-scan {
   opacity: 0;
