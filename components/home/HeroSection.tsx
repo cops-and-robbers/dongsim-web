@@ -151,10 +151,11 @@ export default function HeroSection() {
               <div className="mt-10 flex flex-col gap-5">
                 <div className="inline-flex w-fit items-center gap-3.5 rounded-2xl bg-slate-50/80 p-2 pr-5 ring-1 ring-slate-200/70 backdrop-blur dark:bg-white/6 dark:ring-white/10">
                   <Image
-                    src="/brand/app-icon.png"
+                    src="/brand/app-icon.svg"
                     alt="경찰과 도둑 앱 아이콘"
                     width={52}
                     height={52}
+                    unoptimized
                     className="h-13 w-13 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10"
                   />
                   <div className="leading-tight">
