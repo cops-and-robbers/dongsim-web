@@ -75,6 +75,12 @@ export const TEAM_MEMBERS: TeamMember[] = [
     photo: "/team/yoon.jpeg",
     github: "https://github.com/jihee127",
   },
+  {
+    name: "김다임",
+    role: "Design",
+    bio: "프로필 준비 중이에요.",
+    photo: "/team/kim.jpeg",
+  },
 ];
 
 export type HelperRole = "infrastructure" | "qa";

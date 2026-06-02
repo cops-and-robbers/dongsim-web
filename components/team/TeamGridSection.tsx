@@ -350,7 +350,7 @@ export default function TeamGridSection() {
               만드는 사람들
             </p>
             <h2 className="mt-3 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-5xl dark:text-white">
-              여섯 명이 함께 만들어요
+              일곱 명이 함께 만들어요
             </h2>
             <p className="mt-5 text-lg leading-relaxed text-slate-600 dark:text-slate-300">
               상희의 &ldquo;경찰과 도둑 같이 만들래?&rdquo; 한마디에서 시작된
