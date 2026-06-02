@@ -65,7 +65,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     name: "황혜림",
     role: "Backend",
     bio: "프로필 준비 중이에요.",
-    photo: "/team/hwang.png",
+    photo: "/team/hwang.jpg",
     github: "https://github.com/HyerimH",
   },
   {
