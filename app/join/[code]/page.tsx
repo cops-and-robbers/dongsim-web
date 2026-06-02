@@ -5,6 +5,7 @@ import RobberIcon from "@/components/characters/RobberIcon";
 import { AppleIcon, PlayIcon } from "@/components/ui/StoreIcons";
 import { APP_LINKS } from "@/lib/constants";
 import StoreRedirect from "./StoreRedirect";
+import InviteCode from "./InviteCode";
 
 type Platform = "ios" | "android" | "other";
 
@@ -144,16 +145,7 @@ export default async function JoinFallbackPage({
               : "스토어로 이동하고 있어요. 자동으로 열리지 않으면 아래 버튼을 눌러 주세요."}
           </p>
 
-          {safeCode && (
-            <div className="mt-6 w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-4 dark:border-white/15 dark:bg-white/5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                초대 코드
-              </p>
-              <p className="mt-1 font-mono text-2xl font-bold tracking-[0.3em] text-slate-900 dark:text-white">
-                {safeCode}
-              </p>
-            </div>
-          )}
+          {safeCode && <InviteCode code={safeCode} />}
 
           <div className="mt-8 flex w-full flex-col gap-3">{buttons}</div>
 
