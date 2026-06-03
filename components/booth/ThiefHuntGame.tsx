@@ -42,7 +42,7 @@ export default function ThiefHuntGame() {
       if (o.type === "civ") {
         g.combo = 0;
         g.score = Math.max(0, g.score - 5);
-        g.pops.push({ id: g.nextId++, hole: i, text: "시민!", good: false, at: now });
+        g.pops.push({ id: g.nextId++, hole: i, text: "경찰!", good: false, at: now });
         setShaking(true);
         window.setTimeout(() => setShaking(false), 360);
       } else {
