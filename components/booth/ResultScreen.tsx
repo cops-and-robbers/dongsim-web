@@ -152,7 +152,7 @@ export default function ResultScreen({
           <div className="flex h-full flex-col rounded-3xl bg-brand-blue p-4 text-white shadow-lg shadow-brand-blue/30 dark:bg-app-black-900 dark:shadow-none dark:ring-1 dark:ring-white/10">
             {/* 앱 다운로드 — 데스크탑은 QR + 스토어 버튼, 모바일은 단일 버튼 */}
             <p className="text-center text-sm font-extrabold">
-              이건 맛보기, 진짜는 밖에서 뛰어요 🏃
+              앱 다운받고 밖에서 즐겨요 🏃
             </p>
 
             {/* 데스크탑: QR(폰으로 스캔) — 남는 높이를 채워 결과 카드와 맞춤 */}
