@@ -80,6 +80,7 @@ export const TEAM_MEMBERS: TeamMember[] = [
     role: "Design",
     bio: "프로필 준비 중이에요.",
     photo: "/team/kim.jpeg",
+    github: "https://github.com/muchaim811",
   },
 ];
 
