@@ -2,12 +2,26 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { preload } from "react-dom";
 import Shell from "./Shell";
-import { CIVILIAN_SRC, ROBBER_SRC } from "./types";
+import {
+  CHEESE_BACK_SRC,
+  CHEESE_TOP_SRC,
+  CIVILIAN_SRC,
+  ROBBER_SRC,
+} from "./types";
 import { getTopScores } from "./leaderboard";
 
 export default function IntroScreen({ onStart }: { onStart: () => void }) {
   const [best, setBest] = useState<number | null>(null);
+
+  // 보드 에셋을 인트로에서 미리 받아둬 시작 시 지연 제거
+  useEffect(() => {
+    for (const src of [CHEESE_BACK_SRC, CHEESE_TOP_SRC, ROBBER_SRC, CIVILIAN_SRC]) {
+      preload(src, { as: "image" });
+    }
+  }, []);
+
   useEffect(() => {
     let alive = true;
     getTopScores(1).then((s) => {

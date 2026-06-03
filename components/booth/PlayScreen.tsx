@@ -86,6 +86,7 @@ export default function PlayScreen({
             alt=""
             fill
             sizes="(max-width: 640px) 90vw, 30rem"
+            unoptimized
             aria-hidden="true"
             className="pointer-events-none select-none object-contain"
           />
@@ -126,6 +127,7 @@ export default function PlayScreen({
             alt=""
             fill
             sizes="(max-width: 640px) 90vw, 30rem"
+            unoptimized
             aria-hidden="true"
             className="pointer-events-none z-20 select-none object-contain"
           />
