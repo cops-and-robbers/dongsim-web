@@ -2,7 +2,21 @@
 
 import Image from "next/image";
 import Shell from "./Shell";
-import { CIVILIAN_SRC, GAME_MS, ROBBER_SRC, type Game, type Occ, type Pop } from "./types";
+import {
+  CHEESE_BACK_SRC,
+  CHEESE_TOP_SRC,
+  CIVILIAN_SRC,
+  GAME_MS,
+  HOLE_POS,
+  ROBBER_SRC,
+  type Game,
+  type Pop,
+} from "./types";
+
+// 보드 대비 % 단위 시각 상수
+const MOUSE_W = 17;
+const MOUSE_YOFF = 4; // 구멍 중심보다 아래로 — 하반신이 치즈에 가려지게
+const TAP_W = 22;
 
 export default function PlayScreen({
   game,
@@ -60,16 +74,67 @@ export default function PlayScreen({
           />
         </div>
 
-        {/* 보드 — 가용 높이에 맞춰 축소(한 화면에 들어오게) */}
+        {/* 보드 — 치즈 3레이어(뒤 구멍속·쥐·앞 치즈) */}
         <div
-          className={`mx-auto grid aspect-square w-full max-w-[min(30rem,calc(100dvh-17rem))] grid-cols-3 gap-2.5 rounded-3xl bg-brand-blue-bg p-3 ring-1 ring-brand-blue/10 transition-shadow sm:gap-3 sm:p-4 dark:bg-app-black-900 dark:ring-white/10 ${
-            fever ? "shadow-[0_0_0_3px_rgba(56,245,91,0.4)]" : ""
-          } ${shaking ? "animate-[booth-shake_0.36s_ease-in-out]" : ""}`}
+          className={`relative mx-auto aspect-square w-full max-w-[min(30rem,calc(100dvh-17rem))] ${
+            shaking ? "animate-[booth-shake_0.36s_ease-in-out]" : ""
+          }`}
         >
-          {game.holes.map((occ, i) => (
-            <Hole
+          {/* 뒤: 구멍 속(주황) */}
+          <Image
+            src={CHEESE_BACK_SRC}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 90vw, 30rem"
+            aria-hidden="true"
+            className="pointer-events-none select-none object-contain"
+          />
+
+          {/* 쥐 — 각 구멍에서 빼꼼 */}
+          {game.holes.map((occ, i) =>
+            occ ? (
+              <div
+                key={i}
+                className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  left: `${HOLE_POS[i].x}%`,
+                  top: `${HOLE_POS[i].y + MOUSE_YOFF}%`,
+                  width: `${MOUSE_W}%`,
+                }}
+              >
+                <Image
+                  key={occ.id}
+                  src={occ.type === "robber" ? ROBBER_SRC : CIVILIAN_SRC}
+                  alt=""
+                  width={occ.type === "robber" ? 160 : 180}
+                  height={occ.type === "robber" ? 145 : 200}
+                  unoptimized
+                  aria-hidden="true"
+                  className={`h-auto w-full ${
+                    occ.caught
+                      ? "animate-[booth-caught_0.28s_ease-in_forwards]"
+                      : "animate-[booth-pop_0.24s_ease-out]"
+                  }`}
+                />
+              </div>
+            ) : null,
+          )}
+
+          {/* 앞: 치즈(구멍 투명) — 쥐 하반신을 가림. 탭은 통과 */}
+          <Image
+            src={CHEESE_TOP_SRC}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 90vw, 30rem"
+            aria-hidden="true"
+            className="pointer-events-none z-20 select-none object-contain"
+          />
+
+          {/* 탭 영역 + 점수 팝업 */}
+          {game.holes.map((_, i) => (
+            <HoleButton
               key={i}
-              occ={occ}
+              i={i}
               pop={game.pops.find((p) => p.hole === i)}
               onTap={() => onTap(i)}
             />
@@ -110,12 +175,12 @@ function WantedPoster() {
   );
 }
 
-function Hole({
-  occ,
+function HoleButton({
+  i,
   pop,
   onTap,
 }: {
-  occ: Occ | null;
+  i: number;
   pop: Pop | undefined;
   onTap: () => void;
 }) {
@@ -127,37 +192,18 @@ function Hole({
         onTap();
       }}
       aria-label="쥐구멍"
-      className="relative aspect-square touch-none select-none overflow-hidden rounded-2xl bg-[#eaf0fd] ring-1 ring-inset ring-white/70 dark:bg-app-black/40 dark:ring-white/10"
+      className="absolute z-30 aspect-square -translate-x-1/2 -translate-y-1/2 touch-none select-none rounded-full"
+      style={{
+        left: `${HOLE_POS[i].x}%`,
+        top: `${HOLE_POS[i].y}%`,
+        width: `${TAP_W}%`,
+      }}
     >
-      {/* 굴 입구(어두운 구멍) */}
-      <span className="pointer-events-none absolute bottom-[8%] left-1/2 h-[46%] w-[80%] -translate-x-1/2 rounded-[50%] bg-[#27345a] dark:bg-black/70" />
-
-      {/* 캐릭터 — 구멍에서 빼꼼 */}
-      {occ && (
-        <Image
-          key={occ.id}
-          src={occ.type === "robber" ? ROBBER_SRC : CIVILIAN_SRC}
-          alt=""
-          width={120}
-          height={120}
-          unoptimized
-          aria-hidden="true"
-          className={`pointer-events-none absolute bottom-[20%] left-1/2 z-10 w-[58%] -translate-x-1/2 ${
-            occ.caught
-              ? "animate-[booth-caught_0.28s_ease-in_forwards]"
-              : "animate-[booth-pop_0.24s_ease-out]"
-          }`}
-        />
-      )}
-
-      {/* 굴 앞턱 — 캐릭터 하반신을 가려 '나오는' 느낌 */}
-      <span className="pointer-events-none absolute bottom-[1%] left-1/2 z-20 h-[34%] w-[88%] -translate-x-1/2 rounded-[50%] bg-[#e1e9fb] shadow-[inset_0_2px_0_rgba(255,255,255,0.8)] dark:bg-app-black-900 dark:shadow-[inset_0_2px_0_rgba(255,255,255,0.08)]" />
-
       {pop && (
         <span
           key={pop.id}
-          className={`pointer-events-none absolute left-1/2 top-1/2 z-30 -translate-x-1/2 animate-[booth-float_0.6s_ease-out_forwards] font-mono text-lg font-extrabold ${
-            pop.good ? "text-brand-blue dark:text-brand-green" : "text-brand-red"
+          className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 animate-[booth-float_0.6s_ease-out_forwards] font-mono text-lg font-extrabold drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)] ${
+            pop.good ? "text-white" : "text-brand-red"
           }`}
         >
           {pop.text}

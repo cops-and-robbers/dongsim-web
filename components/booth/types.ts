@@ -3,6 +3,23 @@ export const HOLE_COUNT = 9;
 export const ROBBER_SRC = "/characters/robber.svg";
 export const CIVILIAN_SRC = "/characters/police.svg";
 
+// 치즈 보드 3레이어 에셋
+export const CHEESE_BACK_SRC = "/booth/cheese-back.png"; // 뒤: 구멍 속(주황)
+export const CHEESE_TOP_SRC = "/booth/cheese-top.png"; // 앞: 치즈(구멍 투명)
+
+// 구멍 9개 중심 좌표(보드 대비 %)
+export const HOLE_POS = [
+  { x: 20.4, y: 19.1 },
+  { x: 50, y: 19.1 },
+  { x: 79.5, y: 19.1 },
+  { x: 20.4, y: 50 },
+  { x: 50, y: 50 },
+  { x: 79.5, y: 50 },
+  { x: 20.4, y: 80.8 },
+  { x: 50, y: 80.8 },
+  { x: 79.5, y: 80.8 },
+];
+
 export const lerp = (a: number, b: number, t: number) =>
   a + (b - a) * Math.min(1, Math.max(0, t));
 
