@@ -46,7 +46,7 @@ export default function PlayScreen({
             <p
               className={`h-4 font-mono text-xs font-extrabold tabular-nums transition-opacity ${
                 game.combo >= 2 ? "opacity-100" : "opacity-0"
-              } ${fever ? "text-brand-green" : "text-brand-blue dark:text-brand-green"}`}
+              } ${fever ? "text-amber-500" : "text-amber-600 dark:text-amber-400"}`}
             >
               ×{game.combo} 콤보
             </p>
@@ -68,7 +68,7 @@ export default function PlayScreen({
         <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
           <div
             className={`h-full rounded-full transition-[width] duration-100 ease-linear ${
-              urgent ? "bg-brand-red" : "bg-brand-blue dark:bg-brand-green"
+              urgent ? "bg-brand-red" : "bg-amber-400"
             }`}
             style={{ width: `${timePct}%` }}
           />

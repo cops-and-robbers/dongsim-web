@@ -25,17 +25,16 @@ export default function IntroScreen({ onStart }: { onStart: () => void }) {
           미니게임
         </span>
         <h1 className="mt-4 text-balance text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl dark:text-white">
-          도둑을 잡아라!
+          치즈 도둑 검거 작전!
         </h1>
         <p className="mt-4 text-pretty text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          30초 동안 빼꼼 나오는{" "}
-          <b className="text-emerald-600 dark:text-brand-green">도둑</b>만 콕!{" "}
-          <b className="text-red-500 dark:text-red-400">경찰</b>을 건드리면 감점이에요.
+          30초 안에 치즈 은행의 치즈를 절도한{" "}
+          <b className="text-amber-600 dark:text-amber-300">도둑</b>을 최대한 많이 잡으세요!
         </p>
 
         <div className="mt-6 flex items-center justify-center gap-6">
-          <Legend src={ROBBER_SRC} label="탭하면 체포" tone="good" />
-          <Legend src={CIVILIAN_SRC} label="건드리면 감점" tone="bad" />
+          <Legend src={ROBBER_SRC} label="득점" tone="good" />
+          <Legend src={CIVILIAN_SRC} label="감점" tone="bad" />
         </div>
 
         {best !== null && best > 0 && (
@@ -71,7 +70,7 @@ function Legend({
       <span
         className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl ring-1 ${
           tone === "good"
-            ? "bg-emerald-50 ring-emerald-200 dark:bg-brand-green/10 dark:ring-brand-green/20"
+            ? "bg-amber-50 ring-amber-200 dark:bg-amber-400/10 dark:ring-amber-400/20"
             : "bg-red-50 ring-red-200 dark:bg-red-500/10 dark:ring-red-500/20"
         }`}
       >
@@ -80,7 +79,7 @@ function Legend({
       <span
         className={`text-xs font-bold ${
           tone === "good"
-            ? "text-emerald-600 dark:text-brand-green"
+            ? "text-amber-600 dark:text-amber-300"
             : "text-red-500 dark:text-red-400"
         }`}
       >
