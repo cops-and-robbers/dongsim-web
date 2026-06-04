@@ -142,9 +142,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`h-full antialiased ${pretendard.variable}`}>
+    <html
+      lang="ko"
+      className={`h-full antialiased ${pretendard.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <meta name="theme-color" content="#ffffff" />
+        {/* 페인트 전 톤 결정: 저장된 선택 → 기기 다크 → 경찰(읽기 실패 시 경찰) */}
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('team');var d=s==='robber'||(s!=='police'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#080a0c';}}catch(e){}})();`,
+          }}
+        />
         <Script id="gtm-init" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
