@@ -87,10 +87,15 @@ function StoreButton({
 
 export default async function JoinFallbackPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ code: string }>;
+  searchParams: Promise<{ ui?: string }>;
 }) {
   const { code } = await params;
+  const { ui } = await searchParams;
+  const preview =
+    ui === "open" || ui === "guide" || ui === "store" ? ui : undefined;
   const safeCode = sanitizeCode(code);
   const platform = detectPlatform((await headers()).get("user-agent") ?? "");
 
@@ -144,6 +149,7 @@ export default async function JoinFallbackPage({
             platform={platform}
             appStore={APP_LINKS.appStore}
             playStore={APP_LINKS.googlePlay}
+            preview={preview}
           >
             {buttons}
           </JoinBridge>

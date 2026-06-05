@@ -11,12 +11,15 @@ export default function JoinBridge({
   platform,
   appStore,
   playStore,
+  preview,
   children,
 }: {
   code: string;
   platform: "ios" | "android" | "other";
   appStore: string;
   playStore: string;
+  // ?ui= 로 특정 상태 UI를 미리보기(자동 핸드오프 비활성)
+  preview?: "open" | "guide" | "store";
   children: ReactNode;
 }) {
   const [showEscapeGuide, setShowEscapeGuide] = useState(false);
@@ -67,38 +70,80 @@ export default function JoinBridge({
     }
   }, [code, platform, appStore, playStore]);
 
-  // 진입 시 1회 자동 실행(데스크톱·코드 없음 제외). 폴백 UI를 먼저 그린 뒤 다음 틱에 시도
+  // 진입 시 1회 자동 실행(데스크톱·코드 없음·프리뷰 제외). 폴백 UI를 먼저 그린 뒤 다음 틱에 시도
   useEffect(() => {
-    if (hasAttemptedRef.current) return;
+    if (preview || hasAttemptedRef.current) return;
     hasAttemptedRef.current = true;
     if (platform === "other" || !code) return;
     const timer = window.setTimeout(openApp, 0);
     return () => window.clearTimeout(timer);
-  }, [openApp, platform, code]);
+  }, [openApp, platform, code, preview]);
 
-  const showOpenButton = platform !== "other" && Boolean(code);
+  const showGuide = preview ? preview === "guide" : showEscapeGuide;
+  const showOpenButton = preview
+    ? preview === "open"
+    : platform !== "other" && Boolean(code);
 
   return (
-    <div className="mt-8 flex w-full flex-col gap-3">
-      {showOpenButton && (
-        <button
-          type="button"
-          onClick={openApp}
-          className="inline-flex w-full items-center justify-center rounded-xl bg-brand-blue px-6 py-3.5 text-base font-bold text-white shadow-sm transition-colors duration-200 hover:bg-brand-blue-light dark:bg-brand-green dark:text-app-black dark:hover:bg-brand-green-light"
-        >
-          앱에서 열기
-        </button>
+    <div className="mt-8 flex w-full flex-col gap-4">
+      {showGuide ? (
+        <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4 text-left ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10">
+          <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-blue/10 text-brand-blue dark:bg-brand-green/15 dark:text-brand-green">
+            <ExternalIcon />
+          </span>
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-slate-900 dark:text-white">
+              한 단계만 더!
+            </p>
+            <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              오른쪽 위 ⋯ 에서{" "}
+              <b className="font-bold text-slate-700 dark:text-slate-200">
+                ‘다른 브라우저로 열기’
+              </b>
+              를 누르면 게임에 입장돼요.
+            </p>
+          </div>
+        </div>
+      ) : (
+        showOpenButton && (
+          <button
+            type="button"
+            onClick={openApp}
+            className="inline-flex w-full items-center justify-center rounded-xl bg-brand-blue px-6 py-3.5 text-base font-bold text-white shadow-sm transition-colors duration-200 hover:bg-brand-blue-light dark:bg-brand-green dark:text-app-black dark:hover:bg-brand-green-light"
+          >
+            게임 입장하기
+          </button>
+        )
       )}
-      {children}
-      {showEscapeGuide && (
-        <p className="mt-1 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600 ring-1 ring-slate-200 dark:bg-white/5 dark:text-slate-400 dark:ring-white/10">
-          인앱 브라우저에서는 앱으로 바로 열 수 없어요. 우측 상단 메뉴(⋯)에서{" "}
-          <b className="font-bold text-slate-700 dark:text-slate-200">
-            ‘다른 브라우저로 열기’
-          </b>
-          (Safari·Chrome)를 선택해 주세요.
-        </p>
-      )}
+
+      {/* 앱 미설치 폴백 — 조용한 보조 그룹 */}
+      <div className="flex w-full flex-col gap-2.5">
+        <div className="flex items-center gap-3 text-xs font-medium text-slate-400 dark:text-slate-500">
+          <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+          앱이 아직 없다면
+          <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+        </div>
+        {children}
+      </div>
     </div>
+  );
+}
+
+function ExternalIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </svg>
   );
 }
