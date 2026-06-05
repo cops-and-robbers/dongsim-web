@@ -4,7 +4,7 @@ import Container from "@/components/ui/Container";
 import RobberIcon from "@/components/characters/RobberIcon";
 import { AppleIcon, PlayIcon } from "@/components/ui/StoreIcons";
 import { APP_LINKS } from "@/lib/constants";
-import StoreRedirect from "./StoreRedirect";
+import JoinBridge from "./JoinBridge";
 import InviteCode from "./InviteCode";
 
 type Platform = "ios" | "android" | "other";
@@ -94,19 +94,12 @@ export default async function JoinFallbackPage({
   const safeCode = sanitizeCode(code);
   const platform = detectPlatform((await headers()).get("user-agent") ?? "");
 
-  const redirectUrl =
-    platform === "ios"
-      ? APP_LINKS.appStore
-      : platform === "android"
-        ? APP_LINKS.googlePlay
-        : null;
-
   const appStoreButton = (
     <StoreButton
       key="apple"
       href={APP_LINKS.appStore}
       kind="apple"
-      emphasis={platform === "ios" ? "primary" : "secondary"}
+      emphasis="secondary"
     />
   );
   const playStoreButton = (
@@ -114,7 +107,7 @@ export default async function JoinFallbackPage({
       key="play"
       href={APP_LINKS.googlePlay}
       kind="play"
-      emphasis={platform === "ios" ? "secondary" : "primary"}
+      emphasis="secondary"
     />
   );
 
@@ -125,7 +118,6 @@ export default async function JoinFallbackPage({
 
   return (
     <section className="flex min-h-[70vh] items-center justify-center bg-white py-16 transition-colors duration-500 sm:py-20 dark:bg-app-black">
-      {redirectUrl && <StoreRedirect url={redirectUrl} />}
       <Container>
         <div className="mx-auto flex max-w-md flex-col items-center text-center">
           <div className="relative mb-6 h-28 w-28">
@@ -142,12 +134,19 @@ export default async function JoinFallbackPage({
           <p className="mt-3 text-pretty text-sm leading-relaxed text-slate-600 dark:text-slate-300">
             {platform === "other"
               ? "이 링크는 휴대폰에서 열어 주세요. 앱을 설치하면 초대받은 방으로 바로 들어갈 수 있어요."
-              : "스토어로 이동하고 있어요. 자동으로 열리지 않으면 아래 버튼을 눌러 주세요."}
+              : "앱으로 이동하고 있어요. 자동으로 열리지 않으면 아래 버튼을 눌러 주세요."}
           </p>
 
           {safeCode && <InviteCode code={safeCode} />}
 
-          <div className="mt-8 flex w-full flex-col gap-3">{buttons}</div>
+          <JoinBridge
+            code={code}
+            platform={platform}
+            appStore={APP_LINKS.appStore}
+            playStore={APP_LINKS.googlePlay}
+          >
+            {buttons}
+          </JoinBridge>
 
           <p className="mt-6 text-xs leading-relaxed text-slate-400 dark:text-slate-500">
             앱이 이미 설치되어 있다면 이 링크가 자동으로 앱에서 열려요.
