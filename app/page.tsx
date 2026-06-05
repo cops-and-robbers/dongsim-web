@@ -2,6 +2,7 @@ import HeroSection from "@/components/home/HeroSection";
 import CharactersSection from "@/components/home/CharactersSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
+import MinigameTeaserSection from "@/components/home/MinigameTeaserSection";
 import CtaSection from "@/components/home/CtaSection";
 import { APP_LINKS, SITE_URL } from "@/lib/constants";
 
@@ -219,6 +220,7 @@ export default function HomePage() {
       <CharactersSection />
       <HowItWorksSection />
       <FeaturesSection />
+      <MinigameTeaserSection />
       <CtaSection />
     </>
   );

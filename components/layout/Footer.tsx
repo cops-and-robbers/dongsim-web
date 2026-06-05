@@ -111,6 +111,14 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link
+                  href="/play"
+                  className="text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                >
+                  미니게임
+                </Link>
+              </li>
             </ul>
           </div>
 
