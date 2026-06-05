@@ -46,10 +46,10 @@ export default function JoinBridge({
 
     // 일반 브라우저는 설치된 앱을 직접 실행한다(미설치 시 스토어로 폴백)
     if (platform === "android") {
-      // 검증된 https App Links를 intent로 호출 → 설치 시 앱, 미설치 시 browser_fallback_url
+      // 커스텀 스킴을 intent로 호출 → 도메인 검증과 무관하게 설치 시 앱, 미설치 시 browser_fallback_url
       window.location.href =
-        `intent://copsnro66ers.site/join/${encodedCode}` +
-        `#Intent;scheme=https;package=${ANDROID_PACKAGE};` +
+        `intent://join/${encodedCode}` +
+        `#Intent;scheme=copsandrobbers;package=${ANDROID_PACKAGE};` +
         `S.browser_fallback_url=${encodeURIComponent(playStore)};end`;
       return;
     }
