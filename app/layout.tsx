@@ -118,6 +118,7 @@ const organizationSchema = {
     "https://www.instagram.com/cops._.robbers",
     "https://github.com/cops-and-robbers",
     "https://www.youtube.com/channel/UCUmCD4Lg4jc95ShNBPxSdDA",
+    "https://www.tiktok.com/@cops._.robbers",
   ],
 };
 
