@@ -408,6 +408,97 @@ body {
   animation: nfBounce 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
 
+/* 포토부스 키오스크: 마스코트 팝·카운트다운·촬영 깜빡임·선택 뱃지 */
+@keyframes pbBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes pbCountPop {
+  0% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes pbFlash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes pbBadgePop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+/* 찍힐 때마다 프레임 아래 모서리에서 톡 솟았다 다시 들어감 */
+@keyframes pbPopUp {
+  0% {
+    transform: translateY(55%) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    transform: translateY(-8%) scale(1.08);
+    opacity: 1;
+  }
+  45%,
+  72% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(55%) scale(0.85);
+    opacity: 0;
+  }
+}
+.pb-bob {
+  animation: pbBob 2s ease-in-out infinite;
+}
+.pb-count {
+  animation: pbCountPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.pb-flash {
+  animation: pbFlash 0.28s ease-out forwards;
+}
+.pb-badge {
+  animation: pbBadgePop 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.pb-pop {
+  animation: pbPopUp 1.15s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes pbScreenIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.pb-screen {
+  animation: pbScreenIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 
 @media (prefers-reduced-motion: reduce) {
   .scroll-animate,
@@ -432,7 +523,13 @@ body {
   .mockup-qr-scan,
   .mockup-chat-bubble,
   .nf-spin,
-  .nf-bounce {
+  .nf-bounce,
+  .pb-bob,
+  .pb-count,
+  .pb-flash,
+  .pb-badge,
+  .pb-pop,
+  .pb-screen {
     animation: none;
     opacity: 1;
     transform: none;
