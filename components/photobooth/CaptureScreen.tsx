@@ -57,35 +57,31 @@ export default function CaptureScreen({
     if (!img) return;
     setFlash(true);
     window.setTimeout(() => setFlash(false), 280);
-    setShots((prev) => {
-      if (prev.length >= SHOT_COUNT) return prev;
-      const next = [...prev, img];
-      if (next.length >= SHOT_COUNT) onDoneRef.current(next);
-      return next;
-    });
+    // 업데이터는 순수하게 — 한 장만 추가(Strict Mode가 두 번 호출해도 1장).
+    setShots((prev) => (prev.length >= SHOT_COUNT ? prev : [...prev, img]));
   }, [ratio, videoRef]);
-
-  // 자동 카운트다운 → 0이면 촬영. 촬영 때마다 효과가 재실행돼 다음 컷 카운트다운 시작.
-  useEffect(() => {
-    if (!ready || shots.length >= SHOT_COUNT) return;
-    // 새 컷 시작마다 카운트다운을 처음 값으로 리셋(직접 찍기 후에도).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCount(COUNTDOWN_SECONDS);
-    const id = window.setInterval(() => {
-      setCount((c) => {
-        if (c <= 1) {
-          window.clearInterval(id);
-          doCapture();
-          return COUNTDOWN_SECONDS;
-        }
-        return c - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [ready, shots.length, doCapture]);
 
   const taken = shots.length;
   const tappable = ready && !error;
+
+  // 다 찍으면 상위로 전달.
+  useEffect(() => {
+    if (shots.length >= SHOT_COUNT) onDoneRef.current(shots);
+  }, [shots]);
+
+  // 카운트다운: 컷 시작마다 리셋 후 1초마다 순수하게 감소(업데이터에 부작용 없음).
+  useEffect(() => {
+    if (!tappable || shots.length >= SHOT_COUNT) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCount(COUNTDOWN_SECONDS);
+    const id = window.setInterval(() => setCount((c) => c - 1), 1000);
+    return () => window.clearInterval(id);
+  }, [tappable, shots.length]);
+
+  // count가 0이 되는 순간 한 번만 촬영(부작용을 업데이터 밖에서 → 중복 방지).
+  useEffect(() => {
+    if (count === 0) doCapture();
+  }, [count, doCapture]);
 
   return (
     <div
@@ -146,7 +142,7 @@ export default function CaptureScreen({
                   key={count}
                   className="pb-count text-[8rem] font-black text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)]"
                 >
-                  {count}
+                  {count > 0 ? count : ""}
                 </span>
               </div>
             )}
