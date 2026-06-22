@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { COUNTDOWN_SECONDS, SHOT_COUNT } from "./config";
 import { slotRatio, type FrameDef } from "./frames";
 import { useCamera } from "./useCamera";
+import { playShutter } from "./shutter";
 
 /** 비디오 현재 프레임을 슬롯 비율로 cover-crop + 셀카 미러해 dataURL로 반환. */
 function captureFrame(video: HTMLVideoElement, ratio: number): string {
@@ -57,6 +58,7 @@ export default function CaptureScreen({
     if (!img) return;
     setFlash(true);
     window.setTimeout(() => setFlash(false), 280);
+    playShutter();
     // 업데이터는 순수하게 — 한 장만 추가(Strict Mode가 두 번 호출해도 1장).
     setShots((prev) => (prev.length >= SHOT_COUNT ? prev : [...prev, img]));
   }, [ratio, videoRef]);
