@@ -38,7 +38,7 @@ export default function SelectScreen({
     <div className="flex flex-1 flex-col items-center px-4 py-5">
       <div className="flex items-center gap-3 pt-1">
         <img
-          src="/photobooth/cop-search.png"
+          src="/photobooth/cop-search.svg"
           alt=""
           className="h-14 w-auto drop-shadow-md sm:h-16"
         />

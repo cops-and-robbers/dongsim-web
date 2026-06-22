@@ -12,12 +12,12 @@ export default function ClosedScreen() {
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center">
         <div className="mb-8 flex items-end justify-center gap-3">
           <img
-            src="/photobooth/cop.png"
+            src="/photobooth/cop.svg"
             alt=""
             className="h-28 w-auto drop-shadow-md sm:h-36"
           />
           <img
-            src="/photobooth/thief.png"
+            src="/photobooth/thief.svg"
             alt=""
             className="h-24 w-auto drop-shadow-md sm:h-32"
           />

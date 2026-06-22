@@ -114,13 +114,13 @@ export default function CaptureScreen({
             <>
               <img
                 key={`cop-${taken}`}
-                src="/photobooth/cop.png"
+                src="/photobooth/cop.svg"
                 alt=""
                 className="pb-pop pointer-events-none absolute -bottom-2 left-2 z-30 h-24 w-auto origin-bottom drop-shadow-xl sm:left-6 sm:h-32"
               />
               <img
                 key={`thief-${taken}`}
-                src="/photobooth/thief.png"
+                src="/photobooth/thief.svg"
                 alt=""
                 className="pb-pop pointer-events-none absolute -bottom-2 right-2 z-30 h-24 w-auto origin-bottom drop-shadow-xl sm:right-6 sm:h-32"
               />

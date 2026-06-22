@@ -47,11 +47,11 @@ export default function QrScreen({
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
       <div className="mb-6 flex items-center justify-center gap-2">
-        <img src="/photobooth/cop.png" alt="" className="h-12 w-auto sm:h-14" />
+        <img src="/photobooth/cop.svg" alt="" className="h-12 w-auto sm:h-14" />
         <h2 className="text-2xl font-extrabold text-brand-ink sm:text-3xl dark:text-white">
           예쁜 사진이 나왔어요
         </h2>
-        <img src="/photobooth/thief.png" alt="" className="h-12 w-auto sm:h-14" />
+        <img src="/photobooth/thief.svg" alt="" className="h-12 w-auto sm:h-14" />
       </div>
 
       <p className="mb-6 text-lg text-slate-500 dark:text-slate-400">

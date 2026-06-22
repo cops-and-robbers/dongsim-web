@@ -26,8 +26,8 @@ export async function renderPhotoboothOg(opts: {
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
     dataUri("public/brand/header-logo.svg", "image/svg+xml"),
-    dataUri("public/photobooth/cop.png", "image/png"),
-    dataUri("public/photobooth/thief.png", "image/png"),
+    dataUri("public/photobooth/cop.svg", "image/svg+xml"),
+    dataUri("public/photobooth/thief.svg", "image/svg+xml"),
   ]);
 
   return new ImageResponse(

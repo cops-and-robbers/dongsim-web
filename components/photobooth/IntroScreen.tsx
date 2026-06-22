@@ -5,8 +5,8 @@ export default function IntroScreen({ onStart }: { onStart: () => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
       <div className="mb-10 flex items-end justify-center gap-3">
-        <img src="/photobooth/cop.png" alt="" className="h-32 w-auto drop-shadow-md sm:h-44" />
-        <img src="/photobooth/thief.png" alt="" className="h-28 w-auto drop-shadow-md sm:h-40" />
+        <img src="/photobooth/cop.svg" alt="" className="h-32 w-auto drop-shadow-md sm:h-44" />
+        <img src="/photobooth/thief.svg" alt="" className="h-28 w-auto drop-shadow-md sm:h-40" />
       </div>
       <h1 className="text-4xl font-extrabold tracking-tight text-brand-ink sm:text-5xl dark:text-white">
         경찰과 도둑 포토부스

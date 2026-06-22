@@ -63,11 +63,11 @@ export default function PreviewScreen({
   return (
     <div className="flex flex-1 flex-col items-center px-4 py-6">
       <div className="flex items-center justify-center gap-2 pt-2">
-        <img src="/photobooth/cop.png" alt="" className="h-12 w-auto sm:h-14" />
+        <img src="/photobooth/cop.svg" alt="" className="h-12 w-auto sm:h-14" />
         <h2 className="text-2xl font-extrabold text-brand-ink sm:text-3xl dark:text-white">
           이렇게 나왔어요
         </h2>
-        <img src="/photobooth/thief.png" alt="" className="h-12 w-auto sm:h-14" />
+        <img src="/photobooth/thief.svg" alt="" className="h-12 w-auto sm:h-14" />
       </div>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         괜찮으면 QR로 받아가세요
