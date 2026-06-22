@@ -72,7 +72,7 @@ export default function PhotoResult({ imageUrl }: { imageUrl: string | null }) {
   if (!imageUrl) {
     return (
       <section className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-6 text-center">
-        <img src="/photobooth/thief-flee.png" alt="" className="h-24 w-auto" />
+        <img src="/photobooth/cop-search.png" alt="" className="h-24 w-auto" />
         <h1 className="mt-6 text-xl font-bold text-brand-ink dark:text-white">
           사진을 찾을 수 없어요
         </h1>
