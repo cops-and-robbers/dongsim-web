@@ -4,6 +4,7 @@ import HowItWorksSection from "@/components/home/HowItWorksSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import MinigameTeaserSection from "@/components/home/MinigameTeaserSection";
 import CtaSection from "@/components/home/CtaSection";
+import EventModal from "@/components/home/EventModal";
 import { APP_LINKS, SITE_URL } from "@/lib/constants";
 
 const gameSchema = {
@@ -165,6 +166,7 @@ export default function HomePage() {
           __html: JSON.stringify(gameSchema),
         }}
       />
+      <EventModal />
       <HeroSection />
       <section
         id="game-intro"
