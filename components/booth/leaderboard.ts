@@ -1,8 +1,8 @@
+"use client";
+
 /**
- * 부스 미니게임 랭킹 저장소.
- *
- * 지금은 localStorage 기반이지만, 함수 시그니처를 async로 둬서
- * 추후 백엔드 API(fetch)로 구현만 갈아끼우면 호출부 수정 없이 동기화할 수 있다.
+ * 부스 미니게임 공유 랭킹 — /api/booth/scores(Upstash Redis)를 호출한다.
+ * 닉네임만 편의상 localStorage에 기억. 네트워크 실패 시 빈 값/무동작으로 안전.
  */
 
 export type Score = {
@@ -12,46 +12,37 @@ export type Score = {
   at: number;
 };
 
-const KEY = "cnr-booth-scores";
 const NAME_KEY = "cnr-booth-name";
-const MAX = 50;
 
-function read(): Score[] {
-  if (typeof window === "undefined") return [];
+/** 점수 높은 순 상위 목록(공유). */
+export async function getTopScores(limit = 10): Promise<Score[]> {
   try {
-    const raw = window.localStorage.getItem(KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Score[];
-    return Array.isArray(parsed) ? parsed : [];
+    const res = await fetch(`/api/booth/scores?limit=${limit}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { scores?: Score[] };
+    return Array.isArray(data.scores) ? data.scores : [];
   } catch {
     return [];
   }
 }
 
-function write(scores: Score[]) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(scores.slice(0, MAX)));
-  } catch {
-    // 저장 실패는 무시(시크릿 모드 등)
-  }
-}
-
-/** 점수 내림차순 상위 목록. */
-export async function getTopScores(limit = 10): Promise<Score[]> {
-  return read()
-    .sort((a, b) => b.score - a.score || a.at - b.at)
-    .slice(0, limit);
-}
-
-/** 점수를 저장하고, 방금 점수의 등수(1-base)와 전체 인원을 돌려준다. */
+/** 점수를 저장하고, 등수(1-base)와 전체 인원을 돌려준다. */
 export async function submitScore(
-  entry: Omit<Score, "at">,
+  entry: Omit<Score, "at">
 ): Promise<{ rank: number; total: number }> {
-  const all = [...read(), { ...entry, at: Date.now() }];
-  write(all.sort((a, b) => b.score - a.score || a.at - b.at));
-  const rank = all.filter((s) => s.score > entry.score).length + 1;
-  return { rank, total: all.length };
+  try {
+    const res = await fetch("/api/booth/scores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry),
+    });
+    if (!res.ok) return { rank: 0, total: 0 };
+    return (await res.json()) as { rank: number; total: number };
+  } catch {
+    return { rank: 0, total: 0 };
+  }
 }
 
 /** 마지막으로 사용한 닉네임(편의용). */
