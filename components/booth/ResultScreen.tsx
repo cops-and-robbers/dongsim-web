@@ -243,61 +243,85 @@ function Leaderboard({
         onClick={onClose}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
       />
-      <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-200 dark:bg-app-black dark:ring-white/10">
-        <p className="text-center text-lg font-extrabold text-slate-900 dark:text-white">
-          🏆 검거왕 랭킹
-        </p>
+      <div
+        style={{ animation: "scaleIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
+        className="relative z-10 w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-200 dark:bg-app-black dark:ring-white/10"
+      >
+        {/* 헤더 — 트로피 + 타이틀 */}
+        <div className="flex flex-col items-center gap-1 px-6 pb-4 pt-7">
+          <span className="text-4xl" aria-hidden="true">
+            🏆
+          </span>
+          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+            검거왕 랭킹
+          </h2>
+          {myRank != null && total != null && (
+            <p className="mt-1 rounded-full bg-brand-blue px-4 py-1 text-sm font-bold text-white shadow-sm shadow-brand-blue/30 dark:bg-brand-green dark:text-app-black dark:shadow-none">
+              전체 {total}명 중 {myRank}위
+            </p>
+          )}
+        </div>
 
-        {myRank != null && total != null && (
-          <p className="mt-3 rounded-xl bg-brand-blue/10 px-4 py-2.5 text-center text-sm font-bold text-brand-blue dark:bg-brand-green/15 dark:text-brand-green">
-            전체 {total}명 중 {myRank}위
-          </p>
-        )}
-
-        <ol className="mt-4 space-y-2">
-          {top.map((s, i) => {
-            const mine = myRank != null && i === myRank - 1;
-            return (
-              <li
-                key={s.at}
-                className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-base ${
-                  mine
-                    ? "bg-brand-blue/10 ring-1 ring-brand-blue/30 dark:bg-brand-green/15 dark:ring-brand-green/30"
-                    : "bg-slate-50 dark:bg-white/5"
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <span
-                    className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
-                      i === 0
-                        ? "bg-brand-blue text-white dark:bg-brand-green dark:text-app-black"
-                        : "bg-slate-200 text-slate-500 dark:bg-white/10 dark:text-slate-300"
+        <div className="px-5 pb-5">
+          {top.length === 0 ? (
+            <p className="py-8 text-center text-sm font-medium leading-relaxed text-slate-400 dark:text-slate-500">
+              아직 기록이 없어요.
+              <br />첫 검거왕에 도전해보세요!
+            </p>
+          ) : (
+            <ol className="space-y-2">
+              {top.map((s, i) => {
+                const mine = myRank != null && i === myRank - 1;
+                return (
+                  <li
+                    key={s.at}
+                    className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${
+                      mine
+                        ? "bg-brand-blue/10 ring-1 ring-brand-blue/40 dark:bg-brand-green/15 dark:ring-brand-green/40"
+                        : i < 3
+                          ? "bg-slate-50 dark:bg-white/5"
+                          : ""
                     }`}
                   >
-                    {i + 1}
-                  </span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-200">
-                    {s.name}
-                  </span>
-                </span>
-                <span className="font-mono font-bold tabular-nums text-slate-900 dark:text-white">
-                  {s.score}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold ${medalStyle(i)}`}
+                    >
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-base font-bold text-slate-700 dark:text-slate-200">
+                      {s.name}
+                    </span>
+                    <span className="font-mono text-base font-extrabold tabular-nums text-slate-900 dark:text-white">
+                      {s.score}
+                      <span className="ml-0.5 text-xs font-semibold text-slate-400">
+                        점
+                      </span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-5 w-full rounded-2xl bg-app-black px-6 py-3 text-base font-bold text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-app-black"
-        >
-          닫기
-        </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-5 w-full rounded-2xl bg-app-black px-6 py-3 text-base font-bold text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-app-black"
+          >
+            닫기
+          </button>
+        </div>
       </div>
     </div>
   );
+}
+
+// 1·2·3위 금·은·동 메달, 그 외는 기본.
+function medalStyle(i: number): string {
+  if (i === 0) return "bg-amber-400 text-white shadow-sm shadow-amber-400/50";
+  if (i === 1) return "bg-slate-300 text-slate-700";
+  if (i === 2) return "bg-amber-700 text-white";
+  return "bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-300";
 }
 
 function DownloadIcon({ className }: { className?: string }) {
