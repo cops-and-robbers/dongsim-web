@@ -24,7 +24,6 @@ export default function ThiefHuntGame() {
     const g = freshGame();
     const now = Date.now();
     g.startAt = now;
-    g.nextSpawn = now + 350;
     gameRef.current = g;
     setShaking(false);
     snapshot();
@@ -81,25 +80,25 @@ export default function ThiefHuntGame() {
       }
       g.pops = g.pops.filter((p) => now - p.at < 650);
 
-      const maxActive = d < 0.33 ? 2 : d < 0.66 ? 3 : 4;
+      const maxActive = d < 0.33 ? 3 : d < 0.66 ? 4 : 5;
       const active = g.holes.filter((o) => o && !o.caught).length;
-      if (now >= g.nextSpawn && active < maxActive) {
+      const elapsed = now - g.startAt;
+      if (g.queue.length && g.queue[0].at <= elapsed && active < maxActive) {
         const empties = g.holes
           .map((o, i) => (o ? -1 : i))
           .filter((i) => i >= 0);
         if (empties.length) {
           const idx = empties[Math.floor(Math.random() * empties.length)];
-          const type = Math.random() < lerp(0.16, 0.32, d) ? "civ" : "robber";
+          const spawn = g.queue.shift()!;
           g.holes[idx] = {
             id: g.nextId++,
-            type,
+            type: spawn.type,
             born: now,
-            ttl: lerp(1300, 720, d),
+            ttl: lerp(1050, 560, d),
             caught: false,
             caughtAt: 0,
           };
         }
-        g.nextSpawn = now + lerp(820, 430, d) * (0.75 + Math.random() * 0.5);
       }
 
       if (g.timeLeft <= 0) {
