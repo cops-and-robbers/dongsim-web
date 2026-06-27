@@ -2,19 +2,15 @@
 
 /**
  * 부스 미니게임 공유 랭킹 — /api/booth/scores(Upstash Redis)를 호출한다.
- * 닉네임만 편의상 localStorage에 기억. 네트워크 실패 시 빈 값/무동작으로 안전.
+ * 닉네임당 최고점 1줄. 닉네임만 편의상 localStorage에 기억.
+ * 네트워크 실패 시 빈 값/무동작으로 안전.
  */
 
-export type Score = {
-  name: string;
-  score: number;
-  caught: number;
-  at: number;
-};
+export type Score = { name: string; score: number };
 
 const NAME_KEY = "cnr-booth-name";
 
-/** 점수 높은 순 상위 목록(공유). */
+/** 점수 높은 순 상위 목록(닉네임당 1줄, 공유). */
 export async function getTopScores(limit = 10): Promise<Score[]> {
   try {
     const res = await fetch(`/api/booth/scores?limit=${limit}`, {
@@ -28,10 +24,12 @@ export async function getTopScores(limit = 10): Promise<Score[]> {
   }
 }
 
-/** 점수를 저장하고, 등수(1-base)와 전체 인원을 돌려준다. */
-export async function submitScore(
-  entry: Omit<Score, "at">
-): Promise<{ rank: number; total: number }> {
+/** 점수를 저장(닉네임 최고점만 갱신)하고, 등수와 전체 인원을 돌려준다. */
+export async function submitScore(entry: {
+  name: string;
+  score: number;
+  caught?: number;
+}): Promise<{ rank: number; total: number }> {
   try {
     const res = await fetch("/api/booth/scores", {
       method: "POST",

@@ -274,7 +274,7 @@ function Leaderboard({
                 const mine = myRank != null && i === myRank - 1;
                 return (
                   <li
-                    key={s.at}
+                    key={s.name}
                     className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 ${
                       mine
                         ? "bg-brand-blue/10 ring-1 ring-brand-blue/40 dark:bg-brand-green/15 dark:ring-brand-green/40"
