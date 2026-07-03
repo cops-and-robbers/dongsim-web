@@ -13,8 +13,8 @@ type EventGate = {
 export const EVENT: EventGate = {
   venue: "서울 게임 타운",
   dateLabel: "7월 4일 (토)",
-  openFrom: "2026-07-04T00:00:00+09:00",
-  openUntil: "2026-07-05T00:00:00+09:00",
+  openFrom: "2026-07-04T09:00:00+09:00", // 포토부스와 동일한 운영 창(9–18시)
+  openUntil: "2026-07-04T18:00:00+09:00",
   forceClosed: false, // 티저 미리보려면 잠깐 true
 };
 
