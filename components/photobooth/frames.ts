@@ -1,6 +1,6 @@
 // 포토부스 프레임 레지스트리.
-// 지금은 "경찰과 도둑" 한 개뿐 → 프레임 선택 단계는 두지 않는다.
-// 나중에 FRAMES 배열에 항목을 추가하면 선택 단계를 붙일 수 있도록 구조만 열어둔다.
+// 화이트/스카이/블랙 3종 — 레이아웃(창 좌표)은 동일하고 색상만 다르다.
+// 창 좌표는 알파 채널 스캔으로 검증(창4개 전부 x=82, w=1200, h=830, y 간격 정확히 895).
 
 export type FrameSlot = { x: number; y: number; w: number; h: number };
 
@@ -11,27 +11,49 @@ export type FrameDef = {
   label: string;
   /** /public 기준 프레임 PNG 경로(투명 창 + 스티커). */
   src: string;
+  /** 선택 스와치에 쓸 대표색. */
+  swatch: string;
   width: number;
   height: number;
   /** 사진이 들어갈 창들. 위→아래(합성·선택 순서)와 일치해야 한다. */
   slots: readonly FrameSlot[];
 };
 
+// 3종 공통 창 좌표(1364×4096 캔버스, 창 1200×830 ≈ 1.446:1).
+const SLOTS: readonly FrameSlot[] = [
+  { x: 82, y: 99, w: 1200, h: 830 },
+  { x: 82, y: 994, w: 1200, h: 830 },
+  { x: 82, y: 1889, w: 1200, h: 830 },
+  { x: 82, y: 2784, w: 1200, h: 830 },
+];
+
 export const FRAMES: readonly FrameDef[] = [
   {
-    id: "cops-and-robbers",
-    label: "경찰과 도둑",
-    src: "/photobooth/frame.png",
-    width: 1800,
-    height: 5400,
-    // 좌표 검증: frame.png 알파 채널 16경계(창4 × 상·하·좌·우) 전부 PASS — 900ppi inch사양 일치.
-    // 모든 창: x=112.5, w=1575, h=1125 (가로 7:5).
-    slots: [
-      { x: 112.5, y: 112.5, w: 1575, h: 1125 },
-      { x: 112.5, y: 1293.75, w: 1575, h: 1125 },
-      { x: 112.5, y: 2475, w: 1575, h: 1125 },
-      { x: 112.5, y: 3656.25, w: 1575, h: 1125 },
-    ],
+    id: "white",
+    label: "화이트",
+    src: "/photobooth/frame-white.png",
+    swatch: "#ffffff",
+    width: 1364,
+    height: 4096,
+    slots: SLOTS,
+  },
+  {
+    id: "sky",
+    label: "스카이",
+    src: "/photobooth/frame-sky.png",
+    swatch: "#cbeeff",
+    width: 1364,
+    height: 4096,
+    slots: SLOTS,
+  },
+  {
+    id: "black",
+    label: "블랙",
+    src: "/photobooth/frame-black.png",
+    swatch: "#000000",
+    width: 1364,
+    height: 4096,
+    slots: SLOTS,
   },
 ] as const;
 

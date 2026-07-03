@@ -3,16 +3,18 @@
 
 import { useState } from "react";
 import FramePreview from "./FramePreview";
-import { pickCount, type FrameDef } from "./frames";
+import { FRAMES, HAS_FRAME_CHOICE, pickCount, type FrameDef } from "./frames";
 
 export default function SelectScreen({
   shots,
   frame,
+  onFrameChange,
   onDone,
   onRetake,
 }: {
   shots: string[];
   frame: FrameDef;
+  onFrameChange: (frame: FrameDef) => void;
   onDone: (selected: number[]) => void;
   onRetake: () => void;
 }) {
@@ -50,11 +52,30 @@ export default function SelectScreen({
       </div>
 
       <div className="mt-5 flex w-full max-w-4xl flex-1 items-center justify-center gap-6">
-        <FramePreview
-          frame={frame}
-          slots={slotSrcs}
-          className="h-[50vh] shrink-0 rounded-xl shadow-lg ring-1 ring-black/5 sm:h-[56vh]"
-        />
+        <div className="flex shrink-0 flex-col items-center gap-3">
+          <FramePreview
+            frame={frame}
+            slots={slotSrcs}
+            className="h-[46vh] rounded-xl shadow-lg ring-1 ring-black/5 sm:h-[52vh]"
+          />
+          {HAS_FRAME_CHOICE && (
+            <div className="flex items-center gap-2.5">
+              {FRAMES.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => onFrameChange(f)}
+                  aria-label={`${f.label} 프레임`}
+                  className={`h-9 w-9 rounded-full ring-2 ring-offset-2 transition ring-offset-white dark:ring-offset-app-black ${
+                    f.id === frame.id
+                      ? "scale-110 ring-brand-blue"
+                      : "ring-slate-300 hover:ring-brand-blue/50 dark:ring-app-black-800"
+                  }`}
+                  style={{ backgroundColor: f.swatch }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {shots.map((src, i) => {
@@ -64,7 +85,8 @@ export default function SelectScreen({
               <button
                 key={i}
                 onClick={() => toggle(i)}
-                className={`relative aspect-7/5 w-36 overflow-hidden rounded-2xl border-4 transition sm:w-44 ${
+                style={{ aspectRatio: frame.slots[0].w / frame.slots[0].h }}
+                className={`relative w-36 overflow-hidden rounded-2xl border-4 transition sm:w-44 ${
                   active
                     ? "scale-[0.97] border-brand-blue shadow-lg"
                     : "border-transparent hover:border-brand-blue/40"

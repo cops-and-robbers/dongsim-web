@@ -127,7 +127,10 @@ export default function CaptureScreen({
             </>
           )}
 
-          <div className="relative aspect-7/5 w-full overflow-hidden rounded-3xl bg-black shadow-2xl">
+          <div
+            className="relative w-full overflow-hidden rounded-3xl bg-black shadow-2xl"
+            style={{ aspectRatio: ratio }}
+          >
             <video
               ref={videoRef}
               playsInline

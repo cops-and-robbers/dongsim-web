@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Backdrop from "./Backdrop";
 import CaptureScreen from "./CaptureScreen";
-import { DEFAULT_FRAME } from "./frames";
+import { DEFAULT_FRAME, type FrameDef } from "./frames";
 import IntroScreen from "./IntroScreen";
 import PreviewScreen from "./PreviewScreen";
 import QrScreen from "./QrScreen";
@@ -13,7 +13,7 @@ type Phase = "intro" | "capture" | "select" | "preview" | "qr";
 
 /** 부스 데스크탑 전용 전체화면 키오스크 — 사이트 헤더/푸터를 덮는다. */
 export default function Kiosk() {
-  const frame = DEFAULT_FRAME;
+  const [frame, setFrame] = useState<FrameDef>(DEFAULT_FRAME);
   const [phase, setPhase] = useState<Phase>("intro");
   const [shots, setShots] = useState<string[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
@@ -57,6 +57,7 @@ export default function Kiosk() {
           <SelectScreen
             shots={shots}
             frame={frame}
+            onFrameChange={setFrame}
             onRetake={() => {
               reset();
               setPhase("capture");
