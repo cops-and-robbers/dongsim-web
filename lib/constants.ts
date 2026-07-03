@@ -20,6 +20,7 @@ export const BRAND = {
 
 export const NAV_ITEMS = [
   { href: "/game", label: "게임 소개" },
+  { href: "/event", label: "서울 게임 타운" },
   { href: "/team", label: "팀 소개" },
 ] as const;
 
