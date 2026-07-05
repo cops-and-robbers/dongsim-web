@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EVENT, isEventOpen } from "@/components/event/schedule";
+import { EVENT, isEventOpen, isEventOver } from "@/components/event/schedule";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
@@ -15,7 +15,48 @@ export const metadata: Metadata = {
 };
 
 export default function EventPage() {
-  return isEventOpen() ? <EventStory /> : <EventTeaser />;
+  if (isEventOpen()) return <EventStory />;
+  return isEventOver() ? <EventThanks /> : <EventTeaser />;
+}
+
+// 행사가 끝난 뒤 — 사건 종결 + 감사 인사.
+function EventThanks() {
+  return (
+    <main className="flex min-h-[75vh] flex-col items-center justify-center px-6 text-center">
+      <div className="mb-8 flex items-end justify-center gap-3">
+        <img
+          src="/photobooth/cop-search.svg"
+          alt=""
+          className="h-24 w-auto drop-shadow-md sm:h-32"
+        />
+        <img
+          src="/photobooth/thief-flee.svg"
+          alt=""
+          className="h-20 w-auto drop-shadow-md sm:h-28"
+        />
+      </div>
+      <span className="rounded-full border border-brand-blue/30 bg-white px-4 py-1 text-xs font-bold tracking-wider text-brand-blue dark:border-brand-green/40 dark:bg-app-black dark:text-brand-green">
+        사건 종결
+      </span>
+      <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-brand-ink sm:text-4xl dark:text-white">
+        도둥이, 검거 완료!
+      </h1>
+      <p className="mt-4 max-w-md text-lg leading-relaxed text-slate-600 dark:text-slate-300">
+        {EVENT.venue}을 찾아주신 모든 시민 여러분,
+        <br />
+        덕분에 황금 치즈 레시피를 되찾았어요. 감사합니다.
+      </p>
+      <p className="mt-6 text-slate-500 dark:text-slate-400">
+        경찰과 도둑의 추격전은 앱에서 계속돼요.
+      </p>
+      <Link
+        href="/download"
+        className="mt-5 inline-block rounded-full bg-brand-blue px-9 py-3.5 text-lg font-bold text-white shadow-lg transition hover:-translate-y-0.5 dark:bg-brand-green dark:text-app-black"
+      >
+        앱 다운로드
+      </Link>
+    </main>
+  );
 }
 
 // 행사 당일이 아닐 때 — "곧 공개" 티저.

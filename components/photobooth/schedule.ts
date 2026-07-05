@@ -27,6 +27,14 @@ export const PHOTOBOOTH_EVENT: EventConfig = {
   forceClosed: false, // 준비중 화면 미리보려면 잠깐 true
 };
 
+/** 행사가 끝났는지(운영 종료 시각 이후) — 닫힘 화면을 "준비중"과 "감사 인사"로 분기. */
+export function isEventOver(now: number = Date.now()): boolean {
+  const { openUntil } = PHOTOBOOTH_EVENT;
+  if (!openUntil) return false;
+  const until = new Date(openUntil).getTime();
+  return !Number.isNaN(until) && now > until;
+}
+
 /** 지금 부스를 열어도 되는지. 개발 모드는 항상 열림, 배포는 운영 창에만. */
 export function isBoothOpen(now: number = Date.now()): boolean {
   if (PHOTOBOOTH_EVENT.forceClosed) return false;
