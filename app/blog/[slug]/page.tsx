@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import NotionBlocks from "@/components/blog/NotionBlocks";
+import ArticleJsonLd from "@/components/seo/ArticleJsonLd";
 import Container from "@/components/ui/Container";
 import { findAuthorProfile } from "@/lib/blog/authors";
 import { formatPostDate } from "@/lib/blog/format";
@@ -80,6 +81,7 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <main className="py-16 md:py-24">
+      <ArticleJsonLd post={post} />
       {/* 본문은 읽기 최적화 좁은 컬럼 — 헤더 순서: 카테고리 → 날짜 → 제목 → 커버.
           Container의 max-w-6xl과 유틸리티가 충돌하지 않도록 내부 div로 폭을 제한한다. */}
       <Container>
