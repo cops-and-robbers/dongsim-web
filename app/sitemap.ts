@@ -1,9 +1,11 @@
 import type { MetadataRoute } from "next";
+import { getPosts } from "@/lib/blog/notion";
 
 const BASE_URL = "https://copsnro66ers.site";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const posts = await getPosts(); // 연동 미설정·오류 시 빈 배열이라 안전
 
   return [
     {
@@ -46,6 +48,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
         `${BASE_URL}/team/hwang.png`,
       ],
     },
+    {
+      url: `${BASE_URL}/blog`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    },
+    ...posts.map((post) => ({
+      url: `${BASE_URL}/blog/${post.slug}`,
+      lastModified: post.date ? new Date(post.date) : now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
     {
       url: `${BASE_URL}/terms`,
       lastModified: now,
