@@ -30,18 +30,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${post.title} — 경찰과 도둑`,
     description: post.summary || `동심지키미 팀의 이야기 — ${post.title}`,
     alternates: { canonical: `/blog/${post.slug}` },
+    // og:image는 같은 폴더의 opengraph-image.tsx(동적 브랜드 카드)가 자동으로 붙인다.
     openGraph: {
       title: post.title,
       description: post.summary || undefined,
       type: "article",
       url: `${SITE_URL}/blog/${post.slug}`,
-      images: post.coverUrl
-        ? [
-            post.coverUrl.startsWith("/")
-              ? `${SITE_URL}${post.coverUrl}`
-              : post.coverUrl,
-          ]
-        : undefined,
     },
   };
 }
