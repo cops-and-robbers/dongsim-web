@@ -10,7 +10,7 @@ import { getPosts } from "@/lib/blog/notion";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "이야기 — 경찰과 도둑",
+  title: "이야기",
   description:
     "경찰과 도둑을 만드는 동심지키미 팀이 남기는 발자국들 — 개발기, 행사 후기, 그리고 뒷이야기.",
   alternates: { canonical: "/blog" },

@@ -24,10 +24,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const posts = await getPosts();
   const post = posts.find((p) => p.slug === slug);
-  if (!post) return { title: "이야기 — 경찰과 도둑" };
+  if (!post) return { title: "이야기" };
 
   return {
-    title: `${post.title} — 경찰과 도둑`,
+    title: post.title,
     description: post.summary || `동심지키미 팀의 이야기 — ${post.title}`,
     alternates: { canonical: `/blog/${post.slug}` },
     // og:image는 같은 폴더의 opengraph-image.tsx(동적 브랜드 카드)가 자동으로 붙인다.

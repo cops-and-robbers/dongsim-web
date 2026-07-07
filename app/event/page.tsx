@@ -8,7 +8,7 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "황금 치즈 도난 사건 — 경찰과 도둑 이벤트",
+  title: "황금 치즈 도난 사건",
   description:
     "500년의 봉인이 풀린 밤, 전설의 치즈 레시피가 사라졌다. 흩어진 단서를 쫓아 도둑 '도둥이'를 잡아라. 경찰과 도둑 앱 이벤트.",
   alternates: { canonical: "/event" },
