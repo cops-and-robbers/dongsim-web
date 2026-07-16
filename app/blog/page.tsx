@@ -4,10 +4,11 @@ import Link from "next/link";
 import Container from "@/components/ui/Container";
 import { findAuthorProfile } from "@/lib/blog/authors";
 import { formatPostDate } from "@/lib/blog/format";
-import { getPosts } from "@/lib/blog/notion";
+import { getPosts, withImageWidth } from "@/lib/blog/notion";
 
-// 목록은 5분 주기로 재생성 — 노션에서 "공개"를 켜면 늦어도 5분 안에 반영된다.
-export const revalidate = 300;
+// 목록은 1분 주기로 재생성 — 노션에서 "공개"를 켜면 늦어도 1~2분 안에 반영된다.
+// (이미지가 프록시에서 장기 캐시되므로 짧은 주기가 부담이 없다.)
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "이야기",
@@ -84,7 +85,7 @@ export default async function BlogPage() {
                 <div className="aspect-3/2 w-full overflow-hidden rounded-2xl bg-brand-blue-bg dark:bg-app-black-800">
                   {post.coverUrl ? (
                     <img
-                      src={post.coverUrl}
+                      src={withImageWidth(post.coverUrl, 800)}
                       alt=""
                       loading="lazy"
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"

@@ -69,6 +69,7 @@ function getDataSourceId(): Promise<string | null> {
 
 type NotionPage = {
   id: string;
+  last_edited_time?: string;
   cover?:
     | { type: "external"; external: { url: string } }
     | { type: "file"; file: { url: string } }
@@ -123,7 +124,14 @@ function coverToUrl(page: NotionPage): string | null {
   if (!page.cover) return null;
   if (page.cover.type === "external") return page.cover.external.url;
   // Notion 업로드 파일은 서명 URL이 만료되므로 프록시를 거친다.
-  return `/api/blog/image?page=${page.id}`;
+  // v=수정시각 → 커버가 바뀌면 URL이 바뀌어 장기 CDN 캐시와 공존한다.
+  const v = encodeURIComponent(page.last_edited_time ?? "");
+  return `/api/blog/image?page=${page.id}&v=${v}`;
+}
+
+/** 프록시 이미지 URL에 리사이즈 폭을 지정한다(외부 URL은 그대로 통과). */
+export function withImageWidth(url: string, width: number): string {
+  return url.startsWith("/api/blog/image") ? `${url}&w=${width}` : url;
 }
 
 /** 공개된 글 전체 — 날짜 내림차순. 연동 미설정·오류 시 빈 배열. */

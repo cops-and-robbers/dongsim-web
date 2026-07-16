@@ -7,11 +7,12 @@ import ArticleJsonLd from "@/components/seo/ArticleJsonLd";
 import Container from "@/components/ui/Container";
 import { findAuthorProfile } from "@/lib/blog/authors";
 import { formatPostDate } from "@/lib/blog/format";
-import { getBlocks, getPosts } from "@/lib/blog/notion";
+import { getBlocks, getPosts, withImageWidth } from "@/lib/blog/notion";
 import { SITE_URL } from "@/lib/constants";
 
-// 본문은 30분 주기로 재생성. 새 슬러그는 첫 요청 때 온디맨드로 생성된다.
-export const revalidate = 1800;
+// 본문은 5분 주기로 재생성. 새 슬러그는 첫 요청 때 온디맨드로 생성된다.
+// (이미지는 프록시가 자체 캐시하므로 페이지 캐시 수명과 무관하게 안전하다.)
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   const posts = await getPosts();
@@ -105,7 +106,7 @@ export default async function BlogPostPage({ params }: Props) {
 
           {post.coverUrl && (
             <img
-              src={post.coverUrl}
+              src={withImageWidth(post.coverUrl, 1600)}
               alt=""
               className="mt-10 aspect-video w-full rounded-3xl object-cover sm:-mx-6 sm:w-[calc(100%+3rem)] sm:max-w-none"
             />
@@ -130,7 +131,7 @@ export default async function BlogPostPage({ params }: Props) {
                   <div className="aspect-3/2 w-full overflow-hidden rounded-2xl bg-brand-blue-bg dark:bg-app-black-800">
                     {p.coverUrl ? (
                       <img
-                        src={p.coverUrl}
+                        src={withImageWidth(p.coverUrl, 800)}
                         alt=""
                         loading="lazy"
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"

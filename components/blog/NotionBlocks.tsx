@@ -57,11 +57,14 @@ function payload(block: NotionBlock): Payload {
   return (block[block.type] ?? {}) as Payload;
 }
 
-/** 이미지 블록의 표시 URL — 업로드 파일은 만료되므로 프록시 경유. */
+/** 이미지 블록의 표시 URL — 업로드 파일은 만료되므로 프록시(리사이즈·캐시) 경유. */
 function imageUrl(block: NotionBlock): string | null {
   const p = payload(block);
   if (p.type === "external") return p.external?.url ?? null;
-  if (p.type === "file") return `/api/blog/image?block=${block.id}`;
+  if (p.type === "file") {
+    const v = encodeURIComponent(String(block.last_edited_time ?? ""));
+    return `/api/blog/image?block=${block.id}&v=${v}&w=1200`;
+  }
   return null;
 }
 
