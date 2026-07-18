@@ -14,7 +14,10 @@ export const metadata: Metadata = {
   title: "이야기",
   description:
     "경찰과 도둑을 만드는 동심지키미 팀이 남기는 발자국들 — 개발기, 행사 후기, 그리고 뒷이야기.",
-  alternates: { canonical: "/blog" },
+  alternates: {
+    canonical: "/blog",
+    types: { "application/rss+xml": "/rss.xml" },
+  },
 };
 
 // 작성자(팀원이면 프로필 사진 포함) + 날짜 한 줄.
