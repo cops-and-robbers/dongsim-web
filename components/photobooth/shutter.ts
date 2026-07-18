@@ -1,4 +1,4 @@
-// 셔터 효과음 — public/photobooth/shutter.mp3 재생.
+// 셔터 효과음 - public/photobooth/shutter.mp3 재생.
 
 let audio: HTMLAudioElement | null = null;
 

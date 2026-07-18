@@ -2,9 +2,9 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-// 초대 전용 OG — 루트 OG와 톤 동일(로고·그라데이션), 헤드라인 문구는 초대용으로, 캐릭터는 기본형 나란히.
+// 초대 전용 OG - 루트 OG와 톤 동일(로고·그라데이션), 헤드라인 문구는 초대용으로, 캐릭터는 기본형 나란히.
 
-export const alt = "경찰과 도둑 — 게임에 초대받았어요";
+export const alt = "경찰과 도둑 - 게임에 초대받았어요";
 export const size = { width: 1200, height: 600 };
 export const contentType = "image/png";
 

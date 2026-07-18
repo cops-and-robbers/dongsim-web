@@ -20,14 +20,14 @@ type EventConfig = {
 
 export const PHOTOBOOTH_EVENT: EventConfig = {
   venue: "서울 게임 타운",
-  dateLabel: "7월 4일 (토) 낮 12시–오후 5시",
+  dateLabel: "7월 4일 (토) 낮 12시-오후 5시",
   location: "판교 투썸월드 B1",
   openFrom: "2026-07-04T09:00:00+09:00", // 설치·디버깅 위해 9시부터 접근 가능
   openUntil: "2026-07-04T18:00:00+09:00",
   forceClosed: false, // 준비중 화면 미리보려면 잠깐 true
 };
 
-/** 행사가 끝났는지(운영 종료 시각 이후) — 닫힘 화면을 "준비중"과 "감사 인사"로 분기. */
+/** 행사가 끝났는지(운영 종료 시각 이후) - 닫힘 화면을 "준비중"과 "감사 인사"로 분기. */
 export function isEventOver(now: number = Date.now()): boolean {
   const { openUntil } = PHOTOBOOTH_EVENT;
   if (!openUntil) return false;

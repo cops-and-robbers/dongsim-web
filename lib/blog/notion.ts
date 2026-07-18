@@ -1,6 +1,6 @@
 // Notion을 CMS로 쓰는 블로그 데이터 레이어 (서버 전용).
 // 팀 Notion 데이터베이스에서 "공개" 체크된 글만 읽어온다.
-// - 필요한 env: NOTION_TOKEN, NOTION_BLOG_DATABASE_ID (없으면 빈 목록 — 빌드는 깨지지 않는다)
+// - 필요한 env: NOTION_TOKEN, NOTION_BLOG_DATABASE_ID (없으면 빈 목록 - 빌드는 깨지지 않는다)
 // - DB 속성 규약(글쓰기 가이드와 일치): 제목(title) · 슬러그(text) · 요약(text) ·
 //   작성자(text) · 날짜(date) · 태그(multi-select) · 공개(checkbox), 커버는 페이지 커버.
 // - Notion 파일 URL은 1시간짜리 서명 URL이라 /api/blog/image 프록시로 감싼다.
@@ -134,7 +134,7 @@ export function withImageWidth(url: string, width: number): string {
   return url.startsWith("/api/blog/image") ? `${url}&w=${width}` : url;
 }
 
-/** 공개된 글 전체 — 날짜 내림차순. 연동 미설정·오류 시 빈 배열. */
+/** 공개된 글 전체 - 날짜 내림차순. 연동 미설정·오류 시 빈 배열. */
 export async function getPosts(): Promise<BlogPost[]> {
   const dataSourceId = await getDataSourceId();
   if (!notion || !dataSourceId) return [];
@@ -163,7 +163,7 @@ export async function getPosts(): Promise<BlogPost[]> {
   }
 }
 
-/** 페이지 본문 블록 트리 — 토글·리스트 하위까지 재귀(깊이 3). */
+/** 페이지 본문 블록 트리 - 토글·리스트 하위까지 재귀(깊이 3). */
 export async function getBlocks(
   pageId: string,
   depth = 0
@@ -197,7 +197,7 @@ export async function getBlocks(
   }
 }
 
-/** 이미지 프록시용 — 블록/페이지 커버의 현재(신선한) 서명 URL을 얻는다. */
+/** 이미지 프록시용 - 블록/페이지 커버의 현재(신선한) 서명 URL을 얻는다. */
 export async function getFreshImageUrl(params: {
   blockId?: string;
   pageId?: string;

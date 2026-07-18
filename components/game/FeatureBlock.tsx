@@ -79,7 +79,7 @@ export default function FeatureBlock({ feature, index, total }: Props) {
                       aria-hidden="true"
                       className="text-slate-400 dark:text-slate-500"
                     >
-                      —
+                      -
                     </span>
                     <span>{check}</span>
                   </li>

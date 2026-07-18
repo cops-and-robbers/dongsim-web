@@ -1,4 +1,4 @@
-// 이벤트(서울 게임 타운) 페이지 노출 게이트 — 행사 당일엔 본문, 그 외엔 "곧 공개" 티저.
+// 이벤트(서울 게임 타운) 페이지 노출 게이트 - 행사 당일엔 본문, 그 외엔 "곧 공개" 티저.
 // 배포(production)에서만 날짜 게이트가 적용되고, 로컬 개발에선 항상 본문이 뜬다
 // (그래서 이 파일을 그대로 커밋해도 로컬 테스트가 막히지 않는다). forceClosed로 티저 미리보기.
 
@@ -13,12 +13,12 @@ type EventGate = {
 export const EVENT: EventGate = {
   venue: "서울 게임 타운",
   dateLabel: "7월 4일 (토)",
-  openFrom: "2026-07-04T09:00:00+09:00", // 포토부스와 동일한 운영 창(9–18시)
+  openFrom: "2026-07-04T09:00:00+09:00", // 포토부스와 동일한 운영 창(9-18시)
   openUntil: "2026-07-04T18:00:00+09:00",
   forceClosed: false, // 티저 미리보려면 잠깐 true
 };
 
-/** 행사가 끝났는지(운영 종료 시각 이후) — 닫힘 화면을 "곧 공개"와 "감사 인사"로 분기. */
+/** 행사가 끝났는지(운영 종료 시각 이후) - 닫힘 화면을 "곧 공개"와 "감사 인사"로 분기. */
 export function isEventOver(now: number = Date.now()): boolean {
   const { openUntil } = EVENT;
   if (!openUntil) return false;

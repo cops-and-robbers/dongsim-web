@@ -96,7 +96,7 @@ export type Helper = {
 };
 
 /**
- * 도움 주신 분들 — 발자국 카운트 = participationCount.
+ * 도움 주신 분들 - 발자국 카운트 = participationCount.
  * 인프라 제공자는 별도 spotlight로 노출.
  * 정렬: infrastructure 먼저, 그다음 참여 횟수 내림차순, 같은 횟수 안에선 입력 순서.
  */

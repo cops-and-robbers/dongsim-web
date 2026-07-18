@@ -88,7 +88,7 @@ function Item({ item }: { item: PolicyItem }) {
                 aria-hidden="true"
                 className="shrink-0 text-slate-400 dark:text-slate-500"
               >
-                —
+                -
               </span>
               <span>{sub}</span>
             </li>

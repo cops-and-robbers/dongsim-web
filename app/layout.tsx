@@ -19,7 +19,7 @@ const GTM_ID = "GTM-WG4J7BXL";
 
 const SITE_NAME = "경찰과 도둑";
 const SITE_DESCRIPTION =
-  "경찰과 도둑(경도) — GPS 기반 오프라인 술래잡기 게임. 친구들과 밖에서 직접 뛰며 놀던 그 놀이를 이제 앱과 함께 즐기세요.";
+  "경찰과 도둑(경도) - GPS 기반 오프라인 술래잡기 게임. 친구들과 밖에서 직접 뛰며 놀던 그 놀이를 이제 앱과 함께 즐기세요.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: SITE_NAME,
     description:
-      "경찰과 도둑(경도) — GPS와 실시간 지도로 더 짜릿해진 오프라인 술래잡기. 친구들과 밖에서 뛰어노세요.",
+      "경찰과 도둑(경도) - GPS와 실시간 지도로 더 짜릿해진 오프라인 술래잡기. 친구들과 밖에서 뛰어노세요.",
     url: SITE_URL,
     siteName: SITE_NAME,
     type: "website",

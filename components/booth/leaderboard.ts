@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 부스 미니게임 공유 랭킹 — /api/booth/scores(Upstash Redis)를 호출한다.
+ * 부스 미니게임 공유 랭킹 - /api/booth/scores(Upstash Redis)를 호출한다.
  * 닉네임당 최고점 1줄. 닉네임만 편의상 localStorage에 기억.
  * 네트워크 실패 시 빈 값/무동작으로 안전.
  */

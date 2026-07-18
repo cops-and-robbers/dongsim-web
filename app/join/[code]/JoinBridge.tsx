@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 const ANDROID_PACKAGE = "com.elipair.copsandrobbers";
-// 외부 브라우저로 빠져나갈 수단이 없는 인앱 브라우저 — 수동 안내로 유도한다
+// 외부 브라우저로 빠져나갈 수단이 없는 인앱 브라우저 - 수동 안내로 유도한다
 const NO_ESCAPE_BROWSERS = /instagram|fbav|fb_iab|daangn|karrot|threads/i;
 
 export default function JoinBridge({
@@ -116,7 +116,7 @@ export default function JoinBridge({
         )
       )}
 
-      {/* 앱 미설치 폴백 — 조용한 보조 그룹 */}
+      {/* 앱 미설치 폴백 - 조용한 보조 그룹 */}
       <div className="flex w-full flex-col gap-2.5">
         <div className="flex items-center gap-3 text-xs font-medium text-slate-400 dark:text-slate-500">
           <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />

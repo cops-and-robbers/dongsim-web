@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "개인정보 처리방침 | 경찰과 도둑",
     description:
-      "경찰과 도둑(Cops and Robbers) 개인정보 처리방침 — 수집 항목, 이용 목적, 보관 기간, 이용자 권리를 안내합니다.",
+      "경찰과 도둑(Cops and Robbers) 개인정보 처리방침 - 수집 항목, 이용 목적, 보관 기간, 이용자 권리를 안내합니다.",
     url: "/privacy",
     type: "article",
     locale: "ko_KR",

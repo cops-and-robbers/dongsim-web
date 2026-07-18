@@ -59,7 +59,7 @@ export default function CaptureScreen({
     setFlash(true);
     window.setTimeout(() => setFlash(false), 280);
     playShutter();
-    // 업데이터는 순수하게 — 한 장만 추가(Strict Mode가 두 번 호출해도 1장).
+    // 업데이터는 순수하게 - 한 장만 추가(Strict Mode가 두 번 호출해도 1장).
     setShots((prev) => (prev.length >= SHOT_COUNT ? prev : [...prev, img]));
   }, [ratio, videoRef]);
 

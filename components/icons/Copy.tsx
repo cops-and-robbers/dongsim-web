@@ -1,5 +1,5 @@
 /**
- * 복사 아이콘 — currentColor 기반이라 부모 텍스트 색상을 따라감.
+ * 복사 아이콘 - currentColor 기반이라 부모 텍스트 색상을 따라감.
  * 앱(`assets/icons/icon_copy.svg`)과 동일한 모양으로, 초대 코드 복사 등에 사용.
  */
 

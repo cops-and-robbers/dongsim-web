@@ -31,7 +31,7 @@ export default function SelectScreen({
           : [...prev, i]
     );
 
-  // 슬롯 순서대로 채워질 사진(아직 안 고른 칸은 null) — 미리보기에 그대로 반영.
+  // 슬롯 순서대로 채워질 사진(아직 안 고른 칸은 null) - 미리보기에 그대로 반영.
   const slotSrcs = Array.from({ length: need }, (_, i) =>
     selected[i] !== undefined ? shots[selected[i]] : null
   );

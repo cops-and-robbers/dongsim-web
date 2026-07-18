@@ -1,6 +1,6 @@
 import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
 
-// 게임 배경 — 흩뿌린 발바닥 + 가장자리 페이드(가운데는 비워 카드가 도드라지게)
+// 게임 배경 - 흩뿌린 발바닥 + 가장자리 페이드(가운데는 비워 카드가 도드라지게)
 const BACKDROP_PAWS = [
   { x: 34, y: 70, s: 46, r: -18, o: 0.09 },
   { x: 330, y: 50, s: 40, r: 22, o: 0.08 },
@@ -50,11 +50,11 @@ const FIXED = "h-[calc(100dvh-3.5rem)] md:h-[calc(100dvh-4rem)]";
 type Variant = "center" | "fit" | "scroll";
 
 const VARIANT: Record<Variant, string> = {
-  // 짧은 화면(인트로) — 가운데 정렬
+  // 짧은 화면(인트로) - 가운데 정렬
   center: `${HEIGHT} items-center overflow-x-clip py-8`,
-  // 게임 — 정확히 한 화면, 스크롤 없음
+  // 게임 - 정확히 한 화면, 스크롤 없음
   fit: `${FIXED} items-center overflow-hidden py-3`,
-  // 결과 — 위 정렬, 길면 스크롤
+  // 결과 - 위 정렬, 길면 스크롤
   scroll: `${HEIGHT} items-start overflow-x-clip py-8`,
 };
 

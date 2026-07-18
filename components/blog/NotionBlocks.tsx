@@ -57,7 +57,7 @@ function payload(block: NotionBlock): Payload {
   return (block[block.type] ?? {}) as Payload;
 }
 
-/** 이미지 블록의 표시 URL — 업로드 파일은 만료되므로 프록시(리사이즈·캐시) 경유. */
+/** 이미지 블록의 표시 URL - 업로드 파일은 만료되므로 프록시(리사이즈·캐시) 경유. */
 function imageUrl(block: NotionBlock): string | null {
   const p = payload(block);
   if (p.type === "external") return p.external?.url ?? null;
@@ -227,7 +227,7 @@ function Block({ block }: { block: NotionBlock }) {
       const src = imageUrl(block);
       if (!src) return null;
       const rawCaption = (p.caption ?? []).map((t) => t.plain_text).join("");
-      // 캡션 첫머리의 크기 지시어([작게]/[중간])로 표시 폭을 조절한다 —
+      // 캡션 첫머리의 크기 지시어([작게]/[중간])로 표시 폭을 조절한다 -
       // Notion API가 드래그 리사이즈 값을 안 주기 때문에 캡션을 채널로 쓴다.
       const sizeMatch = rawCaption.match(/^\[(작게|중간)\]\s*/);
       const size = sizeMatch?.[1] ?? "기본";

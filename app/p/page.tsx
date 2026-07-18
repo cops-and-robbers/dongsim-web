@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// 표시를 허용할 Blob 호스트 — 임의 이미지 URL 렌더 방지(보안).
+// 표시를 허용할 Blob 호스트 - 임의 이미지 URL 렌더 방지(보안).
 const ALLOWED_HOST_SUFFIX = ".public.blob.vercel-storage.com";
 
 export default async function PhotoDownloadPage({

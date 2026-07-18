@@ -25,8 +25,8 @@ type Props = {
 };
 
 // 한 게임의 결과는 두 시나리오뿐이다.
-// A) 전원 검거 — 남은 도둑 0명, 25분 조기 종료 → 경찰 승 · 도둑 패
-// B) 도둑 생존 — 남은 도둑 2명, 30분 만료 → 경찰 패 · 도둑 승
+// A) 전원 검거 - 남은 도둑 0명, 25분 조기 종료 → 경찰 승 · 도둑 패
+// B) 도둑 생존 - 남은 도둑 2명, 30분 만료 → 경찰 패 · 도둑 승
 const CAUGHT_ALL_STATS = [
   { label: "체포 횟수", value: "12회" },
   { label: "남은 도둑", value: "0명" },
@@ -131,7 +131,7 @@ function ResultModal({
         className="relative w-full max-w-[320px]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 캐릭터 몸통 — 카드 뒤(z-0)에서 위로 빼꼼 */}
+        {/* 캐릭터 몸통 - 카드 뒤(z-0)에서 위로 빼꼼 */}
         <div
           className="pointer-events-none absolute bottom-full left-1/2 z-0"
           style={{ transform: `translate(-50%, ${c.overlap}px)` }}
@@ -187,7 +187,7 @@ function ResultModal({
           </div>
         </div>
 
-        {/* 승리 모달의 양손 — 카드 상단 모서리에 걸침(z-20) */}
+        {/* 승리 모달의 양손 - 카드 상단 모서리에 걸침(z-20) */}
         {isWin && (
           <>
             <div
@@ -219,7 +219,7 @@ function ResultModal({
           </>
         )}
 
-        {/* 데모 전용 — 승리/패배 미리보기 토글 */}
+        {/* 데모 전용 - 승리/패배 미리보기 토글 */}
         {showToggle && (
           <div className="mt-5 flex items-center justify-center gap-1.5">
             {(["win", "lose"] as const).map((o) => (

@@ -7,7 +7,7 @@ import RobberFleeIcon from "@/components/characters/RobberFleeIcon";
 import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
 import LiveCountdown from "./LiveCountdown";
 
-// 생쥐 발자국 트레일 — 작은 발바닥이 좌·우 교차로 촘촘히 찍히며 도둑을 향해 이어진다.
+// 생쥐 발자국 트레일 - 작은 발바닥이 좌·우 교차로 촘촘히 찍히며 도둑을 향해 이어진다.
 const HERO_TRACKS = [
   { x: 189, y: 114, s: 11, r: 116, o: 0.18, d: 380 },
   { x: 219, y: 132, s: 12, r: 126, o: 0.27, d: 450 },

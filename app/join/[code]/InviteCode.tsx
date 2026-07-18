@@ -22,7 +22,7 @@ export default function InviteCode({ code }: { code: string }) {
         초대 코드
       </p>
 
-      {/* 앱 InfoCard 스타일 — 연한 회색 카드, 탭하면 복사 */}
+      {/* 앱 InfoCard 스타일 - 연한 회색 카드, 탭하면 복사 */}
       <button
         type="button"
         onClick={copy}
@@ -33,7 +33,7 @@ export default function InviteCode({ code }: { code: string }) {
         <Copy className="h-6 w-6 text-slate-400 dark:text-slate-300" />
       </button>
 
-      {/* 복사 완료 피드백 — 앱 스낵바 문구와 동일 */}
+      {/* 복사 완료 피드백 - 앱 스낵바 문구와 동일 */}
       <p
         role="status"
         aria-live="polite"

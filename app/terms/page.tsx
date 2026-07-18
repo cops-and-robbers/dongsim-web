@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "서비스 이용약관 | 경찰과 도둑",
     description:
-      "경찰과 도둑(Cops and Robbers) 서비스 이용약관 — 회사와 이용자의 권리·의무·책임 사항을 안내합니다.",
+      "경찰과 도둑(Cops and Robbers) 서비스 이용약관 - 회사와 이용자의 권리·의무·책임 사항을 안내합니다.",
     url: "/terms",
     type: "article",
     locale: "ko_KR",

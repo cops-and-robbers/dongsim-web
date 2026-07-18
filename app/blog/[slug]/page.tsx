@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: post.title,
-    description: post.summary || `동심지키미 팀의 이야기 — ${post.title}`,
+    description: post.summary || `동심지키미 팀의 이야기 - ${post.title}`,
     alternates: { canonical: `/blog/${post.slug}` },
     // og:image는 같은 폴더의 opengraph-image.tsx(동적 브랜드 카드)가 자동으로 붙인다.
     openGraph: {
@@ -82,13 +82,13 @@ export default async function BlogPostPage({ params }: Props) {
   if (!post) notFound();
 
   const blocks = await getBlocks(post.id);
-  // 관련 글 — 최신순에서 현재 글만 빼고 2개 (당근 팀 블로그의 하단 추천 방식).
+  // 관련 글 - 최신순에서 현재 글만 빼고 2개 (당근 팀 블로그의 하단 추천 방식).
   const related = posts.filter((p) => p.id !== post.id).slice(0, 2);
 
   return (
     <main className="py-16 md:py-24">
       <ArticleJsonLd post={post} />
-      {/* 본문은 읽기 최적화 좁은 컬럼 — 헤더 순서: 카테고리 → 날짜 → 제목 → 커버.
+      {/* 본문은 읽기 최적화 좁은 컬럼 - 헤더 순서: 카테고리 → 날짜 → 제목 → 커버.
           Container의 max-w-6xl과 유틸리티가 충돌하지 않도록 내부 div로 폭을 제한한다. */}
       <Container>
         <div className="mx-auto w-full max-w-2xl">
@@ -118,7 +118,7 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
       </Container>
 
-      {/* 관련 글 — 목록과 같은 미니멀 카드 */}
+      {/* 관련 글 - 목록과 같은 미니멀 카드 */}
       {related.length > 0 && (
         <Container className="mt-24">
           <div className="border-t border-slate-200 pt-14 dark:border-white/10">

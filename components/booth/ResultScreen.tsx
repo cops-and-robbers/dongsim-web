@@ -58,7 +58,7 @@ export default function ResultScreen({
   return (
     <Shell variant="scroll">
       <div className="relative z-10 mx-auto w-full max-w-85 pt-36 lg:grid lg:w-fit lg:max-w-none lg:grid-cols-[320px_300px] lg:items-stretch lg:gap-5">
-        {/* 결과 카드 — 결과 모달 스타일(경찰이 카드 위로 빼꼼) */}
+        {/* 결과 카드 - 결과 모달 스타일(경찰이 카드 위로 빼꼼) */}
         <div className="relative">
           <div
             className="pointer-events-none absolute bottom-full left-1/2 z-0"
@@ -147,15 +147,15 @@ export default function ResultScreen({
           </div>
         </div>
 
-        {/* 오른쪽: 다운로드 + 랭킹 — 데스크탑에선 결과 카드와 나란한 한 장의 카드 */}
+        {/* 오른쪽: 다운로드 + 랭킹 - 데스크탑에선 결과 카드와 나란한 한 장의 카드 */}
         <div className="mt-3 lg:mt-0">
           <div className="flex h-full flex-col rounded-3xl bg-brand-blue p-4 text-white shadow-lg shadow-brand-blue/30 dark:bg-app-black-900 dark:shadow-none dark:ring-1 dark:ring-white/10">
-            {/* 앱 다운로드 — 데스크탑은 QR + 스토어 버튼, 모바일은 단일 버튼 */}
+            {/* 앱 다운로드 - 데스크탑은 QR + 스토어 버튼, 모바일은 단일 버튼 */}
             <p className="text-center text-sm font-extrabold">
               앱 다운받고 밖에서 즐겨요 🏃
             </p>
 
-            {/* 데스크탑: QR(폰으로 스캔) — 남는 높이를 채워 결과 카드와 맞춤 */}
+            {/* 데스크탑: QR(폰으로 스캔) - 남는 높이를 채워 결과 카드와 맞춤 */}
             <div className="hidden flex-1 items-center justify-center py-3 lg:flex">
               <Image
                 src="/brand/qr-download.svg"
@@ -247,7 +247,7 @@ function Leaderboard({
         style={{ animation: "scaleIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
         className="relative z-10 w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-200 dark:bg-app-black dark:ring-white/10"
       >
-        {/* 헤더 — 트로피 + 타이틀 */}
+        {/* 헤더 - 트로피 + 타이틀 */}
         <div className="flex flex-col items-center gap-1 px-6 pb-4 pt-7">
           <span className="text-4xl" aria-hidden="true">
             🏆

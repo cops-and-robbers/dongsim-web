@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getPosts } from "@/lib/blog/notion";
 
-// 블로그 글 공유용 동적 OG — 글 제목·태그·작성자·날짜가 박힌 브랜드 카드.
+// 블로그 글 공유용 동적 OG - 글 제목·태그·작성자·날짜가 박힌 브랜드 카드.
 // 커버 사진 대신 텍스트 중심으로 가서(만료되는 노션 URL 임베드 회피)
 // 커버 유무와 무관하게 모든 글이 일관된 카드를 갖는다.
 
@@ -41,7 +41,7 @@ export default async function Image({
   ]);
 
   const title = truncate(post?.title ?? "팀이 남기는 이야기", 44);
-  // 날짜·태그는 뺀다 — 카드가 오래 캐시돼도 낡아 보이지 않게, 제목에 힘이 실리게.
+  // 날짜·태그는 뺀다 - 카드가 오래 캐시돼도 낡아 보이지 않게, 제목에 힘이 실리게.
   const metaLine =
     post?.author || "경찰과 도둑을 만드는 동심지키미 팀의 기록";
 

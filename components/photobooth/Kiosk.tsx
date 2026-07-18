@@ -11,7 +11,7 @@ import SelectScreen from "./SelectScreen";
 
 type Phase = "intro" | "capture" | "select" | "preview" | "qr";
 
-/** 부스 데스크탑 전용 전체화면 키오스크 — 사이트 헤더/푸터를 덮는다. */
+/** 부스 데스크탑 전용 전체화면 키오스크 - 사이트 헤더/푸터를 덮는다. */
 export default function Kiosk() {
   const [frame, setFrame] = useState<FrameDef>(DEFAULT_FRAME);
   const [phase, setPhase] = useState<Phase>("intro");

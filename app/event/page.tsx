@@ -19,7 +19,7 @@ export default function EventPage() {
   return isEventOver() ? <EventThanks /> : <EventTeaser />;
 }
 
-// 행사가 끝난 뒤 — 사건 종결 + 감사 인사.
+// 행사가 끝난 뒤 - 사건 종결 + 감사 인사.
 function EventThanks() {
   return (
     <main className="flex min-h-[75vh] flex-col items-center justify-center px-6 text-center">
@@ -59,7 +59,7 @@ function EventThanks() {
   );
 }
 
-// 행사 당일이 아닐 때 — "곧 공개" 티저.
+// 행사 당일이 아닐 때 - "곧 공개" 티저.
 function EventTeaser() {
   return (
     <main className="flex min-h-[75vh] flex-col items-center justify-center px-6 text-center">
@@ -94,7 +94,7 @@ function EventTeaser() {
 function EventStory() {
   return (
     <main>
-      {/* 히어로 — 사건 표지 */}
+      {/* 히어로 - 사건 표지 */}
       <section className="border-b border-slate-200 bg-brand-blue-bg/50 py-20 md:py-28 dark:border-white/10 dark:bg-app-black-900">
         <Container className="text-center">
           <ScrollReveal>
@@ -140,7 +140,7 @@ function EventStory() {
         </Container>
       </section>
 
-      {/* 사건의 시작 — 배경 */}
+      {/* 사건의 시작 - 배경 */}
       <section className="py-16 md:py-24">
         <Container>
           <div className="grid items-center gap-10 md:grid-cols-2">
@@ -162,7 +162,7 @@ function EventStory() {
         </Container>
       </section>
 
-      {/* 용의자 — 지명수배 */}
+      {/* 용의자 - 지명수배 */}
       <section className="bg-slate-50 py-16 md:py-24 dark:bg-app-black-900">
         <Container>
           <ScrollReveal className="mx-auto max-w-2xl">
@@ -182,7 +182,7 @@ function EventStory() {
                 </h3>
                 <p className="mt-3 leading-relaxed text-slate-600 dark:text-slate-300">
                   “쥐는 치즈를 좋아한다”는 세상의 고정관념을 견딜 수 없었다.
-                  레시피가 공개되면 그 편견이 영원히 이어질 거라 믿었고 — 그래서
+                  레시피가 공개되면 그 편견이 영원히 이어질 거라 믿었고 - 그래서
                   모든 걸 없애기로 했다.
                 </p>
               </div>
@@ -191,7 +191,7 @@ function EventStory() {
         </Container>
       </section>
 
-      {/* 그날 밤 — 사건 전말 */}
+      {/* 그날 밤 - 사건 전말 */}
       <section className="py-16 md:py-24">
         <Container>
           <ScrollReveal className="text-center">
@@ -220,7 +220,7 @@ function EventStory() {
         </Container>
       </section>
 
-      {/* CTA — 당신의 차례 */}
+      {/* CTA - 당신의 차례 */}
       <section className="bg-brand-blue py-16 md:py-24 dark:bg-app-black-900 dark:ring-1 dark:ring-white/10">
         <Container className="text-center text-white">
           <ScrollReveal>
@@ -268,7 +268,7 @@ function SectionTag({
   );
 }
 
-// 스토리 삽화 — 고정 높이 박스 + 세로 중앙 정렬(비율 달라도 중심점·아래 텍스트 정렬).
+// 스토리 삽화 - 고정 높이 박스 + 세로 중앙 정렬(비율 달라도 중심점·아래 텍스트 정렬).
 function Clue({ src, label }: { src: string; label: string }) {
   return (
     <figure className="mx-auto w-full max-w-sm">

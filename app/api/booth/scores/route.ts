@@ -1,7 +1,7 @@
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
 
-// 부스 미니게임 공유 랭킹 — Upstash Redis Sorted Set.
+// 부스 미니게임 공유 랭킹 - Upstash Redis Sorted Set.
 // 멤버 = 닉네임, 점수 = 최고점(ZADD GT로 더 높을 때만 갱신) → 닉네임당 1줄.
 // 환경변수가 없으면(연결 전) 빈 값으로 안전하게 동작한다.
 

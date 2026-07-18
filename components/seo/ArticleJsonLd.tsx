@@ -1,7 +1,7 @@
 import { BRAND, SITE_URL } from "@/lib/constants";
 import type { BlogPost } from "@/lib/blog/notion";
 
-// 블로그 글의 Article 구조화 데이터 — 검색 결과에 날짜·작성자가 붙는 리치 결과 대상이 된다.
+// 블로그 글의 Article 구조화 데이터 - 검색 결과에 날짜·작성자가 붙는 리치 결과 대상이 된다.
 export default function ArticleJsonLd({ post }: { post: BlogPost }) {
   const data = {
     "@context": "https://schema.org",

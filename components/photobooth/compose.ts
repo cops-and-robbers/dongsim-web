@@ -1,4 +1,4 @@
-// 포토부스 합성 코어 — 선택된 사진들을 프레임 슬롯에 cover-crop으로 깔고,
+// 포토부스 합성 코어 - 선택된 사진들을 프레임 슬롯에 cover-crop으로 깔고,
 // 그 위에 프레임 PNG(투명 창 + 스티커)를 덮어 최종 스트립을 만든다. 좌표는 frames.ts.
 
 import { DEFAULT_FRAME, type FrameDef, type FrameSlot } from "./frames";
@@ -88,7 +88,7 @@ export async function composeStrip(
   // 1) 사진을 먼저 슬롯에 깔고
   const mirror = opts.mirror ?? false;
   frame.slots.forEach((slot, i) => drawCover(ctx, photos[i], slot, mirror));
-  // 2) 그 위에 프레임(테두리·타이틀·스티커)을 덮는다 — 투명창으로 사진이 비친다.
+  // 2) 그 위에 프레임(테두리·타이틀·스티커)을 덮는다 - 투명창으로 사진이 비친다.
   const frameImg = await loadFrameImage(frame.src);
   ctx.drawImage(frameImg, 0, 0, frame.width, frame.height);
 

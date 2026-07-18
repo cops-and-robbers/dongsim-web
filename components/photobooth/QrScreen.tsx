@@ -15,7 +15,7 @@ export default function QrScreen({
   onRestart: () => void;
 }) {
   const [qr, setQr] = useState<string | null>(null);
-  // 손님 폰이 열 주소 — 전체 Blob URL을 ?u= 로 담는다.
+  // 손님 폰이 열 주소 - 전체 Blob URL을 ?u= 로 담는다.
   const target = `${SITE_URL}/p?u=${encodeURIComponent(imageUrl)}`;
 
   useEffect(() => {

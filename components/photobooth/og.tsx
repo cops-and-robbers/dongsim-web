@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-// 포토부스 OG 공통 렌더러 — 루트 OG 톤(로고·그라데이션) 유지, 냥파·도둑 스티커 사용.
+// 포토부스 OG 공통 렌더러 - 루트 OG 톤(로고·그라데이션) 유지, 냥파·도둑 스티커 사용.
 // 헤드라인 두 줄 + 선택적 작은 정보 줄(행사 안내용)만 라우트별로 다르게 넣는다.
 
 export const OG_SIZE = { width: 1200, height: 600 };

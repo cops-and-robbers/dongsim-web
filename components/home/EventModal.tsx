@@ -37,7 +37,7 @@ export default function EventModal() {
     setOpen(true);
   }, []);
 
-  // 그냥 닫기 — 이번 세션만, 다음 방문 땐 다시 노출.
+  // 그냥 닫기 - 이번 세션만, 다음 방문 땐 다시 노출.
   const closeForSession = () => {
     setOpen(false);
     try {
@@ -45,7 +45,7 @@ export default function EventModal() {
     } catch {}
   };
 
-  // 다시 보지 않기 — 영구 opt-out.
+  // 다시 보지 않기 - 영구 opt-out.
   const dismissForever = () => {
     setOpen(false);
     try {

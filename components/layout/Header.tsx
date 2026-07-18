@@ -12,7 +12,7 @@ export default function Header() {
         <Link href="/" aria-label={`${BRAND.game} 홈`} className="flex items-center">
           <Image
             src="/brand/header-logo.svg"
-            alt="경찰과 도둑(경도) — 동심지키미 GPS 술래잡기 게임"
+            alt="경찰과 도둑(경도) - 동심지키미 GPS 술래잡기 게임"
             width={285}
             height={46}
             priority

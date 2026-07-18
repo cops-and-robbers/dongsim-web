@@ -1,7 +1,7 @@
 import { getPosts } from "@/lib/blog/notion";
 import { BRAND, SITE_URL } from "@/lib/constants";
 
-// 블로그 RSS 피드 — RSS 리더 구독과 기술 블로그 수집 서비스(어썸 데브블로그 등) 등록용.
+// 블로그 RSS 피드 - RSS 리더 구독과 기술 블로그 수집 서비스(어썸 데브블로그 등) 등록용.
 // 목록 페이지와 같은 주기(5분)로 재생성된다.
 export const revalidate = 300;
 

@@ -6,14 +6,14 @@ import { findAuthorProfile } from "@/lib/blog/authors";
 import { formatPostDate } from "@/lib/blog/format";
 import { getPosts, withImageWidth } from "@/lib/blog/notion";
 
-// 목록은 1분 주기로 재생성 — 노션에서 "공개"를 켜면 늦어도 1~2분 안에 반영된다.
+// 목록은 1분 주기로 재생성 - 노션에서 "공개"를 켜면 늦어도 1~2분 안에 반영된다.
 // (이미지가 프록시에서 장기 캐시되므로 짧은 주기가 부담이 없다.)
 export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "이야기",
   description:
-    "경찰과 도둑을 만드는 동심지키미 팀이 남기는 발자국들 — 개발기, 행사 후기, 그리고 뒷이야기.",
+    "경찰과 도둑을 만드는 동심지키미 팀이 남기는 발자국들 - 개발기, 행사 후기, 그리고 뒷이야기.",
   alternates: {
     canonical: "/blog",
     types: { "application/rss+xml": "/rss.xml" },
@@ -55,7 +55,7 @@ export default async function BlogPage() {
   return (
     <main className="py-20 md:py-28">
       <Container>
-        {/* 헤더 — 큰 타이틀 + 부제, 여백을 넉넉히 */}
+        {/* 헤더 - 큰 타이틀 + 부제, 여백을 넉넉히 */}
         <header className="max-w-2xl">
           <h1 className="text-4xl font-extrabold tracking-tight text-brand-ink sm:text-5xl dark:text-white">
             이야기
@@ -81,7 +81,7 @@ export default async function BlogPage() {
             </p>
           </div>
         ) : (
-          // 당근 팀 블로그처럼 테두리 없는 미니멀 카드 — 썸네일과 텍스트, 여백으로만 구분.
+          // 당근 팀 블로그처럼 테두리 없는 미니멀 카드 - 썸네일과 텍스트, 여백으로만 구분.
           <div className="mt-14 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
             {posts.map((post) => (
               <Link key={post.id} href={`/blog/${post.slug}`} className="group">

@@ -1,5 +1,5 @@
 // 포토부스 프레임 레지스트리.
-// 화이트/스카이/블랙 3종 — 레이아웃(창 좌표)은 동일하고 색상만 다르다.
+// 화이트/스카이/블랙 3종 - 레이아웃(창 좌표)은 동일하고 색상만 다르다.
 // 창 좌표는 알파 채널 스캔으로 검증(창4개 전부 x=82, w=1200, h=830, y 간격 정확히 895).
 
 export type FrameSlot = { x: number; y: number; w: number; h: number };
@@ -72,7 +72,7 @@ export function pickCount(frame: FrameDef): number {
   return frame.slots.length;
 }
 
-/** 슬롯 가로:세로 비율 — 웹캠 프리뷰 크롭 비율을 맞출 때 사용. */
+/** 슬롯 가로:세로 비율 - 웹캠 프리뷰 크롭 비율을 맞출 때 사용. */
 export function slotRatio(frame: FrameDef): number {
   return frame.slots[0].w / frame.slots[0].h;
 }

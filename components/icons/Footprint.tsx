@@ -1,5 +1,5 @@
 /**
- * 발자국 아이콘 — 동물 발바닥(중앙 패드 + 발가락 4개) 모양. 경찰(고양이)·도둑(생쥐)
+ * 발자국 아이콘 - 동물 발바닥(중앙 패드 + 발가락 4개) 모양. 경찰(고양이)·도둑(생쥐)
  * 캐릭터에 맞춘 모티프로, currentColor 기반이라 부모 텍스트 색상을 따라감.
  *
  * 동일 SVG가 여러 곳(HeroSection, CharactersSection, FeaturesSection, PhoneMockup,

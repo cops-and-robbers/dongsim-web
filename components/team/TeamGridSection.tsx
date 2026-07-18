@@ -88,7 +88,7 @@ function TeamNode({
       disabled={isActive}
       className="group relative flex flex-col items-center rounded-xl text-center outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-blue disabled:cursor-default dark:focus-visible:outline-brand-green"
       aria-label={
-        isActive ? `${member.name} — 현재 중앙` : `${member.name} 이야기 보기`
+        isActive ? `${member.name} - 현재 중앙` : `${member.name} 이야기 보기`
       }
     >
       <div

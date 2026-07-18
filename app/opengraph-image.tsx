@@ -6,7 +6,7 @@ import { join } from "node:path";
 // 에셋을 런타임에 읽으므로 캐릭터를 교체하면 OG에도 자동 반영된다.
 // 앱인토스 OG 가이드 기준: 1200×600, 텍스트 최소화(로고+한 줄), 추격 캐릭터를 크게.
 
-export const alt = "경찰과 도둑 — 앱으로 더 쉽고 몰입감 있게 즐기는 GPS 술래잡기";
+export const alt = "경찰과 도둑 - 앱으로 더 쉽고 몰입감 있게 즐기는 GPS 술래잡기";
 export const size = { width: 1200, height: 600 };
 export const contentType = "image/png";
 
@@ -92,7 +92,7 @@ export default async function Image() {
             }}
           />
 
-          {/* 경찰 (왼쪽에서 추격 — 오른쪽 도둑을 바라봄) */}
+          {/* 경찰 (왼쪽에서 추격 - 오른쪽 도둑을 바라봄) */}
           <img
             src={police}
             width={240}

@@ -57,7 +57,7 @@ export default function HuntProvider({ children }: { children: ReactNode }) {
 
   const isCaught = useCallback((id: string) => caughtSet.has(id), [caughtSet]);
 
-  // 타이머 — 0이 되면 패배
+  // 타이머 - 0이 되면 패배
   useEffect(() => {
     if (status !== "hunting") return;
     const id = setInterval(() => {

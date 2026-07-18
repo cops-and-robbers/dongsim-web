@@ -3,7 +3,7 @@ export const HOLE_COUNT = 9;
 export const ROBBER_SRC = "/characters/robber.svg";
 export const CIVILIAN_SRC = "/characters/police.svg";
 
-// 한 판에 나오는 도둑·시민 수는 고정(공정성) — 어디/언제/순서만 랜덤(재미).
+// 한 판에 나오는 도둑·시민 수는 고정(공정성) - 어디/언제/순서만 랜덤(재미).
 // 도둑 전원 검거 시 만점은 항상 동일: ROBBER_COUNT*(ROBBER_COUNT+9).
 export const ROBBER_COUNT = 32;
 export const CIV_COUNT = 12;

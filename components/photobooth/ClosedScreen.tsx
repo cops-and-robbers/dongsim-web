@@ -2,7 +2,7 @@
 import Backdrop from "./Backdrop";
 import { isEventOver, PHOTOBOOTH_EVENT } from "./schedule";
 
-// 운영 시간이 아닐 때 부스에 뜨는 화면 — 행사 전엔 "준비중" 안내, 끝난 뒤엔 감사 인사.
+// 운영 시간이 아닐 때 부스에 뜨는 화면 - 행사 전엔 "준비중" 안내, 끝난 뒤엔 감사 인사.
 export default function ClosedScreen() {
   const { venue, dateLabel, location } = PHOTOBOOTH_EVENT;
 

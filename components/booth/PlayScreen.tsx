@@ -15,7 +15,7 @@ import {
 
 // 보드 대비 % 단위 시각 상수
 const MOUSE_W = 17;
-const MOUSE_YOFF = 4; // 구멍 중심보다 아래로 — 하반신이 치즈에 가려지게
+const MOUSE_YOFF = 4; // 구멍 중심보다 아래로 - 하반신이 치즈에 가려지게
 const TAP_W = 22;
 
 export default function PlayScreen({
@@ -74,7 +74,7 @@ export default function PlayScreen({
           />
         </div>
 
-        {/* 보드 — 치즈 3레이어(뒤 구멍속·쥐·앞 치즈) */}
+        {/* 보드 - 치즈 3레이어(뒤 구멍속·쥐·앞 치즈) */}
         <div
           className={`relative mx-auto aspect-square w-full max-w-[min(30rem,calc(100dvh-17rem))] ${
             shaking ? "animate-[booth-shake_0.36s_ease-in-out]" : ""
@@ -91,7 +91,7 @@ export default function PlayScreen({
             className="pointer-events-none select-none object-contain"
           />
 
-          {/* 쥐 — 각 구멍에서 빼꼼 */}
+          {/* 쥐 - 각 구멍에서 빼꼼 */}
           {game.holes.map((occ, i) =>
             occ ? (
               <div
@@ -121,7 +121,7 @@ export default function PlayScreen({
             ) : null,
           )}
 
-          {/* 앞: 치즈(구멍 투명) — 쥐 하반신을 가림. 탭은 통과 */}
+          {/* 앞: 치즈(구멍 투명) - 쥐 하반신을 가림. 탭은 통과 */}
           <Image
             src={CHEESE_TOP_SRC}
             alt=""

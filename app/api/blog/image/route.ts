@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { getFreshImageUrl } from "@/lib/blog/notion";
 
-// Notion 이미지 프록시 겸 최적화 —
+// Notion 이미지 프록시 겸 최적화 -
 // Notion 파일 URL은 1시간 만료 서명 URL이라 페이지에 직접 못 박는다. 이 라우트가
 // 서버에서 원본을 받아 리사이즈·WebP 변환 후 스트리밍하고, 결과를 CDN에 장기 캐시한다.
 // URL의 v(블록/페이지 수정 시각)가 버전 역할이라 이미지가 바뀌면 URL도 바뀐다 → 불변 캐시 안전.
@@ -42,7 +42,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   const original = Buffer.from(await upstream.arrayBuffer());
   const contentType = upstream.headers.get("content-type") ?? "";
 
-  // GIF(애니메이션)·SVG는 변환 없이 원본 그대로 — 리사이즈가 오히려 깨뜨릴 수 있다.
+  // GIF(애니메이션)·SVG는 변환 없이 원본 그대로 - 리사이즈가 오히려 깨뜨릴 수 있다.
   if (/gif|svg/.test(contentType)) {
     return new NextResponse(new Uint8Array(original), {
       headers: { "Content-Type": contentType, "Cache-Control": CACHE },

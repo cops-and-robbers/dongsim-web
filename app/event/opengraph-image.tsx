@@ -4,10 +4,10 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { EVENT } from "@/components/event/schedule";
 
-// 이벤트(/event) 공유 OG — 이번에 추가한 지명수배 이미지(도둥이)를 주인공으로,
+// 이벤트(/event) 공유 OG - 이번에 추가한 지명수배 이미지(도둥이)를 주인공으로,
 // 루트 OG 톤(로고·그라데이션)에 사건 무드를 얹는다.
 
-export const alt = "황금 치즈 도난 사건 — 경찰과 도둑 이벤트";
+export const alt = "황금 치즈 도난 사건 - 경찰과 도둑 이벤트";
 export const size = { width: 1200, height: 600 };
 export const contentType = "image/png";
 
