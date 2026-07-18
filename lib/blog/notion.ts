@@ -20,9 +20,18 @@ export type BlogPost = {
 };
 
 // 렌더러가 소비하는 최소 구조만 타입으로 잡는다(SDK 응답은 구조적으로 이보다 크다).
+export type CustomEmoji = {
+  name?: string;
+  url?: string;
+  /** 렌더링 전에 서버에서 채워 넣는 인라인 이미지(만료되는 노션 URL 대체). */
+  dataUri?: string;
+};
+
 export type RichTextItem = {
+  type?: string;
   plain_text: string;
   href: string | null;
+  custom_emoji?: CustomEmoji;
   annotations: {
     bold: boolean;
     italic: boolean;
@@ -190,11 +199,62 @@ export async function getBlocks(
           b.children = await getBlocks(b.id, depth + 1);
         })
     );
+    if (depth === 0) await inlineCustomEmoji(blocks);
     return blocks;
   } catch (e) {
     console.error("[blog] 본문 블록 조회 실패:", e);
     return [];
   }
+}
+
+// 본문의 커스텀 이모지(노션 워크스페이스 등록 이모지)를 data URI로 인라인한다.
+// 노션 이모지 URL도 만료되는 서명 URL인데, 몇 KB짜리 작은 이미지라
+// HTML에 직접 박으면 만료·추가 요청 걱정이 사라진다. 같은 이모지는 한 번만 받는다.
+async function inlineCustomEmoji(blocks: NotionBlock[]): Promise<void> {
+  const cache = new Map<string, string | null>();
+  const toDataUri = async (url: string): Promise<string | null> => {
+    if (!cache.has(url)) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const buf = Buffer.from(await res.arrayBuffer());
+        const mime = res.headers.get("content-type") ?? "image/png";
+        cache.set(url, `data:${mime};base64,${buf.toString("base64")}`);
+      } catch (e) {
+        console.error("[blog] 커스텀 이모지 조회 실패:", e);
+        cache.set(url, null); // 실패한 URL은 재시도하지 않는다
+      }
+    }
+    return cache.get(url) ?? null;
+  };
+
+  const walk = async (block: NotionBlock): Promise<void> => {
+    const payload = block[block.type] as
+      | {
+          rich_text?: RichTextItem[];
+          cells?: RichTextItem[][];
+          icon?: { type?: string; custom_emoji?: CustomEmoji };
+        }
+      | undefined;
+
+    const items = [
+      ...(payload?.rich_text ?? []),
+      ...(payload?.cells ?? []).flat(),
+    ];
+    for (const item of items) {
+      if (item.custom_emoji?.url) {
+        item.custom_emoji.dataUri =
+          (await toDataUri(item.custom_emoji.url)) ?? undefined;
+      }
+    }
+    if (payload?.icon?.custom_emoji?.url) {
+      payload.icon.custom_emoji.dataUri =
+        (await toDataUri(payload.icon.custom_emoji.url)) ?? undefined;
+    }
+    for (const child of block.children ?? []) await walk(child);
+  };
+
+  for (const block of blocks) await walk(block);
 }
 
 /** 이미지 프록시용 — 블록/페이지 커버의 현재(신선한) 서명 URL을 얻는다. */
