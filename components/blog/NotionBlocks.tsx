@@ -9,19 +9,6 @@ function RichText({ items }: { items?: RichTextItem[] }) {
   return (
     <>
       {items.map((t, i) => {
-        // 커스텀 이모지 — 서버에서 인라인해 둔 data URI를 글자 크기에 맞춰 표시.
-        if (t.custom_emoji) {
-          const src = t.custom_emoji.dataUri ?? t.custom_emoji.url;
-          if (!src) return null;
-          return (
-            <img
-              key={i}
-              src={src}
-              alt={t.custom_emoji.name ?? ""}
-              className="inline-block h-[1.25em] w-auto align-[-0.25em]"
-            />
-          );
-        }
         let node: React.ReactNode = t.plain_text;
         if (t.annotations.code) {
           node = (
@@ -57,11 +44,7 @@ type Payload = {
   checked?: boolean;
   language?: string;
   caption?: RichTextItem[];
-  icon?: {
-    type: string;
-    emoji?: string;
-    custom_emoji?: { name?: string; url?: string; dataUri?: string };
-  };
+  icon?: { type: string; emoji?: string };
   type?: string;
   file?: { url: string };
   external?: { url: string };
@@ -189,13 +172,6 @@ function Block({ block }: { block: NotionBlock }) {
             <span className="text-xl leading-relaxed" aria-hidden="true">
               {p.icon.emoji}
             </span>
-          )}
-          {p.icon?.custom_emoji && (
-            <img
-              src={p.icon.custom_emoji.dataUri ?? p.icon.custom_emoji.url}
-              alt=""
-              className="mt-1 h-6 w-6 shrink-0"
-            />
           )}
           <div className="min-w-0 leading-relaxed">
             <RichText items={p.rich_text} />
