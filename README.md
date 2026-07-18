@@ -73,6 +73,21 @@ pnpm dev
 
 블로그 글 쓰는 법은 [글쓰기 가이드](./docs/blog-writing-guide.md)를 봐주세요.
 
+## 📚 문서 지도
+
+상황에 맞는 문서를 찾아가세요. 코드나 규칙이 바뀌면 해당 문서도 같이 고칩니다.
+
+| 무엇을 하려면 | 여기를 보세요 |
+| --- | --- |
+| 블로그에 글을 쓰고 싶어요 (팀원 누구나) | [docs/blog-writing-guide.md](./docs/blog-writing-guide.md) |
+| 코드 구조를 파악하고 싶어요 | [docs/architecture.md](./docs/architecture.md) |
+| 커밋·코드 스타일·테마 규칙이 궁금해요 | [docs/conventions.md](./docs/conventions.md) |
+| 사이트 문구(카피)를 쓰거나 고쳐요 | [docs/copy-guide.md](./docs/copy-guide.md) |
+| 블로그 시스템(노션 CMS)을 개발해요 | [docs/blog-system.md](./docs/blog-system.md) |
+| 빌드·배포가 이상해요 | [docs/gotchas.md](./docs/gotchas.md) |
+| UI 컴포넌트를 눈으로 보고 싶어요 | 사이트의 [/design](https://copsnro66ers.site/design) 페이지 |
+| AI 도구(Claude 등)로 작업해요 | [AGENTS.md](./AGENTS.md)가 자동 로드돼요 |
+
 ## 👮🐭 팀
 
 **동심지키미** - 경찰과 도둑을 만드는 7인 팀입니다. [팀 소개](https://copsnro66ers.site/team)에서 만나요.
