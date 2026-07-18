@@ -5,6 +5,23 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(__dirname),
   },
+  // OG 이미지 라우트는 요청 시점에 폰트·SVG를 readFile로 읽는데, 경로가 변수 조합이라
+  // 파일 트레이싱이 놓친다 → 서버리스 번들에 명시적으로 포함(누락 시 프로덕션 500).
+  outputFileTracingIncludes: {
+    "/blog/[slug]/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/brand/header-logo.svg",
+      "public/photobooth/cop.svg",
+      "public/photobooth/thief.svg",
+    ],
+    "/event/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/brand/header-logo.svg",
+      "public/event/wanted.svg",
+    ],
+  },
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
