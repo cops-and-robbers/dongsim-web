@@ -1,8 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import NotionBlocks from "@/components/blog/NotionBlocks";
+import PostCard from "@/components/blog/PostCard";
 import ArticleJsonLd from "@/components/seo/ArticleJsonLd";
 import Container from "@/components/ui/Container";
 import { findAuthorProfile } from "@/lib/blog/authors";
@@ -82,7 +82,7 @@ export default async function BlogPostPage({ params }: Props) {
   if (!post) notFound();
 
   const blocks = await getBlocks(post.id);
-  // 관련 글 - 최신순에서 현재 글만 빼고 2개 (당근 팀 블로그의 하단 추천 방식).
+  // 관련 글 - 최신순에서 현재 글만 빼고 2개.
   const related = posts.filter((p) => p.id !== post.id).slice(0, 2);
 
   return (
@@ -127,37 +127,7 @@ export default async function BlogPostPage({ params }: Props) {
             </h2>
             <div className="mt-8 grid gap-x-8 gap-y-12 sm:grid-cols-2">
               {related.map((p) => (
-                <Link key={p.id} href={`/blog/${p.slug}`} className="group">
-                  <div className="aspect-3/2 w-full overflow-hidden rounded-2xl bg-brand-blue-bg dark:bg-app-black-800">
-                    {p.coverUrl ? (
-                      <img
-                        src={withImageWidth(p.coverUrl, 800)}
-                        alt=""
-                        loading="lazy"
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-end justify-center gap-2 pb-4">
-                        <img
-                          src="/photobooth/cop.svg"
-                          alt=""
-                          className="h-14 w-auto"
-                        />
-                        <img
-                          src="/photobooth/thief.svg"
-                          alt=""
-                          className="h-12 w-auto"
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="mt-4 text-lg font-bold leading-snug text-brand-ink transition group-hover:text-brand-blue dark:text-white dark:group-hover:text-brand-green">
-                    {p.title}
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">
-                    {formatPostDate(p.date)}
-                  </p>
-                </Link>
+                <PostCard key={p.id} post={p} variant="compact" />
               ))}
             </div>
           </div>

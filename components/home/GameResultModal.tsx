@@ -1,17 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 import { useTheme, type Team } from "@/components/ThemeProvider";
-
-function useIsClient() {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-}
+import Modal from "@/components/ui/Modal";
 
 type Outcome = "win" | "lose";
 
@@ -45,35 +37,31 @@ export default function GameResultModal({
   outcome: controlledOutcome,
   showToggle = true,
 }: Props) {
-  const isClient = useIsClient();
   const { team } = useTheme();
   const [outcome, setOutcome] = useState<Outcome>(controlledOutcome ?? "win");
 
   // 제어된 결과가 바뀌면 동기화(헌팅 성공/실패 반영).
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (controlledOutcome) setOutcome(controlledOutcome);
   }, [controlledOutcome]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  if (!open) return null;
 
-  if (!open || !isClient) return null;
-
-  return createPortal(
-    <ResultModal
-      team={team}
-      outcome={outcome}
-      onOutcomeChange={setOutcome}
-      showToggle={showToggle}
+  return (
+    <Modal
       onClose={onClose}
-    />,
-    document.body,
+      labelledBy="result-title"
+      contentClassName="relative w-full max-w-80"
+    >
+      <ResultModal
+        team={team}
+        outcome={outcome}
+        onOutcomeChange={setOutcome}
+        showToggle={showToggle}
+        onClose={onClose}
+      />
+    </Modal>
   );
 }
 
@@ -120,18 +108,8 @@ function ResultModal({
   const [leftBtn, rightBtn] = getButtons(isRobber, isWin);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="result-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="relative w-full max-w-[320px]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 캐릭터 몸통 - 카드 뒤(z-0)에서 위로 빼꼼 */}
+    <>
+      {/* 캐릭터 몸통 - 카드 뒤(z-0)에서 위로 빼꼼 */}
         <div
           className="pointer-events-none absolute bottom-full left-1/2 z-0"
           style={{ transform: `translate(-50%, ${c.overlap}px)` }}
@@ -239,8 +217,7 @@ function ResultModal({
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </>
   );
 }
 

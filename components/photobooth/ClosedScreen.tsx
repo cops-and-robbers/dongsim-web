@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+import CharacterDuo from "@/components/ui/CharacterDuo";
 import Backdrop from "./Backdrop";
 import { isEventOver, PHOTOBOOTH_EVENT } from "./schedule";
 
@@ -12,18 +12,7 @@ export default function ClosedScreen() {
         <Backdrop />
 
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <div className="mb-8 flex items-end justify-center gap-3">
-            <img
-              src="/photobooth/cop.svg"
-              alt=""
-              className="h-28 w-auto drop-shadow-md sm:h-36"
-            />
-            <img
-              src="/photobooth/thief.svg"
-              alt=""
-              className="h-24 w-auto drop-shadow-md sm:h-32"
-            />
-          </div>
+          <CharacterDuo size="xl" className="mb-8" />
 
           <h1 className="text-3xl font-extrabold tracking-tight text-brand-ink sm:text-4xl dark:text-white">
             와주셔서 감사합니다
@@ -45,18 +34,7 @@ export default function ClosedScreen() {
       <Backdrop />
 
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <div className="mb-8 flex items-end justify-center gap-3">
-          <img
-            src="/photobooth/cop.svg"
-            alt=""
-            className="h-28 w-auto drop-shadow-md sm:h-36"
-          />
-          <img
-            src="/photobooth/thief.svg"
-            alt=""
-            className="h-24 w-auto drop-shadow-md sm:h-32"
-          />
-        </div>
+        <CharacterDuo size="xl" className="mb-8" />
 
         <h1 className="text-3xl font-extrabold tracking-tight text-brand-ink sm:text-4xl dark:text-white">
           지금은 준비 중이에요

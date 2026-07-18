@@ -234,7 +234,7 @@ function Block({ block }: { block: NotionBlock }) {
       const caption = sizeMatch
         ? rawCaption.slice(sizeMatch[0].length)
         : rawCaption;
-      // 기본: 본문 폭보다 살짝 넓게(당근 팀 블로그 방식) / 중간·작게: 가운데 정렬 축소.
+      // 기본: 본문 폭보다 살짝 넓게 / 중간·작게: 가운데 정렬 축소.
       const figureClass =
         size === "기본" ? "my-10 sm:-mx-6" : "my-10 text-center";
       const imgClass =

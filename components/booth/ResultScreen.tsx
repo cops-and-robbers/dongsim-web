@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import Input from "@/components/ui/Input";
+import Modal from "@/components/ui/Modal";
 import { AppleIcon, PlayIcon } from "@/components/ui/StoreIcons";
 import { APP_LINKS } from "@/lib/constants";
 import Shell from "./Shell";
@@ -98,12 +100,12 @@ export default function ResultScreen({
               </button>
             ) : (
               <div className="mt-5 flex gap-2">
-                <input
+                <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={12}
                   placeholder="닉네임"
-                  className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none focus:border-brand-blue dark:border-white/10 dark:bg-app-black-900 dark:text-white dark:focus:border-brand-green"
+                  className="min-w-0 flex-1"
                 />
                 <button
                   type="button"
@@ -222,30 +224,11 @@ function Leaderboard({
   total: number | null;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label="검거왕 랭킹"
-    >
-      <button
-        type="button"
-        aria-label="닫기"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-      />
+    <Modal onClose={onClose} label="검거왕 랭킹">
       <div
         style={{ animation: "scaleIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
-        className="relative z-10 w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-200 dark:bg-app-black dark:ring-white/10"
+        className="overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-200 dark:bg-app-black dark:ring-white/10"
       >
         {/* 헤더 - 트로피 + 타이틀 */}
         <div className="flex flex-col items-center gap-1 px-6 pb-4 pt-7">
@@ -312,7 +295,7 @@ function Leaderboard({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

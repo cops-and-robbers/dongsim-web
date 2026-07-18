@@ -1,9 +1,9 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 import { PHOTOBOOTH_EVENT } from "@/components/photobooth/schedule";
+import CharacterDuo from "@/components/ui/CharacterDuo";
+import Modal from "@/components/ui/Modal";
 
 // 홈 첫 진입 시 "서울 게임 타운에서 만나요" 안내 모달.
 // 홈에서만 렌더하는 순수 클라이언트 오버레이라 딥링크(/join/*)와 무관하다.
@@ -15,16 +15,7 @@ const SESSION_KEY = "event-modal:seoul-game-town:session"; // 이번 세션(sess
 const SHOW_UNTIL = new Date("2026-07-05T00:00:00+09:00").getTime();
 const EVENT_URL = "https://seoulgametown.com/";
 
-function useIsClient() {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
-}
-
 export default function EventModal() {
-  const isClient = useIsClient();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -53,31 +44,15 @@ export default function EventModal() {
     } catch {}
   };
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeForSession();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
-
-  if (!isClient || !open) return null;
+  if (!open) return null;
 
   const { venue, dateLabel, location } = PHOTOBOOTH_EVENT;
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="event-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6 backdrop-blur-sm"
-      onClick={closeForSession}
-    >
+  return (
+    <Modal onClose={closeForSession} labelledBy="event-modal-title">
       <div
-        onClick={(e) => e.stopPropagation()}
         style={{ animation: "scaleIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
-        className="relative w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl dark:bg-app-black-900"
+        className="relative rounded-3xl bg-white p-7 text-center shadow-2xl dark:bg-app-black-900"
       >
         <button
           type="button"
@@ -88,10 +63,7 @@ export default function EventModal() {
           &times;
         </button>
 
-        <div className="flex items-end justify-center gap-2">
-          <img src="/photobooth/cop.svg" alt="" className="h-20 w-auto" />
-          <img src="/photobooth/thief.svg" alt="" className="h-16 w-auto" />
-        </div>
+        <CharacterDuo size="md" />
 
         <h2
           id="event-modal-title"
@@ -145,7 +117,6 @@ export default function EventModal() {
           다시 보지 않기
         </button>
       </div>
-    </div>,
-    document.body
+    </Modal>
   );
 }

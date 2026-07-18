@@ -1,9 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
-import Link from "next/link";
 import { EVENT, isEventOpen, isEventOver } from "@/components/event/schedule";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import CaptionedFigure from "@/components/ui/CaptionedFigure";
+import CharacterDuo from "@/components/ui/CharacterDuo";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import Section from "@/components/ui/Section";
 
 export const dynamic = "force-dynamic";
 
@@ -23,21 +27,8 @@ export default function EventPage() {
 function EventThanks() {
   return (
     <main className="flex min-h-[75vh] flex-col items-center justify-center px-6 text-center">
-      <div className="mb-8 flex items-end justify-center gap-3">
-        <img
-          src="/photobooth/cop-search.svg"
-          alt=""
-          className="h-24 w-auto drop-shadow-md sm:h-32"
-        />
-        <img
-          src="/photobooth/thief-flee.svg"
-          alt=""
-          className="h-20 w-auto drop-shadow-md sm:h-28"
-        />
-      </div>
-      <span className="rounded-full border border-brand-blue/30 bg-white px-4 py-1 text-xs font-bold tracking-wider text-brand-blue dark:border-brand-green/40 dark:bg-app-black dark:text-brand-green">
-        사건 종결
-      </span>
+      <CharacterDuo pose="search" size="lg" className="mb-8" />
+      <Badge variant="outline">사건 종결</Badge>
       <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-brand-ink sm:text-4xl dark:text-white">
         도둥이, 검거 완료!
       </h1>
@@ -49,12 +40,9 @@ function EventThanks() {
       <p className="mt-6 text-slate-500 dark:text-slate-400">
         경찰과 도둑의 추격전은 앱에서 계속돼요.
       </p>
-      <Link
-        href="/download"
-        className="mt-5 inline-block rounded-full bg-brand-blue px-9 py-3.5 text-lg font-bold text-white shadow-lg transition hover:-translate-y-0.5 dark:bg-brand-green dark:text-app-black"
-      >
+      <Button href="/download" size="lg" className="mt-5">
         앱 다운로드
-      </Link>
+      </Button>
     </main>
   );
 }
@@ -63,21 +51,8 @@ function EventThanks() {
 function EventTeaser() {
   return (
     <main className="flex min-h-[75vh] flex-col items-center justify-center px-6 text-center">
-      <div className="mb-8 flex items-end justify-center gap-3">
-        <img
-          src="/photobooth/cop-search.svg"
-          alt=""
-          className="h-24 w-auto drop-shadow-md sm:h-32"
-        />
-        <img
-          src="/photobooth/thief-flee.svg"
-          alt=""
-          className="h-20 w-auto drop-shadow-md sm:h-28"
-        />
-      </div>
-      <span className="rounded-full border border-brand-blue/30 bg-white px-4 py-1 text-xs font-bold tracking-wider text-brand-blue dark:border-brand-green/40 dark:bg-app-black dark:text-brand-green">
-        미해결 사건
-      </span>
+      <CharacterDuo pose="search" size="lg" className="mb-8" />
+      <Badge variant="outline">미해결 사건</Badge>
       <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-brand-ink sm:text-4xl dark:text-white">
         곧 공개됩니다
       </h1>
@@ -95,12 +70,10 @@ function EventStory() {
   return (
     <main>
       {/* 히어로 - 사건 표지 */}
-      <section className="border-b border-slate-200 bg-brand-blue-bg/50 py-20 md:py-28 dark:border-white/10 dark:bg-app-black-900">
+      <Section className="border-b border-slate-200 bg-brand-blue-bg/50 py-20 md:py-28 dark:border-white/10 dark:bg-app-black-900">
         <Container className="text-center">
           <ScrollReveal>
-            <span className="inline-block rounded-full border border-brand-blue/30 bg-white px-4 py-1 text-xs font-bold tracking-wider text-brand-blue dark:border-brand-green/40 dark:bg-app-black dark:text-brand-green">
-              미해결 사건
-            </span>
+            <Badge variant="outline">미해결 사건</Badge>
           </ScrollReveal>
           <ScrollReveal delayMs={80}>
             <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-brand-ink sm:text-6xl dark:text-white">
@@ -115,18 +88,7 @@ function EventStory() {
             </p>
           </ScrollReveal>
           <ScrollReveal delayMs={240}>
-            <div className="mt-10 flex items-end justify-center gap-3">
-              <img
-                src="/photobooth/cop-search.svg"
-                alt=""
-                className="h-24 w-auto drop-shadow-md sm:h-32"
-              />
-              <img
-                src="/photobooth/thief-flee.svg"
-                alt=""
-                className="h-20 w-auto drop-shadow-md sm:h-28"
-              />
-            </div>
+            <CharacterDuo pose="search" size="lg" className="mt-10" />
           </ScrollReveal>
           <ScrollReveal delayMs={320}>
             <span className="mt-8 inline-flex items-center gap-2 rounded-full bg-brand-red/10 px-4 py-1.5 text-sm font-bold text-brand-red">
@@ -138,10 +100,10 @@ function EventStory() {
             </span>
           </ScrollReveal>
         </Container>
-      </section>
+      </Section>
 
       {/* 사건의 시작 - 배경 */}
-      <section className="py-16 md:py-24">
+      <Section>
         <Container>
           <div className="grid items-center gap-10 md:grid-cols-2">
             <ScrollReveal animation="fadeInLeft">
@@ -156,14 +118,14 @@ function EventStory() {
               </p>
             </ScrollReveal>
             <ScrollReveal animation="fadeInRight">
-              <Clue src="/event/cheese.svg" label="봉인된 황금 치즈" />
+              <CaptionedFigure src="/event/cheese.svg" label="봉인된 황금 치즈" />
             </ScrollReveal>
           </div>
         </Container>
-      </section>
+      </Section>
 
       {/* 용의자 - 지명수배 */}
-      <section className="bg-slate-50 py-16 md:py-24 dark:bg-app-black-900">
+      <Section variant="muted">
         <Container>
           <ScrollReveal className="mx-auto max-w-2xl">
             <SectionTag center>용의자</SectionTag>
@@ -189,10 +151,10 @@ function EventStory() {
             </div>
           </ScrollReveal>
         </Container>
-      </section>
+      </Section>
 
       {/* 그날 밤 - 사건 전말 */}
-      <section className="py-16 md:py-24">
+      <Section>
         <Container>
           <ScrollReveal className="text-center">
             <SectionTag center>그날 밤</SectionTag>
@@ -203,14 +165,14 @@ function EventStory() {
 
           <div className="mx-auto mt-12 grid max-w-4xl gap-12 md:grid-cols-2">
             <ScrollReveal>
-              <Clue src="/event/diary.svg" label="남겨진 일기장" />
+              <CaptionedFigure src="/event/diary.svg" label="남겨진 일기장" />
               <p className="mt-6 text-center leading-relaxed text-slate-600 dark:text-slate-300">
                 현장엔 도둥이의 일기장이 떨어져 있었다. 페이지마다 레시피를 향한
                 분노가 빼곡했다.
               </p>
             </ScrollReveal>
             <ScrollReveal delayMs={120}>
-              <Clue src="/event/cctv.svg" label="그날의 CCTV" />
+              <CaptionedFigure src="/event/cctv.svg" label="그날의 CCTV" />
               <p className="mt-6 text-center leading-relaxed text-slate-600 dark:text-slate-300">
                 카메라엔 황금 치즈를 부수고 레시피를 챙긴 뒤, 어둠 속으로
                 사라지는 회색 그림자가 잡혔다.
@@ -218,10 +180,10 @@ function EventStory() {
             </ScrollReveal>
           </div>
         </Container>
-      </section>
+      </Section>
 
       {/* CTA - 당신의 차례 */}
-      <section className="bg-brand-blue py-16 md:py-24 dark:bg-app-black-900 dark:ring-1 dark:ring-white/10">
+      <Section variant="brand">
         <Container className="text-center text-white">
           <ScrollReveal>
             <img
@@ -237,15 +199,12 @@ function EventStory() {
               <br />
               경찰과 도둑 앱 이벤트 방에서 직접 수사에 참여하세요.
             </p>
-            <Link
-              href="/download"
-              className="mt-9 inline-block rounded-full bg-white px-10 py-4 text-lg font-bold text-brand-blue shadow-lg transition hover:-translate-y-0.5 dark:text-app-black"
-            >
+            <Button href="/download" variant="inverse" size="lg" className="mt-9">
               앱 다운로드하고 수사 시작
-            </Link>
+            </Button>
           </ScrollReveal>
         </Container>
-      </section>
+      </Section>
     </main>
   );
 }
@@ -265,19 +224,5 @@ function SectionTag({
     >
       {children}
     </p>
-  );
-}
-
-// 스토리 삽화 - 고정 높이 박스 + 세로 중앙 정렬(비율 달라도 중심점·아래 텍스트 정렬).
-function Clue({ src, label }: { src: string; label: string }) {
-  return (
-    <figure className="mx-auto w-full max-w-sm">
-      <div className="flex h-56 items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-lg ring-1 ring-black/5 sm:h-64 dark:border-white/10 dark:bg-app-black">
-        <img src={src} alt={label} className="max-h-full w-auto rounded-lg" />
-      </div>
-      <figcaption className="mt-4 text-center font-mono text-xs font-bold tracking-wider text-slate-400 dark:text-slate-500">
-        {label}
-      </figcaption>
-    </figure>
   );
 }
