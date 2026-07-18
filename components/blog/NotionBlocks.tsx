@@ -1,5 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
-import type { NotionBlock, RichTextItem } from "@/lib/blog/notion";
+import type {
+  ImageDimensions,
+  NotionBlock,
+  RichTextItem,
+} from "@/lib/blog/notion";
 
 // Notion 블록 → 사이트 디자인에 맞는 마크업. 지원 블록은 글쓰기 가이드와 일치시킨다.
 // Notion에서 지정한 글자 색상은 사이트 테마 일관성을 위해 반영하지 않는다.
@@ -57,13 +61,22 @@ function payload(block: NotionBlock): Payload {
   return (block[block.type] ?? {}) as Payload;
 }
 
-/** 이미지 블록의 표시 URL - 업로드 파일은 만료되므로 프록시(리사이즈·캐시) 경유. */
-function imageUrl(block: NotionBlock): string | null {
+/** 이미지 블록의 표시 소스 - 업로드 파일은 프록시(리사이즈·캐시) 경유 + 반응형 srcset. */
+function imageSource(
+  block: NotionBlock
+): { src: string; srcSet?: string } | null {
   const p = payload(block);
-  if (p.type === "external") return p.external?.url ?? null;
+  if (p.type === "external") {
+    return p.external?.url ? { src: p.external.url } : null;
+  }
   if (p.type === "file") {
     const v = encodeURIComponent(String(block.last_edited_time ?? ""));
-    return `/api/blog/image?block=${block.id}&v=${v}&w=1200`;
+    const base = `/api/blog/image?block=${block.id}&v=${v}`;
+    // 화면 폭에 맞는 크기를 브라우저가 골라 받는다 - 모바일은 640px이면 충분하다.
+    return {
+      src: `${base}&w=1200`,
+      srcSet: `${base}&w=640 640w, ${base}&w=1200 1200w`,
+    };
   }
   return null;
 }
@@ -224,8 +237,9 @@ function Block({ block }: { block: NotionBlock }) {
       );
 
     case "image": {
-      const src = imageUrl(block);
-      if (!src) return null;
+      const source = imageSource(block);
+      if (!source) return null;
+      const dim = block.dimensions as ImageDimensions | undefined;
       const rawCaption = (p.caption ?? []).map((t) => t.plain_text).join("");
       // 캡션 첫머리의 크기 지시어([작게]/[중간])로 표시 폭을 조절한다 -
       // Notion API가 드래그 리사이즈 값을 안 주기 때문에 캡션을 채널로 쓴다.
@@ -243,9 +257,26 @@ function Block({ block }: { block: NotionBlock }) {
           : size === "중간"
             ? "mx-auto w-9/10 rounded-2xl sm:w-3/4"
             : "w-full rounded-2xl";
+      // 실제 치수(width/height)를 알면 브라우저가 자리를 미리 잡아 로딩 중 밀림이 없다.
+      const sizesAttr =
+        size === "작게"
+          ? "(min-width: 640px) 360px, 75vw"
+          : size === "중간"
+            ? "(min-width: 640px) 540px, 90vw"
+            : "(min-width: 768px) 720px, 100vw";
       return (
         <figure className={figureClass}>
-          <img src={src} alt={caption} loading="lazy" className={imgClass} />
+          <img
+            src={source.src}
+            srcSet={source.srcSet}
+            sizes={source.srcSet ? sizesAttr : undefined}
+            width={dim?.width}
+            height={dim?.height}
+            alt={caption}
+            loading="lazy"
+            decoding="async"
+            className={`h-auto ${imgClass}`}
+          />
           {caption && (
             <figcaption className="mt-3 text-center text-sm text-slate-400 dark:text-slate-500">
               {caption}

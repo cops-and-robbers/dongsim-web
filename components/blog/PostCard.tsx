@@ -24,8 +24,15 @@ export default function PostCard({ post, variant = "full" }: Props) {
         {post.coverUrl ? (
           <img
             src={withImageWidth(post.coverUrl, 800)}
+            srcSet={
+              post.coverUrl.startsWith("/api/blog/image")
+                ? `${withImageWidth(post.coverUrl, 640)} 640w, ${withImageWidth(post.coverUrl, 800)} 800w`
+                : undefined
+            }
+            sizes="(min-width: 1024px) 352px, (min-width: 640px) 50vw, 100vw"
             alt=""
             loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
           />
         ) : (

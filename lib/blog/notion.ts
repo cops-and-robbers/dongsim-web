@@ -190,11 +190,65 @@ export async function getBlocks(
           b.children = await getBlocks(b.id, depth + 1);
         })
     );
+    if (depth === 0) await attachImageDimensions(blocks);
     return blocks;
   } catch (e) {
     console.error("[blog] 본문 블록 조회 실패:", e);
     return [];
   }
+}
+
+export type ImageDimensions = { width: number; height: number };
+
+// 이미지 실제 치수 캐시 - 키는 블록 id + 수정 시각(이미지가 바뀌면 다시 잰다).
+// 치수를 알아야 렌더러가 자리를 미리 확보해 로딩 중 레이아웃 점프(CLS)가 없다.
+const dimensionCache = new Map<string, ImageDimensions | null>();
+
+// 본문 이미지 블록들의 가로세로 치수를 병렬로 알아내 블록에 붙인다.
+// 파일 전체가 아니라 앞부분(헤더)만 Range로 받아서 가볍다. 실패해도 글은 그대로 뜬다.
+async function attachImageDimensions(blocks: NotionBlock[]): Promise<void> {
+  const { default: sharp } = await import("sharp");
+
+  const probe = async (block: NotionBlock): Promise<void> => {
+    const image = block.image as
+      | { type: "file"; file: { url: string } }
+      | { type: "external"; external: { url: string } }
+      | undefined;
+    if (!image) return;
+    const url = image.type === "file" ? image.file.url : image.external.url;
+    const key = `${block.id}:${String(block.last_edited_time ?? "")}`;
+
+    if (!dimensionCache.has(key)) {
+      try {
+        const res = await fetch(url, {
+          headers: { Range: "bytes=0-131071" }, // 앞 128KB면 대부분 포맷의 헤더가 들어온다
+        });
+        const buf = Buffer.from(await res.arrayBuffer());
+        const meta = await sharp(buf).metadata();
+        // EXIF 회전(5~8)은 가로세로가 뒤집힌다 - 프록시가 .rotate()로 보정해 내보내는 기준에 맞춘다.
+        const swapped = (meta.orientation ?? 1) >= 5;
+        const width = swapped ? meta.height : meta.width;
+        const height = swapped ? meta.width : meta.height;
+        dimensionCache.set(
+          key,
+          width && height ? { width, height } : null
+        );
+      } catch {
+        dimensionCache.set(key, null); // 실패한 이미지는 재시도하지 않는다
+      }
+    }
+    const dim = dimensionCache.get(key);
+    if (dim) block.dimensions = dim;
+  };
+
+  const walk = (list: NotionBlock[]): NotionBlock[] =>
+    list.flatMap((b) => [b, ...(b.children ? walk(b.children) : [])]);
+
+  await Promise.all(
+    walk(blocks)
+      .filter((b) => b.type === "image")
+      .map(probe)
+  );
 }
 
 /** 이미지 프록시용 - 블록/페이지 커버의 현재(신선한) 서명 URL을 얻는다. */

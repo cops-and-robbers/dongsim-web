@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { preload } from "react-dom";
 import NotionBlocks from "@/components/blog/NotionBlocks";
 import PostCard from "@/components/blog/PostCard";
 import ArticleJsonLd from "@/components/seo/ArticleJsonLd";
@@ -85,6 +86,21 @@ export default async function BlogPostPage({ params }: Props) {
   // 관련 글 - 최신순에서 현재 글만 빼고 2개.
   const related = posts.filter((p) => p.id !== post.id).slice(0, 2);
 
+  // 커버는 이 페이지의 LCP - 프록시 이미지면 반응형 소스를 만들고 미리 불러온다.
+  const coverIsProxy = post.coverUrl?.startsWith("/api/blog/image") ?? false;
+  const coverSrcSet = coverIsProxy
+    ? `${withImageWidth(post.coverUrl!, 800)} 800w, ${withImageWidth(post.coverUrl!, 1600)} 1600w`
+    : undefined;
+  const coverSizes = coverSrcSet ? "(min-width: 768px) 720px, 100vw" : undefined;
+  if (post.coverUrl) {
+    preload(withImageWidth(post.coverUrl, 1600), {
+      as: "image",
+      fetchPriority: "high",
+      imageSrcSet: coverSrcSet,
+      imageSizes: coverSizes,
+    });
+  }
+
   return (
     <main className="py-16 md:py-24">
       <ArticleJsonLd post={post} />
@@ -107,6 +123,9 @@ export default async function BlogPostPage({ params }: Props) {
           {post.coverUrl && (
             <img
               src={withImageWidth(post.coverUrl, 1600)}
+              srcSet={coverSrcSet}
+              sizes={coverSizes}
+              fetchPriority="high"
               alt=""
               className="mt-10 aspect-video w-full rounded-3xl object-cover sm:-mx-6 sm:w-[calc(100%+3rem)] sm:max-w-none"
             />
