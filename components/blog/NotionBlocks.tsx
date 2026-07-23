@@ -142,11 +142,11 @@ function Block({ block }: { block: NotionBlock }) {
   switch (block.type) {
     case "paragraph":
       return p.rich_text?.length ? (
-        <p className="my-5 leading-[1.8]">
+        <p className="my-3 leading-[1.6]">
           <RichText items={p.rich_text} />
         </p>
       ) : (
-        <div className="h-5" />
+        <div className="h-3" />
       );
 
     case "heading_1":
@@ -345,7 +345,7 @@ function Block({ block }: { block: NotionBlock }) {
 
 export default function NotionBlocks({ blocks }: { blocks: NotionBlock[] }) {
   return (
-    <div className="text-[1.0625rem] text-slate-600 dark:text-slate-300">
+    <div className="text-lg text-slate-600 dark:text-slate-300">
       <Blocks blocks={blocks} />
     </div>
   );
