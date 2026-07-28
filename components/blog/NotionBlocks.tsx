@@ -180,13 +180,15 @@ function Block({ block }: { block: NotionBlock }) {
 
     case "callout":
       return (
-        <aside className="my-6 flex gap-3 rounded-2xl bg-brand-blue-bg px-5 py-4 dark:bg-app-black-900 dark:ring-1 dark:ring-white/10">
+        <aside className="my-6 flex items-start gap-3 rounded-2xl bg-brand-blue-bg px-5 py-4 dark:bg-app-black-900 dark:ring-1 dark:ring-white/10">
           {p.icon?.type === "emoji" && (
-            <span className="text-xl leading-relaxed" aria-hidden="true">
+            <span className="shrink-0 text-xl leading-relaxed" aria-hidden="true">
               {p.icon.emoji}
             </span>
           )}
-          <div className="min-w-0 leading-relaxed">
+          {/* 콜아웃 안 첫/마지막 블록의 바깥 여백을 없애 아이콘과 상단이 맞게 한다
+              (안에 제목 블록을 넣어도 정렬이 깨지지 않도록). */}
+          <div className="min-w-0 leading-relaxed *:first:mt-0 *:last:mb-0">
             <RichText items={p.rich_text} />
             {block.children && <Blocks blocks={block.children} />}
           </div>
