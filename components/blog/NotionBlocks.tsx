@@ -255,10 +255,10 @@ function Block({ block }: { block: NotionBlock }) {
         size === "기본" ? "my-10 sm:-mx-6" : "my-10 text-center";
       const imgClass =
         size === "작게"
-          ? "mx-auto w-3/4 rounded-2xl sm:w-1/2"
+          ? "mx-auto w-3/4 sm:w-1/2"
           : size === "중간"
-            ? "mx-auto w-9/10 rounded-2xl sm:w-3/4"
-            : "w-full rounded-2xl";
+            ? "mx-auto w-9/10 sm:w-3/4"
+            : "w-full";
       // 실제 치수(width/height)를 알면 브라우저가 자리를 미리 잡아 로딩 중 밀림이 없다.
       const sizesAttr =
         size === "작게"

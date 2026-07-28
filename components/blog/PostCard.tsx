@@ -20,7 +20,7 @@ export default function PostCard({ post, variant = "full" }: Props) {
 
   return (
     <Link href={`/blog/${post.slug}`} className="group">
-      <div className="aspect-3/2 w-full overflow-hidden rounded-2xl bg-brand-blue-bg dark:bg-app-black-800">
+      <div className="aspect-3/2 w-full overflow-hidden bg-brand-blue-bg dark:bg-app-black-800">
         {post.coverUrl ? (
           <img
             src={withImageWidth(post.coverUrl, 800)}

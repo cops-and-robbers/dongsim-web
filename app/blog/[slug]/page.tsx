@@ -127,7 +127,7 @@ export default async function BlogPostPage({ params }: Props) {
               sizes={coverSizes}
               fetchPriority="high"
               alt=""
-              className="mt-10 aspect-video w-full rounded-3xl object-cover sm:-mx-6 sm:w-[calc(100%+3rem)] sm:max-w-none"
+              className="mt-10 aspect-video w-full object-cover sm:-mx-6 sm:w-[calc(100%+3rem)] sm:max-w-none"
             />
           )}
 
