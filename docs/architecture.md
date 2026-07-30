@@ -9,7 +9,8 @@
 | `/` | 홈 - 게임 첫인상, 다운로드 유도 | |
 | `/game` | 게임 소개 - 규칙·기능·FAQ | 콘텐츠는 `lib/constants.ts` |
 | `/blog`, `/blog/[slug]` | 팀 블로그 "이야기" | 노션 CMS, `docs/blog-system.md` |
-| `/team` | 팀 소개 | 멤버 데이터는 `lib/constants.ts` |
+| `/team` | 회사 소개 - 소개·주요 연혁·수상/선정·구성원 미리보기 | 공식체(`~입니다`), 연혁/수상 데이터는 `lib/constants.ts` |
+| `/team/members` | 구성원 상세 - 멤버 그리드 + 도움 주신 분들 | 멤버 데이터는 `lib/constants.ts` |
 | `/design` | UI 스타일가이드 | 내부용, 내비·sitemap 미노출 |
 | `/download` | 기기 인식 스토어 리다이렉트 | 부스 QR이 가리키는 곳 |
 | `/join/[code]` | 게임 방 초대 딥링크 | `.well-known` 설정은 `next.config.ts` |
