@@ -33,7 +33,7 @@ export default function TeamHeroSection() {
                 </p>
                 <p>
                   대표 서비스 ‘경찰과 도둑’은 실시간 위치 데이터를 기반으로
-                  사용자 간 추적과 회피를 구현하여, 단순한 게임을 넘어 몰입감 있는
+                  서로를 쫓고 피하는 플레이를 통해, 단순한 게임을 넘어 몰입감 있는
                   오프라인 경험을 제공합니다.
                 </p>
               </div>
@@ -42,7 +42,7 @@ export default function TeamHeroSection() {
 
           <ScrollReveal animation="fadeInUp" delayMs={120}>
             {/* 모바일은 카드가 문단 바로 밑이라, 빼꼼 캐릭터가 앉을 공간을 위에 확보. */}
-            <div className="relative mx-auto mt-24 w-full max-w-80 lg:mx-0 lg:mt-0">
+            <div className="relative mx-auto mt-24 w-full max-w-80 translate-y-10 lg:mx-0 lg:mt-0">
               {/* 카드 뒤에서 머리가 빼꼼 - 라이트=냥파(경찰), 다크=도둥이(도둑). */}
               <div className="pointer-events-none absolute inset-x-0 bottom-full z-0 flex translate-y-1.25 justify-center">
                 <img
