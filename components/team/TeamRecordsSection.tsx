@@ -1,0 +1,67 @@
+import Badge from "@/components/ui/Badge";
+import Container from "@/components/ui/Container";
+import ScrollReveal from "@/components/ui/ScrollReveal";
+import { TEAM_AWARDS, TEAM_HISTORY } from "@/lib/constants";
+
+// 주요 연혁 + 수상 및 선정 이력. 장식 없이 날짜·제목·수상 라벨만으로 정렬한
+// 미니멀 리스트(SEED식). 날짜는 차분한 회색 모노, 포인트는 수상 배지에만.
+type Record = { date: string; title: string; award?: string };
+
+function RecordList({ items }: { items: readonly Record[] }) {
+  return (
+    <div
+      role="list"
+      className="divide-y divide-slate-200 dark:divide-white/10"
+    >
+      {items.map((r, i) => (
+        <ScrollReveal key={i} animation="fadeInUp" delayMs={i * 60}>
+          <div role="listitem" className="flex items-baseline gap-4 py-4">
+            <time className="w-24 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400 dark:text-slate-500">
+              {r.date}
+            </time>
+            <span className="min-w-0 flex-1 text-base font-semibold text-slate-900 sm:text-lg dark:text-white">
+              {r.title}
+            </span>
+            {r.award && (
+              <Badge variant="soft" className="shrink-0">
+                {r.award}
+              </Badge>
+            )}
+          </div>
+        </ScrollReveal>
+      ))}
+    </div>
+  );
+}
+
+export default function TeamRecordsSection() {
+  return (
+    <section className="bg-slate-50 py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black-900">
+      <Container>
+        <div className="grid gap-16 md:grid-cols-2 md:gap-20">
+          <div>
+            <ScrollReveal animation="fadeInUp">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+                걸어온 길
+              </h2>
+            </ScrollReveal>
+            <div className="mt-8">
+              <RecordList items={TEAM_HISTORY} />
+            </div>
+          </div>
+
+          <div>
+            <ScrollReveal animation="fadeInUp">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+                수상 및 선정 이력
+              </h2>
+            </ScrollReveal>
+            <div className="mt-8">
+              <RecordList items={TEAM_AWARDS} />
+            </div>
+          </div>
+        </div>
+      </Container>
+    </section>
+  );
+}

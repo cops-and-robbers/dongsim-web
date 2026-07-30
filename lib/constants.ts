@@ -26,7 +26,7 @@ export const NAV_ITEMS = [
 
 export type TeamMember = {
   name: string;
-  role: "Frontend" | "Backend" | "Design";
+  role: "Frontend" | "Backend" | "Design" | "Marketing";
   bio: string;
   photo: string;
   github?: string;
@@ -84,6 +84,22 @@ export const TEAM_MEMBERS: TeamMember[] = [
     photo: "/team/kim.jpeg",
     github: "https://github.com/muchaim811",
   },
+  {
+    name: "최유정",
+    role: "Marketing",
+    bio: "프로필 준비 중이에요.",
+    photo: "/team/choi.jpeg",
+  },
+];
+
+/** 회사 소개 카드에 행으로 나열하는 기본 정보. 항목은 아래에 계속 추가할 수 있다. */
+export const COMPANY_INFO: { label: string; value: string; href?: string }[] = [
+  { label: "설립", value: "2026년 4월" },
+  { label: "대표", value: FOUNDER.name },
+  { label: "팀 규모", value: `${TEAM_MEMBERS.length + 1}명` },
+  { label: "분야", value: "위치 기반 오프라인 게임" },
+  { label: "대표 서비스", value: BRAND.game },
+  { label: "문의", value: BRAND.email, href: `mailto:${BRAND.email}` },
 ];
 
 export type HelperRole = "infrastructure" | "qa";
@@ -137,6 +153,25 @@ export const HELPERS: Helper[] = [
   { name: "정명준", role: "qa", participationCount: 1 },
   { name: "강대현", role: "qa", participationCount: 1 },
   { name: "심 혁", role: "qa", participationCount: 1 },
+];
+
+export type HistoryEntry = { date: string; title: string };
+export type AwardEntry = { date: string; title: string; award: string };
+
+/** 주요 연혁 - 오래된 것부터 최신 순. */
+export const TEAM_HISTORY: HistoryEntry[] = [
+  { date: "2026.03.24", title: "경찰과 도둑 1차 QA 진행" },
+  { date: "2026.04.08", title: "동심지키미 설립" },
+  { date: "2026.04.28", title: "경찰과 도둑 2차 QA 진행" },
+  { date: "2026.07.04", title: "서울게임타운 박람회 ‘경찰과 도둑’ 부스 참여" },
+];
+
+/** 수상 및 선정 이력. */
+export const TEAM_AWARDS: AwardEntry[] = [
+  { date: "2026.05.08", title: "세종 창업 아이디어 리그", award: "대상" },
+  { date: "2026.03.06", title: "세종대학교 아롬 데모데이", award: "특별상" },
+  { date: "2026.07", title: "세종대학교 하반기 입주공모전", award: "우수 창업 아이템상" },
+  { date: "2026.07", title: "세종대학교 창업 동아리 SSUP", award: "선정" },
 ];
 
 export const HOW_STEPS = [
