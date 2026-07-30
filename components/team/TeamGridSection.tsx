@@ -1,7 +1,4 @@
-"use client";
-
 import Image from "next/image";
-import { useState } from "react";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import {
@@ -12,7 +9,6 @@ import {
   type Helper,
 } from "@/lib/constants";
 import Footprint from "@/components/icons/Footprint";
-import HiddenCharacter from "@/components/hunt/HiddenCharacter";
 
 function GithubIcon() {
   return (
@@ -30,22 +26,6 @@ function InstagramIcon() {
   );
 }
 
-const ALL_MEMBERS: TeamMember[] = [FOUNDER, ...TEAM_MEMBERS];
-const SATELLITE_COUNT = ALL_MEMBERS.length - 1;
-const RADIUS = 34;
-
-const SLOT_POSITIONS = Array.from({ length: SATELLITE_COUNT }, (_, i) => {
-  const angle = (i * 360) / SATELLITE_COUNT;
-  const rad = (angle - 90) * (Math.PI / 180);
-  return { x: Math.cos(rad) * RADIUS, y: Math.sin(rad) * RADIUS };
-});
-
-const roleAccent: Record<TeamMember["role"], string> = {
-  Frontend: "text-brand-blue dark:text-brand-green",
-  Backend: "text-slate-700 dark:text-slate-300",
-  Design: "text-emerald-700 dark:text-brand-green",
-};
-
 function SocialLink({
   href,
   label,
@@ -62,7 +42,6 @@ function SocialLink({
       target="_blank"
       rel="noreferrer"
       aria-label={label}
-      onClick={(e) => e.stopPropagation()}
       className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-900 hover:text-white dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white dark:hover:text-app-black"
     >
       {children}
@@ -70,303 +49,77 @@ function SocialLink({
   );
 }
 
-function TeamNode({
+const ALL_MEMBERS: TeamMember[] = [FOUNDER, ...TEAM_MEMBERS];
+
+const roleAccent: Record<TeamMember["role"], string> = {
+  Frontend: "text-brand-blue dark:text-brand-green",
+  Backend: "text-slate-700 dark:text-slate-300",
+  Design: "text-emerald-700 dark:text-brand-green",
+  Marketing: "text-amber-600 dark:text-amber-400",
+};
+
+function MemberCard({
   member,
-  isActive,
   isFounder,
-  onSelect,
 }: {
   member: TeamMember;
-  isActive: boolean;
   isFounder: boolean;
-  onSelect: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={isActive}
-      className="group relative flex flex-col items-center rounded-xl text-center outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-blue disabled:cursor-default dark:focus-visible:outline-brand-green"
-      aria-label={
-        isActive ? `${member.name} - 현재 중앙` : `${member.name} 이야기 보기`
-      }
-    >
-      <div
-        className={`relative overflow-hidden rounded-full transition-all duration-500 ease-out ${
-          isActive
-            ? "h-28 w-28 shadow-2xl ring-[6px] ring-brand-blue/25 sm:h-36 sm:w-36 dark:ring-brand-green/30"
-            : "h-16 w-16 shadow-md ring-2 ring-white group-hover:scale-105 group-hover:shadow-lg group-hover:ring-brand-blue sm:h-24 sm:w-24 dark:ring-white/25 dark:group-hover:ring-brand-green"
-        }`}
-      >
+    <article className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-app-black-900">
+      <div className="relative aspect-square w-full overflow-hidden bg-slate-100 dark:bg-app-black-800">
         <Image
           src={member.photo}
           alt={`${member.name} 프로필 사진`}
           fill
-          sizes="(max-width: 640px) 96px, 144px"
-          className="object-cover"
+          sizes="(min-width: 1024px) 280px, (min-width: 640px) 33vw, 50vw"
+          className="object-cover transition duration-500 group-hover:scale-105"
         />
+        {isFounder && (
+          <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand-blue backdrop-blur dark:bg-app-black/80 dark:text-brand-green">
+            Founder
+          </span>
+        )}
       </div>
-
-      <p
-        className={`whitespace-nowrap transition-all duration-500 ${
-          isActive
-            ? "mt-4 text-xl font-bold text-slate-900 sm:text-2xl dark:text-white"
-            : "mt-3 text-xs font-semibold text-slate-700 sm:text-sm dark:text-slate-300"
-        }`}
-      >
-        {member.name}
-      </p>
-
-      <div
-        aria-hidden={!isActive}
-        className={`flex flex-col items-center overflow-hidden transition-all duration-500 ${
-          isActive ? "mt-2 max-h-56 opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 p-4">
+        <div className="min-w-0">
+          <h3 className="truncate text-base font-bold text-slate-900 dark:text-white">
+            {member.name}
+          </h3>
           <p className={`text-sm font-medium ${roleAccent[member.role]}`}>
             {member.role}
           </p>
-          {isFounder && (
-            <span className="rounded-full bg-brand-blue/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-brand-blue dark:bg-brand-green/15 dark:text-brand-green">
-              Founder
-            </span>
-          )}
         </div>
-        <p className="mt-3 max-w-64 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-          {member.bio}
-        </p>
         {(member.github || member.instagram) && (
-          <div className="mt-4 flex items-center gap-2">
-            {member.github && (
-              <SocialLink href={member.github} label={`${member.name} GitHub`}>
-                <GithubIcon />
-              </SocialLink>
-            )}
-            {member.instagram && (
-              <SocialLink
-                href={member.instagram}
-                label={`${member.name} Instagram`}
-              >
-                <InstagramIcon />
-              </SocialLink>
-            )}
+          <div className="flex shrink-0 items-center gap-1.5">
+            <SocialLink href={member.github} label={`${member.name} GitHub`}>
+              <GithubIcon />
+            </SocialLink>
+            <SocialLink
+              href={member.instagram}
+              label={`${member.name} Instagram`}
+            >
+              <InstagramIcon />
+            </SocialLink>
           </div>
         )}
       </div>
-    </button>
-  );
-}
-
-function TeamWeb() {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const positions = ALL_MEMBERS.map((_, i) => {
-    if (i === activeIndex) return { x: 0, y: 0, isActive: true };
-    const slot = i < activeIndex ? i : i - 1;
-    const { x, y } = SLOT_POSITIONS[slot];
-    return { x, y, isActive: false };
-  });
-
-  return (
-    <div className="relative mx-auto mt-16 aspect-square w-full max-w-170">
-      {/* Subtle dot grid background */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(rgba(15,23,42,0.055)_1px,transparent_1px)] bg-size-[18px_18px] opacity-60 dark:bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)]"
-      />
-      {/* Soft center glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[60%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-blue/10 blur-3xl dark:bg-brand-green/10"
-      />
-
-      <svg
-        viewBox="-50 -50 100 100"
-        preserveAspectRatio="none"
-        className="pointer-events-none absolute inset-0 h-full w-full text-brand-blue/25 dark:text-brand-green/25"
-        aria-hidden="true"
-      >
-        {SLOT_POSITIONS.map((p, i) => (
-          <line
-            key={i}
-            x1="0"
-            y1="0"
-            x2={p.x}
-            y2={p.y}
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeDasharray="6 7"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
-      </svg>
-
-      {ALL_MEMBERS.map((m, i) => {
-        const p = positions[i];
-        return (
-          <div
-            key={m.name}
-            className="absolute -translate-x-1/2 -translate-y-1/2 transition-[left,top] duration-500 ease-out"
-            style={{
-              left: `${50 + p.x}%`,
-              top: `${50 + p.y}%`,
-            }}
-          >
-            <TeamNode
-              member={m}
-              isActive={p.isActive}
-              isFounder={i === 0}
-              onSelect={() => setActiveIndex(i)}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function MobileTeamList() {
-  return (
-    <div className="mt-12 space-y-8 md:hidden">
-      <article className="flex flex-col items-center rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-white/10 dark:bg-app-black-900">
-        <div className="relative h-28 w-28 overflow-hidden rounded-full shadow-xl ring-[6px] ring-brand-blue/25 dark:ring-brand-green/30">
-          <Image
-            src={FOUNDER.photo}
-            alt={`${FOUNDER.name} 프로필 사진`}
-            fill
-            sizes="112px"
-            className="object-cover"
-          />
-        </div>
-        <span className="mt-4 inline-flex rounded-full bg-brand-blue/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-brand-blue dark:bg-brand-green/15 dark:text-brand-green">
-          Founder
-        </span>
-        <h3 className="mt-3 text-xl font-bold text-slate-900 dark:text-white">
-          {FOUNDER.name}
-        </h3>
-        <p className={`text-sm font-medium ${roleAccent[FOUNDER.role]}`}>
-          {FOUNDER.role}
-        </p>
-        <blockquote className="mt-4 text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-200">
-          &ldquo;경찰과 도둑 같이 만들래?&rdquo;
-        </blockquote>
-        <p className="mt-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-          {FOUNDER.bio}
-        </p>
-        {(FOUNDER.github || FOUNDER.instagram) && (
-          <div className="mt-4 flex items-center gap-2">
-            {FOUNDER.github && (
-              <SocialLink
-                href={FOUNDER.github}
-                label={`${FOUNDER.name} GitHub`}
-              >
-                <GithubIcon />
-              </SocialLink>
-            )}
-            {FOUNDER.instagram && (
-              <SocialLink
-                href={FOUNDER.instagram}
-                label={`${FOUNDER.name} Instagram`}
-              >
-                <InstagramIcon />
-              </SocialLink>
-            )}
-          </div>
-        )}
-      </article>
-
-      <div className="flex items-center gap-3">
-        <div className="flex-1 border-t border-dashed border-brand-blue/30 dark:border-brand-green/30" />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-          함께 만드는 사람들
-        </span>
-        <div className="flex-1 border-t border-dashed border-brand-blue/30 dark:border-brand-green/30" />
-      </div>
-
-      <ul className="grid grid-cols-2 gap-3">
-        {TEAM_MEMBERS.map((m) => (
-          <li key={m.name}>
-            <article className="flex h-full flex-col items-center rounded-2xl bg-white p-5 text-center ring-1 ring-slate-200 dark:bg-app-black-900 dark:ring-white/10">
-              <div className="relative h-16 w-16 overflow-hidden rounded-full shadow-md ring-2 ring-white dark:ring-white/20">
-                <Image
-                  src={m.photo}
-                  alt={`${m.name} 프로필 사진`}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
-              </div>
-              <p className="mt-3 text-sm font-bold text-slate-900 dark:text-white">
-                {m.name}
-              </p>
-              <p className={`text-xs font-medium ${roleAccent[m.role]}`}>
-                {m.role}
-              </p>
-              {(m.github || m.instagram) && (
-                <div className="mt-3 flex items-center gap-1.5">
-                  {m.github && (
-                    <SocialLink href={m.github} label={`${m.name} GitHub`}>
-                      <GithubIcon />
-                    </SocialLink>
-                  )}
-                  {m.instagram && (
-                    <SocialLink
-                      href={m.instagram}
-                      label={`${m.name} Instagram`}
-                    >
-                      <InstagramIcon />
-                    </SocialLink>
-                  )}
-                </div>
-              )}
-            </article>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </article>
   );
 }
 
 export default function TeamGridSection() {
   return (
-    <section className="relative bg-white py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black">
-      <HiddenCharacter
-        id="grid1"
-        pose="peek"
-        flip
-        className="right-[8%] top-7 h-11 w-14"
-      />
-      <HiddenCharacter
-        id="grid2"
-        pose="peek"
-        className="left-[14%] bottom-7 h-11 w-14"
-      />
+    <section className="bg-white pb-24 pt-10 transition-colors duration-500 sm:pb-32 sm:pt-14 dark:bg-app-black">
       <Container>
         <ScrollReveal animation="fadeInUp">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-              만드는 사람들
-            </p>
-            <h2 className="mt-3 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-5xl dark:text-white">
-              일곱 명이 함께 만들어요
-            </h2>
-            <p className="mt-5 text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-              상희의 &ldquo;경찰과 도둑 같이 만들래?&rdquo; 한마디에서 시작된
-              팀이에요.
-            </p>
-          </div>
-        </ScrollReveal>
-
-        <ScrollReveal animation="fadeInUp" delayMs={100}>
-          <div className="hidden md:block">
-            <TeamWeb />
-            <p className="mt-8 text-center text-xs text-slate-400 dark:text-slate-500">
-              사진을 눌러 다른 팀원 이야기를 만나보세요
-            </p>
-          </div>
-          <MobileTeamList />
+          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+            {ALL_MEMBERS.map((m, i) => (
+              <li key={m.name}>
+                <MemberCard member={m} isFounder={i === 0} />
+              </li>
+            ))}
+          </ul>
         </ScrollReveal>
 
         <CreditsSection />
@@ -497,7 +250,7 @@ function SparkleDivider() {
 function CreditsSection() {
   const backers = HELPERS.filter((h) => h.role === "infrastructure");
   const playtesters = HELPERS.filter((h) => h.role === "qa").sort(
-    (a, b) => b.participationCount - a.participationCount,
+    (a, b) => b.participationCount - a.participationCount
   );
 
   return (

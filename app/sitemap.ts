@@ -39,6 +39,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/team/members`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
       images: [
         `${BASE_URL}/team/park.jpeg`,
         `${BASE_URL}/team/lee.jpeg`,
