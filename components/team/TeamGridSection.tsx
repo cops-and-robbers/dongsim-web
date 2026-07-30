@@ -53,7 +53,7 @@ const ALL_MEMBERS: TeamMember[] = [FOUNDER, ...TEAM_MEMBERS];
 
 const roleAccent: Record<TeamMember["role"], string> = {
   Frontend: "text-brand-blue dark:text-brand-green",
-  Backend: "text-slate-700 dark:text-slate-300",
+  Backend: "text-rose-500 dark:text-rose-400",
   Design: "text-emerald-700 dark:text-brand-green",
   Marketing: "text-amber-600 dark:text-amber-400",
 };
