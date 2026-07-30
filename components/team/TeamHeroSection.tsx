@@ -14,7 +14,7 @@ export default function TeamHeroSection() {
   return (
     <section className="border-b border-slate-200 bg-white transition-colors duration-500 dark:border-white/10 dark:bg-app-black">
       <Container className="py-24 sm:py-32">
-        <div className="grid gap-12 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-16">
+        <div className="grid gap-12 lg:grid-cols-[1fr_auto] lg:items-end lg:gap-16">
           <ScrollReveal animation="fadeInUp">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-blue dark:text-brand-green">
@@ -42,20 +42,20 @@ export default function TeamHeroSection() {
 
           <ScrollReveal animation="fadeInUp" delayMs={120}>
             {/* 모바일은 카드가 문단 바로 밑이라, 빼꼼 캐릭터가 앉을 공간을 위에 확보. */}
-            <div className="relative mx-auto mt-28 w-full max-w-80 lg:mx-0 lg:mt-0">
+            <div className="relative mx-auto mt-24 w-full max-w-80 lg:mx-0 lg:mt-0">
               {/* 카드 뒤에서 머리가 빼꼼 - 라이트=냥파(경찰), 다크=도둥이(도둑). */}
               <div className="pointer-events-none absolute inset-x-0 bottom-full z-0 flex translate-y-1.25 justify-center">
                 <img
                   src="/characters/police-win-body.svg"
                   alt=""
                   style={pop}
-                  className="h-auto w-[56%] drop-shadow-sm dark:hidden"
+                  className="h-auto w-[42%] drop-shadow-sm dark:hidden"
                 />
                 <img
                   src="/characters/robber-win-body.svg"
                   alt=""
                   style={pop}
-                  className="hidden h-auto w-1/2 drop-shadow-sm dark:block"
+                  className="hidden h-auto w-[38%] drop-shadow-sm dark:block"
                 />
               </div>
 
@@ -94,36 +94,36 @@ export default function TeamHeroSection() {
               </div>
 
               {/* 카드 위 모서리를 잡은 양손 (z-20, 카드 앞). 경찰·도둑 손 위치가 달라 테마별로 분리. */}
-              <div className="pointer-events-none absolute left-[20%] top-0 z-20 -translate-y-1/2 dark:hidden">
+              <div className="pointer-events-none absolute left-[27%] top-0 z-20 -translate-y-1/2 dark:hidden">
                 <img
                   src="/characters/police-win-arm-left.svg"
                   alt=""
                   style={pop}
-                  className="h-auto w-9"
+                  className="h-auto w-7"
                 />
               </div>
-              <div className="pointer-events-none absolute right-[20%] top-0 z-20 -translate-y-1/2 dark:hidden">
+              <div className="pointer-events-none absolute right-[27%] top-0 z-20 -translate-y-1/2 dark:hidden">
                 <img
                   src="/characters/police-win-arm-right.svg"
                   alt=""
                   style={pop}
-                  className="h-auto w-9"
+                  className="h-auto w-7"
                 />
               </div>
-              <div className="pointer-events-none absolute left-[31%] top-0 z-20 hidden -translate-y-1/2 dark:block">
+              <div className="pointer-events-none absolute left-[37%] top-0 z-20 hidden -translate-y-1/2 dark:block">
                 <img
                   src="/characters/robber-win-arm-left.svg"
                   alt=""
                   style={pop}
-                  className="h-auto w-5"
+                  className="h-auto w-4"
                 />
               </div>
-              <div className="pointer-events-none absolute right-[31%] top-0 z-20 hidden -translate-y-1/2 dark:block">
+              <div className="pointer-events-none absolute right-[37%] top-0 z-20 hidden -translate-y-1/2 dark:block">
                 <img
                   src="/characters/robber-win-arm-right.svg"
                   alt=""
                   style={pop}
-                  className="h-auto w-5"
+                  className="h-auto w-4"
                 />
               </div>
             </div>
