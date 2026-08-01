@@ -126,7 +126,7 @@ export default async function BlogPostPage({ params }: Props) {
               srcSet={coverSrcSet}
               sizes={coverSizes}
               fetchPriority="high"
-              alt=""
+              alt={post.title}
               className="mt-10 aspect-3/2 w-full object-cover sm:-mx-6 sm:w-[calc(100%+3rem)] sm:max-w-none"
             />
           )}

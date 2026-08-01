@@ -30,7 +30,7 @@ export default function PostCard({ post, variant = "full" }: Props) {
                 : undefined
             }
             sizes="(min-width: 1024px) 352px, (min-width: 640px) 50vw, 100vw"
-            alt=""
+            alt={post.title}
             loading="lazy"
             decoding="async"
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
