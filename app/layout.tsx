@@ -96,7 +96,7 @@ export const metadata: Metadata = {
   verification: {
     google: "EM3kJB3fS-BFeyM4ZUps2_vema1a9ZDCeGbLfnhOkNk",
     other: {
-      "naver-site-verification": "5e0fd8064fc8996b8716790efeafbb9385e3e420",
+      "naver-site-verification": "90903d1a4454a1e48eb6e2d8e0b4c2e71cd535e0",
     },
   },
 };
