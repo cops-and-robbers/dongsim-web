@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getPosts } from "@/lib/blog/notion";
 
-const BASE_URL = "https://copsnro66ers.site";
+const BASE_URL = "https://copsandrobbers.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();

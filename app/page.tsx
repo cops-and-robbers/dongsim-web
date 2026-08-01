@@ -105,7 +105,7 @@ const gameSchema = {
       applicationCategory: "GameApplication",
       operatingSystem: "iOS, Android",
       inLanguage: "ko-KR",
-      url: "https://copsnro66ers.site",
+      url: SITE_URL,
       installUrl: APP_LINKS.appStore,
       downloadUrl: [APP_LINKS.appStore, APP_LINKS.googlePlay],
       offers: {
@@ -116,7 +116,7 @@ const gameSchema = {
       author: {
         "@type": "Organization",
         name: "동심지키미",
-        url: "https://copsnro66ers.site",
+        url: SITE_URL,
       },
     },
     {
@@ -129,7 +129,7 @@ const gameSchema = {
       description:
         "GPS 기반 오프라인 술래잡기 게임. 친구들과 밖에서 직접 뛰며 놀던 그 놀이를 이제 앱과 함께 즐기세요.",
       inLanguage: "ko-KR",
-      url: "https://copsnro66ers.site",
+      url: SITE_URL,
       installUrl: APP_LINKS.appStore,
       downloadUrl: [APP_LINKS.appStore, APP_LINKS.googlePlay],
       offers: {
@@ -140,7 +140,7 @@ const gameSchema = {
       author: {
         "@type": "Organization",
         name: "동심지키미",
-        url: "https://copsnro66ers.site",
+        url: SITE_URL,
       },
     },
     {

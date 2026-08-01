@@ -12,7 +12,7 @@ GPS 기반 실외 술래잡기 게임 **경찰과 도둑**의 공식 홈페이�
 게임 소개, 팀 블로그, 앱으로 이어지는 딥링크, 오프라인 행사 운영 도구까지 -
 팀 **동심지키미**의 웹 전초기지예요.
 
-[홈페이지](https://copsnro66ers.site) · [Google Play](https://play.google.com/store/apps/details?id=com.elipair.copsandrobbers) · [App Store](https://apps.apple.com/kr/app/경찰과도둑/id6756843948) · [Instagram](https://www.instagram.com/cops._.robbers)
+[홈페이지](https://copsandrobbers.app) · [Google Play](https://play.google.com/store/apps/details?id=com.elipair.copsandrobbers) · [App Store](https://apps.apple.com/kr/app/경찰과도둑/id6756843948) · [Instagram](https://www.instagram.com/cops._.robbers)
 
 </div>
 
@@ -85,12 +85,12 @@ pnpm dev
 | 사이트 문구(카피)를 쓰거나 고쳐요 | [docs/copy-guide.md](./docs/copy-guide.md) |
 | 블로그 시스템(노션 CMS)을 개발해요 | [docs/blog-system.md](./docs/blog-system.md) |
 | 빌드·배포가 이상해요 | [docs/gotchas.md](./docs/gotchas.md) |
-| UI 컴포넌트를 눈으로 보고 싶어요 | 사이트의 [/design](https://copsnro66ers.site/design) 페이지 |
+| UI 컴포넌트를 눈으로 보고 싶어요 | 사이트의 [/design](https://copsandrobbers.app/design) 페이지 |
 | AI 도구(Claude 등)로 작업해요 | [AGENTS.md](./AGENTS.md)가 자동 로드돼요 |
 
 ## 👮🐭 팀
 
-**동심지키미** - 경찰과 도둑을 만드는 7인 팀입니다. [팀 소개](https://copsnro66ers.site/team)에서 만나요.
+**동심지키미** - 경찰과 도둑을 만드는 7인 팀입니다. [팀 소개](https://copsandrobbers.app/team)에서 만나요.
 
 <div align="center">
 

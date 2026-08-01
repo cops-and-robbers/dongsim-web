@@ -1,4 +1,4 @@
-export const SITE_URL = "https://copsnro66ers.site";
+export const SITE_URL = "https://copsandrobbers.app";
 
 export const APP_LINKS = {
   googlePlay:
