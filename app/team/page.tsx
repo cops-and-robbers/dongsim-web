@@ -6,7 +6,7 @@ import TeamPreviewSection from "@/components/team/TeamPreviewSection";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 
 export const metadata: Metadata = {
-  title: "팀 소개",
+  title: "동심지키미 팀 소개",
   description:
     "동심지키미 - 게임으로 사람과 사람을 연결하는 팀. 위치 기반 오프라인 게임 ‘경찰과 도둑’을 기획·개발하며, 연혁과 수상·선정 이력을 소개합니다.",
   keywords: [
