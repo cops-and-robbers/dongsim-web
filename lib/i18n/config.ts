@@ -60,17 +60,28 @@ export function appIconSrc(locale: Locale): string {
   return `/brand/i18n/app-icon-${locale}.svg`;
 }
 
-// en·ja에서 실제로 번역되어 열리는 기준 경로. 그 외(/blog, /terms 등)는
-// 미번역이라 proxy가 한국어(루트)로 리다이렉트한다. 페이지를 번역할 때마다 추가.
-export const TRANSLATED_PATHS: readonly string[] = [
-  "/",
-  "/game",
-  "/team",
-  "/play",
+// 영어·일본어로 번역하지 않고 한국어에만 존재하는 실제 페이지들.
+// /en·/ja로 접근하면 proxy가 한국어로 리다이렉트한다(콘텐츠는 그것뿐이므로).
+// 이 목록에 없는 /en·/ja 경로는 그냥 통과 → 없는 경로면 해당 언어의 404가 뜬다.
+export const KO_ONLY_PATHS: readonly string[] = [
+  "/blog",
+  "/team/members",
+  "/design",
+  "/download",
+  "/join",
+  "/event",
+  "/photobooth",
+  "/p",
+  "/terms",
+  "/privacy",
+  "/location",
+  "/marketing",
 ];
 
-export function isTranslatedPath(basePath: string): boolean {
-  return TRANSLATED_PATHS.includes(basePath);
+export function isKoOnlyPath(basePath: string): boolean {
+  return KO_ONLY_PATHS.some(
+    (path) => basePath === path || basePath.startsWith(`${path}/`),
+  );
 }
 
 // 특정 기준 경로(ko 기준, "/"로 시작)의 언어별 절대 URL 맵. hreflang·sitemap 공용.
