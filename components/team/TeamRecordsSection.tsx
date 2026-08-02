@@ -15,11 +15,14 @@ function RecordList({ items }: { items: readonly Record[] }) {
     >
       {items.map((r, i) => (
         <ScrollReveal key={i} animation="fadeInUp" delayMs={i * 60}>
-          <div role="listitem" className="flex items-baseline gap-4 py-4">
+          <div
+            role="listitem"
+            className="flex flex-wrap items-baseline gap-x-4 gap-y-1.5 py-4"
+          >
             <time className="w-24 shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-400 dark:text-slate-500">
               {r.date}
             </time>
-            <span className="min-w-0 flex-1 text-base font-semibold text-slate-900 sm:text-lg dark:text-white">
+            <span className="min-w-40 flex-1 text-base font-semibold text-slate-900 sm:text-lg dark:text-white">
               {r.title}
             </span>
             {r.award && (
