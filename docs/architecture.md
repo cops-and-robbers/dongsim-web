@@ -7,9 +7,9 @@
 | 경로 | 역할 | 비고 |
 | --- | --- | --- |
 | `/` | 홈 - 게임 첫인상, 다운로드 유도 | |
-| `/game` | 게임 소개 - 규칙·기능·FAQ | 콘텐츠는 `lib/constants.ts` |
+| `/game` | 게임 소개 - 규칙·기능·FAQ | 카피는 `lib/i18n/messages.ts`, `/en`·`/ja` 지원 |
 | `/blog`, `/blog/[slug]` | 팀 블로그 "이야기" | 노션 CMS, `docs/blog-system.md` |
-| `/team` | 회사 소개 - 소개·주요 연혁·수상/선정·구성원 미리보기 | 공식체(`~입니다`), 연혁/수상 데이터는 `lib/constants.ts` |
+| `/team` | 회사 소개 - 소개·연혁·수상·QA·구성원 미리보기 | 카피는 `lib/i18n/messages.ts`, `/en`·`/ja` 지원(구성원 미리보기는 ko 전용) |
 | `/team/members` | 구성원 상세 - 멤버 그리드 + 도움 주신 분들 | 멤버 데이터는 `lib/constants.ts` |
 | `/design` | UI 스타일가이드 | 내부용, 내비·sitemap 미노출 |
 | `/download` | 기기 인식 스토어 리다이렉트 | 부스 QR이 가리키는 곳 |
@@ -28,7 +28,7 @@
 | `/api/photobooth/upload` | Vercel Blob 업로드 토큰 발급 (운영 시간 게이트 포함) |
 | `/api/booth/scores` | 미니게임 리더보드 (Redis 정렬 집합, 닉네임별 최고점) |
 
-`/rss.xml`(route)과 `sitemap.ts`, `robots.ts`도 `app/` 루트에 있다.
+`/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 다국어 라우팅용 `proxy.ts`도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/en/*`·`app/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
 
 ## 컴포넌트 (`components/`)
 
@@ -36,7 +36,8 @@
 | --- | --- |
 | `ui/` | **재사용 프리미티브** - Button, Badge, SectionHeading, Section, CharacterDuo, EmptyState, Modal, Input, CaptionedFigure, Container, ScrollReveal, DownloadButtons. 새 UI는 여기부터. 전시장은 `/design` |
 | `blog/` | 노션 블록 → 사이트 마크업 렌더러 |
-| `layout/` | Header, Footer, MobileMenu (내비는 `lib/constants.ts`의 `NAV_ITEMS`) |
+| `layout/` | Header, Footer, MobileMenu, LanguageSwitcher - 로케일 인식(내비·문구는 `lib/i18n/chrome.ts`) |
+| `i18n/` | LocaleProvider(`useLocale`), SkipLink |
 | `home/`, `game/`, `team/`, `event/` | 각 페이지 전용 섹션 |
 | `photobooth/` | 키오스크 단계별 화면 + `schedule.ts`(게이트) + `frames.ts`(프레임 좌표) |
 | `booth/` | 부스 미니게임 |
@@ -45,7 +46,8 @@
 
 ## 데이터·설정
 
-- `lib/constants.ts` - 사이트 전역 상수의 단일 출처: 내비, 브랜드, 팀원(블로그 작성자 매핑에도 사용), 게임 소개 콘텐츠
+- `lib/constants.ts` - 사이트 전역 상수: 브랜드, 팀원(블로그 작성자 매핑에도 사용), 앱 링크, 게임 기능 목업 순서. 사용자에게 보이는 카피는 여기 두지 않는다
+- `lib/i18n/` - 다국어: 로케일 설정·경로 헬퍼(`config.ts`), 페이지 카피 단일 출처(`messages.ts`), 공통 UI 문구(`chrome.ts`). 상세는 `docs/i18n.md`
 - `lib/blog/` - 노션 데이터 레이어 (`notion.ts`), 작성자 매핑(`authors.ts`), 날짜 포맷(`format.ts`)
 - `public/` - 정적 에셋: `brand/`(로고), `characters/`, `event/`, `photobooth/`, `team/`(프로필 사진)
 - `next.config.ts` - 이미지 설정, `.well-known` 헤더, OG 라우트 파일 트레이싱
