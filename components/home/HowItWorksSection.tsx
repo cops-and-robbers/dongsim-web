@@ -3,9 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-import { HOW_STEPS } from "@/lib/constants";
+import type { Messages } from "@/lib/i18n/messages";
 
-export default function HowItWorksSection() {
+export default function HowItWorksSection({
+  copy,
+}: {
+  copy: Messages["home"]["how"];
+}) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [progress, setProgress] = useState(0);
 
@@ -48,12 +52,12 @@ export default function HowItWorksSection() {
         <ScrollReveal animation="fadeInUp">
           <div className="max-w-2xl">
             <h2 className="text-balance text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl md:text-5xl dark:text-white">
-              앱을 열고,
+              {copy.title1}
               <br />
-              공원으로 나가면 끝
+              {copy.title2}
             </h2>
             <p className="mt-5 text-pretty text-base leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">
-              친구한테 코드 보내고, 지도에 구역만 그리면 바로 시작이에요.
+              {copy.sub}
             </p>
           </div>
         </ScrollReveal>
@@ -70,8 +74,8 @@ export default function HowItWorksSection() {
           />
 
           <ol className="relative grid gap-10 md:grid-cols-4 md:gap-6">
-            {HOW_STEPS.map((step, i) => {
-              const threshold = (i + 0.5) / HOW_STEPS.length;
+            {copy.steps.map((step, i) => {
+              const threshold = (i + 0.5) / copy.steps.length;
               const isActive = progress >= threshold;
               return (
                 <li key={step.title}>

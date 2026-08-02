@@ -10,7 +10,7 @@ const INITIAL_SECONDS = 30 * 60;
  * 카운트다운이 끝까지(0) 가면 승리 모달을 띄운다.
  * (별도로 /team 페이지의 숨은 캐릭터 잡기 이스터에그도 결과 모달을 띄운다.)
  */
-export default function LiveCountdown() {
+export default function LiveCountdown({ label }: { label: string }) {
   const [seconds, setSeconds] = useState(INITIAL_SECONDS);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -39,7 +39,7 @@ export default function LiveCountdown() {
     <>
       <div className="hero-anim-chip absolute right-5 top-5 rounded-xl bg-white/95 px-3 py-2 shadow-sm ring-1 ring-slate-200 backdrop-blur dark:bg-app-black-900/90 dark:ring-white/10">
         <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
-          남은 시간
+          {label}
         </p>
         <p className="font-mono text-sm font-bold tabular-nums text-slate-900 dark:text-white">
           {mm}:{ss}

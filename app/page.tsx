@@ -3,7 +3,10 @@ import CharactersSection from "@/components/home/CharactersSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import MinigameTeaserSection from "@/components/home/MinigameTeaserSection";
+import type { Metadata } from "next";
 import CtaSection from "@/components/home/CtaSection";
+import { getMessages } from "@/lib/i18n/messages";
+import { alternateLanguages } from "@/lib/i18n/config";
 import EventModal from "@/components/home/EventModal";
 import { APP_LINKS, SITE_URL } from "@/lib/constants";
 
@@ -157,7 +160,18 @@ const gameSchema = {
   ],
 };
 
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+    languages: {
+      ...alternateLanguages(SITE_URL),
+      "x-default": `${SITE_URL}/`,
+    },
+  },
+};
+
 export default function HomePage() {
+  const copy = getMessages("ko").home;
   return (
     <>
       <script
@@ -167,7 +181,7 @@ export default function HomePage() {
         }}
       />
       <EventModal />
-      <HeroSection />
+      <HeroSection copy={copy.hero} locale="ko" />
       <section
         id="game-intro"
         className="sr-only"
@@ -219,11 +233,11 @@ export default function HomePage() {
           무료로 다운로드할 수 있습니다.
         </p>
       </section>
-      <CharactersSection />
-      <HowItWorksSection />
-      <FeaturesSection />
-      <MinigameTeaserSection />
-      <CtaSection />
+      <CharactersSection copy={copy.characters} />
+      <HowItWorksSection copy={copy.how} />
+      <FeaturesSection copy={copy.features} />
+      <MinigameTeaserSection copy={copy.minigame} />
+      <CtaSection copy={copy.finalCta} />
     </>
   );
 }

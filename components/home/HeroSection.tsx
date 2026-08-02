@@ -6,6 +6,8 @@ import CopChaseIcon from "@/components/characters/CopChaseIcon";
 import RobberFleeIcon from "@/components/characters/RobberFleeIcon";
 import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
 import LiveCountdown from "./LiveCountdown";
+import { BRAND_NAME, appIconSrc, type Locale } from "@/lib/i18n/config";
+import type { Messages } from "@/lib/i18n/messages";
 
 // 생쥐 발자국 트레일 - 작은 발바닥이 좌·우 교차로 촘촘히 찍히며 도둑을 향해 이어진다.
 const HERO_TRACKS = [
@@ -21,7 +23,7 @@ const HERO_TRACKS = [
   { x: 366, y: 341, s: 20, r: 126, o: 0.97, d: 1010 },
 ];
 
-function GameScene() {
+function GameScene({ timeLeft }: { timeLeft: string }) {
   return (
     <div className="relative mx-auto aspect-square w-full max-w-120">
       <svg
@@ -118,12 +120,18 @@ function GameScene() {
         </div>
       </div>
 
-      <LiveCountdown />
+      <LiveCountdown label={timeLeft} />
     </div>
   );
 }
 
-export default function HeroSection() {
+export default function HeroSection({
+  copy,
+  locale,
+}: {
+  copy: Messages["home"]["hero"];
+  locale: Locale;
+}) {
   return (
     <section className="relative overflow-hidden bg-white transition-colors duration-500 dark:bg-app-black">
       <Container className="pt-12 pb-16 md:pt-16 md:pb-20 lg:pt-20 lg:pb-24">
@@ -131,28 +139,25 @@ export default function HeroSection() {
           <ScrollReveal animation="fadeInUp">
             <div>
               <h1 className="text-balance text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl md:text-6xl lg:text-7xl dark:text-white">
-                경찰과 도둑이
+                {copy.title1}
                 <br />
-                돌아왔어요
+                {copy.title2}
               </h1>
 
               <div className="mt-8 lg:hidden">
-                <GameScene />
+                <GameScene timeLeft={copy.timeLeft} />
               </div>
 
               <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-slate-600 sm:mt-8 sm:text-lg md:text-xl dark:text-slate-300">
-                스마트폰 하나면 준비 끝이에요.
-                <span className="hidden lg:inline">
-                  {" "}
-                  진행은 앱이 알아서 해요.
-                </span>
+                {copy.lead}
+                <span className="hidden lg:inline"> {copy.leadExtra}</span>
               </p>
 
               <div className="mt-10 flex flex-col gap-5">
                 <div className="inline-flex w-fit items-center gap-3.5 rounded-2xl bg-slate-50/80 p-2 pr-5 ring-1 ring-slate-200/70 backdrop-blur dark:bg-white/6 dark:ring-white/10">
                   <Image
-                    src="/brand/app-icon.svg"
-                    alt="경찰과 도둑 앱 아이콘"
+                    src={appIconSrc(locale)}
+                    alt={BRAND_NAME[locale]}
                     width={52}
                     height={52}
                     unoptimized
@@ -160,11 +165,11 @@ export default function HeroSection() {
                   />
                   <div className="leading-tight">
                     <p className="text-sm font-bold text-slate-900 dark:text-white">
-                      경찰과 도둑
+                      {BRAND_NAME[locale]}
                     </p>
                     <div className="mt-1 flex items-center gap-1.5">
                       <span className="rounded-full bg-brand-blue/10 px-2 py-0.5 text-[11px] font-bold text-brand-blue dark:bg-brand-green/15 dark:text-brand-green">
-                        무료
+                        {copy.free}
                       </span>
                       <span className="text-xs text-slate-500 dark:text-slate-400">
                         iOS · Android
@@ -176,13 +181,13 @@ export default function HeroSection() {
               </div>
 
               <p className="mt-6 text-sm text-slate-400 dark:text-slate-500">
-                최대 50명까지 함께 플레이
+                {copy.players}
               </p>
             </div>
           </ScrollReveal>
 
           <div className="hidden lg:block">
-            <GameScene />
+            <GameScene timeLeft={copy.timeLeft} />
           </div>
         </div>
       </Container>

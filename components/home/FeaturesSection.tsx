@@ -1,6 +1,7 @@
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
+import type { Messages } from "@/lib/i18n/messages";
 
 function ZoneVisual() {
   return (
@@ -181,52 +182,41 @@ function ChatVisual() {
   );
 }
 
-const ITEMS = [
-  {
-    title: "주기적으로 남는 발자국",
-    description:
-      "설정한 주기마다 도둑 위치가 발자국으로 찍혀요. 경찰이 따라갈 유일한 단서예요.",
-    visual: <ShoeprintVisual />,
-  },
-  {
-    title: "구역과 감옥, 손끝으로",
-    description:
-      "지도를 드래그해서 플레이 구역과 감옥을 그려요. 구역 밖으로 나가면 바로 경고가 떠요.",
-    visual: <ZoneVisual />,
-  },
-  {
-    title: "팀원에게만 닿는 대화",
-    description:
-      "경찰은 경찰끼리, 도둑은 도둑끼리. 전략이 상대팀으로 새어나가지 않아요.",
-    visual: <ChatVisual />,
-  },
+// 비주얼은 언어 무관 - 사전의 items 순서(발자국·구역·채팅)와 맞춘다.
+const VISUALS = [
+  <ShoeprintVisual key="shoeprint" />,
+  <ZoneVisual key="zone" />,
+  <ChatVisual key="chat" />,
 ];
 
-export default function FeaturesSection() {
+export default function FeaturesSection({
+  copy,
+}: {
+  copy: Messages["home"]["features"];
+}) {
   return (
     <section className="bg-slate-50 py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black-900">
       <Container>
         <ScrollReveal animation="fadeInUp">
           <div className="max-w-2xl">
             <h2 className="text-balance text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl md:text-5xl dark:text-white">
-              복잡한 건 앱에 맡기고
+              {copy.title1}
               <br />
-              즐기기만 하세요
+              {copy.title2}
             </h2>
             <p className="mt-5 text-pretty text-base leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">
-              위치 공유, 구역 체크, 팀 채팅까지 앱이 책임집니다. 이제 게임만
-              즐기세요.
+              {copy.sub}
             </p>
           </div>
         </ScrollReveal>
 
         <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {ITEMS.map((item, i) => (
+          {copy.items.map((item, i) => (
             <ScrollReveal key={item.title} animation="fadeInUp" delayMs={i * 80}>
               <article className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:bg-app-black dark:ring-white/10 dark:hover:shadow-2xl dark:hover:ring-white/20">
                 <div className="aspect-7/5 w-full overflow-hidden bg-white dark:bg-app-black">
                   <div className="h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]">
-                    {item.visual}
+                    {VISUALS[i]}
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-3 border-t border-slate-100 p-7 dark:border-white/10">

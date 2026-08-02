@@ -6,6 +6,7 @@ import CopIcon from "@/components/characters/CopIcon";
 import RobberIcon from "@/components/characters/RobberIcon";
 import { useTheme, type Team } from "@/components/ThemeProvider";
 import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
+import type { Messages } from "@/lib/i18n/messages";
 
 const PATTERN_COLORS = {
   blueLight: "#3F63D9",
@@ -135,10 +136,13 @@ function RolePattern({ tone }: { tone: "blue" | "green" }) {
 }
 
 type RoleCardProps = {
-  name: "경찰" | "도둑";
+  name: string;
   tone: "blue" | "green";
   targetTeam: Team;
   summary: string;
+  selectedLabel: string;
+  pickLabel: string;
+  ariaLabel: string;
   children: React.ReactNode;
 };
 
@@ -147,6 +151,9 @@ function RoleCard({
   tone,
   targetTeam,
   summary,
+  selectedLabel,
+  pickLabel,
+  ariaLabel,
   children,
 }: RoleCardProps) {
   const { team, setTeam } = useTheme();
@@ -170,7 +177,7 @@ function RoleCard({
       type="button"
       onClick={() => setTeam(targetTeam)}
       aria-pressed={isSelected}
-      aria-label={`${name} 팀 선택`}
+      aria-label={ariaLabel}
       className={`group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-3xl bg-white text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:bg-app-black dark:hover:shadow-2xl ${
         isSelected ? selectedRing : idleRing
       }`}
@@ -196,7 +203,7 @@ function RoleCard({
               : "bg-white/80 text-slate-600 opacity-0 group-hover:opacity-100 dark:bg-white/10 dark:text-slate-300"
           }`}
         >
-          {isSelected ? "선택됨" : "팀 선택"}
+          {isSelected ? selectedLabel : pickLabel}
         </span>
       </div>
 
@@ -219,17 +226,21 @@ function RoleCard({
   );
 }
 
-export default function CharactersSection() {
+export default function CharactersSection({
+  copy,
+}: {
+  copy: Messages["home"]["characters"];
+}) {
   return (
     <section className="bg-slate-50 py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black-900">
       <Container>
         <ScrollReveal animation="fadeInUp">
           <div className="max-w-2xl">
             <h2 className="text-balance text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl md:text-5xl dark:text-white">
-              두 팀 서로 다른 전략
+              {copy.title}
             </h2>
             <p className="mt-5 text-base leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">
-              카드를 눌러 팀을 선택해 보세요.
+              {copy.sub}
             </p>
           </div>
         </ScrollReveal>
@@ -237,10 +248,13 @@ export default function CharactersSection() {
         <div className="mt-14 grid gap-6 md:grid-cols-2">
           <ScrollReveal animation="fadeInLeft">
             <RoleCard
-              name="경찰"
+              name={copy.cop.name}
               tone="blue"
               targetTeam="police"
-              summary="공개되는 발자국을 쫓아 도둑을 모두 잡으세요."
+              summary={copy.cop.summary}
+              selectedLabel={copy.selected}
+              pickLabel={copy.pick}
+              ariaLabel={copy.pickAria.replace("{name}", copy.cop.name)}
             >
               <CopIcon className="h-full w-auto" />
             </RoleCard>
@@ -248,10 +262,13 @@ export default function CharactersSection() {
 
           <ScrollReveal animation="fadeInRight" delayMs={100}>
             <RoleCard
-              name="도둑"
+              name={copy.robber.name}
               tone="green"
               targetTeam="robber"
-              summary="잡히지 말고 제한 시간까지 살아남으세요."
+              summary={copy.robber.summary}
+              selectedLabel={copy.selected}
+              pickLabel={copy.pick}
+              ariaLabel={copy.pickAria.replace("{name}", copy.robber.name)}
             >
               <RobberIcon className="h-full w-auto" />
             </RoleCard>

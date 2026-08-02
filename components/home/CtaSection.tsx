@@ -1,8 +1,13 @@
 import Container from "@/components/ui/Container";
 import DownloadButtons from "@/components/ui/DownloadButtons";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import type { Messages } from "@/lib/i18n/messages";
 
-export default function CtaSection() {
+export default function CtaSection({
+  copy,
+}: {
+  copy: Messages["home"]["finalCta"];
+}) {
   return (
     <section className="bg-white py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black">
       <Container>
@@ -15,12 +20,12 @@ export default function CtaSection() {
 
             <div className="relative mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
               <h2 className="text-balance text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
-                이제 공원에서 만나요
+                {copy.title}
               </h2>
               <p className="max-w-lg text-pretty text-base leading-relaxed text-white/85 sm:text-lg dark:text-slate-300">
-                친구에게 초대 코드나 QR만 보내면 준비 끝이에요.
+                {copy.lead1}
                 <br />
-                가까운 공원으로 나가볼까요?
+                {copy.lead2}
               </p>
               <div className="mt-4 flex justify-center">
                 <DownloadButtons variant="onDark" />
