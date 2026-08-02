@@ -3,7 +3,31 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import DownloadButtons from "@/components/ui/DownloadButtons";
-import { APP_LINKS, BRAND } from "@/lib/constants";
+import { APP_LINKS } from "@/lib/constants";
+import { BRAND_NAME, appIconSrc, type Locale } from "@/lib/i18n/config";
+
+// 이 페이지는 로케일 접두어 없는 /download 하나뿐이라(부스 QR용, noindex),
+// 브라우저 언어로 문구를 고른다. 한국어 서비스라 미지정 언어는 영어로.
+const DOWNLOAD_TEXT: Record<Locale, { redirecting: string; fallback: string }> =
+  {
+    ko: { redirecting: "스토어로 이동 중…", fallback: "스토어에서 무료로 받으세요" },
+    en: {
+      redirecting: "Taking you to the store…",
+      fallback: "Get it free from the store",
+    },
+    ja: {
+      redirecting: "ストアへ移動中…",
+      fallback: "ストアから無料でダウンロード",
+    },
+  };
+
+function localeFromBrowser(): Locale {
+  if (typeof navigator === "undefined") return "ko";
+  const lang = navigator.language.toLowerCase();
+  if (lang.startsWith("ja")) return "ja";
+  if (lang.startsWith("ko")) return "ko";
+  return "en";
+}
 
 /**
  * 기기에 맞는 스토어로 자동 이동시키는 다운로드 랜딩.
@@ -13,8 +37,11 @@ import { APP_LINKS, BRAND } from "@/lib/constants";
  */
 export default function DownloadRedirect() {
   const [fallback, setFallback] = useState(false);
+  const [locale, setLocale] = useState<Locale>("ko");
+  const text = DOWNLOAD_TEXT[locale];
 
   useEffect(() => {
+    setLocale(localeFromBrowser());
     const ua = navigator.userAgent || "";
     if (/iPad|iPhone|iPod/.test(ua)) {
       window.location.replace(APP_LINKS.appStore);
@@ -31,7 +58,7 @@ export default function DownloadRedirect() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-white px-6 text-center transition-colors duration-500 dark:bg-app-black">
       <Image
-        src="/brand/app-icon.svg"
+        src={appIconSrc(locale)}
         alt=""
         width={96}
         height={96}
@@ -40,10 +67,10 @@ export default function DownloadRedirect() {
       />
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          {BRAND.game}
+          {BRAND_NAME[locale]}
         </h1>
         <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
-          {fallback ? "스토어에서 무료로 받으세요" : "스토어로 이동 중…"}
+          {fallback ? text.fallback : text.redirecting}
         </p>
       </div>
       {fallback && <DownloadButtons />}
