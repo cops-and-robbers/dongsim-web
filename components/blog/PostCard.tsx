@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import CharacterDuo from "@/components/ui/CharacterDuo";
-import { findAuthorProfile } from "@/lib/blog/authors";
 import { formatPostDate } from "@/lib/blog/format";
 import { withImageWidth, type BlogPost } from "@/lib/blog/notion";
 
@@ -15,7 +14,6 @@ type Props = {
 };
 
 export default function PostCard({ post, variant = "full" }: Props) {
-  const profile = post.author ? findAuthorProfile(post.author) : null;
   const compact = variant === "compact";
 
   return (
@@ -66,13 +64,6 @@ export default function PostCard({ post, variant = "full" }: Props) {
         </p>
       ) : (
         <p className="mt-3 flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500">
-          {profile && (
-            <img
-              src={profile.photo}
-              alt=""
-              className="h-5 w-5 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10"
-            />
-          )}
           {post.author && <span>{post.author}</span>}
           {post.author && post.date && <span aria-hidden="true">·</span>}
           <span>{formatPostDate(post.date)}</span>

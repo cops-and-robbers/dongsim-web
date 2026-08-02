@@ -6,7 +6,6 @@ import NotionBlocks from "@/components/blog/NotionBlocks";
 import PostCard from "@/components/blog/PostCard";
 import ArticleJsonLd from "@/components/seo/ArticleJsonLd";
 import Container from "@/components/ui/Container";
-import { findAuthorProfile } from "@/lib/blog/authors";
 import { formatPostDate } from "@/lib/blog/format";
 import { getBlocks, getPosts, withImageWidth } from "@/lib/blog/notion";
 import { SITE_URL } from "@/lib/constants";
@@ -44,31 +43,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // 작성자 + 날짜 한 줄. 작성자가 팀원이면 아바타가 붙고, 클릭하면 GitHub으로 간다.
 function AuthorLine({ author, date }: { author: string; date: string }) {
-  const profile = author ? findAuthorProfile(author) : null;
   return (
     <div className="mt-3 flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500">
-      {profile ? (
-        <a
-          href={profile.github}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex items-center gap-2"
-        >
-          <img
-            src={profile.photo}
-            alt=""
-            className="h-6 w-6 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10"
-          />
-          <span className="font-medium text-slate-500 underline-offset-4 group-hover:underline dark:text-slate-400">
-            {author}
-          </span>
-        </a>
-      ) : (
-        author && (
-          <span className="font-medium text-slate-500 dark:text-slate-400">
-            {author}
-          </span>
-        )
+      {author && (
+        <span className="font-medium text-slate-500 dark:text-slate-400">
+          {author}
+        </span>
       )}
       {author && date && <span aria-hidden="true">·</span>}
       <span>{formatPostDate(date)}</span>
