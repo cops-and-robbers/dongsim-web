@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import DownloadButtons from "@/components/ui/DownloadButtons";
 import { APP_LINKS } from "@/lib/constants";
 import { BRAND_NAME, appIconSrc, type Locale } from "@/lib/i18n/config";
@@ -29,6 +29,15 @@ function localeFromBrowser(): Locale {
   return "en";
 }
 
+// 브라우저 언어는 서버/클라이언트에서 값이 다르고 이후 바뀌지 않는 "외부 값"이라
+// useSyncExternalStore로 읽는다: 구독은 no-op(변화 없음), 서버 스냅샷은 ko.
+// effect에서 setState로 교정하는 방식과 달리 재렌더가 한 번 덜 돌고 경고도 없다.
+const noopSubscribe = () => () => {};
+
+function useBrowserLocale(): Locale {
+  return useSyncExternalStore(noopSubscribe, localeFromBrowser, () => "ko");
+}
+
 /**
  * 기기에 맞는 스토어로 자동 이동시키는 다운로드 랜딩.
  * - iOS → App Store, Android → Google Play 로 리다이렉트
@@ -37,11 +46,10 @@ function localeFromBrowser(): Locale {
  */
 export default function DownloadRedirect() {
   const [fallback, setFallback] = useState(false);
-  const [locale, setLocale] = useState<Locale>("ko");
+  const locale = useBrowserLocale();
   const text = DOWNLOAD_TEXT[locale];
 
   useEffect(() => {
-    setLocale(localeFromBrowser());
     const ua = navigator.userAgent || "";
     if (/iPad|iPhone|iPod/.test(ua)) {
       window.location.replace(APP_LINKS.appStore);
