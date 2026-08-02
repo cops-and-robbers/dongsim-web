@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { APP_LINKS } from "@/lib/constants";
 import { AppleIcon, PlayIcon } from "@/components/ui/StoreIcons";
+import { CHROME } from "@/lib/i18n/chrome";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 type Props = {
   variant?: "primary" | "onDark";
@@ -37,6 +39,7 @@ export default function DownloadButtons({
 }: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const chrome = CHROME[useLocale()];
 
   useEffect(() => {
     if (!open) return;
@@ -103,7 +106,7 @@ export default function DownloadButtons({
           className={`${baseBtn} ${mobilePrimaryStyle} w-full px-8 py-4`}
         >
           <DownloadIcon className="h-5 w-5" />
-          <span>앱 다운로드</span>
+          <span>{chrome.downloadShort}</span>
         </button>
 
         {open && (
