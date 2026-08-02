@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { APP_LINKS } from "@/lib/constants";
 import { AppleIcon, PlayIcon } from "@/components/ui/StoreIcons";
+import { CHROME } from "@/lib/i18n/chrome";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function DownloadCTAButton() {
+  const chrome = CHROME[useLocale()];
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
@@ -54,8 +57,8 @@ export default function DownloadCTAButton() {
         aria-expanded={open}
         className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-blue-light md:px-4 md:py-2 md:hover:scale-[1.03] md:active:scale-[0.97] dark:bg-brand-green dark:text-app-black dark:hover:bg-brand-green-light"
       >
-        <span className="md:hidden">앱 다운로드</span>
-        <span className="hidden md:inline">다운로드</span>
+        <span className="md:hidden">{chrome.downloadShort}</span>
+        <span className="hidden md:inline">{chrome.download}</span>
       </button>
 
       {open && (

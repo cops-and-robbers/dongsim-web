@@ -1,6 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { BRAND, NAV_ITEMS } from "@/lib/constants";
+import { BRAND } from "@/lib/constants";
+import { BRAND_NAME, localizedPath } from "@/lib/i18n/config";
+import { CHROME } from "@/lib/i18n/chrome";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 function InstagramIcon() {
   return (
@@ -54,7 +60,11 @@ function TikTokIcon() {
   );
 }
 
+// 로케일 인식 푸터. en·ja는 미번역 항목(미니게임·약관)을 감추고, 하단에 언어 선택을 둔다.
 export default function Footer() {
+  const locale = useLocale();
+  const copy = CHROME[locale].footer;
+  const brand = locale === "ko" ? BRAND.fullName : BRAND_NAME[locale];
   const year = new Date().getFullYear();
 
   return (
@@ -65,25 +75,25 @@ export default function Footer() {
             <div className="flex items-center gap-2">
               <Image
                 src="/brand/dongsim-logo.svg"
-                alt="동심지키미 로고"
+                alt=""
                 width={32}
                 height={32}
                 unoptimized
                 className="h-8 w-8 rounded-lg"
               />
               <p className="text-base font-bold text-slate-900 dark:text-white">
-                {BRAND.fullName}
+                {brand}
               </p>
             </div>
             <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-              {BRAND.tagline}
+              {copy.tagline}
             </p>
             <div className="flex items-center gap-2 pt-1">
               <a
                 href={BRAND.instagram}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="경찰과 도둑 Instagram"
+                aria-label={`${brand} Instagram`}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-900 hover:text-white dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white dark:hover:text-app-black"
               >
                 <InstagramIcon />
@@ -92,7 +102,7 @@ export default function Footer() {
                 href={BRAND.tiktok}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="경찰과 도둑 TikTok"
+                aria-label={`${brand} TikTok`}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-900 hover:text-white dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white dark:hover:text-app-black"
               >
                 <TikTokIcon />
@@ -101,7 +111,7 @@ export default function Footer() {
                 href={BRAND.youtube}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="경찰과 도둑 YouTube"
+                aria-label={`${brand} YouTube`}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-900 hover:text-white dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white dark:hover:text-app-black"
               >
                 <YoutubeIcon />
@@ -110,7 +120,7 @@ export default function Footer() {
                 href={BRAND.github}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="동심지키미 GitHub"
+                aria-label={`${brand} GitHub`}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-900 hover:text-white dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white dark:hover:text-app-black"
               >
                 <GithubIcon />
@@ -120,33 +130,35 @@ export default function Footer() {
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-              둘러보기
+              {copy.browseHeading}
             </p>
             <ul className="mt-5 flex flex-col gap-3 text-sm">
-              {NAV_ITEMS.map((item) => (
-                <li key={item.href}>
+              {CHROME[locale].nav.map((item) => (
+                <li key={item.path}>
                   <Link
-                    href={item.href}
+                    href={localizedPath(item.path, locale)}
                     className="text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
                   >
                     {item.label}
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link
-                  href="/play"
-                  className="text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                >
-                  미니게임
-                </Link>
-              </li>
+              {copy.minigame && (
+                <li>
+                  <Link
+                    href="/play"
+                    className="text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                  >
+                    {copy.minigame}
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-              문의
+              {copy.contactHeading}
             </p>
             <a
               href={`mailto:${BRAND.email}`}
@@ -155,49 +167,32 @@ export default function Footer() {
               {BRAND.email}
             </a>
             <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-500">
-              제휴, 피드백, 버그 제보 모두 환영해요.
+              {copy.contactNote}
             </p>
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
+        <div className="mt-14 flex flex-col gap-4 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
           <p className="text-xs text-slate-400 dark:text-slate-500">
-            © {year} {BRAND.fullName}. All rights reserved.
+            © {year} {brand}. All rights reserved.
           </p>
-          <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-            <li>
-              <Link
-                href="/terms"
-                className="text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-              >
-                이용약관
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/privacy"
-                className="text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-              >
-                개인정보 처리방침
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/location"
-                className="text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-              >
-                위치정보 이용약관
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/marketing"
-                className="text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-              >
-                마케팅 정보 수신 동의
-              </Link>
-            </li>
-          </ul>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            {copy.legal.length > 0 && (
+              <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+                {copy.legal.map((item) => (
+                  <li key={item.path}>
+                    <Link
+                      href={item.path}
+                      className="text-slate-500 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <LanguageSwitcher />
+          </div>
         </div>
       </div>
     </footer>

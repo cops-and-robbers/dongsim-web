@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { NAV_ITEMS } from "@/lib/constants";
+import { localizedPath } from "@/lib/i18n/config";
+import { CHROME } from "@/lib/i18n/chrome";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 function useIsClient() {
   return useSyncExternalStore(
@@ -16,6 +18,8 @@ function useIsClient() {
 
 export default function MobileMenu() {
   const isClient = useIsClient();
+  const locale = useLocale();
+  const nav = CHROME[locale].nav;
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [prevPath, setPrevPath] = useState(pathname);
@@ -62,10 +66,10 @@ export default function MobileMenu() {
     >
       <nav className="mx-auto max-w-6xl px-4 py-3">
         <ul className="flex flex-col">
-          {NAV_ITEMS.map((item) => (
-            <li key={item.href}>
+          {nav.map((item) => (
+            <li key={item.path}>
               <Link
-                href={item.href}
+                href={localizedPath(item.path, locale)}
                 className="block py-3.5 text-[15px] font-medium text-slate-700 dark:text-slate-200"
               >
                 {item.label}

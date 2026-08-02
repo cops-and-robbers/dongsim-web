@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getPosts } from "@/lib/blog/notion";
+import { alternateLanguages } from "@/lib/i18n/config";
 
 const BASE_URL = "https://copsandrobbers.app";
 
@@ -20,6 +21,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         `${BASE_URL}/characters/police.svg`,
         `${BASE_URL}/characters/robber.svg`,
       ],
+      alternates: {
+        languages: alternateLanguages(BASE_URL),
+      },
+    },
+    {
+      url: `${BASE_URL}/en`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+      alternates: {
+        languages: alternateLanguages(BASE_URL),
+      },
+    },
+    {
+      url: `${BASE_URL}/ja`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+      alternates: {
+        languages: alternateLanguages(BASE_URL),
+      },
     },
     {
       url: `${BASE_URL}/game`,
@@ -33,12 +55,54 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         `${BASE_URL}/icons/robber-badge.svg`,
         `${BASE_URL}/icons/shoeprint.svg`,
       ],
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/game"),
+      },
+    },
+    {
+      url: `${BASE_URL}/en/game`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/game"),
+      },
+    },
+    {
+      url: `${BASE_URL}/ja/game`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/game"),
+      },
     },
     {
       url: `${BASE_URL}/team`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/team"),
+      },
+    },
+    {
+      url: `${BASE_URL}/en/team`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/team"),
+      },
+    },
+    {
+      url: `${BASE_URL}/ja/team`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/team"),
+      },
     },
     {
       url: `${BASE_URL}/team/members`,
