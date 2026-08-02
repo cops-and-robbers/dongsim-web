@@ -5,10 +5,13 @@ import IntroScreen from "./IntroScreen";
 import PlayScreen from "./PlayScreen";
 import ResultScreen from "./ResultScreen";
 import { GAME_MS, freshGame, lerp, type Game } from "./types";
+import { PLAY_TEXT } from "@/lib/i18n/play";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 type Phase = "intro" | "playing" | "over";
 
 export default function ThiefHuntGame() {
+  const t = PLAY_TEXT[useLocale()];
   const [phase, setPhase] = useState<Phase>("intro");
   const [view, setView] = useState<Game>(() => freshGame());
   const [shaking, setShaking] = useState(false);
@@ -41,7 +44,7 @@ export default function ThiefHuntGame() {
       if (o.type === "civ") {
         g.combo = 0;
         g.score = Math.max(0, g.score - 5);
-        g.pops.push({ id: g.nextId++, hole: i, text: "경찰!", good: false, at: now });
+        g.pops.push({ id: g.nextId++, hole: i, text: t.play.cop, good: false, at: now });
         setShaking(true);
         window.setTimeout(() => setShaking(false), 360);
       } else {
@@ -112,7 +115,8 @@ export default function ThiefHuntGame() {
     return () => window.clearInterval(id);
   }, [phase, snapshot]);
 
-  if (phase === "intro") return <IntroScreen onStart={start} />;
-  if (phase === "over") return <ResultScreen game={view} onRestart={start} />;
-  return <PlayScreen game={view} shaking={shaking} onTap={tap} />;
+  if (phase === "intro") return <IntroScreen onStart={start} t={t} />;
+  if (phase === "over")
+    return <ResultScreen game={view} onRestart={start} t={t} />;
+  return <PlayScreen game={view} shaking={shaking} onTap={tap} t={t} />;
 }

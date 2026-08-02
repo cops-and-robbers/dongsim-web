@@ -12,6 +12,7 @@ import {
   type Game,
   type Pop,
 } from "./types";
+import type { PlayText } from "@/lib/i18n/play";
 
 // 보드 대비 % 단위 시각 상수
 const MOUSE_W = 17;
@@ -22,10 +23,12 @@ export default function PlayScreen({
   game,
   shaking,
   onTap,
+  t,
 }: {
   game: Game;
   shaking: boolean;
   onTap: (i: number) => void;
+  t: PlayText;
 }) {
   const timePct = (game.timeLeft / GAME_MS) * 100;
   const urgent = game.timeLeft <= 6000;
@@ -38,7 +41,7 @@ export default function PlayScreen({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              점수
+              {t.play.score}
             </p>
             <p className="font-mono text-3xl font-extrabold leading-tight tabular-nums text-slate-900 dark:text-white">
               {game.score}
@@ -48,12 +51,13 @@ export default function PlayScreen({
                 game.combo >= 2 ? "opacity-100" : "opacity-0"
               } ${fever ? "text-amber-500" : "text-amber-600 dark:text-amber-400"}`}
             >
-              ×{game.combo} 콤보
+              ×{game.combo}
+              {t.play.comboSuffix}
             </p>
           </div>
           <div className="text-right">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              남은 시간
+              {t.play.timeLeft}
             </p>
             <p
               className={`font-mono text-3xl font-extrabold leading-tight tabular-nums ${
@@ -139,23 +143,24 @@ export default function PlayScreen({
               i={i}
               pop={game.pops.find((p) => p.hole === i)}
               onTap={() => onTap(i)}
+              holeAria={t.play.holeAria}
             />
           ))}
         </div>
 
-        <WantedPoster />
+        <WantedPoster t={t.play} />
       </div>
     </Shell>
   );
 }
 
-function WantedPoster() {
+function WantedPoster({ t }: { t: PlayText["play"] }) {
   return (
     <div className="mx-auto flex w-full max-w-xs items-center gap-3.5 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 px-4 py-2.5 dark:border-white/15 dark:bg-app-black/40">
       <div className="grid h-16 w-14 shrink-0 place-items-center overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200 dark:bg-white/10 dark:ring-white/10">
         <Image
           src={ROBBER_SRC}
-          alt="지명수배 도둑"
+          alt={t.wantedAlt}
           width={120}
           height={120}
           unoptimized
@@ -167,10 +172,10 @@ function WantedPoster() {
           WANTED
         </p>
         <p className="text-lg font-extrabold text-slate-900 dark:text-white">
-          지명수배
+          {t.wanted}
         </p>
         <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-          도둑을 전원 검거하라
+          {t.wantedSub}
         </p>
       </div>
     </div>
@@ -181,10 +186,12 @@ function HoleButton({
   i,
   pop,
   onTap,
+  holeAria,
 }: {
   i: number;
   pop: Pop | undefined;
   onTap: () => void;
+  holeAria: string;
 }) {
   return (
     <button
@@ -193,7 +200,7 @@ function HoleButton({
         e.preventDefault();
         onTap();
       }}
-      aria-label="쥐구멍"
+      aria-label={holeAria}
       className="absolute z-30 aspect-square -translate-x-1/2 -translate-y-1/2 touch-none select-none rounded-full"
       style={{
         left: `${HOLE_POS[i].x}%`,

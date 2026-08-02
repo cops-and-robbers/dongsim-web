@@ -15,13 +15,16 @@ import {
   submitScore,
   type Score,
 } from "./leaderboard";
+import type { PlayText } from "@/lib/i18n/play";
 
 export default function ResultScreen({
   game,
   onRestart,
+  t,
 }: {
   game: Game;
   onRestart: () => void;
+  t: PlayText;
 }) {
   const [name, setName] = useState("");
   const [top, setTop] = useState<Score[]>([]);
@@ -45,7 +48,7 @@ export default function ResultScreen({
   }, []);
 
   const save = async () => {
-    const trimmed = name.trim().slice(0, 12) || "익명";
+    const trimmed = name.trim().slice(0, 12) || t.result.anon;
     setLastName(trimmed);
     const res = await submitScore({
       name: trimmed,
@@ -81,13 +84,19 @@ export default function ResultScreen({
               {game.score}
             </p>
             <p className="text-sm font-semibold text-slate-400 dark:text-slate-500">
-              점
+              {t.result.unit}
             </p>
 
             <dl className="mt-5 space-y-2.5 px-2 text-base">
-              <Row label="검거" value={`${game.caught}명`} />
-              <Row label="최대 콤보" value={`x${game.maxCombo}`} />
-              <Row label="놓침" value={`${game.misses}명`} />
+              <Row
+                label={t.result.caught}
+                value={t.result.people(game.caught)}
+              />
+              <Row label={t.result.maxCombo} value={`x${game.maxCombo}`} />
+              <Row
+                label={t.result.missed}
+                value={t.result.people(game.misses)}
+              />
             </dl>
 
             {saved ? (
@@ -96,7 +105,7 @@ export default function ResultScreen({
                 onClick={() => setShowBoard(true)}
                 className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-blue/10 px-4 py-3 text-sm font-bold text-brand-blue transition-colors hover:bg-brand-blue/15 dark:bg-brand-green/15 dark:text-brand-green dark:hover:bg-brand-green/25"
               >
-                🏆 전체 {saved.total}명 중 {saved.rank}위 · 랭킹 보기
+                🏆 {t.result.rankLine(saved.total, saved.rank)}
               </button>
             ) : (
               <div className="mt-5 flex gap-2">
@@ -104,7 +113,7 @@ export default function ResultScreen({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={12}
-                  placeholder="닉네임"
+                  placeholder={t.result.nickname}
                   className="min-w-0 flex-1"
                 />
                 <button
@@ -112,7 +121,7 @@ export default function ResultScreen({
                   onClick={save}
                   className="shrink-0 rounded-xl bg-app-black px-5 py-3 text-base font-bold text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-app-black"
                 >
-                  기록 저장
+                  {t.result.save}
                 </button>
               </div>
             )}
@@ -122,7 +131,7 @@ export default function ResultScreen({
               onClick={onRestart}
               className="mt-3 w-full rounded-2xl bg-brand-blue px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-brand-blue/30 transition-transform hover:-translate-y-0.5 dark:bg-brand-green dark:text-app-black dark:shadow-none"
             >
-              다시 도전
+              {t.result.restart}
             </button>
           </div>
 
@@ -154,14 +163,14 @@ export default function ResultScreen({
           <div className="flex h-full flex-col rounded-3xl bg-brand-blue p-4 text-white shadow-lg shadow-brand-blue/30 dark:bg-app-black-900 dark:shadow-none dark:ring-1 dark:ring-white/10">
             {/* 앱 다운로드 - 데스크탑은 QR + 스토어 버튼, 모바일은 단일 버튼 */}
             <p className="text-center text-sm font-extrabold">
-              앱 다운받고 밖에서 즐겨요 🏃
+              {t.result.downloadCta}
             </p>
 
             {/* 데스크탑: QR(폰으로 스캔) - 남는 높이를 채워 결과 카드와 맞춤 */}
             <div className="hidden flex-1 items-center justify-center py-3 lg:flex">
               <Image
                 src="/brand/qr-download.svg"
-                alt="앱 다운로드 QR"
+                alt={t.result.qrAlt}
                 width={176}
                 height={176}
                 unoptimized
@@ -195,7 +204,7 @@ export default function ResultScreen({
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3.5 text-base font-bold text-app-black transition-opacity hover:opacity-90 lg:hidden"
             >
               <DownloadIcon className="h-5 w-5" />
-              앱 다운로드
+              {t.result.download}
             </a>
           </div>
         </div>
@@ -207,6 +216,7 @@ export default function ResultScreen({
           myRank={saved?.rank ?? null}
           total={saved?.total ?? null}
           onClose={() => setShowBoard(false)}
+          t={t.board}
         />
       )}
     </Shell>
@@ -218,14 +228,16 @@ function Leaderboard({
   myRank,
   total,
   onClose,
+  t,
 }: {
   top: Score[];
   myRank: number | null;
   total: number | null;
   onClose: () => void;
+  t: PlayText["board"];
 }) {
   return (
-    <Modal onClose={onClose} label="검거왕 랭킹">
+    <Modal onClose={onClose} label={t.title}>
       <div
         style={{ animation: "scaleIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
         className="overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-200 dark:bg-app-black dark:ring-white/10"
@@ -236,11 +248,11 @@ function Leaderboard({
             🏆
           </span>
           <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-            검거왕 랭킹
+            {t.title}
           </h2>
           {myRank != null && total != null && (
             <p className="mt-1 rounded-full bg-brand-blue px-4 py-1 text-sm font-bold text-white shadow-sm shadow-brand-blue/30 dark:bg-brand-green dark:text-app-black dark:shadow-none">
-              전체 {total}명 중 {myRank}위
+              {t.myRank(total, myRank)}
             </p>
           )}
         </div>
@@ -248,8 +260,9 @@ function Leaderboard({
         <div className="px-5 pb-5">
           {top.length === 0 ? (
             <p className="py-8 text-center text-sm font-medium leading-relaxed text-slate-400 dark:text-slate-500">
-              아직 기록이 없어요.
-              <br />첫 검거왕에 도전해보세요!
+              {t.empty1}
+              <br />
+              {t.empty2}
             </p>
           ) : (
             <ol className="space-y-2">
@@ -277,7 +290,7 @@ function Leaderboard({
                     <span className="font-mono text-base font-extrabold tabular-nums text-slate-900 dark:text-white">
                       {s.score}
                       <span className="ml-0.5 text-xs font-semibold text-slate-400">
-                        점
+                        {t.unit}
                       </span>
                     </span>
                   </li>
@@ -291,7 +304,7 @@ function Leaderboard({
             onClick={onClose}
             className="mt-5 w-full rounded-2xl bg-app-black px-6 py-3 text-base font-bold text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-app-black"
           >
-            닫기
+            {t.close}
           </button>
         </div>
       </div>

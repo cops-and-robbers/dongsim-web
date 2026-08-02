@@ -16,7 +16,7 @@ export default function HomeSections({ locale }: { locale: Locale }) {
       <CharactersSection copy={copy.characters} />
       <HowItWorksSection copy={copy.how} />
       <FeaturesSection copy={copy.features} />
-      <MinigameTeaserSection copy={copy.minigame} />
+      <MinigameTeaserSection copy={copy.minigame} locale={locale} />
       <CtaSection copy={copy.finalCta} />
     </>
   );

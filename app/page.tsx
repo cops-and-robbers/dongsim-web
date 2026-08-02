@@ -236,7 +236,7 @@ export default function HomePage() {
       <CharactersSection copy={copy.characters} />
       <HowItWorksSection copy={copy.how} />
       <FeaturesSection copy={copy.features} />
-      <MinigameTeaserSection copy={copy.minigame} />
+      <MinigameTeaserSection copy={copy.minigame} locale="ko" />
       <CtaSection copy={copy.finalCta} />
     </>
   );

@@ -62,7 +62,12 @@ export function appIconSrc(locale: Locale): string {
 
 // en·ja에서 실제로 번역되어 열리는 기준 경로. 그 외(/blog, /terms 등)는
 // 미번역이라 proxy가 한국어(루트)로 리다이렉트한다. 페이지를 번역할 때마다 추가.
-export const TRANSLATED_PATHS: readonly string[] = ["/", "/game", "/team"];
+export const TRANSLATED_PATHS: readonly string[] = [
+  "/",
+  "/game",
+  "/team",
+  "/play",
+];
 
 export function isTranslatedPath(basePath: string): boolean {
   return TRANSLATED_PATHS.includes(basePath);

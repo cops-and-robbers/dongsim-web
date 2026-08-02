@@ -11,8 +11,15 @@ import {
   ROBBER_SRC,
 } from "./types";
 import { getTopScores } from "./leaderboard";
+import type { PlayText } from "@/lib/i18n/play";
 
-export default function IntroScreen({ onStart }: { onStart: () => void }) {
+export default function IntroScreen({
+  onStart,
+  t,
+}: {
+  onStart: () => void;
+  t: PlayText;
+}) {
   const [best, setBest] = useState<number | null>(null);
 
   // 보드 에셋을 인트로에서 미리 받아둬 시작 시 지연 제거
@@ -36,24 +43,25 @@ export default function IntroScreen({ onStart }: { onStart: () => void }) {
     <Shell>
       <div className="relative z-10 mx-auto flex max-w-md flex-col items-center text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-bold text-brand-blue dark:bg-brand-green/15 dark:text-brand-green">
-          미니게임
+          {t.intro.badge}
         </span>
         <h1 className="mt-4 text-balance text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl dark:text-white">
-          치즈 도둑 검거 작전!
+          {t.intro.title}
         </h1>
         <p className="mt-4 text-pretty text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          30초 안에 치즈 은행의 치즈를 절도한{" "}
-          <b className="text-amber-600 dark:text-amber-300">도둑</b>을 최대한 많이 잡으세요!
+          {t.intro.descBefore}
+          <b className="text-amber-600 dark:text-amber-300">{t.intro.thief}</b>
+          {t.intro.descAfter}
         </p>
 
         <div className="mt-6 flex items-center justify-center gap-6">
-          <Legend src={ROBBER_SRC} label="득점" tone="good" />
-          <Legend src={CIVILIAN_SRC} label="감점" tone="bad" />
+          <Legend src={ROBBER_SRC} label={t.intro.legendGood} tone="good" />
+          <Legend src={CIVILIAN_SRC} label={t.intro.legendBad} tone="bad" />
         </div>
 
         {best !== null && best > 0 && (
           <p className="mt-6 font-mono text-sm font-semibold text-slate-400 dark:text-slate-500">
-            현재 최고 점수{" "}
+            {t.intro.best}{" "}
             <span className="text-brand-blue dark:text-brand-green">{best}</span>
           </p>
         )}
@@ -63,7 +71,7 @@ export default function IntroScreen({ onStart }: { onStart: () => void }) {
           onClick={onStart}
           className="mt-8 w-full rounded-2xl bg-brand-blue px-8 py-4 text-lg font-bold text-white shadow-lg shadow-brand-blue/30 transition-transform hover:-translate-y-0.5 active:translate-y-0 dark:bg-brand-green dark:text-app-black dark:shadow-none"
         >
-          시작하기
+          {t.intro.start}
         </button>
       </div>
     </Shell>

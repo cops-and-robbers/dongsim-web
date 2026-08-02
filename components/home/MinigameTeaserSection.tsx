@@ -3,11 +3,14 @@ import Link from "next/link";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import type { Messages } from "@/lib/i18n/messages";
+import { localizedPath, type Locale } from "@/lib/i18n/config";
 
 export default function MinigameTeaserSection({
   copy,
+  locale,
 }: {
   copy: Messages["home"]["minigame"];
+  locale: Locale;
 }) {
   return (
     <section className="bg-white py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black">
@@ -25,7 +28,7 @@ export default function MinigameTeaserSection({
                 {copy.description}
               </p>
               <Link
-                href="/play"
+                href={localizedPath("/play", locale)}
                 className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-brand-blue px-7 py-3.5 text-base font-bold text-white shadow-lg shadow-brand-blue/30 transition-transform hover:-translate-y-0.5 active:translate-y-0 sm:w-auto dark:bg-brand-green dark:text-app-black dark:shadow-none"
               >
                 {copy.button}
