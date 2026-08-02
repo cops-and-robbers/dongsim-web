@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import TeamHeroSection from "@/components/team/TeamHeroSection";
-import TeamRecordsSection from "@/components/team/TeamRecordsSection";
-import TeamMomentsSection from "@/components/team/TeamMomentsSection";
-import TeamPreviewSection from "@/components/team/TeamPreviewSection";
-import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
+import TeamSections from "@/components/team/TeamSections";
+import { alternateLanguages } from "@/lib/i18n/config";
+import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "동심지키미 팀 소개",
@@ -18,7 +16,13 @@ export const metadata: Metadata = {
     "인디 게임 스튜디오",
     "게임 개발팀 소개",
   ],
-  alternates: { canonical: "/team" },
+  alternates: {
+    canonical: "/team",
+    languages: {
+      ...alternateLanguages(SITE_URL, "/team"),
+      "x-default": `${SITE_URL}/team`,
+    },
+  },
   openGraph: {
     title: "팀 소개 | 경찰과 도둑",
     description:
@@ -30,18 +34,5 @@ export const metadata: Metadata = {
 };
 
 export default function TeamPage() {
-  return (
-    <>
-      <BreadcrumbJsonLd
-        items={[
-          { name: "홈", path: "/" },
-          { name: "팀 소개", path: "/team" },
-        ]}
-      />
-      <TeamHeroSection />
-      <TeamRecordsSection />
-      <TeamMomentsSection />
-      <TeamPreviewSection />
-    </>
-  );
+  return <TeamSections locale="ko" />;
 }

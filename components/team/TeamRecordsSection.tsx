@@ -1,7 +1,7 @@
 import Badge from "@/components/ui/Badge";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
-import { TEAM_AWARDS, TEAM_HISTORY } from "@/lib/constants";
+import type { Messages } from "@/lib/i18n/messages";
 
 // 주요 연혁 + 수상 및 선정 이력. 장식 없이 날짜·제목·수상 라벨만으로 정렬한
 // 미니멀 리스트(SEED식). 날짜는 차분한 회색 모노, 포인트는 수상 배지에만.
@@ -34,7 +34,11 @@ function RecordList({ items }: { items: readonly Record[] }) {
   );
 }
 
-export default function TeamRecordsSection() {
+export default function TeamRecordsSection({
+  copy,
+}: {
+  copy: Messages["team"]["records"];
+}) {
   return (
     <section className="bg-slate-50 py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black-900">
       <Container>
@@ -42,22 +46,22 @@ export default function TeamRecordsSection() {
           <div>
             <ScrollReveal animation="fadeInUp">
               <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
-                걸어온 길
+                {copy.historyHeading}
               </h2>
             </ScrollReveal>
             <div className="mt-8">
-              <RecordList items={TEAM_HISTORY} />
+              <RecordList items={copy.history} />
             </div>
           </div>
 
           <div>
             <ScrollReveal animation="fadeInUp">
               <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
-                수상 및 선정 이력
+                {copy.awardsHeading}
               </h2>
             </ScrollReveal>
             <div className="mt-8">
-              <RecordList items={TEAM_AWARDS} />
+              <RecordList items={copy.awards} />
             </div>
           </div>
         </div>
