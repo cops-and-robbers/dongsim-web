@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   LOCALES,
   LOCALE_LABEL,
+  isKoOnlyPath,
   localizedPath,
   stripLocale,
   type Locale,
@@ -78,7 +79,11 @@ export default function LanguageSwitcher() {
           {LOCALES.map((l: Locale) => (
             <Link
               key={l}
-              href={localizedPath(base, l)}
+              // 번역이 없는 한국어 전용 페이지에서 다른 언어로 바꾸면 그 언어 홈으로.
+              href={localizedPath(
+                l === "ko" || !isKoOnlyPath(base) ? base : "/",
+                l,
+              )}
               role="menuitem"
               onClick={() => setOpen(false)}
               className={`flex items-center justify-between px-3.5 py-2 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-white/5 ${
