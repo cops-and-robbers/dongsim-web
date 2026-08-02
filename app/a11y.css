@@ -1,0 +1,12 @@
+/* 접근성 - 움직임 최소화 선호(prefers-reduced-motion) 사용자를 위해
+   애니메이션·전환·스크롤 이동을 사실상 제거한다. 전역 globals.css와 분리해 둔다. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
