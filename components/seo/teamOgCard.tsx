@@ -18,16 +18,23 @@ export async function renderTeamOgCard({
   label,
   headline,
   subtitle,
+  logoPath = "public/brand/header-logo.svg",
+  logoW = 285,
+  logoH = 46,
 }: {
   label: string;
   /** 헤드라인 줄 배열(줄바꿈 단위). */
   headline: string[];
   subtitle: string;
+  /** 로케일 로고 (기본은 한국어 헤더 로고). */
+  logoPath?: string;
+  logoW?: number;
+  logoH?: number;
 }) {
   const [bold, extraBold, logo, cop, thief] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
-    dataUri("public/brand/header-logo.svg", "image/svg+xml"),
+    dataUri(logoPath, "image/svg+xml"),
     dataUri("public/photobooth/cop.svg", "image/svg+xml"),
     dataUri("public/photobooth/thief.svg", "image/svg+xml"),
   ]);
@@ -51,7 +58,12 @@ export async function renderTeamOgCard({
       >
         {/* 상단: 로고 + 라벨 */}
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <img src={logo} width={300} height={48} alt="" />
+          <img
+            src={logo}
+            width={Math.round((logoW * 48) / logoH)}
+            height={48}
+            alt=""
+          />
           <div
             style={{
               display: "flex",
