@@ -93,8 +93,10 @@ export const metadata: Metadata = {
   itunes: {
     appId: "6756843948",
   },
+  // 파비콘(rel=icon)은 metadata로 선언하지 않는다: Next가 관리하면 라우트 이동마다
+  // 기본값으로 되돌려 테마 스왑이 풀린다. 대신 페인트 전 인라인 스크립트로 처음 깔고
+  // ThemeProvider가 토글 시 교체해, 우리가 링크를 온전히 소유한다. apple만 정적으로 둔다.
   icons: {
-    icon: "/favicon-light.svg",
     apple: "/apple-icon.png",
   },
   verification: {
@@ -157,7 +159,7 @@ export default function RootLayout({
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname;var lg=(p==='/ja'||p.indexOf('/ja/')===0)?'ja':(p==='/en'||p.indexOf('/en/')===0)?'en':'ko';document.documentElement.lang=lg;var s=localStorage.getItem('team');var d=s==='robber'||(s!=='police'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#080a0c';}}catch(e){}})();`,
+            __html: `(function(){try{var p=location.pathname;var lg=(p==='/ja'||p.indexOf('/ja/')===0)?'ja':(p==='/en'||p.indexOf('/en/')===0)?'en':'ko';document.documentElement.lang=lg;var s=localStorage.getItem('team');var d=s==='robber'||(s!=='police'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#080a0c';}var l=document.createElement('link');l.rel='icon';l.type='image/svg+xml';l.href=d?'/favicon-dark.svg':'/favicon-light.svg';document.head.appendChild(l);}catch(e){}})();`,
           }}
         />
         <Script id="gtm-init" strategy="afterInteractive">

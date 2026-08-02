@@ -21,6 +21,19 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = "team";
 
+// 파비콘 교체 - 기존 아이콘 링크를 모두 지우고 하나만 다시 얹어야 브라우저가
+// 탭 아이콘을 확실히 다시 그린다(단순 href 변경은 자주 무시된다). metadata로
+// 선언하지 않아 Next가 되돌리지 않으므로, 이 링크는 라우트 이동에도 유지된다.
+// apple-touch-icon은 rel 토큰이 'icon'과 달라 매칭되지 않아 보존된다.
+function applyFavicon(isDark: boolean) {
+  document.querySelectorAll("link[rel~='icon']").forEach((el) => el.remove());
+  const link = document.createElement("link");
+  link.rel = "icon";
+  link.type = "image/svg+xml";
+  link.href = isDark ? "/favicon-dark.svg" : "/favicon-light.svg";
+  document.head.appendChild(link);
+}
+
 export default function ThemeProvider({ children }: { children: ReactNode }) {
   const [team, setTeamState] = useState<Team>("police");
   const firstToggle = useRef(true);
@@ -49,7 +62,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // 최초 마운트에선 인라인 스크립트가 칠한 클래스를 그대로 둠
+    // 최초 마운트에선 인라인 스크립트가 칠한 클래스·파비콘을 그대로 둠(깜빡임 방지)
     if (firstToggle.current) {
       firstToggle.current = false;
       return;
@@ -65,19 +78,9 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     if (metaThemeColor) {
       metaThemeColor.content = isDark ? "#080a0c" : "#ffffff";
     }
-  }, [team]);
 
-  // 파비콘도 테마에 동기화 - 라이트(경찰)는 파랑, 다크(도둑)는 초록 SVG.
-  // 기존 아이콘 링크를 모두 지우고 하나만 다시 얹어야 브라우저가 확실히 갱신한다.
-  // (favicon.ico가 남아 있으면 그게 우선권을 가져 스왑이 안 먹힘.)
-  // apple-touch-icon은 rel 토큰이 달라 매칭되지 않으므로 유지된다.
-  useEffect(() => {
-    document.querySelectorAll("link[rel~='icon']").forEach((el) => el.remove());
-    const link = document.createElement("link");
-    link.rel = "icon";
-    link.type = "image/svg+xml";
-    link.href = team === "robber" ? "/favicon-dark.svg" : "/favicon-light.svg";
-    document.head.appendChild(link);
+    // 파비콘도 같은 토글에 맞춰 교체(첫 마운트는 위에서 걸러져 인라인 값 유지)
+    applyFavicon(isDark);
   }, [team]);
 
   return (
