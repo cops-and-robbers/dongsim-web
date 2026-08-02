@@ -3,7 +3,8 @@ export const SITE_URL = "https://copsandrobbers.app";
 export const APP_LINKS = {
   googlePlay:
     "https://play.google.com/store/apps/details?id=com.elipair.copsandrobbers",
-  appStore: "https://apps.apple.com/kr/app/경찰과도둑/id6756843948",
+  // 국가 코드 없는 정식 링크 - 애플이 사용자의 실제 지역 스토어로 자동 연결한다.
+  appStore: "https://apps.apple.com/app/id6756843948",
 };
 
 export const BRAND = {
