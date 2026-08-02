@@ -7,7 +7,8 @@ import {
   QrMockup,
   ChatMockup,
 } from "./PhoneMockup";
-import type { GameFeature } from "@/lib/constants";
+import type { GameMockup } from "@/lib/constants";
+import type { Messages } from "@/lib/i18n/messages";
 
 const MOCKUPS = {
   zone: <ZoneMockup />,
@@ -17,12 +18,13 @@ const MOCKUPS = {
 };
 
 type Props = {
-  feature: GameFeature;
+  copy: Messages["game"]["features"][number];
+  mockup: GameMockup;
   index: number;
   total: number;
 };
 
-export default function FeatureBlock({ feature, index, total }: Props) {
+export default function FeatureBlock({ copy, mockup, index, total }: Props) {
   const isReversed = index % 2 === 1;
   const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -44,7 +46,7 @@ export default function FeatureBlock({ feature, index, total }: Props) {
                 {pad(index + 1)}  /  {pad(total)}
               </p>
               <h3 className="text-balance text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl md:text-5xl dark:text-white">
-                {feature.title}
+                {copy.title}
               </h3>
             </div>
           </ScrollReveal>
@@ -55,7 +57,7 @@ export default function FeatureBlock({ feature, index, total }: Props) {
             className={`order-2 ${mockupCol} md:row-span-2 md:row-start-1`}
           >
             <div className="flex justify-center">
-              <PhoneFrame>{MOCKUPS[feature.mockup]}</PhoneFrame>
+              <PhoneFrame>{MOCKUPS[mockup]}</PhoneFrame>
             </div>
           </ScrollReveal>
 
@@ -66,11 +68,11 @@ export default function FeatureBlock({ feature, index, total }: Props) {
           >
             <div className="flex flex-col gap-6">
               <p className="text-pretty text-base leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">
-                {feature.description}
+                {copy.description}
               </p>
 
               <ul className="space-y-3 border-t border-slate-100 pt-6 dark:border-white/10">
-                {feature.checks.map((check) => (
+                {copy.checks.map((check) => (
                   <li
                     key={check}
                     className="flex gap-3 text-sm text-slate-700 dark:text-slate-300"

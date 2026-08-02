@@ -2,23 +2,32 @@ import Link from "next/link";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import Chevron from "@/components/icons/Chevron";
-import { GAME_FAQ } from "@/lib/constants";
 
-export default function GameFaqSection() {
+export default function GameFaqSection({
+  heading,
+  items,
+}: {
+  heading: string;
+  items: readonly {
+    question: string;
+    answer: string;
+    link?: { label: string; href: string };
+  }[];
+}) {
   return (
     <section className="bg-slate-50 py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black-900">
       <Container>
         <ScrollReveal animation="fadeInUp">
           <div className="max-w-2xl">
             <h2 className="text-balance text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl md:text-5xl dark:text-white">
-              자주 묻는 질문
+              {heading}
             </h2>
           </div>
         </ScrollReveal>
 
         <ScrollReveal animation="fadeInUp" delayMs={80}>
           <ul className="mt-12 border-t border-slate-200 dark:border-white/10">
-            {GAME_FAQ.map((item) => (
+            {items.map((item) => (
               <li
                 key={item.question}
                 className="border-b border-slate-200 dark:border-white/10"

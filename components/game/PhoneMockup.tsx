@@ -4,6 +4,85 @@ import Image from "next/image";
 import { ReactNode } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import type { Locale } from "@/lib/i18n/config";
+
+// 폰 목업 안에 들어가는 예시 화면 텍스트(로케일별). 목업은 /en/game 등에서
+// useLocale로 현재 언어를 읽어 알맞은 예시를 보여준다.
+type ChatBubble = { name?: string; text: string; side: "left" | "right" };
+const MOCKUP_TEXT: Record<
+  Locale,
+  {
+    zone: { label: string; value: string };
+    location: { label: string; refresh: string };
+    qr: { title: string; hint: string; alt: string };
+    chat: {
+      channel: string;
+      members: string;
+      title: string;
+      input: string;
+      bubbles: ChatBubble[];
+    };
+  }
+> = {
+  ko: {
+    zone: { label: "플레이 구역", value: "반경 200m · 공원" },
+    location: { label: "도둑 발자국 · 마지막 공개", refresh: "3분 뒤 갱신" },
+    qr: { title: "홍길동 님의 QR", hint: "경찰에게 보여주세요", alt: "QR 코드" },
+    chat: {
+      channel: "경찰팀 채널",
+      members: "· 4명",
+      title: "팀 채팅",
+      input: "메시지 입력",
+      bubbles: [
+        { name: "상희", text: "공원 입구로 집결하자", side: "left" },
+        { name: "혜림", text: "도둑 2명 북쪽 근처", side: "left" },
+        { text: "돌아서 접근할게", side: "right" },
+        { name: "지희", text: "1명 체포 완료", side: "left" },
+        { text: "굿, 나머지 찾는 중", side: "right" },
+      ],
+    },
+  },
+  en: {
+    zone: { label: "Play area", value: "200m radius · Park" },
+    location: {
+      label: "Robber footprints · Last reveal",
+      refresh: "Updates in 3 min",
+    },
+    qr: { title: "Alex's QR", hint: "Show this to a cop", alt: "QR code" },
+    chat: {
+      channel: "Cops channel",
+      members: "· 4",
+      title: "Team chat",
+      input: "Message",
+      bubbles: [
+        { name: "Alex", text: "Regroup at the park entrance", side: "left" },
+        { name: "Mia", text: "2 robbers near the north side", side: "left" },
+        { text: "I'll circle around", side: "right" },
+        { name: "Sam", text: "One caught", side: "left" },
+        { text: "Nice, finding the rest", side: "right" },
+      ],
+    },
+  },
+  ja: {
+    zone: { label: "プレイエリア", value: "半径200m・公園" },
+    location: { label: "泥棒の足跡・最終公開", refresh: "3分後に更新" },
+    qr: { title: "ハルさんのQR", hint: "警察に見せてください", alt: "QRコード" },
+    chat: {
+      channel: "警察チームチャンネル",
+      members: "・4人",
+      title: "チームチャット",
+      input: "メッセージを入力",
+      bubbles: [
+        { name: "ハル", text: "公園の入口に集合", side: "left" },
+        { name: "リン", text: "北側に泥棒が2人", side: "left" },
+        { text: "回り込むね", side: "right" },
+        { name: "ソラ", text: "1人つかまえた", side: "left" },
+        { text: "ナイス、残りを探す", side: "right" },
+      ],
+    },
+  },
+};
 
 type FrameProps = {
   children: ReactNode;
@@ -94,6 +173,7 @@ function Shoeprints({
 
 export function ZoneMockup() {
   const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const t = MOCKUP_TEXT[useLocale()].zone;
   return (
     <div
       ref={ref}
@@ -132,10 +212,8 @@ export function ZoneMockup() {
         </g>
       </svg>
       <div className="absolute inset-x-3 bottom-3 rounded-xl bg-white px-3 py-2 shadow-md ring-1 ring-slate-200">
-        <p className="text-[10px] font-medium text-slate-400">플레이 구역</p>
-        <p className="mt-0.5 text-xs font-bold text-slate-900">
-          반경 200m · 공원
-        </p>
+        <p className="text-[10px] font-medium text-slate-400">{t.label}</p>
+        <p className="mt-0.5 text-xs font-bold text-slate-900">{t.value}</p>
       </div>
     </div>
   );
@@ -143,6 +221,7 @@ export function ZoneMockup() {
 
 export function LocationMockup() {
   const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const t = MOCKUP_TEXT[useLocale()].location;
   return (
     <div
       ref={ref}
@@ -161,14 +240,12 @@ export function LocationMockup() {
       />
       <div className="absolute inset-x-3 top-3 rounded-xl bg-white px-3 py-2 shadow-md ring-1 ring-slate-200">
         <div className="flex items-center justify-between">
-          <p className="text-[10px] font-medium text-slate-400">
-            도둑 발자국 · 마지막 공개
-          </p>
+          <p className="text-[10px] font-medium text-slate-400">{t.label}</p>
           <span className="font-mono text-[10px] font-bold tabular-nums text-slate-900">
             00:24
           </span>
         </div>
-        <p className="mt-0.5 text-xs font-bold text-slate-900">3분 뒤 갱신</p>
+        <p className="mt-0.5 text-xs font-bold text-slate-900">{t.refresh}</p>
       </div>
     </div>
   );
@@ -176,20 +253,19 @@ export function LocationMockup() {
 
 export function QrMockup() {
   const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const t = MOCKUP_TEXT[useLocale()].qr;
   return (
     <div
       ref={ref}
       className={`relative flex h-full w-full flex-col items-center bg-[#F8FAFC] pt-[17%] ${visible ? "is-playing" : ""}`}
     >
-      <p className="text-[13px] font-semibold text-slate-900">
-        홍길동 님의 QR
-      </p>
-      <p className="mt-1 text-[10px] text-slate-500">경찰에게 보여주세요</p>
+      <p className="text-[13px] font-semibold text-slate-900">{t.title}</p>
+      <p className="mt-1 text-[10px] text-slate-500">{t.hint}</p>
       <div className="mt-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
         <div className="relative h-36 w-36 overflow-hidden">
           <Image
             src="/demo-qr.svg"
-            alt="QR 코드"
+            alt={t.alt}
             width={144}
             height={144}
             className="h-36 w-36"
@@ -207,6 +283,7 @@ export function QrMockup() {
 
 export function ChatMockup() {
   const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const t = MOCKUP_TEXT[useLocale()].chat;
   return (
     <div
       ref={ref}
@@ -214,27 +291,23 @@ export function ChatMockup() {
     >
       <div className="border-b border-slate-200 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
-          <p className="text-[10px] font-medium text-slate-400">경찰팀 채널</p>
-          <span className="font-mono text-[10px] text-slate-400">· 4명</span>
+          <p className="text-[10px] font-medium text-slate-400">{t.channel}</p>
+          <span className="font-mono text-[10px] text-slate-400">
+            {t.members}
+          </span>
         </div>
-        <p className="mt-0.5 text-sm font-bold text-slate-900">팀 채팅</p>
+        <p className="mt-0.5 text-sm font-bold text-slate-900">{t.title}</p>
       </div>
       <div className="mockup-chat-bubbles flex flex-1 flex-col gap-2 px-3 py-4">
-        <Bubble side="left" name="상희">
-          공원 입구로 집결하자
-        </Bubble>
-        <Bubble side="left" name="혜림">
-          도둑 2명 북쪽 근처
-        </Bubble>
-        <Bubble side="right">돌아서 접근할게</Bubble>
-        <Bubble side="left" name="지희">
-          1명 체포 완료
-        </Bubble>
-        <Bubble side="right">굿, 나머지 찾는 중</Bubble>
+        {t.bubbles.map((bubble, i) => (
+          <Bubble key={i} side={bubble.side} name={bubble.name}>
+            {bubble.text}
+          </Bubble>
+        ))}
       </div>
       <div className="border-t border-slate-200 bg-white px-3 py-2">
         <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5">
-          <span className="text-[10px] text-slate-400">메시지 입력</span>
+          <span className="text-[10px] text-slate-400">{t.input}</span>
           <span className="ml-auto inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-blue text-[9px] font-bold text-white">
             ↑
           </span>
