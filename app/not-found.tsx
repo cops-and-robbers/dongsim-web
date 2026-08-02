@@ -4,11 +4,53 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type PointerEvent, type KeyboardEvent } from "react";
 import Container from "@/components/ui/Container";
 import JailedRobberIcon from "@/components/characters/JailedRobberIcon";
+import { localizedPath, type Locale } from "@/lib/i18n/config";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 type Phase = "idle" | "dragging" | "returning" | "captured";
 
+// 로케일 접두어 없는 경로의 404도 있으므로 문구는 여기 인라인으로 둔다.
+const NOT_FOUND: Record<
+  Locale,
+  {
+    aria: string;
+    drag: string;
+    caught: string;
+    title: string;
+    going: string;
+    instruction: string;
+  }
+> = {
+  ko: {
+    aria: "도둑을 드래그해서 플레이 구역으로 옮기기",
+    drag: "드래그해서 옮기기",
+    caught: "잡았다!",
+    title: "여긴 플레이 구역 밖이에요",
+    going: "홈으로 이동하고 있어요...",
+    instruction: "도둑을 플레이 구역으로 옮겨 주세요.",
+  },
+  en: {
+    aria: "Drag the robber into the play zone",
+    drag: "Drag me over",
+    caught: "Caught!",
+    title: "You're out of the play zone",
+    going: "Taking you home...",
+    instruction: "Drag the robber into the play zone.",
+  },
+  ja: {
+    aria: "泥棒をドラッグしてプレイエリアに移動",
+    drag: "ドラッグして移動",
+    caught: "つかまえた！",
+    title: "ここはプレイエリアの外です",
+    going: "ホームに移動しています...",
+    instruction: "泥棒をプレイエリアに移動してください。",
+  },
+};
+
 export default function NotFound() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = NOT_FOUND[locale];
   const charRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef({
@@ -47,7 +89,7 @@ export default function NotFound() {
     setPhase("captured");
     setIsNear(false);
     setPos((p) => ({ x: p.x + hit.dx, y: p.y + hit.dy }));
-    window.setTimeout(() => router.push("/"), 650);
+    window.setTimeout(() => router.push(localizedPath("/", locale)), 650);
   };
 
   const snapBack = () => {
@@ -112,7 +154,7 @@ export default function NotFound() {
               ref={charRef}
               role="button"
               tabIndex={disabled ? -1 : 0}
-              aria-label="도둑을 드래그해서 플레이 구역으로 옮기기"
+              aria-label={t.aria}
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
@@ -143,12 +185,12 @@ export default function NotFound() {
               </div>
               {phase === "idle" && (
                 <span className="nf-hint pointer-events-none absolute -bottom-8 whitespace-nowrap rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold text-white shadow-md dark:bg-white dark:text-app-black">
-                  드래그해서 옮기기
+                  {t.drag}
                 </span>
               )}
               {isCaptured && (
                 <span className="pointer-events-none absolute -top-8 whitespace-nowrap rounded-full bg-brand-blue px-3 py-1 text-[11px] font-bold text-white shadow-lg dark:bg-brand-green dark:text-app-black">
-                  잡았다!
+                  {t.caught}
                 </span>
               )}
             </div>
@@ -188,12 +230,10 @@ export default function NotFound() {
             404 · OUT OF ZONE
           </p>
           <h1 className="mt-3 text-balance text-center text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl md:text-5xl dark:text-white">
-            여긴 플레이 구역 밖이에요
+            {t.title}
           </h1>
           <p className="mt-3 text-pretty text-center text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
-            {isCaptured
-              ? "홈으로 이동하고 있어요..."
-              : "도둑을 플레이 구역으로 옮겨 주세요."}
+            {isCaptured ? t.going : t.instruction}
           </p>
         </div>
       </Container>
