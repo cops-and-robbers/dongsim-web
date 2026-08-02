@@ -3,6 +3,7 @@ import Script from "next/script";
 import localFont from "next/font/local";
 import "./globals.css";
 import "./a11y.css";
+import "./i18n.css";
 
 const pretendard = localFont({
   src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
@@ -156,7 +157,7 @@ export default function RootLayout({
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem('team');var d=s==='robber'||(s!=='police'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#080a0c';}}catch(e){}})();`,
+            __html: `(function(){try{var p=location.pathname;var lg=(p==='/ja'||p.indexOf('/ja/')===0)?'ja':(p==='/en'||p.indexOf('/en/')===0)?'en':'ko';document.documentElement.lang=lg;var s=localStorage.getItem('team');var d=s==='robber'||(s!=='police'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#080a0c';}}catch(e){}})();`,
           }}
         />
         <Script id="gtm-init" strategy="afterInteractive">

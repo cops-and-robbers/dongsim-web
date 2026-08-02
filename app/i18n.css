@@ -1,0 +1,8 @@
+/* 다국어 줄바꿈 보정.
+   globals.css의 word-break: keep-all은 한국어(띄어쓰기 단위 줄바꿈)에 맞춰져 있는데,
+   일본어는 띄어쓰기가 없어 긴 문자열이 쪼개지지 않고 가로로 넘친다.
+   일본어에서는 일반 줄바꿈(문자 단위)으로 되돌린다. (<html lang="ja"> 기준) */
+:lang(ja) {
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
