@@ -67,6 +67,19 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [team]);
 
+  // 파비콘도 테마에 동기화 - 라이트(경찰)는 파랑, 다크(도둑)는 초록 SVG.
+  // 기존 아이콘 링크를 모두 지우고 하나만 다시 얹어야 브라우저가 확실히 갱신한다.
+  // (favicon.ico가 남아 있으면 그게 우선권을 가져 스왑이 안 먹힘.)
+  // apple-touch-icon은 rel 토큰이 달라 매칭되지 않으므로 유지된다.
+  useEffect(() => {
+    document.querySelectorAll("link[rel~='icon']").forEach((el) => el.remove());
+    const link = document.createElement("link");
+    link.rel = "icon";
+    link.type = "image/svg+xml";
+    link.href = team === "robber" ? "/favicon-dark.svg" : "/favicon-light.svg";
+    document.head.appendChild(link);
+  }, [team]);
+
   return (
     <ThemeContext.Provider value={{ team, setTeam }}>
       {children}

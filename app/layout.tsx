@@ -94,7 +94,7 @@ export const metadata: Metadata = {
     appId: "6756843948",
   },
   icons: {
-    icon: "/icon.png",
+    icon: "/favicon-light.svg",
     apple: "/apple-icon.png",
   },
   verification: {
