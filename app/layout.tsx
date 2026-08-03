@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import "./a11y.css";
 import "./i18n.css";
@@ -197,6 +199,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             <Footer />
           </LocaleProvider>
         </ThemeProvider>
+        {/* Vercel 방문 분석 + 실사용자 Core Web Vitals(RUM) 수집 */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
