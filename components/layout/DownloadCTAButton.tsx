@@ -5,11 +5,16 @@ import { APP_LINKS } from "@/lib/constants";
 import { AppleIcon, PlayIcon } from "@/components/ui/StoreIcons";
 import { CHROME } from "@/lib/i18n/chrome";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { trackEvent } from "@/lib/analytics";
 
 export default function DownloadCTAButton() {
-  const chrome = CHROME[useLocale()];
+  const locale = useLocale();
+  const chrome = CHROME[locale];
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const trackDownload = (store: "appstore" | "googleplay") =>
+    trackEvent("app_download_click", { store, placement: "header", locale });
 
   useEffect(() => {
     if (!open) return;
@@ -38,10 +43,12 @@ export default function DownloadCTAButton() {
     const isAndroid = /Android/i.test(ua);
 
     if (isIOS && APP_LINKS.appStore) {
+      trackDownload("appstore");
       window.location.href = APP_LINKS.appStore;
       return;
     }
     if (isAndroid && APP_LINKS.googlePlay) {
+      trackDownload("googleplay");
       window.location.href = APP_LINKS.googlePlay;
       return;
     }
@@ -71,7 +78,10 @@ export default function DownloadCTAButton() {
             target="_blank"
             rel="noreferrer"
             role="menuitem"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              trackDownload("appstore");
+              setOpen(false);
+            }}
             className="flex items-center gap-3 px-4 py-3 text-slate-900 transition-colors hover:bg-slate-50 dark:text-white dark:hover:bg-white/5"
           >
             <AppleIcon className="h-6 w-6 shrink-0 fill-current" />
@@ -87,7 +97,10 @@ export default function DownloadCTAButton() {
             target="_blank"
             rel="noreferrer"
             role="menuitem"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              trackDownload("googleplay");
+              setOpen(false);
+            }}
             className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-slate-900 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-white dark:hover:bg-white/5"
           >
             <PlayIcon className="h-6 w-6 shrink-0 fill-current" />

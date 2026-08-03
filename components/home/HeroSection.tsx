@@ -177,7 +177,7 @@ export default function HeroSection({
                     </div>
                   </div>
                 </div>
-                <DownloadButtons />
+                <DownloadButtons placement="home_hero" />
               </div>
 
               <p className="mt-6 text-sm text-slate-400 dark:text-slate-500">

@@ -7,11 +7,13 @@ import ResultScreen from "./ResultScreen";
 import { GAME_MS, freshGame, lerp, type Game } from "./types";
 import { PLAY_TEXT } from "@/lib/i18n/play";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { trackEvent } from "@/lib/analytics";
 
 type Phase = "intro" | "playing" | "over";
 
 export default function ThiefHuntGame() {
-  const t = PLAY_TEXT[useLocale()];
+  const locale = useLocale();
+  const t = PLAY_TEXT[locale];
   const [phase, setPhase] = useState<Phase>("intro");
   const [view, setView] = useState<Game>(() => freshGame());
   const [shaking, setShaking] = useState(false);
@@ -24,6 +26,7 @@ export default function ThiefHuntGame() {
   }, []);
 
   const start = useCallback(() => {
+    trackEvent("minigame_start", { locale });
     const g = freshGame();
     const now = Date.now();
     g.startAt = now;
@@ -31,7 +34,7 @@ export default function ThiefHuntGame() {
     setShaking(false);
     snapshot();
     setPhase("playing");
-  }, [snapshot]);
+  }, [snapshot, locale]);
 
   const tap = useCallback(
     (i: number) => {

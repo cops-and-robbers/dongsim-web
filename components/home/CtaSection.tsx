@@ -28,7 +28,7 @@ export default function CtaSection({
                 {copy.lead2}
               </p>
               <div className="mt-4 flex justify-center">
-                <DownloadButtons variant="onDark" />
+                <DownloadButtons variant="onDark" placement="home_cta" />
               </div>
             </div>
           </div>

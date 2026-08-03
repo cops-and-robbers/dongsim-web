@@ -5,10 +5,13 @@ import { APP_LINKS } from "@/lib/constants";
 import { AppleIcon, PlayIcon } from "@/components/ui/StoreIcons";
 import { CHROME } from "@/lib/i18n/chrome";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { trackEvent } from "@/lib/analytics";
 
 type Props = {
   variant?: "primary" | "onDark";
   className?: string;
+  // GA4 app_download_click 이벤트에 어느 위치의 버튼인지 기록(예: home_hero)
+  placement?: string;
 };
 
 function DownloadIcon({ className }: { className?: string }) {
@@ -36,10 +39,15 @@ const baseBtn =
 export default function DownloadButtons({
   variant = "primary",
   className = "",
+  placement = "unknown",
 }: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const chrome = CHROME[useLocale()];
+  const locale = useLocale();
+  const chrome = CHROME[locale];
+
+  const trackDownload = (store: "appstore" | "googleplay") =>
+    trackEvent("app_download_click", { store, placement, locale });
 
   useEffect(() => {
     if (!open) return;
@@ -68,10 +76,12 @@ export default function DownloadButtons({
     const isAndroid = /Android/i.test(ua);
 
     if (isIOS && APP_LINKS.appStore) {
+      trackDownload("appstore");
       window.location.href = APP_LINKS.appStore;
       return;
     }
     if (isAndroid && APP_LINKS.googlePlay) {
+      trackDownload("googleplay");
       window.location.href = APP_LINKS.googlePlay;
       return;
     }
@@ -120,7 +130,10 @@ export default function DownloadButtons({
                 target="_blank"
                 rel="noreferrer"
                 role="menuitem"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  trackDownload("appstore");
+                  setOpen(false);
+                }}
                 className="flex items-center gap-3 px-5 py-4 text-slate-900 transition-colors hover:bg-slate-50 dark:text-white dark:hover:bg-white/5"
               >
                 <AppleIcon className="h-6 w-6 shrink-0 fill-current" />
@@ -132,7 +145,10 @@ export default function DownloadButtons({
               target="_blank"
               rel="noreferrer"
               role="menuitem"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                trackDownload("googleplay");
+                setOpen(false);
+              }}
               className="flex items-center gap-3 border-t border-slate-100 px-5 py-4 text-slate-900 transition-colors hover:bg-slate-50 dark:border-white/10 dark:text-white dark:hover:bg-white/5"
             >
               <PlayIcon className="h-6 w-auto shrink-0" />
@@ -148,6 +164,7 @@ export default function DownloadButtons({
             href={APP_LINKS.appStore}
             target="_blank"
             rel="noreferrer"
+            onClick={() => trackDownload("appstore")}
             className={`${baseBtn} ${appleStyle} min-w-45 px-6 py-3.5`}
             aria-label="App Store에서 다운로드"
           >
@@ -171,6 +188,7 @@ export default function DownloadButtons({
           href={APP_LINKS.googlePlay}
           target="_blank"
           rel="noreferrer"
+          onClick={() => trackDownload("googleplay")}
           className={`${baseBtn} ${googleStyle} min-w-45 px-6 py-3.5`}
           aria-label="Google Play에서 다운로드"
         >

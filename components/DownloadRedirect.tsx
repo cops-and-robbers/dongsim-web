@@ -5,6 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import DownloadButtons from "@/components/ui/DownloadButtons";
 import { APP_LINKS } from "@/lib/constants";
 import { BRAND_NAME, appIconSrc, type Locale } from "@/lib/i18n/config";
+import { trackEvent } from "@/lib/analytics";
 
 // 이 페이지는 로케일 접두어 없는 /download 하나뿐이라(부스 QR용, noindex),
 // 브라우저 언어로 문구를 고른다. 한국어 서비스라 미지정 언어는 영어로.
@@ -52,16 +53,26 @@ export default function DownloadRedirect() {
   useEffect(() => {
     const ua = navigator.userAgent || "";
     if (/iPad|iPhone|iPod/.test(ua)) {
+      trackEvent("app_download_click", {
+        store: "appstore",
+        placement: "download_qr",
+        locale,
+      });
       window.location.replace(APP_LINKS.appStore);
       return;
     }
     if (/Android/i.test(ua)) {
+      trackEvent("app_download_click", {
+        store: "googleplay",
+        placement: "download_qr",
+        locale,
+      });
       window.location.replace(APP_LINKS.googlePlay);
       return;
     }
     const t = window.setTimeout(() => setFallback(true), 0);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [locale]);
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-white px-6 text-center transition-colors duration-500 dark:bg-app-black">
@@ -81,7 +92,7 @@ export default function DownloadRedirect() {
           {fallback ? text.fallback : text.redirecting}
         </p>
       </div>
-      {fallback && <DownloadButtons />}
+      {fallback && <DownloadButtons placement="download_page" />}
     </main>
   );
 }
