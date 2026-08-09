@@ -1,0 +1,84 @@
+name: "🐛 버그"
+description: 웹사이트에서 발생한 버그를 신고해요.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        재현 방법을 자세히 적어주실수록 빨리 고칠 수 있어요.
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영역
+      options:
+        - 홈 · 랜딩
+        - 관리자(admin)
+        - 블로그
+        - 다국어(i18n)
+        - 다운로드 · CTA
+        - 축제 · 부스
+        - 공통 · 기타
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: 🚨 요약
+      description: 어떤 현상이 나타나는지 한두 문장으로 적어주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 🔄 재현 방법
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ 기대한 동작 · ❌ 실제 동작
+      placeholder: |
+        기대: 저장 버튼을 누르면 공지가 등록돼요.
+        실제: 아무 반응이 없고 콘솔에 400 에러가 떠요.
+    validations:
+      required: true
+  - type: dropdown
+    id: screen
+    attributes:
+      label: 화면
+      options:
+        - 데스크톱
+        - 모바일
+        - 둘 다
+    validations:
+      required: true
+  - type: dropdown
+    id: theme
+    attributes:
+      label: 테마
+      options:
+        - 라이트
+        - 다크
+        - 둘 다
+        - 상관없음
+    validations:
+      required: false
+  - type: input
+    id: env
+    attributes:
+      label: 환경
+      description: 브라우저 · OS · 기기 (아는 만큼)
+      placeholder: 예) Chrome 127 · macOS · iPhone 15
+    validations:
+      required: false
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 📸 스크린샷 · 로그
+      description: 화면 캡처나 콘솔·네트워크 에러 로그가 있으면 붙여주세요. (선택)
+    validations:
+      required: false

@@ -1,0 +1,52 @@
+name: "🎨 UI · 디자인"
+description: 화면·레이아웃·문구 톤 등 디자인을 다듬어요.
+labels: ["design"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        경찰·도둑 두 진영은 대등하게, 라이트(경찰·파랑)·다크(도둑·초록)를 쌍으로 다뤄요.
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영역
+      options:
+        - 홈 · 랜딩
+        - 관리자(admin)
+        - 블로그
+        - 다운로드 · CTA
+        - 축제 · 부스
+        - 공통 · 기타
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: 🎯 지금 화면 · 아쉬운 점
+      description: 어디가 어떻게 어색한지 적어주세요. 스크린샷이 있으면 함께요.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: ✨ 제안하는 개선
+      description: 어떻게 바꾸면 좋을지 적어주세요.
+    validations:
+      required: true
+  - type: checkboxes
+    id: considerations
+    attributes:
+      label: 고려 사항
+      options:
+        - label: 라이트 · 다크 모두 확인이 필요해요
+        - label: 모바일 반응형 확인이 필요해요
+        - label: 사용자 문구(카피) 변경이 포함돼요
+    validations:
+      required: false
+  - type: textarea
+    id: refs
+    attributes:
+      label: 🔗 레퍼런스
+      description: 참고 디자인·서비스 링크나 이미지가 있으면 붙여주세요. (선택)
+    validations:
+      required: false

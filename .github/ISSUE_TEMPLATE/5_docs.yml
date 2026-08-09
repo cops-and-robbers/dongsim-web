@@ -1,0 +1,34 @@
+name: "📝 문서 · 카피"
+description: 문서, 사용자 문구(카피), 블로그, 번역을 쓰거나 고쳐요.
+labels: ["docs"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        사용자에게 보이는 문구는 `lib/i18n/messages.ts`가 단일 출처예요. 말투는 `docs/copy-guide.md`를 따라요.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 종류
+      options:
+        - 개발 문서(docs)
+        - 사용자 문구(카피)
+        - 블로그 글
+        - 번역(영어 · 일본어)
+    validations:
+      required: true
+  - type: textarea
+    id: content
+    attributes:
+      label: 📝 내용
+      description: 무엇을 쓰거나 고칠지 적어주세요.
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: 📍 위치
+      description: 관련 파일 경로나 페이지가 있으면 적어주세요. (선택)
+      placeholder: 예) lib/i18n/messages.ts · docs/i18n.md
+    validations:
+      required: false

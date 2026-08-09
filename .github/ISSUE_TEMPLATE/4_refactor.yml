@@ -1,0 +1,53 @@
+name: "🔨 리팩토링"
+description: 동작은 그대로, 코드 구조·품질을 개선해요.
+labels: ["refactor"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        사용자 눈에 보이는 동작 변화는 없고, 코드만 개선하는 작업이에요.
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영역
+      options:
+        - 홈 · 랜딩
+        - 관리자(admin)
+        - 블로그
+        - 다국어(i18n)
+        - 다운로드 · CTA
+        - 축제 · 부스
+        - 공통 · 기타
+    validations:
+      required: true
+  - type: textarea
+    id: target
+    attributes:
+      label: 🔨 대상
+      description: 어떤 파일·컴포넌트·모듈을 손볼지 적어주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 📝 현재 문제
+      description: 지금 구조가 왜 아쉬운지(중복·결합도·가독성 등) 적어주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: 🛠️ 개선 방향 · 작업 목록
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: refs
+    attributes:
+      label: 🔗 관련 링크
+      description: 관련 이슈·PR이 있으면 적어주세요. (선택)
+    validations:
+      required: false
