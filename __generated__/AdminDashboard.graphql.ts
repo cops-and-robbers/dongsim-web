@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<c63426380c33b29f7ffa3b136ecb93e8>>
+ * @generated SignedSource<<a2490301556b3cc389f3483965e360b7>>
  * @lightSyntaxTransform
  */
 
@@ -8,33 +8,31 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from 'relay-runtime';
-export type GameStatus = "CANCELED" | "FINISHED" | "IN_PROGRESS" | "WAITING" | "%future added value";
-export type AdminStats$variables = Record<PropertyKey, never>;
-export type AdminStats$data = {
-  readonly adminStats: {
-    readonly dailyTrend: ReadonlyArray<{
-      readonly date: string;
-      readonly games: number;
-      readonly users: number;
-    }>;
-    readonly eventGames: number;
-    readonly finishedGames: number;
-    readonly gameGrowthRate: number;
-    readonly gamesThisWeek: number;
-    readonly inProgressGames: number;
-    readonly newUsersThisWeek: number;
-    readonly statusBreakdown: ReadonlyArray<{
+export type GameEndReason = "ALL_ARRESTED" | "POLICE_FORFEITED" | "ROBBER_FORFEITED" | "TIME_OVER" | "%future added value";
+export type AdminDashboard$variables = Record<PropertyKey, never>;
+export type AdminDashboard$data = {
+  readonly adminDashboard: {
+    readonly averageGameDurationSeconds: number;
+    readonly endReasonDistribution: ReadonlyArray<{
       readonly count: number;
-      readonly status: GameStatus;
+      readonly endReason: GameEndReason;
     }>;
-    readonly totalGames: number;
-    readonly totalUsers: number;
-    readonly userGrowthRate: number;
+    readonly inProgressGameCount: number;
+    readonly pendingBugReportCount: number;
+    readonly pendingReportCount: number;
+    readonly todayGameCount: number;
+    readonly todayNewUserCount: number;
+    readonly totalUserCount: number;
+    readonly weeklyGameCount: number;
+    readonly winRateByTeam: {
+      readonly policeWinRate: number;
+      readonly robberWinRate: number;
+    };
   };
 };
-export type AdminStats = {
-  response: AdminStats$data;
-  variables: AdminStats$variables;
+export type AdminDashboard = {
+  response: AdminDashboard$data;
+  variables: AdminDashboard$variables;
 };
 
 const node: ConcreteRequest = (function(){
@@ -42,87 +40,80 @@ var v0 = [
   {
     "alias": null,
     "args": null,
-    "concreteType": "AdminStats",
+    "concreteType": "AdminDashboard",
     "kind": "LinkedField",
-    "name": "adminStats",
+    "name": "adminDashboard",
     "plural": false,
     "selections": [
       {
         "alias": null,
         "args": null,
         "kind": "ScalarField",
-        "name": "totalUsers",
+        "name": "todayGameCount",
         "storageKey": null
       },
       {
         "alias": null,
         "args": null,
         "kind": "ScalarField",
-        "name": "totalGames",
+        "name": "weeklyGameCount",
         "storageKey": null
       },
       {
         "alias": null,
         "args": null,
         "kind": "ScalarField",
-        "name": "inProgressGames",
+        "name": "inProgressGameCount",
         "storageKey": null
       },
       {
         "alias": null,
         "args": null,
         "kind": "ScalarField",
-        "name": "finishedGames",
+        "name": "totalUserCount",
         "storageKey": null
       },
       {
         "alias": null,
         "args": null,
         "kind": "ScalarField",
-        "name": "eventGames",
+        "name": "todayNewUserCount",
         "storageKey": null
       },
       {
         "alias": null,
         "args": null,
         "kind": "ScalarField",
-        "name": "newUsersThisWeek",
+        "name": "pendingReportCount",
         "storageKey": null
       },
       {
         "alias": null,
         "args": null,
         "kind": "ScalarField",
-        "name": "gamesThisWeek",
+        "name": "pendingBugReportCount",
         "storageKey": null
       },
       {
         "alias": null,
         "args": null,
         "kind": "ScalarField",
-        "name": "userGrowthRate",
+        "name": "averageGameDurationSeconds",
         "storageKey": null
       },
       {
         "alias": null,
         "args": null,
-        "kind": "ScalarField",
-        "name": "gameGrowthRate",
-        "storageKey": null
-      },
-      {
-        "alias": null,
-        "args": null,
-        "concreteType": "StatusCount",
+        "concreteType": "EndReasonDistribution",
         "kind": "LinkedField",
-        "name": "statusBreakdown",
+        "name": "endReasonDistribution",
         "plural": true,
         "selections": [
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "status",
+            "name": "endReason",
             "storageKey": null
           },
           {
@@ -138,30 +129,23 @@ var v0 = [
       {
         "alias": null,
         "args": null,
-        "concreteType": "DailyPoint",
+        "concreteType": "WinRateByTeam",
         "kind": "LinkedField",
-        "name": "dailyTrend",
-        "plural": true,
+        "name": "winRateByTeam",
+        "plural": false,
         "selections": [
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "date",
+            "name": "policeWinRate",
             "storageKey": null
           },
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "users",
-            "storageKey": null
-          },
-          {
-            "alias": null,
-            "args": null,
-            "kind": "ScalarField",
-            "name": "games",
+            "name": "robberWinRate",
             "storageKey": null
           }
         ],
@@ -176,7 +160,7 @@ return {
     "argumentDefinitions": [],
     "kind": "Fragment",
     "metadata": null,
-    "name": "AdminStats",
+    "name": "AdminDashboard",
     "selections": (v0/*:: as any*/),
     "type": "Query",
     "abstractKey": null
@@ -185,20 +169,20 @@ return {
   "operation": {
     "argumentDefinitions": [],
     "kind": "Operation",
-    "name": "AdminStats",
+    "name": "AdminDashboard",
     "selections": (v0/*:: as any*/)
   },
   "params": {
-    "cacheID": "1ee6dbb93c561d988226bdfea84ca9fa",
+    "cacheID": "d3dc89af9a586ace3d2309ab03d11604",
     "id": null,
     "metadata": {},
-    "name": "AdminStats",
+    "name": "AdminDashboard",
     "operationKind": "query",
-    "text": "query AdminStats {\n  adminStats {\n    totalUsers\n    totalGames\n    inProgressGames\n    finishedGames\n    eventGames\n    newUsersThisWeek\n    gamesThisWeek\n    userGrowthRate\n    gameGrowthRate\n    statusBreakdown {\n      status\n      count\n    }\n    dailyTrend {\n      date\n      users\n      games\n    }\n  }\n}\n"
+    "text": "query AdminDashboard {\n  adminDashboard {\n    todayGameCount\n    weeklyGameCount\n    inProgressGameCount\n    totalUserCount\n    todayNewUserCount\n    pendingReportCount\n    pendingBugReportCount\n    averageGameDurationSeconds\n    endReasonDistribution {\n      endReason\n      count\n    }\n    winRateByTeam {\n      policeWinRate\n      robberWinRate\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "9b5988dee16a2dcf1695b76bda9e293c";
+(node as any).hash = "3ca9ea94f668bf46d981a9a1aa8d01e4";
 
 export default node;

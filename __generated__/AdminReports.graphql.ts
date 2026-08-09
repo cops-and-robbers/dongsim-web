@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<4ae0944bbb3cb35f8c6c9f70d054b304>>
+ * @generated SignedSource<<2a095b55f10be95dfcfb923041c40294>>
  * @lightSyntaxTransform
  */
 
@@ -8,29 +8,30 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from 'relay-runtime';
-export type DeviceType = "ANDROID" | "IOS" | "%future added value";
-export type Role = "ADMIN" | "USER" | "%future added value";
-export type SocialType = "APPLE" | "GOOGLE" | "KAKAO" | "%future added value";
+export type ReportStatus = "DISMISSED" | "PENDING" | "RESOLVED" | "%future added value";
+export type ReportType = "CHEATING" | "DEMORALIZATION" | "ETC" | "FISHING" | "IMPERSONATION" | "SPAM" | "VERBAL_ABUSE" | "%future added value";
 export type SortDirection = "ASC" | "DESC" | "%future added value";
-export type AdminUsers$variables = {
-  nickname?: string | null | undefined;
+export type AdminReports$variables = {
   page?: number | null | undefined;
   size?: number | null | undefined;
-  socialType?: SocialType | null | undefined;
   sortDirection?: SortDirection | null | undefined;
+  status?: ReportStatus | null | undefined;
 };
-export type AdminUsers$data = {
-  readonly adminUsers: {
+export type AdminReports$data = {
+  readonly adminReports: {
     readonly content: ReadonlyArray<{
+      readonly adminMemo: string | null | undefined;
       readonly createdAt: string;
-      readonly device: {
-        readonly deviceType: DeviceType;
-      } | null | undefined;
+      readonly etcReason: string | null | undefined;
+      readonly gameId: string;
       readonly id: string;
-      readonly locationTermsAgreed: boolean;
-      readonly nickname: string;
-      readonly role: Role;
-      readonly socialType: SocialType;
+      readonly messageContent: string;
+      readonly reportType: ReportType;
+      readonly reportedNickname: string;
+      readonly reportedUserId: string;
+      readonly reporterNickname: string;
+      readonly reporterUserId: string;
+      readonly status: ReportStatus;
     }>;
     readonly page: number;
     readonly size: number;
@@ -38,46 +39,36 @@ export type AdminUsers$data = {
     readonly totalPages: number;
   };
 };
-export type AdminUsers = {
-  response: AdminUsers$data;
-  variables: AdminUsers$variables;
+export type AdminReports = {
+  response: AdminReports$data;
+  variables: AdminReports$variables;
 };
 
 const node: ConcreteRequest = (function(){
 var v0 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "nickname"
+  "name": "page"
 },
 v1 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "page"
+  "name": "size"
 },
 v2 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "size"
+  "name": "sortDirection"
 },
 v3 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "socialType"
+  "name": "status"
 },
-v4 = {
-  "defaultValue": null,
-  "kind": "LocalArgument",
-  "name": "sortDirection"
-},
-v5 = [
+v4 = [
   {
     "alias": null,
     "args": [
-      {
-        "kind": "Variable",
-        "name": "nickname",
-        "variableName": "nickname"
-      },
       {
         "kind": "Variable",
         "name": "page",
@@ -90,24 +81,24 @@ v5 = [
       },
       {
         "kind": "Variable",
-        "name": "socialType",
-        "variableName": "socialType"
+        "name": "sortDirection",
+        "variableName": "sortDirection"
       },
       {
         "kind": "Variable",
-        "name": "sortDirection",
-        "variableName": "sortDirection"
+        "name": "status",
+        "variableName": "status"
       }
     ],
-    "concreteType": "AdminUserPage",
+    "concreteType": "AdminReportPage",
     "kind": "LinkedField",
-    "name": "adminUsers",
+    "name": "adminReports",
     "plural": false,
     "selections": [
       {
         "alias": null,
         "args": null,
-        "concreteType": "AdminUser",
+        "concreteType": "AdminReport",
         "kind": "LinkedField",
         "name": "content",
         "plural": true,
@@ -123,28 +114,70 @@ v5 = [
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "nickname",
+            "name": "gameId",
             "storageKey": null
           },
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "socialType",
+            "name": "reporterUserId",
             "storageKey": null
           },
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "role",
+            "name": "reporterNickname",
             "storageKey": null
           },
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "locationTermsAgreed",
+            "name": "reportedUserId",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "reportedNickname",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "messageContent",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "reportType",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "etcReason",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "status",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "adminMemo",
             "storageKey": null
           },
           {
@@ -152,24 +185,6 @@ v5 = [
             "args": null,
             "kind": "ScalarField",
             "name": "createdAt",
-            "storageKey": null
-          },
-          {
-            "alias": null,
-            "args": null,
-            "concreteType": "UserDevice",
-            "kind": "LinkedField",
-            "name": "device",
-            "plural": false,
-            "selections": [
-              {
-                "alias": null,
-                "args": null,
-                "kind": "ScalarField",
-                "name": "deviceType",
-                "storageKey": null
-              }
-            ],
             "storageKey": null
           }
         ],
@@ -213,40 +228,38 @@ return {
       (v0/*:: as any*/),
       (v1/*:: as any*/),
       (v2/*:: as any*/),
-      (v3/*:: as any*/),
-      (v4/*:: as any*/)
+      (v3/*:: as any*/)
     ],
     "kind": "Fragment",
     "metadata": null,
-    "name": "AdminUsers",
-    "selections": (v5/*:: as any*/),
+    "name": "AdminReports",
+    "selections": (v4/*:: as any*/),
     "type": "Query",
     "abstractKey": null
   },
   "kind": "Request",
   "operation": {
     "argumentDefinitions": [
-      (v1/*:: as any*/),
-      (v2/*:: as any*/),
       (v0/*:: as any*/),
+      (v1/*:: as any*/),
       (v3/*:: as any*/),
-      (v4/*:: as any*/)
+      (v2/*:: as any*/)
     ],
     "kind": "Operation",
-    "name": "AdminUsers",
-    "selections": (v5/*:: as any*/)
+    "name": "AdminReports",
+    "selections": (v4/*:: as any*/)
   },
   "params": {
-    "cacheID": "fd167f8d22c914235e9de60f4b91de52",
+    "cacheID": "5bc347c449802818c7339efebd033261",
     "id": null,
     "metadata": {},
-    "name": "AdminUsers",
+    "name": "AdminReports",
     "operationKind": "query",
-    "text": "query AdminUsers(\n  $page: Int\n  $size: Int\n  $nickname: String\n  $socialType: SocialType\n  $sortDirection: SortDirection\n) {\n  adminUsers(page: $page, size: $size, nickname: $nickname, socialType: $socialType, sortDirection: $sortDirection) {\n    content {\n      id\n      nickname\n      socialType\n      role\n      locationTermsAgreed\n      createdAt\n      device {\n        deviceType\n      }\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
+    "text": "query AdminReports(\n  $page: Int\n  $size: Int\n  $status: ReportStatus\n  $sortDirection: SortDirection\n) {\n  adminReports(page: $page, size: $size, status: $status, sortDirection: $sortDirection) {\n    content {\n      id\n      gameId\n      reporterUserId\n      reporterNickname\n      reportedUserId\n      reportedNickname\n      messageContent\n      reportType\n      etcReason\n      status\n      adminMemo\n      createdAt\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "efad2ded4854864e7924c2e6107f2bf3";
+(node as any).hash = "562bba234a3624a454fef54c8e5e4a29";
 
 export default node;

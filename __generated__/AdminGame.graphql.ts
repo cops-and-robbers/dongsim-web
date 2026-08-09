@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<57ef5765307c044484b47f4fa26f6414>>
+ * @generated SignedSource<<c6c539c1ab7e646b4eb226441d6ca3eb>>
  * @lightSyntaxTransform
  */
 
@@ -8,6 +8,7 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from 'relay-runtime';
+export type AreaType = "CIRCLE" | "POLYGON" | "%future added value";
 export type GameEndReason = "ALL_ARRESTED" | "POLICE_FORFEITED" | "ROBBER_FORFEITED" | "TIME_OVER" | "%future added value";
 export type GameStatus = "CANCELED" | "FINISHED" | "IN_PROGRESS" | "WAITING" | "%future added value";
 export type ParticipantStatus = "ALIVE" | "JAILED" | "POLICE_WAITING" | "WAITING" | "%future added value";
@@ -18,12 +19,21 @@ export type AdminGame$variables = {
 export type AdminGame$data = {
   readonly adminGame: {
     readonly area: {
-      readonly jailCenterLat: number;
-      readonly jailCenterLng: number;
-      readonly jailRadiusInMeters: number;
-      readonly playgroundCenterLat: number;
-      readonly playgroundCenterLng: number;
-      readonly playgroundRadiusInMeters: number;
+      readonly areaType: AreaType;
+      readonly jailCenterLat: number | null | undefined;
+      readonly jailCenterLng: number | null | undefined;
+      readonly jailPolygon: ReadonlyArray<{
+        readonly latitude: number;
+        readonly longitude: number;
+      }> | null | undefined;
+      readonly jailRadiusInMeters: number | null | undefined;
+      readonly playgroundCenterLat: number | null | undefined;
+      readonly playgroundCenterLng: number | null | undefined;
+      readonly playgroundPolygon: ReadonlyArray<{
+        readonly latitude: number;
+        readonly longitude: number;
+      }> | null | undefined;
+      readonly playgroundRadiusInMeters: number | null | undefined;
     } | null | undefined;
     readonly createdAt: string;
     readonly id: string;
@@ -43,9 +53,6 @@ export type AdminGame$data = {
       readonly arrestedRobberCount: number;
       readonly durationSeconds: number;
       readonly endReason: GameEndReason;
-      readonly playgroundCenterLat: number;
-      readonly playgroundCenterLng: number;
-      readonly playgroundRadiusInMeters: number;
       readonly totalPoliceCount: number;
       readonly totalRobberCount: number;
       readonly winnerTeam: Team;
@@ -75,28 +82,23 @@ v1 = {
   "name": "status",
   "storageKey": null
 },
-v2 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "playgroundCenterLat",
-  "storageKey": null
-},
-v3 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "playgroundCenterLng",
-  "storageKey": null
-},
-v4 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "playgroundRadiusInMeters",
-  "storageKey": null
-},
-v5 = [
+v2 = [
+  {
+    "alias": null,
+    "args": null,
+    "kind": "ScalarField",
+    "name": "latitude",
+    "storageKey": null
+  },
+  {
+    "alias": null,
+    "args": null,
+    "kind": "ScalarField",
+    "name": "longitude",
+    "storageKey": null
+  }
+],
+v3 = [
   {
     "alias": null,
     "args": [
@@ -264,10 +266,7 @@ v5 = [
             "kind": "ScalarField",
             "name": "durationSeconds",
             "storageKey": null
-          },
-          (v2/*:: as any*/),
-          (v3/*:: as any*/),
-          (v4/*:: as any*/)
+          }
         ],
         "storageKey": null
       },
@@ -279,9 +278,34 @@ v5 = [
         "name": "area",
         "plural": false,
         "selections": [
-          (v2/*:: as any*/),
-          (v3/*:: as any*/),
-          (v4/*:: as any*/),
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "areaType",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "playgroundCenterLat",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "playgroundCenterLng",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "playgroundRadiusInMeters",
+            "storageKey": null
+          },
           {
             "alias": null,
             "args": null,
@@ -302,6 +326,26 @@ v5 = [
             "kind": "ScalarField",
             "name": "jailRadiusInMeters",
             "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "concreteType": "Coordinate",
+            "kind": "LinkedField",
+            "name": "playgroundPolygon",
+            "plural": true,
+            "selections": (v2/*:: as any*/),
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "concreteType": "Coordinate",
+            "kind": "LinkedField",
+            "name": "jailPolygon",
+            "plural": true,
+            "selections": (v2/*:: as any*/),
+            "storageKey": null
           }
         ],
         "storageKey": null
@@ -316,7 +360,7 @@ return {
     "kind": "Fragment",
     "metadata": null,
     "name": "AdminGame",
-    "selections": (v5/*:: as any*/),
+    "selections": (v3/*:: as any*/),
     "type": "Query",
     "abstractKey": null
   },
@@ -325,19 +369,19 @@ return {
     "argumentDefinitions": (v0/*:: as any*/),
     "kind": "Operation",
     "name": "AdminGame",
-    "selections": (v5/*:: as any*/)
+    "selections": (v3/*:: as any*/)
   },
   "params": {
-    "cacheID": "5e4dddbc4236352529862b52f83e19bf",
+    "cacheID": "f1bcae07de3b53f38c26ddd8d028ff98",
     "id": null,
     "metadata": {},
     "name": "AdminGame",
     "operationKind": "query",
-    "text": "query AdminGame(\n  $id: ID!\n) {\n  adminGame(id: $id) {\n    id\n    inviteCode\n    status\n    roundDurationMinutes\n    locationRevealIntervalMinutes\n    policeWaitMinutes\n    maxParticipants\n    isEventGame\n    createdAt\n    startedAt\n    participants {\n      userId\n      nickname\n      team\n      status\n      isHost\n    }\n    result {\n      winnerTeam\n      endReason\n      totalPoliceCount\n      totalRobberCount\n      arrestedRobberCount\n      durationSeconds\n      playgroundCenterLat\n      playgroundCenterLng\n      playgroundRadiusInMeters\n    }\n    area {\n      playgroundCenterLat\n      playgroundCenterLng\n      playgroundRadiusInMeters\n      jailCenterLat\n      jailCenterLng\n      jailRadiusInMeters\n    }\n  }\n}\n"
+    "text": "query AdminGame(\n  $id: ID!\n) {\n  adminGame(id: $id) {\n    id\n    inviteCode\n    status\n    roundDurationMinutes\n    locationRevealIntervalMinutes\n    policeWaitMinutes\n    maxParticipants\n    isEventGame\n    createdAt\n    startedAt\n    participants {\n      userId\n      nickname\n      team\n      status\n      isHost\n    }\n    result {\n      winnerTeam\n      endReason\n      totalPoliceCount\n      totalRobberCount\n      arrestedRobberCount\n      durationSeconds\n    }\n    area {\n      areaType\n      playgroundCenterLat\n      playgroundCenterLng\n      playgroundRadiusInMeters\n      jailCenterLat\n      jailCenterLng\n      jailRadiusInMeters\n      playgroundPolygon {\n        latitude\n        longitude\n      }\n      jailPolygon {\n        latitude\n        longitude\n      }\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "5f5ae03d57529d02a090bc51bff1a439";
+(node as any).hash = "5604e10e4258b2504bd8bc48c15ed71b";
 
 export default node;
