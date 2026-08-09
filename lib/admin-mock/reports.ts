@@ -66,7 +66,7 @@ const MSGS = [
   "욕설이 너무 심해요",
 ];
 
-let reports: MockReport[] = Array.from({ length: 14 }, (_, i) => {
+const reports: MockReport[] = Array.from({ length: 14 }, (_, i) => {
   const type = TYPES[i % TYPES.length];
   const rep = NICKS[i % NICKS.length];
   const red = NICKS[(i + 3) % NICKS.length];
@@ -103,7 +103,7 @@ const BUGS = [
   "닉네임 변경이 저장이 안 돼요.",
 ];
 
-let bugReports: MockBugReport[] = BUGS.map((content, i) => {
+const bugReports: MockBugReport[] = BUGS.map((content, i) => {
   const status: BugReportStatus = i % 3 === 0 ? "RESOLVED" : "PENDING";
   const day = 30 - i;
   return {
@@ -125,7 +125,7 @@ function paginate<T extends { status: string; createdAt: string }>(
 ) {
   const page = args.page ?? 0;
   const size = args.size ?? 20;
-  let items = args.status ? all.filter((r) => r.status === args.status) : [...all];
+  const items = args.status ? all.filter((r) => r.status === args.status) : [...all];
   items.sort((a, b) =>
     args.sortDirection === "ASC"
       ? a.createdAt.localeCompare(b.createdAt)

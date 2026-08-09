@@ -68,7 +68,11 @@ export function Donut({
   const r = 52;
   const cx = 70;
   const cy = 70;
-  let acc = 0;
+  // 세그먼트별 시작 각도(누적 비율). 렌더 중 변수 재할당 대신 미리 계산한다.
+  const offsets = segments.reduce<number[]>(
+    (arr, seg) => [...arr, arr[arr.length - 1] + seg.value / total],
+    [0]
+  );
 
   return (
     <div className="flex items-center gap-6">
@@ -84,8 +88,7 @@ export function Donut({
           />
           {segments.map((seg, i) => {
             const frac = seg.value / total;
-            const rotation = acc * 360;
-            acc += frac;
+            const rotation = offsets[i] * 360;
             return (
               <motion.circle
                 key={seg.label}

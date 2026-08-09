@@ -90,6 +90,7 @@ export function AnimatedNumber({
 
   useEffect(() => {
     if (reduce) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplay(value);
       return;
     }

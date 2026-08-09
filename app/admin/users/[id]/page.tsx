@@ -9,7 +9,6 @@ import {
   PageHeader,
   SectionCard,
   EmptyBlock,
-  TableSkeleton,
   ScrollPage,
 } from "@/components/admin/Parts";
 import { Table, Th, Tr, Td } from "@/components/admin/Table";
