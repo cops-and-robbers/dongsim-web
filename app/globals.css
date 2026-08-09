@@ -2,14 +2,92 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Tailwind v4는 기본적으로 button에 pointer 커서를 주지 않는다. 클릭 가능한 요소에 손가락 커서 복원. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
+
+  /* 어드민 액센트 (라이트=경찰 파랑) */
+  --admin-accent: #3f63d9;
+  --admin-accent-hover: #3557c4;
+  --admin-accent-pressed: #2c49a8;
+  --admin-accent-weak: rgba(63, 99, 217, 0.1);
+  --admin-accent-fg: #ffffff;
+
+  /* 어드민 디자인 토큰 (라이트) */
+  --sd-canvas: #f7f8f9;
+  --sd-surface: #ffffff;
+  --sd-fill: #f7f8f9;
+  --sd-basement: #f3f4f5;
+  --sd-fg: #1a1c20;
+  --sd-fg-muted: #555d6d;
+  --sd-fg-subtle: #868b94;
+  --sd-placeholder: #b0b3ba;
+  --sd-disabled: #d1d3d8;
+  --sd-line: #dcdee3;
+  --sd-hairline: #eeeff1;
+  --sd-gray-200: #f3f4f5;
+  --sd-gray-300: #eeeff1;
+  --sd-gray-400: #dcdee3;
+  --sd-positive: #079171;
+  --sd-positive-weak: #edfaf6;
+  --sd-warning: #9b7821;
+  --sd-warning-weak: #fff7de;
+  --sd-critical: #fa342c;
+  --sd-critical-weak: #fdf0f0;
+  --sd-info: #3f63d9;
+  --sd-info-weak: rgba(63, 99, 217, 0.1);
+  --sd-inverted-bg: #1a1c20;
+  --sd-inverted-fg: #ffffff;
+  --sd-pressed: rgba(0, 0, 0, 0.04);
+  --sd-selected: rgba(0, 0, 0, 0.06);
 }
 
 .dark {
   --background: #080a0c;
   --foreground: #edf0f2;
+
+  /* 어드민 액센트 (다크=도둑 초록) */
+  --admin-accent: #38f55b;
+  --admin-accent-hover: #5cf779;
+  --admin-accent-pressed: #2fd94f;
+  --admin-accent-weak: rgba(56, 245, 91, 0.14);
+  --admin-accent-fg: #08120a;
+
+  /* 어드민 디자인 토큰 (다크) */
+  --sd-canvas: #141517;
+  --sd-surface: #1e2023;
+  --sd-fill: #26282c;
+  --sd-basement: #0f1012;
+  --sd-fg: #f7f8f9;
+  --sd-fg-muted: #adb1b8;
+  --sd-fg-subtle: #7e838c;
+  --sd-placeholder: #6a6f77;
+  --sd-disabled: #4a4e54;
+  --sd-line: #34363b;
+  --sd-hairline: #282a2e;
+  --sd-gray-200: rgba(255, 255, 255, 0.06);
+  --sd-gray-300: rgba(255, 255, 255, 0.1);
+  --sd-gray-400: rgba(255, 255, 255, 0.14);
+  --sd-positive: #26c199;
+  --sd-positive-weak: rgba(38, 193, 153, 0.16);
+  --sd-warning: #e5b84f;
+  --sd-warning-weak: rgba(229, 184, 79, 0.16);
+  --sd-critical: #ff6b64;
+  --sd-critical-weak: rgba(255, 107, 100, 0.16);
+  --sd-info: #7ea2ff;
+  --sd-info-weak: rgba(126, 162, 255, 0.16);
+  --sd-inverted-bg: #f0f1f2;
+  --sd-inverted-fg: #1a1c20;
+  --sd-pressed: rgba(255, 255, 255, 0.05);
+  --sd-selected: rgba(255, 255, 255, 0.08);
 }
 
 @theme inline {
@@ -36,6 +114,41 @@
   --color-brand-red: #f5383b;
   --color-brand-yellow: #f5ef38;
 
+  /* 어드민 액센트 - 테마 인식(라이트 파랑/다크 초록). 어드민 전용 */
+  --color-accent: var(--admin-accent);
+  --color-accent-hover: var(--admin-accent-hover);
+  --color-accent-pressed: var(--admin-accent-pressed);
+  --color-accent-weak: var(--admin-accent-weak);
+  --color-accent-fg: var(--admin-accent-fg);
+
+  /* 어드민 디자인 토큰 - 테마 인식. 어드민 전용 */
+  --color-sd-canvas: var(--sd-canvas);
+  --color-sd-surface: var(--sd-surface);
+  --color-sd-fill: var(--sd-fill);
+  --color-sd-basement: var(--sd-basement);
+  --color-sd-fg: var(--sd-fg);
+  --color-sd-fg-muted: var(--sd-fg-muted);
+  --color-sd-fg-subtle: var(--sd-fg-subtle);
+  --color-sd-placeholder: var(--sd-placeholder);
+  --color-sd-disabled: var(--sd-disabled);
+  --color-sd-line: var(--sd-line);
+  --color-sd-hairline: var(--sd-hairline);
+  --color-sd-gray-200: var(--sd-gray-200);
+  --color-sd-gray-300: var(--sd-gray-300);
+  --color-sd-gray-400: var(--sd-gray-400);
+  --color-sd-positive: var(--sd-positive);
+  --color-sd-positive-weak: var(--sd-positive-weak);
+  --color-sd-warning: var(--sd-warning);
+  --color-sd-warning-weak: var(--sd-warning-weak);
+  --color-sd-critical: var(--sd-critical);
+  --color-sd-critical-weak: var(--sd-critical-weak);
+  --color-sd-info: var(--sd-info);
+  --color-sd-info-weak: var(--sd-info-weak);
+  --color-sd-inverted-bg: var(--sd-inverted-bg);
+  --color-sd-inverted-fg: var(--sd-inverted-fg);
+  --color-sd-pressed: var(--sd-pressed);
+  --color-sd-selected: var(--sd-selected);
+
   --font-sans:
     var(--font-pretendard), -apple-system, BlinkMacSystemFont, system-ui,
     "Segoe UI", Roboto, sans-serif;
@@ -56,6 +169,27 @@ body {
   transition:
     background-color 0.5s ease,
     color 0.5s ease;
+}
+
+/* 어드민 스크롤바 - 테마 인식(다크에서 흰 기본 스크롤바 방지) */
+.admin-shell,
+.admin-shell * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sd-gray-400) transparent;
+}
+.admin-shell ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.admin-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-shell ::-webkit-scrollbar-thumb {
+  background: var(--sd-gray-400);
+  border-radius: 9999px;
+}
+.admin-shell ::-webkit-scrollbar-thumb:hover {
+  background: var(--sd-fg-subtle);
 }
 
 .scroll-animate {
@@ -299,20 +433,6 @@ body {
   }
   80% {
     transform: translateX(3px);
-  }
-}
-
-/* Hidden character: a tiny startled twitch on hover */
-@keyframes hunt-twitch {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  35% {
-    transform: translateY(-1.5px) rotate(-3deg);
-  }
-  70% {
-    transform: translateY(0) rotate(2deg);
   }
 }
 
