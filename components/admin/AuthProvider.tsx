@@ -50,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = getAccessToken();
     const stored = getStoredProfile();
     if (token && stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProfile(stored);
       setStatus("authed");
     } else {

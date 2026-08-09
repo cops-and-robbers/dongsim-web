@@ -3,7 +3,11 @@
 // 소셜 로그인 → Firebase idToken → 백엔드 어드민 로그인 → JWT 토큰 저장.
 // 구글·애플 모두 Firebase 경유(백엔드가 verifyIdToken으로 검증).
 import { signInWithPopup, type AuthProvider } from "firebase/auth";
-import { auth, googleProvider, appleProvider } from "@/lib/firebase";
+import {
+  getFirebaseAuth,
+  createGoogleProvider,
+  createAppleProvider,
+} from "@/lib/firebase";
 import {
   setTokens,
   clearTokens,
@@ -14,9 +18,10 @@ import { adminAuthUrl } from "./session";
 
 export type SocialPlatform = "GOOGLE" | "APPLE";
 
-const PROVIDERS: Record<SocialPlatform, AuthProvider> = {
-  GOOGLE: googleProvider,
-  APPLE: appleProvider,
+// 프로바이더는 로그인 시점에 만든다 (모듈 로드 시점 파베 초기화 방지).
+const PROVIDERS: Record<SocialPlatform, () => AuthProvider> = {
+  GOOGLE: createGoogleProvider,
+  APPLE: createAppleProvider,
 };
 
 type AdminLoginResponse = {
@@ -29,7 +34,8 @@ type AdminLoginResponse = {
 export async function loginWithSocial(
   platform: SocialPlatform
 ): Promise<AdminProfile> {
-  const cred = await signInWithPopup(auth, PROVIDERS[platform]);
+  const auth = getFirebaseAuth();
+  const cred = await signInWithPopup(auth, PROVIDERS[platform]());
   const idToken = await cred.user.getIdToken();
 
   const res = await fetch(adminAuthUrl("/api/auth/admin/login"), {
@@ -65,5 +71,5 @@ export async function logout(): Promise<void> {
     }).catch(() => {});
   }
   clearTokens();
-  await auth.signOut().catch(() => {});
+  await getFirebaseAuth().signOut().catch(() => {});
 }

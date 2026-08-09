@@ -271,8 +271,8 @@ function WinVersus({ police, robber }: { police: number; robber: number }) {
 function EmptyInline({ text }: { text: string }) {
   return (
     <div className="flex min-h-[152px] items-center justify-center py-8">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <div className="flex flex-col items-center gap-2.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/photobooth/cop-search.svg" alt="" className="h-12 w-auto opacity-90 drop-shadow-sm" />
         <p className="text-[13px] font-medium text-sd-fg-subtle">{text}</p>
       </div>
