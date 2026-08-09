@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🖥 백엔드(서버·API) 이슈
+    url: https://github.com/cops-and-robbers/cops-and-robbers-BE/issues/new/choose
+    about: 서버·API·DB·인증 관련 이슈는 백엔드 레포에 올려주세요. (이 레포는 웹사이트 전용이에요.)
+  - name: 💬 구현 방향 논의
+    url: https://github.com/cops-and-robbers/cops-and-robbers-BE/discussions
+    about: 아직 이슈로 정리되지 않은 아이디어·논의는 디스커션에서 편하게 이야기해요.

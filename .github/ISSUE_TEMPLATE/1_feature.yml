@@ -1,0 +1,50 @@
+name: "🚀 기능 추가 · 개선"
+description: 새 기능을 추가하거나 기존 기능을 개선해요.
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        경찰과 도둑 웹사이트에 추가하거나 개선할 기능을 적어주세요.
+        서버·API 관련이면 백엔드 레포에 올려주세요.
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영역
+      description: 어느 부분과 관련된 작업인가요?
+      options:
+        - 홈 · 랜딩
+        - 관리자(admin)
+        - 블로그
+        - 다국어(i18n)
+        - 다운로드 · CTA
+        - 축제 · 부스
+        - 공통 · 기타
+    validations:
+      required: true
+  - type: textarea
+    id: feature
+    attributes:
+      label: 🔥 구현할 기능
+      description: 무엇을, 왜 만드는지 구체적으로 적어주세요.
+      placeholder: 예) 관리자 공지 목록에 카테고리 필터를 추가해 운영자가 점검·이벤트 공지를 빠르게 추려볼 수 있게 해요.
+    validations:
+      required: true
+  - type: textarea
+    id: todos
+    attributes:
+      label: 🚧 작업 목록
+      description: 작업을 체크리스트로 쪼개주세요.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: refs
+    attributes:
+      label: 🔗 참고
+      description: 디자인 링크, 관련 이슈·PR, 스크린샷 등이 있으면 적어주세요. (선택)
+    validations:
+      required: false
