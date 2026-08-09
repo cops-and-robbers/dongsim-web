@@ -4,7 +4,7 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 import type { Messages } from "@/lib/i18n/messages";
 
 // 주요 연혁 + 수상 및 선정 이력. 장식 없이 날짜·제목·수상 라벨만으로 정렬한
-// 미니멀 리스트(SEED식). 날짜는 차분한 회색 모노, 포인트는 수상 배지에만.
+// 미니멀 리스트. 날짜는 차분한 회색 모노, 포인트는 수상 배지에만.
 type Record = { date: string; title: string; award?: string };
 
 function RecordList({ items }: { items: readonly Record[] }) {
