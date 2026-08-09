@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<4ae0944bbb3cb35f8c6c9f70d054b304>>
+ * @generated SignedSource<<81877a76e94e4e5e2b3c13db371a18ee>>
  * @lightSyntaxTransform
  */
 
@@ -8,29 +8,24 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from 'relay-runtime';
-export type DeviceType = "ANDROID" | "IOS" | "%future added value";
-export type Role = "ADMIN" | "USER" | "%future added value";
-export type SocialType = "APPLE" | "GOOGLE" | "KAKAO" | "%future added value";
+export type BugReportStatus = "PENDING" | "RESOLVED" | "%future added value";
 export type SortDirection = "ASC" | "DESC" | "%future added value";
-export type AdminUsers$variables = {
-  nickname?: string | null | undefined;
+export type AdminBugReports$variables = {
   page?: number | null | undefined;
   size?: number | null | undefined;
-  socialType?: SocialType | null | undefined;
   sortDirection?: SortDirection | null | undefined;
+  status?: BugReportStatus | null | undefined;
 };
-export type AdminUsers$data = {
-  readonly adminUsers: {
+export type AdminBugReports$data = {
+  readonly adminBugReports: {
     readonly content: ReadonlyArray<{
+      readonly adminMemo: string | null | undefined;
+      readonly content: string;
       readonly createdAt: string;
-      readonly device: {
-        readonly deviceType: DeviceType;
-      } | null | undefined;
       readonly id: string;
-      readonly locationTermsAgreed: boolean;
-      readonly nickname: string;
-      readonly role: Role;
-      readonly socialType: SocialType;
+      readonly status: BugReportStatus;
+      readonly userId: string;
+      readonly userNickname: string;
     }>;
     readonly page: number;
     readonly size: number;
@@ -38,46 +33,36 @@ export type AdminUsers$data = {
     readonly totalPages: number;
   };
 };
-export type AdminUsers = {
-  response: AdminUsers$data;
-  variables: AdminUsers$variables;
+export type AdminBugReports = {
+  response: AdminBugReports$data;
+  variables: AdminBugReports$variables;
 };
 
 const node: ConcreteRequest = (function(){
 var v0 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "nickname"
+  "name": "page"
 },
 v1 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "page"
+  "name": "size"
 },
 v2 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "size"
+  "name": "sortDirection"
 },
 v3 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "socialType"
+  "name": "status"
 },
-v4 = {
-  "defaultValue": null,
-  "kind": "LocalArgument",
-  "name": "sortDirection"
-},
-v5 = [
+v4 = [
   {
     "alias": null,
     "args": [
-      {
-        "kind": "Variable",
-        "name": "nickname",
-        "variableName": "nickname"
-      },
       {
         "kind": "Variable",
         "name": "page",
@@ -90,24 +75,24 @@ v5 = [
       },
       {
         "kind": "Variable",
-        "name": "socialType",
-        "variableName": "socialType"
+        "name": "sortDirection",
+        "variableName": "sortDirection"
       },
       {
         "kind": "Variable",
-        "name": "sortDirection",
-        "variableName": "sortDirection"
+        "name": "status",
+        "variableName": "status"
       }
     ],
-    "concreteType": "AdminUserPage",
+    "concreteType": "AdminBugReportPage",
     "kind": "LinkedField",
-    "name": "adminUsers",
+    "name": "adminBugReports",
     "plural": false,
     "selections": [
       {
         "alias": null,
         "args": null,
-        "concreteType": "AdminUser",
+        "concreteType": "AdminBugReport",
         "kind": "LinkedField",
         "name": "content",
         "plural": true,
@@ -123,28 +108,35 @@ v5 = [
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "nickname",
+            "name": "content",
             "storageKey": null
           },
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "socialType",
+            "name": "userId",
             "storageKey": null
           },
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "role",
+            "name": "userNickname",
             "storageKey": null
           },
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "locationTermsAgreed",
+            "name": "status",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "adminMemo",
             "storageKey": null
           },
           {
@@ -152,24 +144,6 @@ v5 = [
             "args": null,
             "kind": "ScalarField",
             "name": "createdAt",
-            "storageKey": null
-          },
-          {
-            "alias": null,
-            "args": null,
-            "concreteType": "UserDevice",
-            "kind": "LinkedField",
-            "name": "device",
-            "plural": false,
-            "selections": [
-              {
-                "alias": null,
-                "args": null,
-                "kind": "ScalarField",
-                "name": "deviceType",
-                "storageKey": null
-              }
-            ],
             "storageKey": null
           }
         ],
@@ -213,40 +187,38 @@ return {
       (v0/*:: as any*/),
       (v1/*:: as any*/),
       (v2/*:: as any*/),
-      (v3/*:: as any*/),
-      (v4/*:: as any*/)
+      (v3/*:: as any*/)
     ],
     "kind": "Fragment",
     "metadata": null,
-    "name": "AdminUsers",
-    "selections": (v5/*:: as any*/),
+    "name": "AdminBugReports",
+    "selections": (v4/*:: as any*/),
     "type": "Query",
     "abstractKey": null
   },
   "kind": "Request",
   "operation": {
     "argumentDefinitions": [
-      (v1/*:: as any*/),
-      (v2/*:: as any*/),
       (v0/*:: as any*/),
+      (v1/*:: as any*/),
       (v3/*:: as any*/),
-      (v4/*:: as any*/)
+      (v2/*:: as any*/)
     ],
     "kind": "Operation",
-    "name": "AdminUsers",
-    "selections": (v5/*:: as any*/)
+    "name": "AdminBugReports",
+    "selections": (v4/*:: as any*/)
   },
   "params": {
-    "cacheID": "fd167f8d22c914235e9de60f4b91de52",
+    "cacheID": "d39374eb5b19b4c70c1db33dda961e83",
     "id": null,
     "metadata": {},
-    "name": "AdminUsers",
+    "name": "AdminBugReports",
     "operationKind": "query",
-    "text": "query AdminUsers(\n  $page: Int\n  $size: Int\n  $nickname: String\n  $socialType: SocialType\n  $sortDirection: SortDirection\n) {\n  adminUsers(page: $page, size: $size, nickname: $nickname, socialType: $socialType, sortDirection: $sortDirection) {\n    content {\n      id\n      nickname\n      socialType\n      role\n      locationTermsAgreed\n      createdAt\n      device {\n        deviceType\n      }\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
+    "text": "query AdminBugReports(\n  $page: Int\n  $size: Int\n  $status: BugReportStatus\n  $sortDirection: SortDirection\n) {\n  adminBugReports(page: $page, size: $size, status: $status, sortDirection: $sortDirection) {\n    content {\n      id\n      content\n      userId\n      userNickname\n      status\n      adminMemo\n      createdAt\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "efad2ded4854864e7924c2e6107f2bf3";
+(node as any).hash = "d8e0cb4d41297772f72e78a4c386544b";
 
 export default node;

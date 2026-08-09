@@ -1,0 +1,453 @@
+"""
+어드민 GraphQL 스키마 (백엔드 스펙 기준)
+
+원본: 백엔드가 제공한 어드민 GraphQL API 스펙.
+이 파일이 프론트(Relay)와 목서버(MSW)가 공유하는 단일 계약이다.
+백엔드 구현이 완료되면 이 스키마는 실제 서버의 introspection 결과와 일치해야 한다.
+
+엔드포인트: POST /graphql
+인증: Authorization: Bearer <어드민 JWT> (없으면 401, 어드민 아니면 403)
+날짜: KST ISO 8601 offset string (예: 2025-01-15T10:30:00+09:00)
+
+── 백엔드 구현 노트 (스펙 검증에서 확인된 사항) ──
+1. AdminParticipant.nickname, GameParticipation.inviteCode 는 participants 테이블에
+   컬럼이 없다. 각각 users, games 조인으로 파생해야 한다 (join-derived).
+2. GameArea 는 areaType(CIRCLE|POLYGON)로 갈린다. 원형은 Center*·Radius* 를,
+   다각형은 playground/jailPolygon 을 채우고 반대편은 null. 좌표는 PostGIS
+   GEOMETRY(4326)에서 분해(Point.getY()=lat, getX()=lng).
+3. AdminGameSummary.participantCount 는 저장값이 아니라 participants COUNT 계산값이다.
+"""
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  """유저 목록 (닉네임 검색·소셜 필터·가입일 범위·정렬·페이지네이션)"""
+  adminUsers(
+    page: Int = 0
+    size: Int = 20
+    nickname: String
+    socialType: SocialType
+    fromDate: String
+    toDate: String
+    sortDirection: SortDirection = DESC
+  ): AdminUserPage!
+
+  """유저 상세 (참여 게임 이력 포함). 없으면 null"""
+  adminUser(id: ID!): AdminUser
+
+  """게임 목록 (상태 필터·정렬·페이지네이션)"""
+  adminGames(
+    page: Int = 0
+    size: Int = 20
+    status: GameStatus
+    sortDirection: SortDirection = DESC
+  ): AdminGamePage!
+
+  """게임 상세 (참가자·결과·구역 포함). 없으면 null"""
+  adminGame(id: ID!): AdminGame
+
+  """
+  대시보드 집계·추이.
+  [제안 확장] 원본 스펙에는 없는 쿼리. 어드민 개요를 위해 프론트가 제안하며,
+  백엔드는 users/games/participants 집계로 구현 가능(별도 저장 불필요).
+  """
+  adminStats: AdminStats!
+
+  """
+  앱 사용 분석(GA4).
+  [제안 확장] 백엔드가 GA4 Data API를 서비스 계정으로 조회해 반환.
+  서버 사이드 인증 필요(브라우저에서 직접 호출 불가).
+  """
+  adminAnalytics: AdminAnalytics!
+
+  """신고 목록 (처리 상태 필터·정렬·페이지네이션)"""
+  adminReports(
+    page: Int = 0
+    size: Int = 20
+    status: ReportStatus
+    sortDirection: SortDirection = DESC
+  ): AdminReportPage!
+
+  """버그 제보 목록 (처리 상태 필터·정렬·페이지네이션)"""
+  adminBugReports(
+    page: Int = 0
+    size: Int = 20
+    status: BugReportStatus
+    sortDirection: SortDirection = DESC
+  ): AdminBugReportPage!
+
+  """어드민 대시보드(개요) 집계"""
+  adminDashboard: AdminDashboard!
+}
+
+# ── 어드민 뮤테이션 (신고·버그 처리 상태 변경) ──
+
+type Mutation {
+  """신고 처리 상태 변경"""
+  updateReportStatus(
+    reportId: ID!
+    status: ReportStatus!
+    adminMemo: String
+  ): AdminReport!
+
+  """버그 제보 처리 상태 변경"""
+  updateBugReportStatus(
+    bugReportId: ID!
+    status: BugReportStatus!
+    adminMemo: String
+  ): AdminBugReport!
+}
+
+# ── 신고 ──
+
+type AdminReportPage {
+  content: [AdminReport!]!
+  totalElements: Int!
+  totalPages: Int!
+  page: Int!
+  size: Int!
+}
+
+type AdminReport {
+  id: ID!
+  gameId: ID!
+  reporterUserId: ID!
+  reporterNickname: String!
+  reportedUserId: ID!
+  reportedNickname: String!
+  messageContent: String!
+  reportType: ReportType!
+  """신고 유형이 ETC일 때의 기타 사유"""
+  etcReason: String
+  status: ReportStatus!
+  adminMemo: String
+  createdAt: String!
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportType {
+  FISHING
+  VERBAL_ABUSE
+  IMPERSONATION
+  SPAM
+  CHEATING
+  DEMORALIZATION
+  ETC
+}
+
+# ── 버그 제보 ──
+
+type AdminBugReportPage {
+  content: [AdminBugReport!]!
+  totalElements: Int!
+  totalPages: Int!
+  page: Int!
+  size: Int!
+}
+
+type AdminBugReport {
+  id: ID!
+  content: String!
+  userId: ID!
+  userNickname: String!
+  status: BugReportStatus!
+  adminMemo: String
+  createdAt: String!
+}
+
+enum BugReportStatus {
+  PENDING
+  RESOLVED
+}
+
+# ── 대시보드(개요) ──
+
+type AdminDashboard {
+  todayGameCount: Int!
+  weeklyGameCount: Int!
+  inProgressGameCount: Int!
+  totalUserCount: Int!
+  todayNewUserCount: Int!
+  pendingReportCount: Int!
+  pendingBugReportCount: Int!
+  endReasonDistribution: [EndReasonDistribution!]!
+  averageGameDurationSeconds: Float!
+  winRateByTeam: WinRateByTeam!
+}
+
+type EndReasonDistribution {
+  endReason: GameEndReason!
+  count: Int!
+}
+
+type WinRateByTeam {
+  policeWinRate: Float!
+  robberWinRate: Float!
+}
+
+type AdminAnalytics {
+  """활성 사용자"""
+  dau: Int!
+  wau: Int!
+  mau: Int!
+  newUsers: Int!
+  """전주 대비 증감률(%)"""
+  dauGrowthRate: Float!
+  avgEngagementSeconds: Int!
+  retentionD1: Float!
+  retentionD7: Float!
+  """일별 DAU 추이(최근 14일)"""
+  dauTrend: [AnalyticsPoint!]!
+  """상위 이벤트"""
+  topEvents: [EventCount!]!
+  """플랫폼 분포"""
+  platformBreakdown: [PlatformCount!]!
+}
+
+type AnalyticsPoint {
+  date: String!
+  value: Int!
+}
+
+type EventCount {
+  name: String!
+  count: Int!
+}
+
+type PlatformCount {
+  platform: DeviceType!
+  users: Int!
+}
+
+type AdminStats {
+  totalUsers: Int!
+  totalGames: Int!
+  inProgressGames: Int!
+  finishedGames: Int!
+  eventGames: Int!
+  newUsersThisWeek: Int!
+  gamesThisWeek: Int!
+  """전주 대비 증감률(%)"""
+  userGrowthRate: Float!
+  gameGrowthRate: Float!
+  statusBreakdown: [StatusCount!]!
+  """최근 14일 일별 추이"""
+  dailyTrend: [DailyPoint!]!
+  """게임이 열린 위치(놀이터 중심 좌표). 개요 지역 분포 지도용"""
+  gameLocations: [GameLocation!]!
+  """지역별 게임 수 집계(좌표 포함). 지도 버블·지역 순위용"""
+  regionBreakdown: [RegionCount!]!
+}
+
+type GameLocation {
+  gameId: ID!
+  inviteCode: String!
+  status: GameStatus!
+  lat: Float!
+  lng: Float!
+}
+
+type RegionCount {
+  region: String!
+  count: Int!
+  lat: Float!
+  lng: Float!
+}
+
+type StatusCount {
+  status: GameStatus!
+  count: Int!
+}
+
+type DailyPoint {
+  """YYYY-MM-DD"""
+  date: String!
+  users: Int!
+  games: Int!
+}
+
+# ── 공통 enum ──
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+enum AreaType {
+  CIRCLE
+  POLYGON
+}
+
+enum SocialType {
+  KAKAO
+  GOOGLE
+  APPLE
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum DeviceType {
+  IOS
+  ANDROID
+}
+
+enum Team {
+  POLICE
+  ROBBER
+}
+
+enum ParticipantStatus {
+  WAITING
+  ALIVE
+  JAILED
+  POLICE_WAITING
+}
+
+enum GameStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+  CANCELED
+}
+
+enum GameEndReason {
+  ALL_ARRESTED
+  TIME_OVER
+  POLICE_FORFEITED
+  ROBBER_FORFEITED
+}
+
+# ── 1. 유저 관리 ──
+
+type AdminUserPage {
+  content: [AdminUser!]!
+  totalElements: Int!
+  totalPages: Int!
+  page: Int!
+  size: Int!
+}
+
+type AdminUser {
+  id: ID!
+  nickname: String!
+  socialType: SocialType!
+  role: Role!
+  termsOfServiceAgreed: Boolean!
+  privacyPolicyAgreed: Boolean!
+  locationTermsAgreed: Boolean!
+  createdAt: String!
+  """디바이스 미등록 유저면 null"""
+  device: UserDevice
+  """참여한 게임 이력 (최신순). 목록 쿼리에선 선택하지 않는다"""
+  participations: [GameParticipation!]!
+}
+
+type UserDevice {
+  deviceType: DeviceType!
+  createdAt: String!
+}
+
+type GameParticipation {
+  gameId: ID!
+  """games 조인으로 파생"""
+  inviteCode: String!
+  """팀 배정 전이면 null"""
+  team: Team
+  status: ParticipantStatus!
+  isHost: Boolean!
+  createdAt: String!
+}
+
+# ── 2. 게임 이력 조회 ──
+
+type AdminGamePage {
+  content: [AdminGameSummary!]!
+  totalElements: Int!
+  totalPages: Int!
+  page: Int!
+  size: Int!
+}
+
+type AdminGameSummary {
+  id: ID!
+  inviteCode: String!
+  status: GameStatus!
+  roundDurationMinutes: Int!
+  locationRevealIntervalMinutes: Int!
+  maxParticipants: Int!
+  isEventGame: Boolean!
+  """participants COUNT 계산값"""
+  participantCount: Int!
+  createdAt: String!
+}
+
+type AdminGame {
+  id: ID!
+  inviteCode: String!
+  status: GameStatus!
+  roundDurationMinutes: Int!
+  locationRevealIntervalMinutes: Int!
+  policeWaitMinutes: Int!
+  maxParticipants: Int!
+  isEventGame: Boolean!
+  createdAt: String!
+  """WAITING 상태면 아직 시작 안 함 → null"""
+  startedAt: String
+  participants: [AdminParticipant!]!
+  """게임 미종료(WAITING·IN_PROGRESS)면 null"""
+  result: GameResult
+  """구역 미설정이면 null"""
+  area: GameArea
+}
+
+type AdminParticipant {
+  userId: ID!
+  """users 조인으로 파생"""
+  nickname: String!
+  """팀 배정 전이면 null"""
+  team: Team
+  status: ParticipantStatus!
+  isHost: Boolean!
+}
+
+type GameResult {
+  winnerTeam: Team!
+  endReason: GameEndReason!
+  totalPoliceCount: Int!
+  totalRobberCount: Int!
+  arrestedRobberCount: Int!
+  durationSeconds: Int!
+}
+
+"""
+게임 구역. areaType 에 따라 두 형태 중 하나.
+CIRCLE: playground/jail Center*·Radius* 채워지고 Polygon 은 null.
+POLYGON: playground/jailPolygon 채워지고 Center*·Radius* 는 null.
+"""
+type GameArea {
+  areaType: AreaType!
+  playgroundCenterLat: Float
+  playgroundCenterLng: Float
+  playgroundRadiusInMeters: Int
+  jailCenterLat: Float
+  jailCenterLng: Float
+  jailRadiusInMeters: Int
+  playgroundPolygon: [Coordinate!]
+  jailPolygon: [Coordinate!]
+}
+
+type Coordinate {
+  latitude: Float!
+  longitude: Float!
+}
