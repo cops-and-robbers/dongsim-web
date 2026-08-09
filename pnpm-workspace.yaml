@@ -1,7 +1,10 @@
 # 워크스페이스 경계 표시 — pnpm이 상위 폴더(홈 등)의 잔여 설정을
 # 워크스페이스 루트로 착각해 엉뚱한 곳에 설치하는 것을 막는다.
 packages: []
-# 둘 다 프리빌트 바이너리를 쓰므로 빌드 스크립트 불필요(동작 확인됨).
+# 전부 프리빌트 바이너리를 쓰므로 빌드 스크립트 불필요(동작 확인됨).
 allowBuilds:
+  '@firebase/util': false
+  msw: false
+  protobufjs: false
   sharp: false
   unrs-resolver: false
