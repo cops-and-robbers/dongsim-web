@@ -20,13 +20,15 @@ import { InviteCode } from "@/components/admin/InviteCode";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { formatDate } from "@/lib/admin/format";
 
-type StatusFilter = "" | "WAITING" | "IN_PROGRESS" | "FINISHED" | "CANCELED";
+// 게임은 끝나도 FINISHED로 남지 않고 다시 WAITING이 되며, 방이 비면 삭제된다.
+// 그래서 조회되는 상태는 대기중·진행중 둘뿐이다. 지난 게임은 '지난 게임' 화면에서 본다.
+type StatusFilter = "" | "WAITING" | "IN_PROGRESS";
 const PAGE_SIZE = 20;
 
 function initStatusFilter(): StatusFilter {
   if (typeof window === "undefined") return "";
   const s = new URLSearchParams(window.location.search).get("status");
-  return (["WAITING", "IN_PROGRESS", "FINISHED", "CANCELED"] as string[]).includes(s ?? "")
+  return (["WAITING", "IN_PROGRESS"] as string[]).includes(s ?? "")
     ? (s as StatusFilter)
     : "";
 }
@@ -41,7 +43,7 @@ export default function GamesPage() {
 
   return (
     <ListPage>
-      <PageHeader title="게임" description="생성된 게임 세션과 결과를 조회해요." />
+      <PageHeader title="게임" description="지금 열려 있는 게임 방을 조회해요." />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <SegmentedControl<StatusFilter>
@@ -56,8 +58,6 @@ export default function GamesPage() {
             { label: "전체", value: "" },
             { label: "대기중", value: "WAITING" },
             { label: "진행중", value: "IN_PROGRESS" },
-            { label: "종료", value: "FINISHED" },
-            { label: "취소", value: "CANCELED" },
           ]}
         />
         <SegmentedControl<"DESC" | "ASC">
@@ -138,11 +138,11 @@ function GamesResults({
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center">
         <EmptyBlock
-          title={filtered ? "조건에 맞는 게임이 없어요" : "아직 게임이 없어요"}
+          title={filtered ? "조건에 맞는 방이 없어요" : "열려 있는 방이 없어요"}
           description={
             filtered
               ? "필터를 바꾸거나 초기화해 보세요."
-              : "게임이 생성되면 여기에 표시돼요."
+              : "새 게임 방이 만들어지면 여기에 표시돼요."
           }
           action={emptyAction}
         />
