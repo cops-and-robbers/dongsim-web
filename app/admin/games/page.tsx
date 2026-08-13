@@ -15,6 +15,7 @@ import {
 import { Table, Th, Tr, Td } from "@/components/admin/Table";
 import { GameStatusBadge, Pill } from "@/components/admin/StatusBadge";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
+import { GameTabs } from "@/components/admin/GameTabs";
 import { Button } from "@/components/admin/Button";
 import { InviteCode } from "@/components/admin/InviteCode";
 import QueryBoundary from "@/components/admin/QueryBoundary";
@@ -46,6 +47,7 @@ export default function GamesPage() {
       <PageHeader title="게임" description="지금 열려 있는 게임 방을 조회해요." />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
+        <GameTabs />
         <SegmentedControl<StatusFilter>
           value={status}
           onChange={(v) =>
