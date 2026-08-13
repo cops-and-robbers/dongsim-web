@@ -19,6 +19,10 @@ import {
 } from "./notices";
 import type { NoticeCategory, NoticeInput } from "@/lib/admin/notices/api";
 import {
+  queryGameHistories,
+  type GameEndReason,
+} from "./gameHistories";
+import {
   queryReports,
   queryBugReports,
   updateReportStatus,
@@ -80,6 +84,22 @@ export const handlers = [
     await delay(400);
     return HttpResponse.json({
       data: { adminGame: getGame((variables as { id: string }).id) },
+    });
+  }),
+
+  api.query("AdminGameHistories", async ({ variables }) => {
+    await delay(400);
+    return HttpResponse.json({
+      data: {
+        adminGameHistories: queryGameHistories(
+          variables as {
+            page?: number;
+            size?: number;
+            endReason?: GameEndReason;
+            sortDirection?: "ASC" | "DESC";
+          }
+        ),
+      },
     });
   }),
 
