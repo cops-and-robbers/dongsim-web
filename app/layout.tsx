@@ -129,20 +129,8 @@ const organizationSchema = {
   ],
 };
 
-const websiteSchema = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: SITE_NAME,
-  alternateName: ["경도", "동심지키미", "Cops and Robbers"],
-  url: SITE_URL,
-  description: SITE_DESCRIPTION,
-  inLanguage: "ko-KR",
-  publisher: {
-    "@type": "Organization",
-    name: "동심지키미",
-    url: SITE_URL,
-  },
-};
+// WebSite 스키마는 언어마다 이름·설명이 달라야 해서 각 언어 홈(WebsiteJsonLd)에서 렌더한다.
+// Organization은 언어와 무관한 팀 정보라 여기 둔다.
 
 export default function RootLayout({
   children,
@@ -184,10 +172,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
         <ThemeProvider>
           <LocaleProvider>
