@@ -6,15 +6,28 @@
 
 ```
 노션 DB (공개 체크된 글)
-  → lib/blog/notion.ts (getPosts / getBlocks)
-  → app/blog/page.tsx (목록, ISR 60초) · app/blog/[slug]/page.tsx (본문, ISR 300초)
+  → lib/blog/notion.ts (getPosts(locale) / getAllPosts / getBlocks)
+  → components/blog/BlogList.tsx · BlogPost.tsx (언어 무관 공용 화면)
+  → app/blog · app/ja/blog · app/en/blog (얇은 로케일 라우트, 목록 ISR 60초 / 본문 300초)
   → components/blog/NotionBlocks.tsx (블록 → 사이트 마크업)
 ```
 
+## 언어
+
+- DB의 **`언어`(select: ko/en/ja)** 속성으로 글을 나눈다. **빈 값은 `ko`** 로 본다
+  (속성을 추가하기 전에 쓴 글이 그대로 한국어 블로그에 남아야 해서).
+- `getPosts(locale)`은 노션에서 전체를 받아 **메모리에서 거른다.** 노션 쿼리 필터로는
+  "속성이 없으면 ko" 라는 기본값을 표현할 수 없다. 글 수가 적어 비용도 무시할 만하다.
+- 화면은 `BlogList` / `BlogPost` 하나뿐이고, 각 언어 라우트는 로케일만 넘기는 껍데기다.
+  문구는 `messages.ts`의 `blog` 섹션에서 온다.
+- 글이 없는 언어는 **빈 상태에 "무엇을 다룰지" 안내 문구**를 보여준다. 완전히 빈 화면은
+  검색엔진이 soft 404로 취급할 수 있다.
+- RSS(`/rss.xml`)는 한국어 글만 담는다.
+
 - env: `NOTION_TOKEN`, `NOTION_BLOG_DATABASE_ID` - 없거나 API가 죽으면 **빈 목록 폴백**
   (빌드·사이트는 절대 깨지지 않는다). Vercel에도 같은 env 필요
-- DB 속성 규약: 제목(title) · 슬러그 · 요약 · 작성자 · 날짜 · 태그 · 공개(checkbox).
-  코드가 한/영 속성명을 모두 인식하지만 기준은 한국어
+- DB 속성 규약: 제목(title) · 슬러그 · 요약 · 작성자 · 날짜 · 태그 · 공개(checkbox) ·
+  언어(select). 코드가 한/영 속성명을 모두 인식하지만 기준은 한국어
 - SDK v5 (API 2025-09 체계): `databases.query`가 아니라 `dataSources.query`를 쓴다.
   database id → data source id 해석은 `notion.ts`가 캐시
 
