@@ -2,10 +2,12 @@
 // 팀 Notion 데이터베이스에서 "공개" 체크된 글만 읽어온다.
 // - 필요한 env: NOTION_TOKEN, NOTION_BLOG_DATABASE_ID (없으면 빈 목록 - 빌드는 깨지지 않는다)
 // - DB 속성 규약(글쓰기 가이드와 일치): 제목(title) · 슬러그(text) · 요약(text) ·
-//   작성자(text) · 날짜(date) · 태그(multi-select) · 공개(checkbox), 커버는 페이지 커버.
+//   작성자(text) · 날짜(date) · 태그(multi-select) · 공개(checkbox) · 언어(select),
+//   커버는 페이지 커버.
 // - Notion 파일 URL은 1시간짜리 서명 URL이라 /api/blog/image 프록시로 감싼다.
 
 import { Client } from "@notionhq/client";
+import { LOCALES, type Locale } from "@/lib/i18n/config";
 
 export type BlogPost = {
   id: string;
@@ -17,6 +19,8 @@ export type BlogPost = {
   tags: string[];
   /** 목록 카드·OG에 쓸 커버 이미지 URL(프록시 경유). 없으면 null. */
   coverUrl: string | null;
+  /** 노션 "언어" 속성. 비어 있으면 한국어로 본다(기존 글이 그대로 유지되도록). */
+  locale: Locale;
 };
 
 // 렌더러가 소비하는 최소 구조만 타입으로 잡는다(SDK 응답은 구조적으로 이보다 크다).
@@ -83,6 +87,7 @@ type NotionPage = {
       date?: { start: string } | null;
       checkbox?: boolean;
       multi_select?: { name: string }[];
+      select?: { name: string } | null;
     }
   >;
 };
@@ -97,6 +102,16 @@ function prop(page: NotionPage, ...names: string[]) {
     if (page.properties[n]) return page.properties[n];
   }
   return undefined;
+}
+
+// 노션 "언어" 속성 → 로케일. 속성이 없거나 값이 비면 한국어로 본다.
+// (속성을 추가하기 전에 쓴 글들이 그대로 한국어 블로그에 남아야 한다.)
+function toLocale(page: NotionPage): Locale {
+  const raw = prop(page, "언어", "Language", "locale")?.select?.name;
+  const value = raw?.trim().toLowerCase();
+  return (LOCALES as readonly string[]).includes(value ?? "")
+    ? (value as Locale)
+    : "ko";
 }
 
 function toPost(page: NotionPage): BlogPost | null {
@@ -117,6 +132,7 @@ function toPost(page: NotionPage): BlogPost | null {
     date: prop(page, "날짜", "Date")?.date?.start ?? "",
     tags: (prop(page, "태그", "Tags")?.multi_select ?? []).map((t) => t.name),
     coverUrl: coverToUrl(page),
+    locale: toLocale(page),
   };
 }
 
@@ -134,8 +150,18 @@ export function withImageWidth(url: string, width: number): string {
   return url.startsWith("/api/blog/image") ? `${url}&w=${width}` : url;
 }
 
-/** 공개된 글 전체 - 날짜 내림차순. 연동 미설정·오류 시 빈 배열. */
-export async function getPosts(): Promise<BlogPost[]> {
+/**
+ * 공개된 글 - 날짜 내림차순. 연동 미설정·오류 시 빈 배열.
+ * 언어는 노션에서 받아온 뒤 메모리에서 거른다. "언어" 속성이 없는 기존 글도
+ * ko로 취급해야 해서, 노션 쿼리 필터로는 그 기본값을 표현할 수 없다.
+ */
+export async function getPosts(locale: Locale = "ko"): Promise<BlogPost[]> {
+  const all = await getAllPosts();
+  return all.filter((post) => post.locale === locale);
+}
+
+/** 언어 구분 없는 전체 목록. 사이트맵처럼 모든 언어가 필요한 곳에서 쓴다. */
+export async function getAllPosts(): Promise<BlogPost[]> {
   const dataSourceId = await getDataSourceId();
   if (!notion || !dataSourceId) return [];
 

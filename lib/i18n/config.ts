@@ -64,7 +64,6 @@ export function appIconSrc(locale: Locale): string {
 // /en·/ja로 접근하면 proxy가 한국어로 리다이렉트한다(콘텐츠는 그것뿐이므로).
 // 이 목록에 없는 /en·/ja 경로는 그냥 통과 → 없는 경로면 해당 언어의 404가 뜬다.
 export const KO_ONLY_PATHS: readonly string[] = [
-  "/blog",
   "/team/members",
   "/design",
   "/download",
