@@ -50,6 +50,18 @@ type Query {
   adminGame(id: ID!): AdminGame
 
   """
+  지난 게임 기록 (종료 사유 필터·정렬·페이지네이션).
+  게임은 끝나면 WAITING으로 되돌아가고 방이 비면 삭제되므로,
+  종료 이력은 adminGames가 아니라 GameResult 기반인 이 쿼리로 본다.
+  """
+  adminGameHistories(
+    page: Int = 0
+    size: Int = 20
+    endReason: GameEndReason
+    sortDirection: SortDirection = DESC
+  ): AdminGameHistoryPage!
+
+  """
   대시보드 집계·추이.
   [제안 확장] 원본 스펙에는 없는 쿼리. 어드민 개요를 위해 프론트가 제안하며,
   백엔드는 users/games/participants 집계로 구현 가능(별도 저장 불필요).
@@ -377,6 +389,42 @@ type AdminGamePage {
   totalPages: Int!
   page: Int!
   size: Int!
+}
+
+type AdminGameHistoryPage {
+  content: [AdminGameHistory!]!
+  totalElements: Int!
+  totalPages: Int!
+  page: Int!
+  size: Int!
+}
+
+"""종료된 게임 한 건의 기록(GameResult 스냅샷)."""
+type AdminGameHistory {
+  id: ID!
+  """종료 당시의 게임 id. 게임 row는 삭제되므로 상세 조회에 쓸 수 없다."""
+  gameId: ID!
+  winnerTeam: Team!
+  endReason: GameEndReason!
+  totalPoliceCount: Int!
+  totalRobberCount: Int!
+  arrestedRobberCount: Int!
+  totalArrestCount: Int!
+  durationSeconds: Int!
+  areaType: AreaType!
+  createdAt: String!
+  """
+  종료 시점 참여자 스냅샷.
+  기권으로 끝난 게임은 마지막 이탈자가 이미 삭제된 뒤라 비어 있을 수 있다.
+  """
+  participants: [AdminGameHistoryParticipant!]!
+}
+
+type AdminGameHistoryParticipant {
+  userId: ID!
+  nickname: String!
+  team: Team!
+  status: ParticipantStatus!
 }
 
 type AdminGameSummary {
