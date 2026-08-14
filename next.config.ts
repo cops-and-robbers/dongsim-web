@@ -25,6 +25,27 @@ const nextConfig: NextConfig = {
       "public/photobooth/cop.svg",
       "public/photobooth/thief.svg",
     ],
+    "/blog/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/brand/header-logo.svg",
+      "public/photobooth/cop.svg",
+      "public/photobooth/thief.svg",
+    ],
+    "/ja/blog/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/brand/header-logo.svg",
+      "public/photobooth/cop.svg",
+      "public/photobooth/thief.svg",
+    ],
+    "/en/blog/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/brand/header-logo.svg",
+      "public/photobooth/cop.svg",
+      "public/photobooth/thief.svg",
+    ],
     "/ja/blog/[slug]/opengraph-image": [
       "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
       "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
