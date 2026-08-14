@@ -4,6 +4,11 @@ import { alternateLanguages, localizedPath } from "@/lib/i18n/config";
 
 const BASE_URL = "https://copsandrobbers.app";
 
+// 노션에 새 글을 공개하면 재배포 없이도 사이트맵에 들어오도록 주기적으로 다시 만든다.
+// (기본값은 빌드 시 1회 생성이라, 배포 사이에 올린 글이 색인 대상에서 빠진다)
+// 목록·RSS와 같은 결의 주기. 사이트맵은 크롤러만 읽으므로 더 길게 잡아도 무방하다.
+export const revalidate = 600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   // 언어 구분 없이 받아 각 글을 자기 언어 경로로 넣는다. 연동 미설정·오류 시 빈 배열.
