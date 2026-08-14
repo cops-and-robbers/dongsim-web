@@ -8,6 +8,7 @@ import CtaSection from "@/components/home/CtaSection";
 import { getMessages } from "@/lib/i18n/messages";
 import { alternateLanguages } from "@/lib/i18n/config";
 import EventModal from "@/components/home/EventModal";
+import WebsiteJsonLd from "@/components/seo/WebsiteJsonLd";
 import { APP_LINKS, SITE_URL } from "@/lib/constants";
 
 const gameSchema = {
@@ -174,6 +175,7 @@ export default function HomePage() {
   const copy = getMessages("ko").home;
   return (
     <>
+      <WebsiteJsonLd locale="ko" />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
