@@ -49,6 +49,7 @@ const ko: Chrome = {
 const en: Chrome = {
   nav: [
     { path: "/game", label: "Game" },
+    { path: "/blog", label: "Stories" },
     { path: "/team", label: "Team" },
   ],
   download: "Download",
@@ -68,6 +69,7 @@ const en: Chrome = {
 const ja: Chrome = {
   nav: [
     { path: "/game", label: "ゲーム紹介" },
+    { path: "/blog", label: "ストーリー" },
     { path: "/team", label: "チーム紹介" },
   ],
   download: "ダウンロード",
