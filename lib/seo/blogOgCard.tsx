@@ -49,6 +49,37 @@ function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
+// 줄 첫머리에 올 수 없는 글자(금칙처리). 닫는 괄호·구두점·장음·작은 가나.
+const NO_LINE_START = /[」』）］｝〉》、。，．！？：；ー〜ぁぃぅぇぉっゃゅょァィゥェォッャュョ]/;
+// 줄 끝에 올 수 없는 글자. 여는 괄호.
+const NO_LINE_END = /[「『（［｛〈《]/;
+
+/**
+ * 일본어 제목을 satori에 넘기기 전에 직접 줄을 나눈다.
+ * satori는 금칙처리를 하지 않아 「ドロケイ / 」、何が… 처럼 닫는 괄호가 줄 첫머리로 밀린다.
+ * 금지 글자가 줄 첫머리에 오면 앞줄 끝으로 끌어올린다(追い込み).
+ * 한국어·영어는 단어 단위로 끊기므로 그대로 둔다.
+ */
+function wrapJapanese(text: string, perLine: number): string[] {
+  const lines: string[] = [];
+  for (let i = 0; i < text.length; i += perLine) {
+    lines.push(text.slice(i, i + perLine));
+  }
+  for (let i = 1; i < lines.length; i++) {
+    // 다음 줄이 금지 글자로 시작하면 앞줄로 넘긴다(연속될 수 있어 반복).
+    while (lines[i] && NO_LINE_START.test(lines[i][0])) {
+      lines[i - 1] += lines[i][0];
+      lines[i] = lines[i].slice(1);
+    }
+    // 앞줄이 여는 괄호로 끝나면 그 괄호를 다음 줄로 내린다.
+    while (lines[i - 1] && NO_LINE_END.test(lines[i - 1].slice(-1))) {
+      lines[i] = lines[i - 1].slice(-1) + lines[i];
+      lines[i - 1] = lines[i - 1].slice(0, -1);
+    }
+  }
+  return lines.filter(Boolean);
+}
+
 /**
  * 제목에 실제로 쓰인 글자만 담은 일본어 폰트를 구글 폰트에서 받아온다.
  * Pretendard는 가나는 있지만 한자가 없어서, 일본어 제목이 두부(□)로 깨진다.
@@ -71,10 +102,11 @@ async function subsetJapaneseFont(text: string): Promise<ArrayBuffer | null> {
   }
 }
 
-export async function renderBlogOg(locale: Locale, slug: string) {
+/** slug가 없으면 목록용 카드(섹션 브랜드 카드)를 만든다. */
+export async function renderBlogOg(locale: Locale, slug?: string) {
   const copy = COPY[locale];
-  const posts = await getPosts(locale);
-  const post = posts.find((p) => p.slug === slug);
+  const posts = slug ? await getPosts(locale) : [];
+  const post = slug ? posts.find((p) => p.slug === slug) : undefined;
 
   const [bold, extraBold, logo, cop, thief] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
@@ -85,6 +117,8 @@ export async function renderBlogOg(locale: Locale, slug: string) {
   ]);
 
   const title = truncate(post?.title ?? copy.fallbackTitle, 44);
+  // 일본어만 직접 줄을 나눈다. 64px 전각 기준 한 줄에 약 13자가 들어간다.
+  const titleLines = locale === "ja" ? wrapJapanese(title, 13) : [title];
   // 날짜·태그는 뺀다 - 카드가 오래 캐시돼도 낡아 보이지 않게, 제목에 힘이 실리게.
   const metaLine = post?.author || copy.fallbackMeta;
 
@@ -140,6 +174,7 @@ export async function renderBlogOg(locale: Locale, slug: string) {
           <div
             style={{
               display: "flex",
+              flexDirection: "column",
               fontSize: 64,
               fontWeight: 800,
               lineHeight: 1.25,
@@ -147,7 +182,11 @@ export async function renderBlogOg(locale: Locale, slug: string) {
               wordBreak: "keep-all",
             }}
           >
-            {title}
+            {titleLines.map((line, i) => (
+              <div key={i} style={{ display: "flex" }}>
+                {line}
+              </div>
+            ))}
           </div>
         </div>
 
