@@ -24,8 +24,12 @@ export function proxy(request: NextRequest) {
     if (isAdminHost || isLocalhost) {
       return NextResponse.next();
     }
-    // 그 외 도메인에서는 존재하지 않는 것처럼 404
-    return NextResponse.rewrite(new URL("/_not-found", request.url));
+    // 그 외 도메인에서는 존재하지 않는 것처럼 404.
+    // rewrite는 상태 코드를 그대로 두므로 404를 명시한다. 안 하면 404 화면을
+    // 보여주면서 200을 응답해, 검색엔진이 정상 페이지로 보고 색인할 수 있다.
+    return NextResponse.rewrite(new URL("/_not-found", request.url), {
+      status: 404,
+    });
   }
 
   return NextResponse.next();
