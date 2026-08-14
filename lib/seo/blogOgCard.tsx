@@ -54,30 +54,42 @@ const NO_LINE_START = /[」』）］｝〉》、。，．！？：；ー〜ぁ�
 // 줄 끝에 올 수 없는 글자. 여는 괄호.
 const NO_LINE_END = /[「『（［｛〈《]/;
 
+// 제목이 들어갈 가로 폭(px). 캔버스 1200 - 좌우 패딩 160 - 캐릭터 자리 240.
+const TITLE_WIDTH = 800;
+
 /**
  * 일본어 제목을 satori에 넘기기 전에 직접 줄을 나눈다.
  * satori는 금칙처리를 하지 않아 「ドロケイ / 」、何が… 처럼 닫는 괄호가 줄 첫머리로 밀린다.
- * 금지 글자가 줄 첫머리에 오면 앞줄 끝으로 끌어올린다(追い込み).
- * 한국어·영어는 단어 단위로 끊기므로 그대로 둔다.
+ *
+ * 줄이 꽉 찼더라도 다음 글자가 줄 첫머리 금지 글자면 현재 줄에 붙인다(追い込み).
+ * 그만큼 줄이 길어질 수 있으므로, 호출부에서 폰트 크기를 함께 낮춰 실제로 들어가게 한다.
+ * (계산한 줄보다 폭이 모자라면 satori가 제멋대로 다시 쪼개 금칙처리가 무의미해진다.)
  */
-function wrapJapanese(text: string, perLine: number): string[] {
+function wrapJapanese(text: string, maxChars: number): string[] {
   const lines: string[] = [];
-  for (let i = 0; i < text.length; i += perLine) {
-    lines.push(text.slice(i, i + perLine));
-  }
-  for (let i = 1; i < lines.length; i++) {
-    // 다음 줄이 금지 글자로 시작하면 앞줄로 넘긴다(연속될 수 있어 반복).
-    while (lines[i] && NO_LINE_START.test(lines[i][0])) {
-      lines[i - 1] += lines[i][0];
-      lines[i] = lines[i].slice(1);
+  let line = "";
+  for (const ch of text) {
+    if (line.length >= maxChars && !NO_LINE_START.test(ch)) {
+      lines.push(line);
+      line = "";
     }
-    // 앞줄이 여는 괄호로 끝나면 그 괄호를 다음 줄로 내린다.
-    while (lines[i - 1] && NO_LINE_END.test(lines[i - 1].slice(-1))) {
-      lines[i] = lines[i - 1].slice(-1) + lines[i];
-      lines[i - 1] = lines[i - 1].slice(0, -1);
+    // 여는 괄호가 줄 끝에 남지 않도록, 꽉 찬 줄의 마지막이 여는 괄호면 다음 줄로 넘긴다.
+    if (line.length >= maxChars && NO_LINE_END.test(line.slice(-1))) {
+      const open = line.slice(-1);
+      lines.push(line.slice(0, -1));
+      line = open;
     }
+    line += ch;
   }
-  return lines.filter(Boolean);
+  if (line) lines.push(line);
+  return lines;
+}
+
+/** 글자 수에 따라 제목 폰트 크기를 정한다. 전각 기준 1글자 ≈ 1em. */
+function titleFontSize(length: number): number {
+  if (length <= 12) return 64;
+  if (length <= 24) return 54;
+  return 46;
 }
 
 /**
@@ -117,8 +129,12 @@ export async function renderBlogOg(locale: Locale, slug?: string) {
   ]);
 
   const title = truncate(post?.title ?? copy.fallbackTitle, 44);
-  // 일본어만 직접 줄을 나눈다. 64px 전각 기준 한 줄에 약 13자가 들어간다.
-  const titleLines = locale === "ja" ? wrapJapanese(title, 13) : [title];
+  // 일본어만 직접 줄을 나눈다(금칙처리). 한국어·영어는 satori의 단어 단위 줄바꿈이 잘 맞는다.
+  const fontSize = locale === "ja" ? titleFontSize(title.length) : 64;
+  const titleLines =
+    locale === "ja"
+      ? wrapJapanese(title, Math.floor(TITLE_WIDTH / fontSize))
+      : [title];
   // 날짜·태그는 뺀다 - 카드가 오래 캐시돼도 낡아 보이지 않게, 제목에 힘이 실리게.
   const metaLine = post?.author || copy.fallbackMeta;
 
@@ -175,7 +191,7 @@ export async function renderBlogOg(locale: Locale, slug?: string) {
             style={{
               display: "flex",
               flexDirection: "column",
-              fontSize: 64,
+              fontSize,
               fontWeight: 800,
               lineHeight: 1.25,
               letterSpacing: "-0.03em",
@@ -183,7 +199,8 @@ export async function renderBlogOg(locale: Locale, slug?: string) {
             }}
           >
             {titleLines.map((line, i) => (
-              <div key={i} style={{ display: "flex" }}>
+              // nowrap - 계산한 줄을 satori가 다시 쪼개지 못하게 한다.
+              <div key={i} style={{ display: "flex", whiteSpace: "nowrap" }}>
                 {line}
               </div>
             ))}
