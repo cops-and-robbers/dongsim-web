@@ -21,10 +21,7 @@ const MOCK_ENDPOINT = "/graphql"; // MSW가 가로채는 상대경로
 // 아직 실서버(dev)에 배포되지 않은 오퍼레이션만 목으로 강제한다.
 // (대시보드·신고·버그는 BE PR #141 dev 배포로 실데이터에 붙어 현재 비어 있음.
 //  아직 안 붙은 오퍼레이션이 생기면 여기에 이름을 추가하면 그 쿼리만 목으로 간다.)
-const MOCK_ONLY = new Set<string>([
-  // BE PR #151(adminGameHistories) 배포되면 이 줄만 빼면 실데이터로 붙는다.
-  "AdminGameHistories",
-]);
+const MOCK_ONLY = new Set<string>([]);
 
 function endpointFor(operationName?: string | null): string {
   if (USE_DEV && operationName && !MOCK_ONLY.has(operationName)) {

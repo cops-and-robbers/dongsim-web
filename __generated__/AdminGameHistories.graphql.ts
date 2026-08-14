@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<d41459b3d9271e5fb46609b778c89a88>>
+ * @generated SignedSource<<337e763885195b8aead9c5eddef19a00>>
  * @lightSyntaxTransform
  */
 
@@ -27,7 +27,7 @@ export type AdminGameHistories$data = {
       readonly createdAt: string;
       readonly durationSeconds: number;
       readonly endReason: GameEndReason;
-      readonly gameId: number;
+      readonly gameId: string;
       readonly id: string;
       readonly participants: ReadonlyArray<{
         readonly nickname: string;

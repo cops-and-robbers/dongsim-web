@@ -403,7 +403,7 @@ type AdminGameHistoryPage {
 type AdminGameHistory {
   id: ID!
   """종료 당시의 게임 id. 게임 row는 삭제되므로 상세 조회에 쓸 수 없다."""
-  gameId: Int!
+  gameId: ID!
   winnerTeam: Team!
   endReason: GameEndReason!
   totalPoliceCount: Int!

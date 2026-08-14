@@ -17,7 +17,7 @@ export interface MockHistoryParticipant {
 
 export interface MockGameHistory {
   id: string;
-  gameId: number;
+  gameId: string;
   winnerTeam: Team;
   endReason: GameEndReason;
   totalPoliceCount: number;
@@ -107,7 +107,7 @@ const histories: MockGameHistory[] = REASONS.map((endReason, i) => {
 
   return {
     id: String(seq),
-    gameId: 1000 + seq,
+    gameId: String(1000 + seq),
     winnerTeam: WINNER_BY_REASON[endReason],
     endReason,
     totalPoliceCount: policeCount,
