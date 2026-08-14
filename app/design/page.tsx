@@ -40,6 +40,7 @@ const SAMPLE_POST: BlogPost = {
   date: "2026-07-04",
   tags: ["행사", "개발"],
   coverUrl: null,
+  locale: "ko",
 };
 
 function Section({

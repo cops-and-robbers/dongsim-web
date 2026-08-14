@@ -4,25 +4,30 @@ import { getMessages } from "@/lib/i18n/messages";
 import { alternateLanguages } from "@/lib/i18n/config";
 import { SITE_URL } from "@/lib/constants";
 
-// 목록은 1분 주기로 재생성 - 노션에서 "공개"를 켜면 늦어도 1~2분 안에 반영된다.
-// (이미지가 프록시에서 장기 캐시되므로 짧은 주기가 부담이 없다.)
 export const revalidate = 60;
 
-const meta = getMessages("ko").blog.meta;
+const meta = getMessages("ja").blog.meta;
 
 export const metadata: Metadata = {
-  title: meta.title,
+  // 루트 레이아웃의 "%s | 경찰과 도둑" 템플릿을 우회(absolute)해 일본어 제목만 노출.
+  title: { absolute: meta.title },
   description: meta.description,
   alternates: {
-    canonical: "/blog",
+    canonical: `${SITE_URL}/ja/blog`,
     languages: {
       ...alternateLanguages(SITE_URL, "/blog"),
       "x-default": `${SITE_URL}/blog`,
     },
-    types: { "application/rss+xml": "/rss.xml" },
+  },
+  openGraph: {
+    title: meta.title,
+    description: meta.description,
+    url: `${SITE_URL}/ja/blog`,
+    locale: "ja_JP",
+    type: "website",
   },
 };
 
-export default function BlogPage() {
-  return <BlogList locale="ko" />;
+export default function BlogJaPage() {
+  return <BlogList locale="ja" />;
 }

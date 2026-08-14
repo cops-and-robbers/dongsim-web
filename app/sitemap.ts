@@ -1,12 +1,14 @@
 import type { MetadataRoute } from "next";
-import { getPosts } from "@/lib/blog/notion";
-import { alternateLanguages } from "@/lib/i18n/config";
+import { getAllPosts } from "@/lib/blog/notion";
+import { alternateLanguages, localizedPath } from "@/lib/i18n/config";
 
 const BASE_URL = "https://copsandrobbers.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const posts = await getPosts(); // 연동 미설정·오류 시 빈 배열이라 안전
+  // 언어 구분 없이 받아 각 글을 자기 언어 경로로 넣는다. 연동 미설정·오류 시 빈 배열.
+  const allPosts = await getAllPosts();
+  const posts = allPosts.filter((post) => post.locale === "ko");
 
   return [
     {
@@ -130,6 +132,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
+    // 영어·일본어 블로그. 글이 아직 없어도 목록은 넣어 색인을 시작한다.
+    ...(["en", "ja"] as const).flatMap((locale) => [
+      {
+        url: `${BASE_URL}${localizedPath("/blog", locale)}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      },
+      ...allPosts
+        .filter((post) => post.locale === locale)
+        .map((post) => ({
+          url: `${BASE_URL}${localizedPath(`/blog/${post.slug}`, locale)}`,
+          lastModified: post.date ? new Date(post.date) : now,
+          changeFrequency: "monthly" as const,
+          priority: 0.7,
+        })),
+    ]),
     {
       url: `${BASE_URL}/terms`,
       lastModified: now,

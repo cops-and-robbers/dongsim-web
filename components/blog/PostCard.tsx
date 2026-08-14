@@ -3,6 +3,7 @@ import Link from "next/link";
 import CharacterDuo from "@/components/ui/CharacterDuo";
 import { formatPostDate } from "@/lib/blog/format";
 import { withImageWidth, type BlogPost } from "@/lib/blog/notion";
+import { localizedPath, type Locale } from "@/lib/i18n/config";
 
 // 블로그 글 카드 - 목록·관련 글에서 재사용.
 // 테두리 없이 썸네일과 텍스트, 여백만으로 구분하는 미니멀 스타일.
@@ -11,13 +12,21 @@ import { withImageWidth, type BlogPost } from "@/lib/blog/notion";
 type Props = {
   post: BlogPost;
   variant?: "full" | "compact";
+  locale?: Locale;
 };
 
-export default function PostCard({ post, variant = "full" }: Props) {
+export default function PostCard({
+  post,
+  variant = "full",
+  locale = "ko",
+}: Props) {
   const compact = variant === "compact";
 
   return (
-    <Link href={`/blog/${post.slug}`} className="group">
+    <Link
+      href={localizedPath(`/blog/${post.slug}`, locale)}
+      className="group"
+    >
       <div className="aspect-3/2 w-full overflow-hidden bg-brand-blue-bg dark:bg-app-black-800">
         {post.coverUrl ? (
           <img

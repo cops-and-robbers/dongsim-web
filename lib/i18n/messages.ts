@@ -270,6 +270,22 @@ const ko = {
       ],
     },
   },
+  blog: {
+    meta: {
+      title: "이야기",
+      description:
+        "경찰과 도둑을 만드는 동심지키미 팀이 남기는 발자국들 - 개발기, 행사 후기, 그리고 뒷이야기.",
+    },
+    title: "이야기",
+    lead: "경찰과 도둑을 만들며 남긴 발자국들.\n개발기, 행사 후기, 그리고 뒷이야기를 기록해요.",
+    // 글이 없을 때도 무엇을 다룰지 알려준다 - 빈 화면이면 검색엔진이 soft 404로 본다.
+    empty: {
+      title: "아직 첫 이야기를 준비하고 있어요",
+      description:
+        "게임을 더 재밌게 즐기는 방법, 직접 연 행사 후기, 만들면서 겪은 일들을 곧 기록할게요.",
+    },
+    related: "이런 이야기는 어때요?",
+  },
 };
 
 const en: Messages = {
@@ -545,6 +561,21 @@ const en: Messages = {
       ],
     },
   },
+  blog: {
+    meta: {
+      title: "Stories",
+      description:
+        "Dev logs, event recaps, and behind-the-scenes notes from the team building Cops and Robbers.",
+    },
+    title: "Stories",
+    lead: "Footprints we left while building Cops and Robbers.\nDev logs, event recaps, and the stories behind them.",
+    empty: {
+      title: "Our first story is on the way",
+      description:
+        "We'll be sharing tips for playing, recaps from the events we run, and notes from building the game. Check back soon.",
+    },
+    related: "You might also like",
+  },
 };
 
 const ja: Messages = {
@@ -817,6 +848,21 @@ const ja: Messages = {
         { label: "第2回QA", date: "2026.04" },
       ],
     },
+  },
+  blog: {
+    meta: {
+      title: "ストーリー",
+      description:
+        "ケイドロを作るチーム・トンシムが綴る開発の裏側、イベントレポート、遊び方のヒント。",
+    },
+    title: "ストーリー",
+    lead: "ケイドロを作りながら残してきた足あと。\n開発の裏側やイベントのレポートを綴っていきます。",
+    empty: {
+      title: "最初のストーリーを準備しています",
+      description:
+        "ケイドロをもっと楽しむコツ、開催したイベントのレポート、開発の裏側などをお届けする予定です。",
+    },
+    related: "こちらもどうぞ",
   },
 };
 
