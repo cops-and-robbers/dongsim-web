@@ -62,6 +62,13 @@ type Query {
   ): AdminGameHistoryPage!
 
   """
+  지난 게임 기록 한 건. GameResult의 id로 찾는다.
+  기록의 gameId로는 조회할 수 없다. 게임이 끝나면 games·game_areas 행이 지워지기 때문.
+  없는 id면 GAME_RESULT_NOT_FOUND 에러.
+  """
+  adminGameHistory(id: ID!): AdminGameHistory!
+
+  """
   대시보드 집계·추이.
   [제안 확장] 원본 스펙에는 없는 쿼리. 어드민 개요를 위해 프론트가 제안하며,
   백엔드는 users/games/participants 집계로 구현 가능(별도 저장 불필요).
@@ -412,6 +419,12 @@ type AdminGameHistory {
   totalArrestCount: Int!
   durationSeconds: Int!
   areaType: AreaType!
+  """
+  종료 시점의 플레이 구역. 진행 중인 게임의 adminGame.area와 같은 타입이다.
+  좌표를 남기지 않던 시절의 기록은 null.
+  감옥 좌표는 2026-08-15 배포부터 쌓이므로, 그 이전 기록은 jail* 필드가 비어 있다.
+  """
+  area: GameArea
   createdAt: String!
   """
   종료 시점 참여자 스냅샷.

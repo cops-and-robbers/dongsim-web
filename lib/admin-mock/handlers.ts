@@ -20,6 +20,7 @@ import {
 import type { NoticeCategory, NoticeInput } from "@/lib/admin/notices/api";
 import {
   queryGameHistories,
+  queryGameHistory,
   type GameEndReason,
 } from "./gameHistories";
 import {
@@ -101,6 +102,19 @@ export const handlers = [
         ),
       },
     });
+  }),
+
+  api.query("AdminGameHistory", async ({ variables }) => {
+    await delay(400);
+    const { id } = variables as { id: string };
+    try {
+      return HttpResponse.json({ data: { adminGameHistory: queryGameHistory(id) } });
+    } catch {
+      return HttpResponse.json({
+        data: { adminGameHistory: null },
+        errors: [{ message: "GAME_RESULT_NOT_FOUND" }],
+      });
+    }
   }),
 
   api.query("AdminDashboard", async () => {
