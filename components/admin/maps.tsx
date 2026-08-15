@@ -156,10 +156,18 @@ function areaCenter(area: Area): google.maps.LatLngLiteral {
 
 export function GameAreaMap({ area }: { area: Area }) {
   if (!KEY) {
+    // 지난 게임 기록에는 감옥 좌표가 없을 수 있어, 있을 때만 덧붙인다.
     const detail =
       area.areaType === "POLYGON"
         ? `다각형 구역 (놀이터 ${area.playgroundPolygon?.length ?? 0}점)`
-        : `놀이터 ${area.playgroundRadiusInMeters ?? "-"}m · 감옥 ${area.jailRadiusInMeters ?? "-"}m`;
+        : [
+            `놀이터 ${area.playgroundRadiusInMeters ?? "-"}m`,
+            area.jailRadiusInMeters != null
+              ? `감옥 ${area.jailRadiusInMeters}m`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" · ");
     return <MapFallback height={300} title="게임 구역" detail={detail} />;
   }
   return (
