@@ -658,3 +658,44 @@ body {
     scroll-behavior: auto;
   }
 }
+
+/* ── 블로그 목록 보기 방식 (카드형 / 목록형) ──────────────────
+   두 레이아웃을 다 그려두고 CSS로 하나만 보여준다. React 상태로 고르면
+   서버가 그린 카드형이 먼저 보였다가 목록형으로 튄다. <html>의 data-blog-view는
+   페인트 전에 심기고 React 밖에 있어서, 화면을 옮겨 다녀도(뒤로가기 포함) 유지된다.
+   기본값은 속성이 없는 상태 = 카드형. */
+[data-blog-panel="list"] {
+  display: none;
+}
+[data-blog-view="list"] [data-blog-panel="card"] {
+  display: none;
+}
+[data-blog-view="list"] [data-blog-panel="list"] {
+  display: block;
+}
+
+/* 보기를 바꾸면 항목이 순서대로 올라온다. display가 바뀌면 애니메이션이 다시 돌아서
+   전환한 순간에만 보인다. 첫 로딩에는 걸지 않는다. 표지 이미지가 투명하게 시작하면
+   가장 큰 요소가 늦게 그려진 것으로 잡혀 LCP가 나빠진다.
+   그래서 토글을 한 번이라도 누른 뒤에만(data-blog-animate) 동작하게 둔다. */
+@keyframes blogItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-blog-animate] [data-blog-panel] > * {
+  animation: blogItemIn 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--blog-item-index, 0) * 40ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-blog-animate] [data-blog-panel] > * {
+    animation: none;
+  }
+}

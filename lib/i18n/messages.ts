@@ -285,6 +285,12 @@ const ko = {
         "게임을 더 재밌게 즐기는 방법, 직접 연 행사 후기, 만들면서 겪은 일들을 곧 기록할게요.",
     },
     related: "이런 이야기는 어때요?",
+    view: {
+      label: "글 목록 보기 방식",
+      card: "카드형으로 보기",
+      list: "목록형으로 보기",
+      count: "글 {count}개",
+    },
   },
 };
 
@@ -575,6 +581,12 @@ const en: Messages = {
         "We'll be sharing tips for playing, recaps from the events we run, and notes from building the game. Check back soon.",
     },
     related: "You might also like",
+    view: {
+      label: "View mode",
+      card: "Card view",
+      list: "List view",
+      count: "{count} stories",
+    },
   },
 };
 
@@ -863,6 +875,12 @@ const ja: Messages = {
         "ケイドロをもっと楽しむコツ、開催したイベントのレポート、開発の裏側などをお届けする予定です。",
     },
     related: "こちらもどうぞ",
+    view: {
+      label: "表示方法",
+      card: "カード表示",
+      list: "リスト表示",
+      count: "記事 {count}本",
+    },
   },
 };
 

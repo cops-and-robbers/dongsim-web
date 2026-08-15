@@ -145,11 +145,13 @@ export default function RootLayout({
     >
       <head>
         <meta name="theme-color" content="#ffffff" />
-        {/* 페인트 전 톤 결정: 저장된 선택 → 기기 다크 → 경찰(읽기 실패 시 경찰) */}
+        {/* 페인트 전 톤 결정: 저장된 선택 → 기기 다크 → 경찰(읽기 실패 시 경찰)
+            블로그 보기 방식도 여기서 심는다. 붙은 뒤에 바꾸면 카드형이 한 번
+            보였다가 목록형으로 튄다. */}
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname;var lg=(p==='/ja'||p.indexOf('/ja/')===0)?'ja':(p==='/en'||p.indexOf('/en/')===0)?'en':'ko';document.documentElement.lang=lg;var s=localStorage.getItem('team');var d=s==='robber'||(s!=='police'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#080a0c';}var l=document.createElement('link');l.rel='icon';l.type='image/svg+xml';l.href=d?'/favicon-dark.svg':'/favicon-light.svg';document.head.appendChild(l);}catch(e){}})();`,
+            __html: `(function(){try{var p=location.pathname;var lg=(p==='/ja'||p.indexOf('/ja/')===0)?'ja':(p==='/en'||p.indexOf('/en/')===0)?'en':'ko';document.documentElement.lang=lg;var s=localStorage.getItem('team');var d=s==='robber'||(s!=='police'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#080a0c';}var l=document.createElement('link');l.rel='icon';l.type='image/svg+xml';l.href=d?'/favicon-dark.svg':'/favicon-light.svg';document.head.appendChild(l);if(localStorage.getItem('blog-view')==='list'){document.documentElement.dataset.blogView='list';}}catch(e){}})();`,
           }}
         />
         <Script id="gtm-init" strategy="afterInteractive">
