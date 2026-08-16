@@ -54,7 +54,7 @@ export default function PostRow({
         <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-400 dark:text-slate-500">
           {post.author && <span>{post.author}</span>}
           {post.author && post.date && <span aria-hidden="true">·</span>}
-          <span>{formatPostDate(post.date)}</span>
+          <span>{formatPostDate(post.date, post.locale)}</span>
         </p>
       </div>
     </Link>

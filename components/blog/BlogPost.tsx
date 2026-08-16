@@ -10,8 +10,16 @@ import { getBlocks, getPosts, withImageWidth } from "@/lib/blog/notion";
 import { getMessages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/i18n/config";
 
-// 작성자 + 날짜 한 줄.
-function AuthorLine({ author, date }: { author: string; date: string }) {
+// 작성자 + 날짜 한 줄. 날짜는 보는 사람이 아니라 글의 언어를 따른다.
+function AuthorLine({
+  author,
+  date,
+  locale,
+}: {
+  author: string;
+  date: string;
+  locale: Locale;
+}) {
   return (
     <div className="mt-3 flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500">
       {author && (
@@ -20,7 +28,7 @@ function AuthorLine({ author, date }: { author: string; date: string }) {
         </span>
       )}
       {author && date && <span aria-hidden="true">·</span>}
-      <span>{formatPostDate(date)}</span>
+      <span>{formatPostDate(date, locale)}</span>
     </div>
   );
 }
@@ -70,7 +78,7 @@ export default async function BlogPost({
                 {post.tags.join(" · ")}
               </p>
             )}
-            <AuthorLine author={post.author} date={post.date} />
+            <AuthorLine author={post.author} date={post.date} locale={post.locale} />
             <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-brand-ink sm:text-[2.75rem] sm:leading-[1.2] dark:text-white">
               {post.title}
             </h1>
