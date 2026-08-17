@@ -124,7 +124,7 @@ function ReportsResults({
       <div className="min-h-0 flex-1 overflow-auto">
         <Table sticky head={<><Th>유형</Th><Th>신고 대상</Th><Th>신고자</Th><Th>내용</Th><Th>상태</Th><Th className="text-right">접수일</Th></>}>
           {pageData.content.map((r, i) => (
-            <Tr key={r.id} index={i}>
+            <Tr key={r.id} index={i} onActivate={() => onSelect(r)}>
               <Td><ReportTypeBadge type={r.reportType} /></Td>
               <Td>
                 <button type="button" onClick={() => onSelect(r)} className="font-semibold text-sd-fg transition hover:text-accent">

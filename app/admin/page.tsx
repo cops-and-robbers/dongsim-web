@@ -129,7 +129,7 @@ function Overview() {
               ) : (
                 <Table head={<><Th>초대코드</Th><Th>상태</Th><Th>인원</Th><Th className="text-right">생성일</Th></>}>
                   {games.adminGames.content.map((g, i) => (
-                    <Tr key={g.id} index={i}>
+                    <Tr key={g.id} index={i} href={`/admin/games/${g.id}`}>
                       <Td><InviteCode code={g.inviteCode} gameId={g.id} /></Td>
                       <Td><GameStatusBadge status={g.status} /></Td>
                       <Td className="tabular-nums text-sd-fg-subtle">
@@ -153,7 +153,7 @@ function Overview() {
               ) : (
                 <Table head={<><Th>유저</Th><Th className="text-right">가입일</Th></>}>
                   {users.adminUsers.content.map((u, i) => (
-                    <Tr key={u.id} index={i}>
+                    <Tr key={u.id} index={i} href={`/admin/users/${u.id}`}>
                       <Td>
                         <Link href={`/admin/users/${u.id}`} className="font-semibold text-sd-fg transition hover:text-accent">
                           {u.nickname}

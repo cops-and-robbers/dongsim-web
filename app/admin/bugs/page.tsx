@@ -118,7 +118,7 @@ function BugsResults({
       <div className="min-h-0 flex-1 overflow-auto">
         <Table sticky head={<><Th>내용</Th><Th>작성자</Th><Th>상태</Th><Th className="text-right">작성일</Th></>}>
           {pageData.content.map((b, i) => (
-            <Tr key={b.id} index={i}>
+            <Tr key={b.id} index={i} onActivate={() => onSelect(b)}>
               <Td>
                 <button type="button" onClick={() => onSelect(b)} className="line-clamp-1 max-w-md text-left font-medium text-sd-fg transition hover:text-accent">
                   {b.content}
