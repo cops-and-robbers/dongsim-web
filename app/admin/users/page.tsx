@@ -194,7 +194,7 @@ function UsersResults({
         }
       >
           {pageData.content.map((u, i) => (
-            <Tr key={u.id} index={i}>
+            <Tr key={u.id} index={i} href={`/admin/users/${u.id}`}>
               <Td>
                 <Link
                   href={`/admin/users/${u.id}`}

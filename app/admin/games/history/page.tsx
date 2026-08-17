@@ -149,7 +149,7 @@ function HistoryResults({
           }
         >
           {pageData.content.map((h, i) => (
-            <Tr key={h.id} index={i}>
+            <Tr key={h.id} index={i} href={`/admin/games/history/${h.id}`}>
               <Td>
                 <Link
                   href={`/admin/games/history/${h.id}`}

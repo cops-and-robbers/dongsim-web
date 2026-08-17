@@ -171,7 +171,7 @@ function GamesResults({
         }
       >
         {pageData.content.map((g, i) => (
-          <Tr key={g.id} index={i}>
+          <Tr key={g.id} index={i} href={`/admin/games/${g.id}`}>
             <Td>
               <InviteCode code={g.inviteCode} gameId={g.id} />
             </Td>

@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode, ThHTMLAttributes, TdHTMLAttributes } from "react";
+import type { MouseEvent, ReactNode, ThHTMLAttributes, TdHTMLAttributes } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 
 // 어드민 데이터 테이블. sticky 헤더 지원 + 얇은 행 구분선.
@@ -48,19 +49,52 @@ export function Th({
   );
 }
 
+/**
+ * 데이터 한 줄. href 나 onActivate 를 주면 줄 전체가 눌린다.
+ *
+ * tr 은 초점 대상으로 만들지 않는다. 표를 읽는 도구가 줄과 버튼을 헷갈린다.
+ * 키보드로 옮겨 다니는 길은 칸 안의 링크·버튼이 그대로 맡는다.
+ */
 export function Tr({
   children,
   index = 0,
+  href,
+  onActivate,
 }: {
   children: ReactNode;
   index?: number;
+  href?: string;
+  onActivate?: () => void;
 }) {
+  const router = useRouter();
+  const clickable = Boolean(href || onActivate);
+
+  const handleClick = (event: MouseEvent<HTMLTableRowElement>) => {
+    if (!clickable) return;
+
+    // "삭제"를 눌렀는데 상세로 넘어가면 안 된다
+    if ((event.target as HTMLElement).closest("a,button,input,select,textarea")) return;
+
+    // 어드민에서는 아이디·닉네임을 끌어서 복사하는 일이 잦다
+    if (window.getSelection()?.toString()) return;
+
+    if (!href) {
+      onActivate?.();
+      return;
+    }
+    if (event.metaKey || event.ctrlKey) window.open(href, "_blank", "noopener");
+    else router.push(href);
+  };
+
   return (
     <motion.tr
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.5) }}
-      className="group/row transition-colors hover:bg-sd-pressed active:bg-sd-selected"
+      onClick={handleClick}
+      className={`group/row transition-colors hover:bg-sd-pressed active:bg-sd-selected ${
+        clickable ? "cursor-pointer" : ""
+      }`}
     >
       {children}
     </motion.tr>
