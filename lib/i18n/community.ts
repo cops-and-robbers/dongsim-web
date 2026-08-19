@@ -1,0 +1,168 @@
+import type { Locale } from "./config";
+
+// 모집글 페이지 문구. 메인 messages.ts 와 떼어 둔 이유는 /play 와 같다 -
+// 이 기능만 쓰는 문구가 많아 섞으면 messages.ts 가 비대해진다.
+//
+// 일본에서 실제로 자리가 열리고 있어 en·ja 를 처음부터 채워 둔다.
+
+export type CommunityText = {
+  meta: { title: string; description: string };
+  list: {
+    eyebrow: string;
+    heading: string;
+    lede: string;
+    openHeading: string;
+    pastHeading: string;
+    pastCount: (n: number) => string;
+    emptyTitle: string;
+    emptyBody: string;
+    ctaHeading: string;
+    ctaBody: string;
+    ctaButton: string;
+  };
+  detail: {
+    back: string;
+    place: string;
+    when: string;
+    host: string;
+    placeHint: string;
+    openMap: string;
+    closedTitle: string;
+    closedBody: string;
+    fullTitle: string;
+    fullBody: string;
+    inAppTitle: string;
+    inAppBody: string;
+    joinButton: string;
+    joinHint: string;
+    otherButton: string;
+    otherHint: string;
+    openNearby: string;
+  };
+};
+
+const ko: CommunityText = {
+  meta: {
+    title: "모임",
+    description:
+      "동네에서 함께 뛸 사람을 찾는 모임이에요. 장소와 시간을 보고 앱에서 참여할 수 있어요.",
+  },
+  list: {
+    eyebrow: "커뮤니티",
+    heading: "지금 열린 모임",
+    lede: "동네에서 함께 뛸 사람을 찾고 있어요. 참여는 앱에서 할 수 있어요.",
+    openHeading: "지금 열린 모임",
+    pastHeading: "지난 모임",
+    pastCount: (n) => `지금까지 ${n}번 열렸어요`,
+    emptyTitle: "아직 열린 모임이 없어요",
+    emptyBody: "첫 모임을 열어보세요. 장소와 시간만 정하면 돼요.",
+    ctaHeading: "직접 모임을 열어보세요",
+    ctaBody: "장소와 시간만 정하면 돼요. 링크 하나로 사람을 모을 수 있어요.",
+    ctaButton: "앱에서 모임 만들기",
+  },
+  detail: {
+    back: "모임 목록",
+    place: "장소",
+    when: "일시",
+    host: "연 사람",
+    placeHint: "자세한 집결 지점은 참여하면 알려드려요",
+    openMap: "지도 열기",
+    closedTitle: "이 모임은 마감됐어요",
+    closedBody: "다른 모임은 아래에서 볼 수 있어요.",
+    fullTitle: "자리가 다 찼어요",
+    fullBody: "다음 모임을 기다리거나 직접 열어보세요.",
+    inAppTitle: "댓글과 참여자는 앱에 있어요",
+    inAppBody: "모임에 참여하면 채팅으로 바로 이야기할 수 있어요.",
+    joinButton: "앱에서 참여하기",
+    joinHint: "앱을 설치하면 이 모임으로 바로 들어가요",
+    otherButton: "앱 받으러 가기",
+    otherHint: "다른 모임도 앱에서 볼 수 있어요",
+    openNearby: "지금 열린 모임",
+  },
+};
+
+const en: CommunityText = {
+  meta: {
+    title: "Meetups",
+    description:
+      "Find people to play with nearby. Check the place and time, then join from the app.",
+  },
+  list: {
+    eyebrow: "Community",
+    heading: "Open meetups",
+    lede: "People are looking for others to run with. Joining happens in the app.",
+    openHeading: "Open meetups",
+    pastHeading: "Past meetups",
+    pastCount: (n) => `${n} meetups so far`,
+    emptyTitle: "No open meetups yet",
+    emptyBody: "Open the first one. All you need is a place and a time.",
+    ctaHeading: "Open your own meetup",
+    ctaBody: "Pick a place and a time. One link is enough to gather people.",
+    ctaButton: "Create in the app",
+  },
+  detail: {
+    back: "All meetups",
+    place: "Place",
+    when: "When",
+    host: "Host",
+    placeHint: "The exact meeting spot is shared once you join",
+    openMap: "Open map",
+    closedTitle: "This meetup is closed",
+    closedBody: "You can find others below.",
+    fullTitle: "All spots are taken",
+    fullBody: "Wait for the next one, or open your own.",
+    inAppTitle: "Comments and members are in the app",
+    inAppBody: "Join the meetup to talk with everyone in chat.",
+    joinButton: "Join in the app",
+    joinHint: "Install the app and you land straight in this meetup",
+    otherButton: "Get the app",
+    otherHint: "Other meetups are in the app too",
+    openNearby: "Open meetups",
+  },
+};
+
+const ja: CommunityText = {
+  meta: {
+    title: "募集",
+    description:
+      "近くで一緒に走る人を探す募集です。場所と時間を見て、アプリから参加できます。",
+  },
+  list: {
+    eyebrow: "コミュニティ",
+    heading: "募集中のケイドロ",
+    lede: "一緒に走る人を探しています。参加はアプリからできます。",
+    openHeading: "募集中のケイドロ",
+    pastHeading: "終わった募集",
+    pastCount: (n) => `これまで${n}回開かれました`,
+    emptyTitle: "まだ募集がありません",
+    emptyBody: "最初の募集を出してみましょう。場所と時間だけで大丈夫です。",
+    ctaHeading: "自分で募集を出す",
+    ctaBody: "場所と時間を決めるだけ。リンク一つで人を集められます。",
+    ctaButton: "アプリで募集を作る",
+  },
+  detail: {
+    back: "募集一覧",
+    place: "場所",
+    when: "日時",
+    host: "主催",
+    placeHint: "詳しい集合場所は参加すると分かります",
+    openMap: "地図を開く",
+    closedTitle: "この募集は締め切りました",
+    closedBody: "ほかの募集は下から見られます。",
+    fullTitle: "定員に達しました",
+    fullBody: "次の募集を待つか、自分で開いてみてください。",
+    inAppTitle: "コメントと参加者はアプリにあります",
+    inAppBody: "参加するとチャットですぐ話せます。",
+    joinButton: "アプリで参加する",
+    joinHint: "アプリを入れるとこの募集に直接入れます",
+    otherButton: "アプリを入れる",
+    otherHint: "ほかの募集もアプリで見られます",
+    openNearby: "募集中のケイドロ",
+  },
+};
+
+const TEXT: Record<Locale, CommunityText> = { ko, en, ja };
+
+export function getCommunityText(locale: Locale): CommunityText {
+  return TEXT[locale];
+}
