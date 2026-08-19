@@ -3,6 +3,8 @@
 // 서버 컴포넌트에서만 부르므로 CORS 를 타지 않고 토큰도 필요 없다.
 // BE 의 GET 두 개는 인증 없이 열려 있다(2026-08-19 확인).
 
+import { USE_MOCK, mockGet, mockList } from "./mock";
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.copsandrobbers.app";
 
@@ -52,6 +54,7 @@ async function get<T>(path: string, ttl: number): Promise<T | null> {
 }
 
 export async function listPosts(page = 0, size = 24): Promise<PostPage> {
+  if (USE_MOCK) return mockList(page, size);
   const data = await get<PostPage>(
     `/api/community-posts?page=${page}&size=${size}`,
     LIST_TTL,
@@ -65,6 +68,7 @@ export async function listPosts(page = 0, size = 24): Promise<PostPage> {
 }
 
 export async function getPost(postId: number): Promise<CommunityPost | null> {
+  if (USE_MOCK) return mockGet(postId);
   return get<CommunityPost>(`/api/community-posts/${postId}`, DETAIL_TTL);
 }
 
