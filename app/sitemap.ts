@@ -132,6 +132,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     },
+    // 모임 목록. 개별 모집글은 며칠 살고 죽지만 이 페이지는 계속 남아 유입구가 된다
+    {
+      url: `${BASE_URL}/community`,
+      lastModified: now,
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    },
     ...posts.map((post) => ({
       url: `${BASE_URL}/blog/${post.slug}`,
       lastModified: post.date ? new Date(post.date) : now,
