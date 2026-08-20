@@ -13,7 +13,7 @@ type Params = { params: Promise<{ postId: string }> };
 /** 공유 카드에 들어갈 한 줄. 장소·시간·남은 자리 순으로 붙인다. */
 function shareLine(post: NonNullable<Awaited<ReturnType<typeof getPost>>>) {
   const left = seatsLeft(post);
-  const parts = [post.placeName, meetingLabel(post.meetingAt)].filter(Boolean);
+  const parts = [post.location.placeName, meetingLabel(post.meetingAt)];
   if (!isOpen(post)) parts.push("마감된 모임");
   else if (left !== null) parts.push(seatLabel(left));
   return parts.join(" · ");

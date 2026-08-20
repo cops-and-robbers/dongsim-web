@@ -43,12 +43,17 @@ export default function PostCard({ post }: { post: CommunityPost }) {
       </h3>
 
       <div className="mt-3 flex flex-col gap-1.5 text-sm text-slate-600 dark:text-slate-300">
-        {post.placeName && (
-          <span className="flex items-start gap-2">
-            <PinIcon size={15} className="mt-0.5 text-brand-blue dark:text-brand-green" />
-            {post.placeName}
-          </span>
-        )}
+        <span className="flex items-start gap-2">
+          <PinIcon size={15} className="mt-0.5 text-brand-blue dark:text-brand-green" />
+          {/* 장소 이름은 작성자가 직접 쓴 값이라 항상 있다. region 은 역지오코딩이
+              실패하면 없으므로 있을 때만 덧붙인다 */}
+          {post.location.placeName}
+          {post.location.region && (
+            <span className="text-slate-400 dark:text-slate-500">
+              · {post.location.region}
+            </span>
+          )}
+        </span>
         <span className="flex items-start gap-2">
           <CalendarIcon size={15} className="mt-0.5 text-brand-blue dark:text-brand-green" />
           {meetingLabel(post.meetingAt)}

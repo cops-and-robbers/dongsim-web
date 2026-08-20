@@ -2,7 +2,7 @@ import Container from "@/components/ui/Container";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import PostCard from "@/components/community/PostCard";
-import { isOpen, listPosts } from "@/lib/community/api";
+import { countryOf, isOpen, listPosts } from "@/lib/community/api";
 import { getCommunityText } from "@/lib/i18n/community";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -12,7 +12,8 @@ import type { Locale } from "@/lib/i18n/config";
 // "아무도 안 하는구나"로 읽힌다. 실제로 열렸던 기록이 신뢰 신호가 된다.
 
 export default async function PostListSections({ locale }: { locale: Locale }) {
-  const { content } = await listPosts(0, 48);
+  // 국가를 안 주면 400 이다. 앱은 현재 위치를 쓰지만 웹은 경로의 언어로 정한다
+  const { content } = await listPosts({ countryCode: countryOf(locale), size: 48 });
   const t = getCommunityText(locale).list;
 
   const now = Date.now();
@@ -53,7 +54,7 @@ export default async function PostListSections({ locale }: { locale: Locale }) {
                 {t.pastHeading}
               </h2>
               <p className="text-sm text-slate-400 dark:text-slate-500">
-                {t.pastCount(content.length)}
+                {t.pastCount(past.length)}
               </p>
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">

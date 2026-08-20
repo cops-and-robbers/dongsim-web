@@ -3,6 +3,7 @@ import Container from "@/components/ui/Container";
 import PostCard from "@/components/community/PostCard";
 import { CalendarIcon, PeopleIcon, PinIcon } from "@/components/icons/CommunityIcons";
 import {
+  countryOf,
   isOpen,
   listPosts,
   mapUrl,
@@ -33,7 +34,7 @@ export default async function PostDetailSections({
   const until = untilLabel(post.meetingAt);
 
   // 마감된 글은 막다른 길이 되면 안 된다. 오픈 채널에 뿌려진 링크는 며칠 뒤에 눌린다
-  const nearby = open ? [] : await openPostsExcept(post.id, 2);
+  const nearby = open ? [] : await openPostsExcept(post, locale, 2);
 
   return (
     <section className="pt-10 pb-28 sm:pt-14 sm:pb-32">
@@ -80,32 +81,29 @@ export default async function PostDetailSections({
         )}
 
         <dl className="mt-7 overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
-          {post.placeName && (
-            <div className="flex items-baseline gap-4 p-4 sm:px-5">
+          <div className="flex items-baseline gap-4 p-4 sm:px-5">
               <dt className="w-14 shrink-0 text-sm font-semibold text-slate-400 dark:text-slate-500">
                 {t.place}
               </dt>
               <dd className="font-semibold text-brand-ink dark:text-white">
                 <span className="flex items-center gap-2">
                   <PinIcon size={15} className="text-brand-blue dark:text-brand-green" />
-                  {post.placeName}
+                  {post.location.placeName}
                 </span>
                 <span className="mt-1 block text-sm font-normal text-slate-400 dark:text-slate-500">
+                  {post.location.region ? `${post.location.region} · ` : ""}
                   {t.placeHint}
                 </span>
               </dd>
-              {map && (
-                <a
-                  href={map}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ml-auto shrink-0 text-sm font-bold text-brand-blue dark:text-brand-green"
-                >
-                  {t.openMap}
-                </a>
-              )}
-            </div>
-          )}
+              <a
+                href={map}
+                target="_blank"
+                rel="noreferrer"
+                className="ml-auto shrink-0 text-sm font-bold text-brand-blue dark:text-brand-green"
+              >
+                {t.openMap}
+              </a>
+          </div>
           <div className="flex items-baseline gap-4 border-t border-slate-100 p-4 first:border-t-0 sm:px-5 dark:border-white/5">
             <dt className="w-14 shrink-0 text-sm font-semibold text-slate-400 dark:text-slate-500">
               {t.when}
@@ -198,9 +196,13 @@ export default async function PostDetailSections({
   );
 }
 
-/** 마감 글 아래에 붙일 열린 모임 몇 개. 실패해도 빈 배열이면 섹션이 사라진다. */
-async function openPostsExcept(excludeId: number, take: number) {
-  const { content } = await listPosts(0, 24);
+/**
+ * 마감 글 아래에 붙일 열린 모임 몇 개.
+ * 같은 나라 글만 보여준다. 마감된 일본 글 밑에 한국 모임이 뜨면 도움이 안 된다.
+ */
+async function openPostsExcept(post: CommunityPost, locale: Locale, take: number) {
+  const country = post.location.countryCode ?? countryOf(locale);
+  const { content } = await listPosts({ countryCode: country, size: 24 });
   const now = Date.now();
-  return content.filter((item) => item.id !== excludeId && isOpen(item, now)).slice(0, take);
+  return content.filter((item) => item.id !== post.id && isOpen(item, now)).slice(0, take);
 }
