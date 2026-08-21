@@ -1,7 +1,7 @@
 // 커뮤니티 모집글 - 웹은 읽기만 한다. 글쓰기·참여·댓글은 앱에서 한다(#46).
 //
 // 서버 컴포넌트에서만 부르므로 CORS 를 타지 않고 토큰도 필요 없다.
-// BE 의 GET 두 개는 인증 없이 열려 있다(2026-08-20 dev 확인).
+// BE 의 조회 API 는 인증 없이 열려 있다(2026-08-21 dev 확인).
 // 스펙 문서에는 전역 JWT 를 상속해 "인증 필요"로 보이지만 실제 동작은 공개다.
 
 import type { Locale } from "@/lib/i18n/config";
@@ -47,7 +47,6 @@ export type PostPage = {
   content: CommunityPost[];
   /** 커서 방식이라 총 개수가 없다. 다음 장이 있는지만 알 수 있다 */
   cursor: { nextCursor: string | null; hasNext: boolean };
-  countryCode?: string;
 };
 
 /**
@@ -74,14 +73,29 @@ export function countryOf(locale: Locale): string {
 /**
  * 모집글 하나를 어느 언어로 그릴지.
  *
- * 딥링크 경로는 하나여야 해서(`/g/{id}` 만 AASA·intent-filter 에 등록한다) 상세에는
- * 언어 세그먼트를 둘 수 없다. 대신 글이 열리는 나라의 말로 그린다. 일본 모임 글은
- * 본문부터 일본어라, 그 둘레만 한국어면 오히려 읽기 어렵다.
+ * 글이 열리는 나라의 말로 그린다. 일본 모임 글은 본문부터 일본어라,
+ * 그 둘레만 한국어면 오히려 읽기 어렵다.
  */
 export function localeOfPost(post: CommunityPost): Locale {
   if (post.location.countryCode === "JP") return "ja";
   if (post.location.countryCode === "KR") return "ko";
   return "en";
+}
+
+/**
+ * 모집글 주소. 언어가 경로에 들어간다.
+ *
+ * App Router 에서 `<html lang>` 은 루트 레이아웃만 그린다. 경로에 언어가 없으면
+ * 일본어 글이 `lang="ko"` 로 선언돼 검색엔진도 스크린 리더도 언어를 잘못 잡는다.
+ * 사이트의 다른 페이지(/ja/blog, /ja/game)와 같은 구조로 맞춘다.
+ *
+ * 글 하나에 주소도 하나다. 국가가 언어를 정하므로 중복 색인이 생기지 않는다.
+ * 딥링크는 경로 셋을 등록하면 된다(AASA·AndroidManifest 각각).
+ */
+export function postPath(post: CommunityPost): string {
+  const locale = localeOfPost(post);
+  const prefix = locale === "ko" ? "" : `/${locale}`;
+  return `${prefix}/g/${post.id}`;
 }
 
 /** 목록은 자주 바뀌므로 짧게, 상세는 그보다 길게 캐시한다. */

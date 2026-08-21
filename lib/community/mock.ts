@@ -133,7 +133,6 @@ export function mockList(size: number, cursor?: string): PostPage {
       nextCursor: next < POSTS.length ? String(next) : null,
       hasNext: next < POSTS.length,
     },
-    countryCode: "KR",
   };
 }
 
