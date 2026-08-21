@@ -162,13 +162,6 @@ export default async function PostDetailSections({
             </div>
           </div>
         )}
-
-        <div className="mt-8 rounded-2xl border border-dashed border-slate-200 p-5 dark:border-white/10">
-          <p className="font-bold text-brand-ink dark:text-white">{t.inAppTitle}</p>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            {t.inAppBody}
-          </p>
-        </div>
       </Container>
 
       {/* 글이 끝나면 다른 모임. 링크로 들어온 사람에게 필요한 건 뒤로가 아니라 다음이다 */}

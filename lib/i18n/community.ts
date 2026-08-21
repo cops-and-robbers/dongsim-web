@@ -30,8 +30,6 @@ export type CommunityText = {
     closedBody: string;
     fullTitle: string;
     fullBody: string;
-    inAppTitle: string;
-    inAppBody: string;
     joinButton: string;
     joinHint: string;
     otherButton: string;
@@ -50,7 +48,7 @@ const ko: CommunityText = {
   list: {
     eyebrow: "커뮤니티",
     heading: "지금 열린 모임",
-    lede: "동네에서 함께 뛸 사람을 찾고 있어요. 참여는 앱에서 할 수 있어요.",
+    lede: "가까운 날짜부터 보여드려요.",
     openHeading: "지금 열린 모임",
     pastHeading: "지난 모임",
     pastCount: (n) => `지금까지 ${n}번 열렸어요`,
@@ -70,8 +68,6 @@ const ko: CommunityText = {
     closedBody: "다른 모임은 아래에서 볼 수 있어요.",
     fullTitle: "자리가 다 찼어요",
     fullBody: "다음 모임을 기다리거나 직접 열어보세요.",
-    inAppTitle: "댓글과 참여자는 앱에 있어요",
-    inAppBody: "모임에 참여하면 채팅으로 바로 이야기할 수 있어요.",
     joinButton: "앱에서 참여하기",
     joinHint: "참여 신청은 앱에서 할 수 있어요",
     otherButton: "앱 받으러 가기",
@@ -90,7 +86,7 @@ const en: CommunityText = {
   list: {
     eyebrow: "Community",
     heading: "Open meetups",
-    lede: "People are looking for others to run with. Joining happens in the app.",
+    lede: "Sorted by how soon they start.",
     openHeading: "Open meetups",
     pastHeading: "Past meetups",
     pastCount: (n) => `${n} meetups so far`,
@@ -110,8 +106,6 @@ const en: CommunityText = {
     closedBody: "You can find others below.",
     fullTitle: "All spots are taken",
     fullBody: "Wait for the next one, or open your own.",
-    inAppTitle: "Comments and members are in the app",
-    inAppBody: "Join the meetup to talk with everyone in chat.",
     joinButton: "Join in the app",
     joinHint: "Joining happens in the app",
     otherButton: "Get the app",
@@ -130,7 +124,7 @@ const ja: CommunityText = {
   list: {
     eyebrow: "コミュニティ",
     heading: "募集中のケイドロ",
-    lede: "一緒に走る人を探しています。参加はアプリからできます。",
+    lede: "開催が近い順に並べています。",
     openHeading: "募集中のケイドロ",
     pastHeading: "終わった募集",
     pastCount: (n) => `これまで${n}回開かれました`,
@@ -150,8 +144,6 @@ const ja: CommunityText = {
     closedBody: "ほかの募集は下から見られます。",
     fullTitle: "定員に達しました",
     fullBody: "次の募集を待つか、自分で開いてみてください。",
-    inAppTitle: "コメントと参加者はアプリにあります",
-    inAppBody: "参加するとチャットですぐ話せます。",
     joinButton: "アプリで参加する",
     joinHint: "参加の申し込みはアプリからです",
     otherButton: "アプリを入れる",
