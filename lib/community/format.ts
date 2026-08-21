@@ -7,16 +7,25 @@ function kst(iso: string): Date {
   return new Date(new Date(iso).toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
 }
 
-/** "9월 10일 (목) 저녁 6시" - 24시 표기보다 읽기 쉽다 */
-export function meetingLabel(iso: string): string {
+/** "9월 10일 (목)" - 목록에서 날짜 열로 쓴다 */
+export function dayLabel(iso: string): string {
+  const d = kst(iso);
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAY[d.getDay()]})`;
+}
+
+/** "저녁 6시" - 24시 표기보다 읽기 쉽다 */
+export function timeLabel(iso: string): string {
   const d = kst(iso);
   const hour = d.getHours();
   const minute = d.getMinutes();
-  const part =
-    hour < 6 ? "새벽" : hour < 12 ? "오전" : hour < 18 ? "낮" : "저녁";
+  const part = hour < 6 ? "새벽" : hour < 12 ? "오전" : hour < 18 ? "낮" : "저녁";
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  const time = minute ? `${h12}시 ${minute}분` : `${h12}시`;
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAY[d.getDay()]}) ${part} ${time}`;
+  return minute ? `${part} ${h12}시 ${minute}분` : `${part} ${h12}시`;
+}
+
+/** "9월 10일 (목) 저녁 6시" - 한 줄로 붙여 쓸 때 */
+export function meetingLabel(iso: string): string {
+  return `${dayLabel(iso)} ${timeLabel(iso)}`;
 }
 
 /** "3일 뒤예요" / "오늘이에요" - 급한 정도를 한 줄로 알려준다 */
