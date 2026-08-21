@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarIcon, LocationIcon, PeopleIcon } from "@/components/icons/CommunityIcons";
 import { isOpen, seatsLeft, type CommunityPost } from "@/lib/community/api";
-import { meetingLabel } from "@/lib/community/format";
+import { meetingLabel, untilLabel } from "@/lib/community/format";
 
 // 목록 한 칸. 참여 판단에 필요한 것만 담는다 - 언제, 어디서, 몇 자리 남았는지.
 // 본문은 넣지 않는다. 카드가 길어지면 훑는 속도가 떨어진다.
@@ -9,6 +9,9 @@ import { meetingLabel } from "@/lib/community/format";
 export default function PostCard({ post }: { post: CommunityPost }) {
   const open = isOpen(post);
   const left = seatsLeft(post);
+  // 며칠 남았는지가 갈지 말지를 가른다. 날짜만 있으면 매번 오늘과 견줘야 한다
+  const until = open ? untilLabel(post.meetingAt) : null;
+  const soon = until === "오늘이에요" || until === "내일이에요";
   const tight = left !== null && left > 0 && left <= 2;
 
   return (
@@ -59,7 +62,20 @@ export default function PostCard({ post }: { post: CommunityPost }) {
         </span>
         <span className="flex items-start gap-2">
           <CalendarIcon size={15} className="mt-0.5 text-brand-blue dark:text-brand-green" />
-          {meetingLabel(post.meetingAt)}
+          <span className="min-w-0">
+            {meetingLabel(post.meetingAt)}
+            {until && (
+              <span
+                className={`ml-1.5 ${
+                  soon
+                    ? "font-bold text-brand-blue dark:text-brand-green"
+                    : "text-slate-400 dark:text-slate-500"
+                }`}
+              >
+                {until}
+              </span>
+            )}
+          </span>
         </span>
       </div>
 

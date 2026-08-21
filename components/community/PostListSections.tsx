@@ -8,8 +8,21 @@ import type { Locale } from "@/lib/i18n/config";
 
 // 모임 목록. 열린 모임을 위에 두고 지난 모임은 아래에 흐리게 남긴다.
 //
+// 서버 정렬(sort=LATEST)은 "글을 쓴 순서"인데 사람은 "모임이 열리는 순서"로 찾는다.
+// 나중에 쓴 먼 날짜 글이 위로 올라오면 목록을 훑는 의미가 없어져서, 받아온 뒤 다시 세운다.
+//
 // 지난 모임을 지우지 않는 이유: 열린 모임이 두세 개일 때 목록이 텅 비면
 // "아무도 안 하는구나"로 읽힌다. 실제로 열렸던 기록이 신뢰 신호가 된다.
+// 다만 다 보여주면 지난 것이 화면을 덮어버려서 최근 넷만 남긴다.
+
+/** 가까운 날짜부터 */
+const SOONEST = (a: { meetingAt: string }, b: { meetingAt: string }) =>
+  new Date(a.meetingAt).getTime() - new Date(b.meetingAt).getTime();
+
+/** 최근에 열렸던 것부터 */
+const RECENT = (a: { meetingAt: string }, b: { meetingAt: string }) => -SOONEST(a, b);
+
+const PAST_LIMIT = 4;
 
 export default async function PostListSections({ locale }: { locale: Locale }) {
   // 국가를 안 주면 400 이다. 앱은 현재 위치를 쓰지만 웹은 경로의 언어로 정한다
@@ -17,8 +30,8 @@ export default async function PostListSections({ locale }: { locale: Locale }) {
   const t = getCommunityText(locale).list;
 
   const now = Date.now();
-  const open = content.filter((post) => isOpen(post, now));
-  const past = content.filter((post) => !isOpen(post, now));
+  const open = content.filter((post) => isOpen(post, now)).sort(SOONEST);
+  const past = content.filter((post) => !isOpen(post, now)).sort(RECENT);
 
   return (
     <section className="py-16 sm:py-20">
@@ -58,7 +71,7 @@ export default async function PostListSections({ locale }: { locale: Locale }) {
               </p>
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {past.map((post) => (
+              {past.slice(0, PAST_LIMIT).map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
             </div>
