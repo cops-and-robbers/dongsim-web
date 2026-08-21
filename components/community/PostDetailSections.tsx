@@ -66,13 +66,6 @@ export default async function PostDetailSections({
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-balance text-brand-ink sm:text-4xl dark:text-white">
             {post.title}
           </h1>
-
-          {/* 누가 여는지가 참여 판단의 절반이다. 블로그 상세의 작성자 줄과 같은 자리 */}
-          {post.writerNickname && (
-            <p className="mt-3 text-sm text-slate-400 dark:text-slate-500">
-              {t.hostLine(post.writerNickname)}
-            </p>
-          )}
         </header>
 
         {!open && (
@@ -136,6 +129,18 @@ export default async function PostDetailSections({
               {t.openMap}
             </a>
           </div>
+
+          {/* 닉네임이 자동 생성이라 앞세울 값이 아니다. 일시·장소와 같은 무게로 둔다 */}
+          {post.writerNickname && (
+            <div className="flex items-baseline gap-4 border-t border-slate-100 p-4 sm:px-5 dark:border-white/5">
+              <dt className="w-12 shrink-0 text-sm font-semibold text-slate-400 dark:text-slate-500">
+                {t.host}
+              </dt>
+              <dd className="min-w-0 font-semibold text-brand-ink dark:text-white">
+                {post.writerNickname}
+              </dd>
+            </div>
+          )}
         </dl>
 
         <p className="mt-7 text-base leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-200">

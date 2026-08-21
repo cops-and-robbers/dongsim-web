@@ -23,7 +23,7 @@ export type CommunityText = {
   detail: {
     place: string;
     when: string;
-    hostLine: (nickname: string) => string;
+    host: string;
     placeHint: string;
     openMap: string;
     closedTitle: string;
@@ -61,7 +61,7 @@ const ko: CommunityText = {
   detail: {
     place: "장소",
     when: "일시",
-    hostLine: (nickname) => `${nickname} 님이 열었어요`,
+    host: "주최",
     placeHint: "자세한 집결 지점은 참여하면 알려드려요",
     openMap: "지도 열기",
     closedTitle: "이 모임은 마감됐어요",
@@ -99,7 +99,7 @@ const en: CommunityText = {
   detail: {
     place: "Place",
     when: "When",
-    hostLine: (nickname) => `Hosted by ${nickname}`,
+    host: "Host",
     placeHint: "The exact meeting spot is shared once you join",
     openMap: "Open map",
     closedTitle: "This meetup is closed",
@@ -137,7 +137,7 @@ const ja: CommunityText = {
   detail: {
     place: "場所",
     when: "日時",
-    hostLine: (nickname) => `${nickname} さんが開きました`,
+    host: "主催",
     placeHint: "詳しい集合場所は参加すると分かります",
     openMap: "地図を開く",
     closedTitle: "この募集は締め切りました",
