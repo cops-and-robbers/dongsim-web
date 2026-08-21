@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LocationIcon, PeopleIcon } from "@/components/icons/CommunityIcons";
-import { isOpen, seatsLeft, type CommunityPost } from "@/lib/community/api";
+import { isOpen, postPath, seatsLeft, type CommunityPost } from "@/lib/community/api";
 import { dayLabel, daysUntil, timeLabel } from "@/lib/community/format";
 import { getCommunityText } from "@/lib/i18n/community";
 import type { Locale } from "@/lib/i18n/config";
@@ -32,7 +32,7 @@ export default function PostCard({
 
   return (
     <Link
-      href={`/g/${post.id}`}
+      href={postPath(post)}
       className={`flex flex-col rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-slate-300 dark:border-white/10 dark:bg-app-black-900 dark:hover:border-white/20 ${
         open ? "" : "opacity-60"
       }`}

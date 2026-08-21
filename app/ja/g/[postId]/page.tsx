@@ -24,7 +24,7 @@ function shareLine(post: NonNullable<Awaited<ReturnType<typeof getPost>>>) {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { postId } = await params;
   const post = await getPost(Number(postId));
-  if (!post) return { title: getCommunityText("ko").meta.title };
+  if (!post) return { title: getCommunityText("ja").meta.title };
 
   const description = shareLine(post);
   return {
@@ -36,13 +36,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       title: post.title,
       description,
       url: `${SITE_URL}${postPath(post)}`,
-      locale: "ko_KR",
+      locale: "ja_JP",
       type: "article",
     },
   };
 }
 
-export default async function CommunityPostPage({ params }: Params) {
+export default async function CommunityPostJaPage({ params }: Params) {
   const { postId } = await params;
-  return <PostPageShell postId={postId} locale="ko" />;
+  return <PostPageShell postId={postId} locale="ja" />;
 }

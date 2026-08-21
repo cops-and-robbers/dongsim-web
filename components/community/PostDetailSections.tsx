@@ -183,7 +183,7 @@ export default async function PostDetailSections({
               </h2>
             )}
             <Link
-              href="/community"
+              href={locale === "ko" ? "/community" : `/${locale}/community`}
               className="ml-auto shrink-0 text-sm font-bold text-brand-blue dark:text-brand-green"
             >
               {t.moreAll}
