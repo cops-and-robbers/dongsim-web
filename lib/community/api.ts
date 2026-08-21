@@ -51,13 +51,20 @@ export type PostPage = {
 };
 
 /**
- * 목록은 국가를 특정하지 않으면 400 이다.
- * 앱은 현재 위치를 보내지만 웹은 위치 권한이 없으므로 경로의 언어로 정한다.
+ * 목록은 국가를 특정하지 않으면 400 이다. 앱은 현재 위치를 보내지만 웹은 위치 권한이 없다.
+ *
+ * IP 로 알아내는 방법은 쓰지 않는다. 페이지가 ISR 로 캐시되는데 IP 로 갈라지면 캐시를
+ * 못 쓰고, 무엇보다 검색엔진 크롤러 IP 는 대부분 미국이라 색인이 통째로 미국 목록으로
+ * 잡힌다. 검색 유입을 노리는 페이지에서 그건 치명적이다.
+ *
+ * 그래서 경로가 곧 국가다. URL 이 국가를 정하니 캐시·색인·공유가 모두 성립한다.
+ * 영어는 국가를 알려주지 않으므로(영어 사용자가 어디 사는지 알 수 없다) 한국으로 둔다.
+ * 영어 라우트를 따로 열 때 그 경로에서 국가를 정하면 된다.
  */
 const COUNTRY_BY_LOCALE: Record<Locale, string> = {
   ko: "KR",
   ja: "JP",
-  en: "US",
+  en: "KR",
 };
 
 export function countryOf(locale: Locale): string {
@@ -122,10 +129,16 @@ export function seatsLeft(post: CommunityPost): number | null {
   return Math.max(0, post.maxParticipants - post.currentParticipants);
 }
 
-/** 카카오 지도로 보낸다. 앱을 안 깔아도 브라우저에서 열린다. */
+/**
+ * 구글 지도로 보낸다.
+ *
+ * 카카오나 네이버는 한국 밖에서 쓸모가 없다. 모임은 이미 여러 나라에서 열리고 있어
+ * 한 나라에서만 되는 지도를 링크할 수 없다. 앱도 google_maps_flutter 를 쓰고 있어
+ * 앱과 웹이 같은 지도를 보게 된다.
+ *
+ * 이름이 아니라 좌표로 보낸다. 이름으로 검색하면 같은 이름의 다른 곳으로 갈 수 있다.
+ */
 export function mapUrl(post: CommunityPost): string {
-  const { latitude, longitude, placeName } = post.location;
-  return `https://map.kakao.com/link/map/${encodeURIComponent(
-    placeName,
-  )},${latitude},${longitude}`;
+  const { latitude, longitude } = post.location;
+  return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
 }
