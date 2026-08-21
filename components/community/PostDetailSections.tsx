@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Container from "@/components/ui/Container";
 import PostCard from "@/components/community/PostCard";
-import { CalendarIcon, PeopleIcon, PinIcon } from "@/components/icons/CommunityIcons";
+import { CalendarIcon, LocationIcon, PeopleIcon } from "@/components/icons/CommunityIcons";
 import {
   countryOf,
   isOpen,
@@ -87,11 +87,16 @@ export default async function PostDetailSections({
               </dt>
               <dd className="font-semibold text-brand-ink dark:text-white">
                 <span className="flex items-center gap-2">
-                  <PinIcon size={15} className="text-brand-blue dark:text-brand-green" />
+                  <LocationIcon size={15} />
                   {post.location.placeName}
                 </span>
-                <span className="mt-1 block text-sm font-normal text-slate-400 dark:text-slate-500">
-                  {post.location.region ? `${post.location.region} · ` : ""}
+                {post.location.region && (
+                  <span className="mt-1 block text-sm font-normal text-slate-500 dark:text-slate-400">
+                    {post.location.region}
+                  </span>
+                )}
+                {/* 사실과 안내는 성격이 달라 한 줄에 묶지 않는다 */}
+                <span className="mt-1.5 block text-sm font-normal text-slate-400 dark:text-slate-500">
                   {t.placeHint}
                 </span>
               </dd>

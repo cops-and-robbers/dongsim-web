@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarIcon, PeopleIcon, PinIcon } from "@/components/icons/CommunityIcons";
+import { CalendarIcon, LocationIcon, PeopleIcon } from "@/components/icons/CommunityIcons";
 import { isOpen, seatsLeft, type CommunityPost } from "@/lib/community/api";
 import { meetingLabel } from "@/lib/community/format";
 
@@ -43,16 +43,19 @@ export default function PostCard({ post }: { post: CommunityPost }) {
       </h3>
 
       <div className="mt-3 flex flex-col gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+        {/* 만나는 곳과 행정 구역은 성격이 달라 줄을 나눈다. 한 줄에 이어 붙이면
+            카드가 좁아 가운데서 끊기고, 어디까지가 장소인지 안 보인다.
+            region 은 나라마다 형식이 달라 앞부분을 잘라낼 수 없다 */}
         <span className="flex items-start gap-2">
-          <PinIcon size={15} className="mt-0.5 text-brand-blue dark:text-brand-green" />
-          {/* 장소 이름은 작성자가 직접 쓴 값이라 항상 있다. region 은 역지오코딩이
-              실패하면 없으므로 있을 때만 덧붙인다 */}
-          {post.location.placeName}
-          {post.location.region && (
-            <span className="text-slate-400 dark:text-slate-500">
-              · {post.location.region}
-            </span>
-          )}
+          <LocationIcon size={15} className="mt-0.5" />
+          <span className="min-w-0">
+            {post.location.placeName}
+            {post.location.region && (
+              <span className="mt-0.5 block text-xs text-slate-400 dark:text-slate-500">
+                {post.location.region}
+              </span>
+            )}
+          </span>
         </span>
         <span className="flex items-start gap-2">
           <CalendarIcon size={15} className="mt-0.5 text-brand-blue dark:text-brand-green" />
