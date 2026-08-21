@@ -21,10 +21,9 @@ export type CommunityText = {
     ctaButton: string;
   };
   detail: {
-    back: string;
     place: string;
     when: string;
-    host: string;
+    hostLine: (nickname: string) => string;
     placeHint: string;
     openMap: string;
     closedTitle: string;
@@ -37,7 +36,8 @@ export type CommunityText = {
     joinHint: string;
     otherButton: string;
     otherHint: string;
-    openNearby: string;
+    moreHeading: string;
+    moreAll: string;
   };
 };
 
@@ -61,10 +61,9 @@ const ko: CommunityText = {
     ctaButton: "앱에서 모임 만들기",
   },
   detail: {
-    back: "모임 목록",
     place: "장소",
     when: "일시",
-    host: "연 사람",
+    hostLine: (nickname) => `${nickname} 님이 열었어요`,
     placeHint: "자세한 집결 지점은 참여하면 알려드려요",
     openMap: "지도 열기",
     closedTitle: "이 모임은 마감됐어요",
@@ -74,10 +73,11 @@ const ko: CommunityText = {
     inAppTitle: "댓글과 참여자는 앱에 있어요",
     inAppBody: "모임에 참여하면 채팅으로 바로 이야기할 수 있어요.",
     joinButton: "앱에서 참여하기",
-    joinHint: "앱을 설치하면 이 모임으로 바로 들어가요",
+    joinHint: "참여 신청은 앱에서 할 수 있어요",
     otherButton: "앱 받으러 가기",
     otherHint: "다른 모임도 앱에서 볼 수 있어요",
-    openNearby: "지금 열린 모임",
+    moreHeading: "이런 모임도 열려 있어요",
+    moreAll: "모임 전체 보기",
   },
 };
 
@@ -101,10 +101,9 @@ const en: CommunityText = {
     ctaButton: "Create in the app",
   },
   detail: {
-    back: "All meetups",
     place: "Place",
     when: "When",
-    host: "Host",
+    hostLine: (nickname) => `Hosted by ${nickname}`,
     placeHint: "The exact meeting spot is shared once you join",
     openMap: "Open map",
     closedTitle: "This meetup is closed",
@@ -114,10 +113,11 @@ const en: CommunityText = {
     inAppTitle: "Comments and members are in the app",
     inAppBody: "Join the meetup to talk with everyone in chat.",
     joinButton: "Join in the app",
-    joinHint: "Install the app and you land straight in this meetup",
+    joinHint: "Joining happens in the app",
     otherButton: "Get the app",
     otherHint: "Other meetups are in the app too",
-    openNearby: "Open meetups",
+    moreHeading: "These are open too",
+    moreAll: "See all meetups",
   },
 };
 
@@ -141,10 +141,9 @@ const ja: CommunityText = {
     ctaButton: "アプリで募集を作る",
   },
   detail: {
-    back: "募集一覧",
     place: "場所",
     when: "日時",
-    host: "主催",
+    hostLine: (nickname) => `${nickname} さんが開きました`,
     placeHint: "詳しい集合場所は参加すると分かります",
     openMap: "地図を開く",
     closedTitle: "この募集は締め切りました",
@@ -154,10 +153,11 @@ const ja: CommunityText = {
     inAppTitle: "コメントと参加者はアプリにあります",
     inAppBody: "参加するとチャットですぐ話せます。",
     joinButton: "アプリで参加する",
-    joinHint: "アプリを入れるとこの募集に直接入れます",
+    joinHint: "参加の申し込みはアプリからです",
     otherButton: "アプリを入れる",
     otherHint: "ほかの募集もアプリで見られます",
-    openNearby: "募集中のケイドロ",
+    moreHeading: "こちらも募集中です",
+    moreAll: "募集をすべて見る",
   },
 };
 
