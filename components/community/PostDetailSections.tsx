@@ -14,7 +14,7 @@ import {
   seatsLeft,
   type CommunityPost,
 } from "@/lib/community/api";
-import { meetingLabel, seatLabel, untilLabel } from "@/lib/community/format";
+import { daysUntil, meetingLabel } from "@/lib/community/format";
 import { getCommunityText } from "@/lib/i18n/community";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -34,11 +34,15 @@ export default async function PostDetailSections({
   post: CommunityPost;
   locale: Locale;
 }) {
-  const t = getCommunityText(locale).detail;
+  const text = getCommunityText(locale);
+  const t = text.detail;
+  const c = text.card;
   const open = isOpen(post);
   const left = seatsLeft(post);
   const full = left !== null && left <= 0;
-  const until = untilLabel(post.meetingAt);
+  const days = open ? daysUntil(post.meetingAt) : null;
+  const until =
+    days === null ? null : days === 0 ? c.today : days === 1 ? c.tomorrow : c.inDays(days);
   const more = await otherOpenPosts(post, locale, 2);
 
   return (
@@ -53,12 +57,12 @@ export default async function PostDetailSections({
                   : "bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-500"
               }`}
             >
-              {open ? "모집중" : "마감"}
+              {open ? c.open : c.closed}
             </span>
             {left !== null && (
               <span className="flex items-center gap-1.5 text-sm font-bold text-slate-500 tabular-nums dark:text-slate-400">
                 <PeopleIcon size={14} />
-                {post.currentParticipants} / {post.maxParticipants}명
+                {c.seats(post.currentParticipants ?? 0, post.maxParticipants)}
               </span>
             )}
           </div>
@@ -91,7 +95,7 @@ export default async function PostDetailSections({
                   size={15}
                   className="text-brand-blue dark:text-brand-green"
                 />
-                {meetingLabel(post.meetingAt)}
+                {meetingLabel(post.meetingAt, locale)}
               </span>
               {until && (
                 <span className="mt-1 block text-sm font-normal text-slate-500 dark:text-slate-400">
@@ -151,10 +155,10 @@ export default async function PostDetailSections({
           <div className="mt-8">
             <div className="flex items-baseline justify-between">
               <strong className="font-extrabold tracking-tight text-brand-ink dark:text-white">
-                {seatLabel(left)}
+                {left > 0 ? c.seatsLeft(left) : c.seatsNone}
               </strong>
               <span className="text-sm text-slate-500 tabular-nums dark:text-slate-400">
-                {post.currentParticipants} / {post.maxParticipants}명
+                {c.seats(post.currentParticipants ?? 0, post.maxParticipants)}
               </span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
@@ -188,7 +192,7 @@ export default async function PostDetailSections({
           {more.length > 0 && (
             <div className="mt-6 grid gap-4">
               {more.map((item) => (
-                <PostCard key={item.id} post={item} />
+                <PostCard key={item.id} post={item} locale={locale} />
               ))}
             </div>
           )}

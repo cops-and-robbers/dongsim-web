@@ -71,6 +71,19 @@ export function countryOf(locale: Locale): string {
   return COUNTRY_BY_LOCALE[locale];
 }
 
+/**
+ * 모집글 하나를 어느 언어로 그릴지.
+ *
+ * 딥링크 경로는 하나여야 해서(`/g/{id}` 만 AASA·intent-filter 에 등록한다) 상세에는
+ * 언어 세그먼트를 둘 수 없다. 대신 글이 열리는 나라의 말로 그린다. 일본 모임 글은
+ * 본문부터 일본어라, 그 둘레만 한국어면 오히려 읽기 어렵다.
+ */
+export function localeOfPost(post: CommunityPost): Locale {
+  if (post.location.countryCode === "JP") return "ja";
+  if (post.location.countryCode === "KR") return "ko";
+  return "en";
+}
+
 /** 목록은 자주 바뀌므로 짧게, 상세는 그보다 길게 캐시한다. */
 const LIST_TTL = 60;
 const DETAIL_TTL = 120;

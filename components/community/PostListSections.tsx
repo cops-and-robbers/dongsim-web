@@ -49,7 +49,7 @@ export default async function PostListSections({ locale }: { locale: Locale }) {
         {open.length > 0 ? (
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {open.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard key={post.id} post={post} locale={locale} />
             ))}
           </div>
         ) : (
@@ -72,7 +72,7 @@ export default async function PostListSections({ locale }: { locale: Locale }) {
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {past.slice(0, PAST_LIMIT).map((post) => (
-                <PostCard key={post.id} post={post} />
+                <PostCard key={post.id} post={post} locale={locale} />
               ))}
             </div>
           </>

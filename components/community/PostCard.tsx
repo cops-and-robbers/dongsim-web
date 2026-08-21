@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { LocationIcon, PeopleIcon } from "@/components/icons/CommunityIcons";
 import { isOpen, seatsLeft, type CommunityPost } from "@/lib/community/api";
-import { dayLabel, timeLabel, untilLabel } from "@/lib/community/format";
+import { dayLabel, daysUntil, timeLabel } from "@/lib/community/format";
+import { getCommunityText } from "@/lib/i18n/community";
+import type { Locale } from "@/lib/i18n/config";
 
 // 목록 한 칸.
 //
@@ -11,13 +13,22 @@ import { dayLabel, timeLabel, untilLabel } from "@/lib/community/format";
 //
 // 본문은 넣지 않는다. 카드가 길어지면 훑는 속도가 떨어진다.
 
-export default function PostCard({ post }: { post: CommunityPost }) {
+export default function PostCard({
+  post,
+  locale,
+}: {
+  post: CommunityPost;
+  locale: Locale;
+}) {
+  const t = getCommunityText(locale).card;
   const open = isOpen(post);
   const left = seatsLeft(post);
   const tight = left !== null && left > 0 && left <= 2;
   // 며칠 남았는지가 갈지 말지를 가른다. 날짜만 있으면 매번 오늘과 견줘야 한다
-  const until = open ? untilLabel(post.meetingAt) : null;
-  const soon = until === "오늘이에요" || until === "내일이에요";
+  const days = open ? daysUntil(post.meetingAt) : null;
+  const until =
+    days === null ? null : days === 0 ? t.today : days === 1 ? t.tomorrow : t.inDays(days);
+  const soon = days !== null && days <= 1;
 
   return (
     <Link
@@ -28,9 +39,9 @@ export default function PostCard({ post }: { post: CommunityPost }) {
     >
       <div className="flex items-start gap-3">
         <p className="min-w-0 font-bold tracking-tight text-brand-ink dark:text-white">
-          {dayLabel(post.meetingAt)}
+          {dayLabel(post.meetingAt, locale)}
           <span className="ml-1.5 font-medium text-slate-500 dark:text-slate-400">
-            {timeLabel(post.meetingAt)}
+            {timeLabel(post.meetingAt, locale)}
           </span>
         </p>
         <span
@@ -42,7 +53,7 @@ export default function PostCard({ post }: { post: CommunityPost }) {
                 : "bg-brand-blue-bg text-brand-blue dark:bg-brand-green/15 dark:text-brand-green"
           }`}
         >
-          {!open ? "마감" : tight ? "자리 얼마 안 남음" : "모집중"}
+          {!open ? t.closed : tight ? t.tight : t.open}
         </span>
       </div>
 
@@ -78,11 +89,11 @@ export default function PostCard({ post }: { post: CommunityPost }) {
 
       {(post.writerNickname || left !== null) && (
         <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-3 text-xs text-slate-400 dark:border-white/5 dark:text-slate-500">
-          {post.writerNickname && <span>주최 {post.writerNickname}</span>}
+          {post.writerNickname && <span>{t.host(post.writerNickname)}</span>}
           {left !== null && (
             <span className="ml-auto flex items-center gap-1.5 font-bold text-slate-500 tabular-nums dark:text-slate-400">
               <PeopleIcon size={13} />
-              {post.currentParticipants} / {post.maxParticipants}명
+              {t.seats(post.currentParticipants ?? 0, post.maxParticipants)}
             </span>
           )}
         </div>

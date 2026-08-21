@@ -20,6 +20,18 @@ export type CommunityText = {
     ctaBody: string;
     ctaButton: string;
   };
+  card: {
+    open: string;
+    tight: string;
+    closed: string;
+    host: (nickname: string) => string;
+    seats: (current: number, max: number) => string;
+    today: string;
+    tomorrow: string;
+    inDays: (n: number) => string;
+    seatsLeft: (n: number) => string;
+    seatsNone: string;
+  };
   detail: {
     place: string;
     when: string;
@@ -57,6 +69,18 @@ const ko: CommunityText = {
     ctaHeading: "직접 모임을 열어보세요",
     ctaBody: "장소와 시간만 정하면 돼요. 링크 하나로 사람을 모을 수 있어요.",
     ctaButton: "앱에서 모임 만들기",
+  },
+  card: {
+    open: "모집중",
+    tight: "자리 얼마 안 남음",
+    closed: "마감",
+    host: (nickname) => `주최 ${nickname}`,
+    seats: (current, max) => `${current} / ${max}명`,
+    today: "오늘이에요",
+    tomorrow: "내일이에요",
+    inDays: (n) => `${n}일 뒤예요`,
+    seatsLeft: (n) => (n === 1 ? "한 자리 남았어요" : `${n}자리 남았어요`),
+    seatsNone: "자리가 다 찼어요",
   },
   detail: {
     place: "장소",
@@ -96,6 +120,18 @@ const en: CommunityText = {
     ctaBody: "Pick a place and a time. One link is enough to gather people.",
     ctaButton: "Create in the app",
   },
+  card: {
+    open: "Open",
+    tight: "Almost full",
+    closed: "Closed",
+    host: (nickname) => `Host ${nickname}`,
+    seats: (current, max) => `${current} / ${max}`,
+    today: "Today",
+    tomorrow: "Tomorrow",
+    inDays: (n) => `In ${n} days`,
+    seatsLeft: (n) => (n === 1 ? "One spot left" : `${n} spots left`),
+    seatsNone: "All spots taken",
+  },
   detail: {
     place: "Place",
     when: "When",
@@ -133,6 +169,18 @@ const ja: CommunityText = {
     ctaHeading: "自分で募集を出す",
     ctaBody: "場所と時間を決めるだけ。リンク一つで人を集められます。",
     ctaButton: "アプリで募集を作る",
+  },
+  card: {
+    open: "募集中",
+    tight: "残りわずか",
+    closed: "締め切り",
+    host: (nickname) => `主催 ${nickname}`,
+    seats: (current, max) => `${current} / ${max}人`,
+    today: "今日です",
+    tomorrow: "明日です",
+    inDays: (n) => `${n}日後です`,
+    seatsLeft: (n) => (n === 1 ? "残り1人です" : `残り${n}人です`),
+    seatsNone: "定員に達しました",
   },
   detail: {
     place: "場所",
