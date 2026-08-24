@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import PolicyRenderer, {
-  type PolicyData,
-} from "@/components/policy/PolicyRenderer";
+import PolicyRenderer from "@/components/policy/PolicyRenderer";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
-import termsData from "@/lib/policies/terms.json";
+import { getLegalDoc } from "@/lib/legal/documents";
 
 export const metadata: Metadata = {
   title: "서비스 이용약관",
@@ -36,7 +34,7 @@ export default function TermsPage() {
           { name: "서비스 이용약관", path: "/terms" },
         ]}
       />
-      <PolicyRenderer data={termsData as PolicyData} />
+      <PolicyRenderer data={getLegalDoc("terms")} />
     </>
   );
 }

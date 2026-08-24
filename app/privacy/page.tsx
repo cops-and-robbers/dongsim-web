@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import PolicyRenderer, {
-  type PolicyData,
-} from "@/components/policy/PolicyRenderer";
+import PolicyRenderer from "@/components/policy/PolicyRenderer";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
-import privacyData from "@/lib/policies/privacy.json";
+import { getLegalDoc } from "@/lib/legal/documents";
 
 export const metadata: Metadata = {
   title: "개인정보 처리방침",
@@ -37,7 +35,7 @@ export default function PrivacyPage() {
           { name: "개인정보 처리방침", path: "/privacy" },
         ]}
       />
-      <PolicyRenderer data={privacyData as PolicyData} />
+      <PolicyRenderer data={getLegalDoc("privacy")} />
     </>
   );
 }

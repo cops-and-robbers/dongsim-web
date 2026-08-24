@@ -1,21 +1,17 @@
+import type {
+  PolicyData,
+  PolicyItem,
+  PolicySection,
+} from "@/lib/legal/documents";
 import Container from "@/components/ui/Container";
 
-export type PolicyItem = {
-  text: string;
-  subItems: string[];
-};
-
-export type PolicySection = {
-  heading: string;
-  content: string;
-  items: PolicyItem[];
-};
-
-export type PolicyData = {
-  title: string;
-  effectiveDate: string;
-  sections: PolicySection[];
-};
+// 타입은 lib/legal/documents 가 정본이다. 같은 문서를 앱 웹뷰(AppLegalView)도
+// 그리기 때문에, 양쪽이 따로 타입을 들고 있으면 스키마가 조용히 갈라진다.
+export type {
+  PolicyItem,
+  PolicySection,
+  PolicyData,
+} from "@/lib/legal/documents";
 
 function isSubsectionHeading(heading: string) {
   return /^\d+-\d+/.test(heading);

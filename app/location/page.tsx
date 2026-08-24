@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import PolicyRenderer, {
-  type PolicyData,
-} from "@/components/policy/PolicyRenderer";
+import PolicyRenderer from "@/components/policy/PolicyRenderer";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
-import locationData from "@/lib/policies/location.json";
+import { getLegalDoc } from "@/lib/legal/documents";
 
 export const metadata: Metadata = {
   title: "위치정보 이용약관",
@@ -37,7 +35,7 @@ export default function LocationPage() {
           { name: "위치정보 이용약관", path: "/location" },
         ]}
       />
-      <PolicyRenderer data={locationData as PolicyData} />
+      <PolicyRenderer data={getLegalDoc("location")} />
     </>
   );
 }
