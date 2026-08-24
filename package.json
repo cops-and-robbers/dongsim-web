@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "check:legal-fonts": "node scripts/check-legal-fonts.mjs",
     "relay": "relay-compiler",
     "relay:watch": "relay-compiler --watch"
   },
