@@ -13,6 +13,7 @@
 // 원본: FE `lib/core/widgets/pages/legal_document_page.dart`
 
 import type { LegalDoc, PolicyData } from "./documents";
+import type { Locale } from "@/lib/i18n/config";
 import { getLegalDoc } from "./documents";
 
 function escapeHtml(value: string): string {
@@ -121,16 +122,16 @@ function renderSection(section: PolicyData["sections"][number]): string {
  */
 export function renderLegalEmbedHtml(
   doc: LegalDoc,
-  options: { lang?: string; notice?: string } = {},
+  options: { locale?: Locale; notice?: string } = {},
 ): string {
-  const { lang = "ko", notice } = options;
-  const data = getLegalDoc(doc);
+  const { locale = "ko", notice } = options;
+  const data = getLegalDoc(doc, locale);
 
   const banner = notice ? `<p class="notice">${escapeHtml(notice)}</p>` : "";
   const body = data.sections.map(renderSection).join("");
 
   return `<!doctype html>
-<html lang="${escapeHtml(lang)}">
+<html lang="${escapeHtml(locale)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
