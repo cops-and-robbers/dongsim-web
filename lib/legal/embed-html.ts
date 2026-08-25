@@ -12,6 +12,7 @@
 //
 // 원본: FE `lib/core/widgets/pages/legal_document_page.dart`
 
+import fontManifest from "./font-manifest.json";
 import type { LegalDoc, PolicyData } from "./documents";
 import type { Locale } from "@/lib/i18n/config";
 import { getLegalDoc } from "./documents";
@@ -38,9 +39,24 @@ function escapeHtml(value: string): string {
  * 다크 모드 분기를 두지 않는다. 앱의 LegalDocumentPage 가 라이트 고정이라
  * 그쪽에 맞춘 것이고, 여기서만 어두워지면 앱 화면과 이질감이 생긴다.
  */
+/*
+ * 폰트 파일 이름에는 내용 해시가 들어간다(#49). 이름이 같으면 내용도 같다는 게
+ * 보장되므로 next.config.ts 가 immutable 캐시를 걸 수 있고, 그래서 앱이 약관을
+ * 열 때마다 폰트를 다시 확인하지 않는다.
+ *
+ * 대신 이름을 여기 적어둘 수 없다. scripts/build-legal-fonts.py 가 만든
+ * manifest.json 에서 읽는다. 문서를 고쳐 폰트를 다시 만들면 이름이 바뀌는데,
+ * 그때 이 파일을 같이 안 고치면 404 가 난다.
+ */
+const FONT_FACE = Object.entries(fontManifest.files)
+  .map(
+    ([weight, file]) =>
+      `@font-face{font-family:PretendardLegal;font-style:normal;font-weight:${weight};font-display:swap;src:url(/fonts/legal/${file}) format('woff2')}`,
+  )
+  .join("");
+
 const CSS = `
-@font-face{font-family:PretendardLegal;font-style:normal;font-weight:500;font-display:swap;src:url(/fonts/legal/pretendard-500.woff2) format('woff2')}
-@font-face{font-family:PretendardLegal;font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/legal/pretendard-600.woff2) format('woff2')}
+${FONT_FACE}
 :root{
   --u:clamp(0.9px,calc(100vw / 393),1.2px);
   --white:#ffffff;--black:#080a0c;--black800:#333d48;--black100:#edf0f2;

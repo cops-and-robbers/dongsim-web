@@ -77,6 +77,17 @@ const nextConfig: NextConfig = {
     return [
       { source: "/.well-known/apple-app-site-association", headers: json },
       { source: "/.well-known/assetlinks.json", headers: json },
+      // 법적 문서 폰트는 파일 이름에 내용 해시가 들어간다(#49). 이름이 같으면 내용도
+      // 같으니 재검증할 이유가 없고, 그래서 앱이 약관을 열 때마다 폰트를 다시 묻지
+      // 않는다. 문서를 고쳐 폰트를 새로 만들면 이름이 바뀌어 자연히 새로 받는다.
+      //
+      // 이 폴더에 이름이 고정인 파일을 두면 그게 1년간 박제되니 두지 않는다.
+      {
+        source: "/fonts/legal/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
     ];
   },
 };
