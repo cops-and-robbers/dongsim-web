@@ -52,7 +52,7 @@ function Section({ section }: { section: PolicySection }) {
       {paragraphs.map((p, i) => (
         <p
           key={i}
-          className="whitespace-pre-line text-sm leading-relaxed text-slate-700 sm:text-[15px] dark:text-slate-300"
+          className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 sm:text-[15px] dark:text-slate-300"
         >
           {p}
         </p>
