@@ -16,7 +16,8 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const CONTENT = "content/legal";
-const CHARSET = "public/fonts/legal/charset.json";
+const MANIFEST = "lib/legal/font-manifest.json";
+const FONT_DIR = "public/fonts/legal";
 
 // build-legal-fonts.py 의 ALWAYS 와 같아야 한다. 한쪽만 고치면 해시가 어긋난다.
 const ALWAYS =
@@ -47,12 +48,12 @@ const hash = createHash("sha256")
   .update([...chars].sort().join(""))
   .digest("hex");
 
-if (!existsSync(CHARSET)) {
-  console.error(`${CHARSET} 이 없다. python scripts/build-legal-fonts.py 를 돌려라.`);
+if (!existsSync(MANIFEST)) {
+  console.error(`${MANIFEST} 이 없다. python scripts/build-legal-fonts.py 를 돌려라.`);
   process.exit(1);
 }
 
-const saved = JSON.parse(readFileSync(CHARSET, "utf-8"));
+const saved = JSON.parse(readFileSync(MANIFEST, "utf-8"));
 if (saved.hash !== hash) {
   console.error(
     `법적 문서의 글자 집합이 폰트 서브셋과 다르다.\n` +
@@ -63,4 +64,34 @@ if (saved.hash !== hash) {
   process.exit(1);
 }
 
-console.log(`법적 문서 폰트 서브셋 최신 (${chars.size}자)`);
+// 파일 이름에 내용 해시가 들어가 있어서(#49) 폰트를 다시 만들면 이름이 바뀐다.
+// 매니페스트만 고치고 파일을 안 올렸거나 그 반대인 상태를 여기서 잡는다.
+// 이름이 어긋나면 화면에서 폰트가 통째로 404 라 글꼴이 전부 시스템 폰트가 된다.
+const listed = Object.values(saved.files ?? {});
+if (listed.length === 0) {
+  console.error(`${MANIFEST} 에 파일 목록이 없다.`);
+  console.error("python scripts/build-legal-fonts.py 를 돌려라.");
+  process.exit(1);
+}
+
+const missing = listed.filter((file) => !existsSync(join(FONT_DIR, file)));
+if (missing.length > 0) {
+  console.error("매니페스트가 가리키는 폰트가 없다.");
+  for (const file of missing) console.error(`  ${join(FONT_DIR, file)}`);
+  console.error("python scripts/build-legal-fonts.py 를 돌리고 결과를 커밋해라.");
+  process.exit(1);
+}
+
+// 빌드 스크립트가 만들기 전에 폴더를 비우지만, 손으로 옛 파일을 되살렸거나
+// 머지하면서 딸려 온 경우를 잡는다. 죽은 파일이 커밋되면 계속 쌓인다.
+const stale = readdirSync(FONT_DIR).filter(
+  (file) => file.endsWith(".woff2") && !listed.includes(file),
+);
+if (stale.length > 0) {
+  console.error("아무도 안 쓰는 폰트가 남아 있다.");
+  for (const file of stale) console.error(`  ${join(FONT_DIR, file)}`);
+  console.error("지우고 커밋해라.");
+  process.exit(1);
+}
+
+console.log(`법적 문서 폰트 서브셋 최신 (${chars.size}자, ${listed.length}개 파일)`);

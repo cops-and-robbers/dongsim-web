@@ -25,6 +25,7 @@ content/legal/<locale>/<doc>.json     ← 정본. 여기만 고친다
   │          앱 화면 재현. 앱 웹뷰가 여는 화면
   │
   └─ scripts/build-legal-fonts.py     → public/fonts/legal/*.woff2
+                                      + lib/legal/font-manifest.json
 ```
 
 문서는 하나인데 그리는 방식이 둘이다. 한 컴포넌트에 분기를 넣지 않고 나눈 것은, 한쪽을 고칠 때 다른 쪽이 깨지지 않게 하려는 것이다. 사이트 화면은 사이트 규칙을 따르고 앱 화면은 앱 규칙을 따르는데, 그 둘이 반대 방향이라 한 곳에 두면 계속 부딪힌다.
@@ -120,7 +121,23 @@ python scripts/build-legal-fonts.py   # 필요: pip install fonttools brotli
 pnpm check:legal-fonts
 ```
 
-글자 집합 해시를 `public/fonts/legal/charset.json` 과 비교한다. 폰트 파일을 파싱하지 않으므로 CI 에 파이썬이 없어도 돈다. `build-legal-fonts.py` 의 `ALWAYS` 와 `check-legal-fonts.mjs` 의 `ALWAYS` 는 **같아야 한다.** 한쪽만 고치면 해시가 어긋나 검사가 항상 실패한다.
+글자 집합 해시를 `lib/legal/font-manifest.json` 과 비교한다. 폰트 파일을 파싱하지 않으므로 CI 에 파이썬이 없어도 돈다. `build-legal-fonts.py` 의 `ALWAYS` 와 `check-legal-fonts.mjs` 의 `ALWAYS` 는 **같아야 한다.** 한쪽만 고치면 해시가 어긋나 검사가 항상 실패한다.
+
+### 파일 이름에 해시가 붙는 이유
+
+`public/` 에 직접 넣은 파일은 Vercel 이 `max-age=0, must-revalidate` 로 내보낸다. 그래서 약관 화면 한 번에 왕복이 세 번 생긴다 - HTML 한 번, 폰트 두 번. 본문은 전부 304 라 데이터는 안 쓰지만 왕복 자체는 매번 발생하고, 느린 망에서는 시스템 폰트로 먼저 그려졌다가 Pretendard 로 튀는 게 보인다.
+
+그래서 파일 이름에 woff2 내용의 sha256 앞 8자리를 넣는다(#49).
+
+```
+pretendard-500.f79e2ecd.woff2
+```
+
+이름이 같으면 내용도 같다는 게 보장되므로 `next.config.ts` 가 `/fonts/legal/` 전체에 `immutable` 을 건다. 폰트를 다시 만들면 이름이 바뀌고, 그 이름을 적어둔 HTML 은 어차피 매번 재검증되니 앱은 곧바로 새 이름을 알게 된다.
+
+**글자 집합 해시를 파일 이름에 쓰면 안 된다.** Pretendard 원본 버전이 올라가면 글자 집합은 그대로인데 woff2 내용은 바뀐다. 그때 이름이 안 바뀌면 낡은 폰트가 1년간 박제된다. 출력된 바이트를 해싱해야 한다.
+
+`public/fonts/legal/` 에 이름이 고정인 파일을 두면 안 되는 것도 같은 이유다. 매니페스트를 `lib/legal/` 에 둔 것은 그래서다.
 
 ## 언어 늘리기
 
