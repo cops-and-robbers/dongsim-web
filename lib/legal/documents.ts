@@ -9,14 +9,17 @@
 // 개인정보보호법에 대응하기 위한 것이라 번역으로는 만들 수 없는 내용이고,
 // 그래서 각 문서 부칙에서 "원문 우선" 원칙의 예외임을 명시하고 있다.
 
+import enLicenses from "@/content/legal/en/licenses.json";
 import enLocation from "@/content/legal/en/location.json";
 import enMarketing from "@/content/legal/en/marketing.json";
 import enPrivacy from "@/content/legal/en/privacy.json";
 import enTerms from "@/content/legal/en/terms.json";
+import jaLicenses from "@/content/legal/ja/licenses.json";
 import jaLocation from "@/content/legal/ja/location.json";
 import jaMarketing from "@/content/legal/ja/marketing.json";
 import jaPrivacy from "@/content/legal/ja/privacy.json";
 import jaTerms from "@/content/legal/ja/terms.json";
+import koLicenses from "@/content/legal/ko/licenses.json";
 import koLocation from "@/content/legal/ko/location.json";
 import koMarketing from "@/content/legal/ko/marketing.json";
 import koPrivacy from "@/content/legal/ko/privacy.json";
@@ -46,6 +49,7 @@ export const LEGAL_DOCS = [
   "privacy",
   "location",
   "marketing",
+  "licenses",
 ] as const;
 
 export type LegalDoc = (typeof LEGAL_DOCS)[number];
@@ -56,18 +60,21 @@ const DOCS: Record<Locale, Record<LegalDoc, PolicyData>> = {
     privacy: koPrivacy as PolicyData,
     location: koLocation as PolicyData,
     marketing: koMarketing as PolicyData,
+    licenses: koLicenses as PolicyData,
   },
   ja: {
     terms: jaTerms as PolicyData,
     privacy: jaPrivacy as PolicyData,
     location: jaLocation as PolicyData,
     marketing: jaMarketing as PolicyData,
+    licenses: jaLicenses as PolicyData,
   },
   en: {
     terms: enTerms as PolicyData,
     privacy: enPrivacy as PolicyData,
     location: enLocation as PolicyData,
     marketing: enMarketing as PolicyData,
+    licenses: enLicenses as PolicyData,
   },
 };
 

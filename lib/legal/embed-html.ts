@@ -93,7 +93,11 @@ h2{
    여러 문단을 만들면 문단 간격이 붙어 앱과 높이가 어긋난다. */
 p,li{
   color:var(--black800);font-size:calc(12 * var(--u));font-weight:500;
-  line-height:1.4;white-space:pre-line;
+  line-height:1.4;
+  /* pre-wrap 이다. 라이선스 본문은 들여쓰기와 정렬이 의미를 갖는다(조항 번호, 목록
+     기호). pre-line 은 줄 앞 공백을 날려서 원문과 다르게 보인다. 약관 4종에는
+     들여쓴 줄이 하나도 없어 영향이 없다. */
+  white-space:pre-wrap;
 }
 ul{list-style:none}
 /* 앱은 content 가 있을 때만 항목 앞에 8 을 넣는다(if content.isNotEmpty).
