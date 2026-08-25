@@ -49,7 +49,9 @@ const CSS = `
 html{background:var(--white);-webkit-text-size-adjust:100%}
 body{
   background:var(--white);
-  padding:calc(16 * var(--u));
+  /* 앱은 좌우 24.w · 상하 16.h 다. 좌우를 16 으로 두면 한 줄에 들어가는 글자 수가
+     달라져서 줄바꿈 위치가 앱과 어긋난다. */
+  padding:calc(16 * var(--u)) calc(24 * var(--u));
   font-family:PretendardLegal,-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   letter-spacing:-0.32px;
   /* 텍스트 선택과 확대를 막지 않는다. 약관은 복사하고 확대해서 읽는 문서고,
@@ -61,6 +63,10 @@ body{
   border-radius:calc(12 * var(--u));background:var(--black100);
   color:var(--black800);font-size:calc(12 * var(--u));font-weight:500;line-height:1.4;
 }
+/* Flutter 의 SizedBox 는 무조건 더해지지만 CSS 마진은 인접하면 큰 쪽으로 합쳐진다
+   (마진 상쇄). 8 뒤에 4 를 두면 12 가 아니라 8 이 돼서 앱보다 촘촘해진다.
+   flex 컨테이너 안에서는 상쇄가 일어나지 않으므로 세로 배치를 전부 flex 로 둔다. */
+body,section,.items,.sub{display:flex;flex-direction:column}
 section + section{margin-top:calc(24 * var(--u))}
 h2{
   color:var(--black);font-size:calc(14 * var(--u));font-weight:600;line-height:1;
@@ -74,13 +80,16 @@ p,li{
   line-height:1.4;white-space:pre-line;
 }
 ul{list-style:none}
-.items{margin-top:calc(8 * var(--u))}
+/* 앱은 content 가 있을 때만 항목 앞에 8 을 넣는다(if content.isNotEmpty).
+   제목만 있고 본문이 없는 섹션에서는 제목 뒤 8 하나로 끝난다. */
+p + .items{margin-top:calc(8 * var(--u))}
 .items > li{margin-top:calc(4 * var(--u))}
 /* 하위 항목 앞에 기호를 붙이지 않는다. 앱이 문자열을 그대로 그리고,
    기호가 필요한 문서는 이미 본문에 넣어 두었다. */
+/* 앱은 하위항목 블록에 top 4 를 주고 각 하위항목에 다시 top 2 를 준다.
+   그래서 첫 하위항목도 2 를 받아 항목 텍스트와의 간격이 6 이다. */
 .sub{padding-left:calc(16 * var(--u));margin-top:calc(4 * var(--u))}
 .sub > li{margin-top:calc(2 * var(--u))}
-.sub > li:first-child{margin-top:0}
 /* 안드로이드 제스처 네비게이션 바와 마지막 본문이 겹치지 않도록 */
 .tail{height:calc(64 * var(--u))}
 `.trim();
