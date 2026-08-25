@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import PolicyRenderer, {
-  type PolicyData,
-} from "@/components/policy/PolicyRenderer";
+import PolicyRenderer from "@/components/policy/PolicyRenderer";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
-import marketingData from "@/lib/policies/marketing.json";
+import { getLegalDoc } from "@/lib/legal/documents";
 
 export const metadata: Metadata = {
   title: "마케팅 정보 수신 동의",
@@ -37,7 +35,7 @@ export default function MarketingPage() {
           { name: "마케팅 정보 수신 동의", path: "/marketing" },
         ]}
       />
-      <PolicyRenderer data={marketingData as PolicyData} />
+      <PolicyRenderer data={getLegalDoc("marketing")} />
     </>
   );
 }

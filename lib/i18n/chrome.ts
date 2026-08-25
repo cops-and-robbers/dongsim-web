@@ -62,7 +62,12 @@ const en: Chrome = {
     minigame: null,
     contactHeading: "Contact",
     contactNote: "Partnerships, feedback, and bug reports are all welcome.",
-    legal: [],
+    legal: [
+      { path: "/en/terms", label: "Terms of Service" },
+      { path: "/en/privacy", label: "Privacy Policy" },
+      { path: "/en/location", label: "Location Data Terms" },
+      { path: "/en/marketing", label: "Marketing Consent" },
+    ],
   },
 };
 
@@ -82,7 +87,12 @@ const ja: Chrome = {
     minigame: null,
     contactHeading: "お問い合わせ",
     contactNote: "提携・フィードバック・不具合報告、お気軽にどうぞ。",
-    legal: [],
+    legal: [
+      { path: "/ja/terms", label: "利用規約" },
+      { path: "/ja/privacy", label: "プライバシーポリシー" },
+      { path: "/ja/location", label: "位置情報利用規約" },
+      { path: "/ja/marketing", label: "マーケティング情報の受信同意" },
+    ],
   },
 };
 

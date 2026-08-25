@@ -1,6 +1,7 @@
+import { LEGAL_DOCS } from "@/lib/legal/documents";
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog/notion";
-import { alternateLanguages, localizedPath } from "@/lib/i18n/config";
+import { LOCALES, alternateLanguages, localizedPath } from "@/lib/i18n/config";
 
 const BASE_URL = "https://copsandrobbers.app";
 
@@ -154,29 +155,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.7,
         })),
     ]),
-    {
-      url: `${BASE_URL}/terms`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE_URL}/privacy`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE_URL}/location`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE_URL}/marketing`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    // 법적 문서는 언어별로 낸다. 앱 웹뷰용 /legal/*/embed 는 같은 내용이 두 주소로
+    // 잡히지 않도록 빼둔다(robots.ts 도 같은 경로를 막는다).
+    ...LOCALES.flatMap((locale) =>
+      LEGAL_DOCS.map((doc) => ({
+        url: `${BASE_URL}${localizedPath(`/${doc}`, locale)}`,
+        lastModified: now,
+        changeFrequency: "yearly" as const,
+        priority: 0.3,
+      })),
+    ),
   ];
 }

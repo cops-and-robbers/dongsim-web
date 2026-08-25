@@ -35,3 +35,4 @@ pnpm build                 # 검증 기준은 이 빌드의 "Compiled successful
 | 빌드·배포·환경 문제가 생겼을 때 | `docs/gotchas.md` |
 | 어드민 웹 애플 로그인 설정·문제 해결 | `docs/apple-signin-web.md` |
 | 팀원에게 블로그 글쓰기를 안내할 때 | `docs/blog-writing-guide.md` |
+| 이용약관·개인정보 처리방침 등 법적 문서 | `docs/legal-documents.md` |

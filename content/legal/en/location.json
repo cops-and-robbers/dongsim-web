@@ -1,0 +1,213 @@
+{
+  "title": "Location Data Terms",
+  "effectiveDate": "May 19, 2026",
+  "sections": [
+    {
+      "heading": "",
+      "content": "Cops and Robbers Location Data Terms\nEffective date: May 19, 2026",
+      "items": []
+    },
+    {
+      "heading": "Article 1 (Purpose)",
+      "content": "These Terms set out the rights, obligations, responsibilities and other necessary matters between Team 동심지키미 (Dongsim Jikimi, the \"Company\") and users (referred to here as \"location data subjects\", the term used in Korean law) in relation to their use of the Cops and Robbers location-based service (the \"Service\").",
+      "items": []
+    },
+    {
+      "heading": "Article 2 (Rules Outside These Terms)",
+      "content": "Matters not provided for in these Terms follow the Korean Act on the Protection and Use of Location Information (the \"Location Information Act\"), the Korean Personal Information Protection Act, the Korean Act on Promotion of Information and Communications Network Utilisation and Information Protection, the Company's Terms of Service and Privacy Policy, other applicable law, and any detailed usage guidance set by the Company.",
+      "items": []
+    },
+    {
+      "heading": "Article 3 (Contents of the Service and Fees)",
+      "content": "1. The Company provides the following location-based services.",
+      "items": [
+        { "text": "a. Real-time location-based gameplay: the GPS coordinates of location data subjects on the robber team are collected in real time and used to run the game.", "subItems": [] },
+        { "text": "b. Location reveal (footprints): the location of the robber team is revealed to the police team and to fellow robbers at the interval set by the host.", "subItems": [] },
+        { "text": "c. Play area departure detection: whether a user has left the play area boundary set by the host is determined on the user's device.", "subItems": [] },
+        { "text": "d. Jail system: confirms whether an arrested robber has reached the jail area.", "subItems": [] },
+        { "text": "e. Game statistics: statistics accumulated during the game, such as the user's own route, distance travelled and average speed, are shown to that user on the result screen.", "subItems": [] },
+        { "text": "2. Location-based services are in principle provided free of charge. If paid services are introduced in future, notice will be given in advance.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 4 (When and How Location Data Is Collected)",
+      "content": "1. The Company collects personal location data only while a game session is in progress (IN_PROGRESS), and does not collect it before a game starts or after it ends (GAME_OVER).",
+      "items": [
+        {
+          "text": "2. Location data is collected through the following mechanisms provided by each operating system.",
+          "subItems": [
+            "a. Android: collected through a Foreground Service (foregroundServiceType=\"location\") that displays a persistent notification indicating that a game is in progress, including while the screen is off or another app is running in the background.",
+            "b. iOS: collected through the UIBackgroundModes location option, with the blue location indicator shown in the system status bar so that the location data subject can see that background location is in use."
+          ]
+        },
+        { "text": "3. The Company stops collecting location data automatically as soon as the game session ends (GAME_OVER). On iOS the system location indicator may remain visible for a short time under the operating system's own policy, but from that moment the Company neither collects, uses nor transmits any location data. On Android the Foreground Service stops immediately and the related notification is dismissed.", "subItems": [] },
+        { "text": "4. The Company carries out background location collection only within the legitimate purpose of running a game, and never collects a location data subject's location while a game is not in progress.", "subItems": [] },
+        { "text": "5. On some Android devices, background location collection may be limited by the operating system's battery optimisation policy. In that case the location data subject may exclude this app from battery optimisation in device settings. The Company is not liable for reduced accuracy or gaps in location collection caused by operating system battery policies or by the location data subject's device settings.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 5 (Rights of Location Data Subjects and How to Exercise Them)",
+      "content": "1. A location data subject may at any time withdraw all or part of their consent to the provision of location-based services using their personal location data and to the provision of that data to third parties.",
+      "items": [
+        {
+          "text": "2. A location data subject may at any time request that collection, use or provision of their personal location data be suspended temporarily. The Company cannot refuse such a request and maintains the technical means to comply. Suspension can be achieved as follows.",
+          "subItems": [
+            "a. Leaving the game in the app, or ending the game session (location collection stops automatically once no game is in progress)",
+            "b. Revoking the app's location permission in device settings",
+            "c. On Android, ending the game from the Foreground Service notification"
+          ]
+        },
+        {
+          "text": "3. A location data subject may request access to or notification of the following records and, where a record is incorrect, request its correction. The Company cannot refuse such a request without good reason.",
+          "subItems": [
+            "a. Records confirming the collection, use and provision of the subject's own location data",
+            "b. The reasons for, and the content of, any provision of the subject's personal location data to a third party under the Location Information Act or another statute"
+          ]
+        },
+        { "text": "4. To exercise the rights in paragraphs 1 to 3, a location data subject may send a request by email (copsnro66ers@gmail.com) attaching material that verifies their identity, and the Company will take the necessary steps without delay.", "subItems": [] },
+        { "text": "5. Where a location data subject withdraws all or part of their consent, the Company will without delay destroy the personal location data collected and the records confirming its collection, use and provision. Where consent is withdrawn in part, this applies to the corresponding part of that data and those records.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 6 (Rights of Legal Representatives)",
+      "content": "1. Where the Company seeks to collect, use or provide personal location data of a child under 14, it must obtain the consent of the child's legal representative. However, the Service does not permit registration by children under 14, so in principle the Company does not collect personal location data of children under 14.",
+      "items": [
+        { "text": "2. A legal representative may withdraw consent to the collection, use or provision of a child's personal location data, and may exercise the rights set out in Article 5 on the child's behalf.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 7 (Rights of Guardians of Children Aged 8 or Under and Others)",
+      "content": "1. Where the guardian of a person falling within the following (a \"child aged 8 or under and others\") consents to the collection, use or provision of personal location data in order to protect that person's life or physical safety, such consent is treated as consent by the person concerned. This Article reflects a scheme under the Korean Location Information Act.",
+      "items": [
+        { "text": "a. A child aged 8 or under", "subItems": [] },
+        { "text": "b. An adult under full guardianship", "subItems": [] },
+        { "text": "c. A person with a mental disability under Article 2(2)2 of the Korean Act on Welfare of Persons with Disabilities who is a person with a severe disability under Article 2(2) of the Korean Act on Employment Promotion and Vocational Rehabilitation of Persons with Disabilities, limited to persons registered as having a disability under Article 32 of the Korean Act on Welfare of Persons with Disabilities", "subItems": [] },
+        {
+          "text": "2. The guardian of a child aged 8 or under and others means a person who in fact protects that person and who falls within the following.",
+          "subItems": [
+            "a. The legal representative of a child aged 8 or under, or a guardian under Article 3 of the Korean Act on the Guardianship Duties for Minors in Protective Facilities",
+            "b. The legal representative of an adult under full guardianship",
+            "c. The legal representative of a person under paragraph 1(c), or the head of a residential facility for persons with disabilities under Article 58(1)1 of the Korean Act on Welfare of Persons with Disabilities (limited to facilities established and operated by the State or a local government), the head of a mental care facility under Article 22 of the Korean Act on the Improvement of Mental Health and the Support for Welfare Services for Mental Patients, or the head of a care facility for homeless persons under Article 16(1)3 of the Korean Act on Welfare and Self-Reliance Support for the Homeless"
+          ]
+        },
+        { "text": "3. A guardian who consents to the collection, use or provision of personal location data of a child aged 8 or under and others must submit to the Company a written consent form together with a document proving their status as guardian.", "subItems": [] },
+        { "text": "4. A guardian who gives such consent may exercise all the rights of a location data subject.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 8 (Basis and Period for Retaining Records of Use and Provision)",
+      "content": "1. Under Article 16(2) of the Korean Location Information Act, the Company automatically records in its location information system the records confirming the collection, use and provision of location data relating to location data subjects, and retains them for at least six months.",
+      "items": [
+        {
+          "text": "2. The records retained comprise the following.",
+          "subItems": [
+            "a. The date, time and purpose of collection, use or provision",
+            "b. A summary of the location data collected, used or provided, such as the type of coordinates and the collection interval",
+            "c. The recipient (participants in the same game session)",
+            "d. Any other matters required by Korean location information legislation"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Article 9 (Provision of Personal Location Data to Third Parties)",
+      "content": "1. The Company does not provide personal location data to third parties without the consent of the location data subject. Where a service involving such provision is offered, the Company notifies the location data subject in advance of the recipient and the purpose, and obtains consent.",
+      "items": [
+        {
+          "text": "2. To the extent essential to running a game, the Company provides personal location data to participants in the same game session as follows.",
+          "subItems": [
+            "a. To the police team in the same session, the GPS coordinates of robbers are provided at the reveal interval set by the host, so that the location reveal feature can work.",
+            "b. To members of the robber team in the same session, the GPS coordinates of fellow robbers are provided at the reveal interval set by the host (the same moment as the reveal to the police team), so that teammates can coordinate."
+          ]
+        },
+        { "text": "3. Participants in the same game session who receive location data can view it only while the game is in progress, and all sharing stops as soon as the game ends. The Company imposes on recipients obligations to protect personal data equivalent to those in these Terms and the Privacy Policy.", "subItems": [] },
+        { "text": "4. Where the Company provides personal location data to a third party designated by the location data subject, it notifies the subject immediately on each occasion, through an in-app notification or on-screen message, of the recipient, the date and time and the purpose of the provision.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 10 (Retention and Destruction of Personal Location Data)",
+      "content": "1. Under Article 23 of the Korean Location Information Act, the Company destroys personal location data without delay once the purpose of its use has been achieved.",
+      "items": [
+        {
+          "text": "2. Retention and destruction are handled as follows.",
+          "subItems": [
+            "a. Real-time location data: discarded immediately after delivery to participants in the same game, and deleted from the server as soon as the game session ends. It is not stored permanently on the Company's servers unless separate consent is given.",
+            "b. Location reveal records (footprints): deleted as soon as the game session ends.",
+            "c. Route and statistics accumulated during a game: discarded from the user's device memory as soon as the result screen is closed.",
+            "d. Records confirming the collection, use and provision of location data: permanently deleted in an unrecoverable manner once the retention period has passed."
+          ]
+        },
+        { "text": "3. Personal location data stored in electronic file form is deleted using a technical method that makes it impossible to restore.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 11 (Planned Features)",
+      "content": "The Company may in future introduce features such as local storage of the user's own game records on their device, storage of game records on the Company's servers, and sharing of routes with other participants. Such features are enabled only where the location data subject has given separate consent. Where they are introduced, the corresponding provisions of these Terms and of the Privacy Policy will be announced at least 30 days before they take effect.",
+      "items": []
+    },
+    {
+      "heading": "Article 12 (Change and Suspension of the Service)",
+      "content": "1. The Company may temporarily suspend the location-based service for repair, inspection, replacement or failure of equipment, loss of communications, or other substantial operational reasons. In that case the Company will notify location data subjects in advance, for example by an in-app announcement. Where advance notice is not possible for unavoidable reasons, notice may be given afterwards.",
+      "items": [
+        { "text": "2. The Company may restrict or discontinue all or part of the location-based service for policy or operational reasons. In that case the reasons and the date will be announced in advance within the app.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 13 (Location Data Manager)",
+      "content": "1. The Company designates and maintains a location data manager, being a person in a position to take real responsibility for managing and protecting location data and for handling complaints from location data subjects.",
+      "items": [
+        { "text": "2. The location data manager is the head of the team providing the location-based service; details are set out at the end of these Terms.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 14 (Compensation for Damages)",
+      "content": "1. Where a location data subject suffers damage as a result of the Company acting in breach of Articles 15 to 26 of the Korean Location Information Act, the subject may claim compensation from the Company. In that case the Company cannot escape liability unless it proves the absence of intent or negligence.",
+      "items": [
+        { "text": "2. Where the Company causes damage to a location data subject through intent or gross negligence, it is liable to compensate that damage, and the scope of compensation is limited to ordinary damages.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 15 (Disclaimer)",
+      "content": "1. Where the Company cannot provide the location-based service for any of the following reasons, it is not liable for damage thereby caused to location data subjects.",
+      "items": [
+        { "text": "a. Natural disaster or an equivalent state of force majeure", "subItems": [] },
+        { "text": "b. Deliberate interference with the service by a third party that has entered into a service partnership agreement with the Company", "subItems": [] },
+        { "text": "c. Disruption to use of the service caused by reasons attributable to the location data subject", "subItems": [] },
+        { "text": "d. Other reasons, excluding a to c, not involving intent or negligence on the part of the Company", "subItems": [] },
+        { "text": "2. The Company is not liable for errors, delays or gaps in GPS signals inherent in location-based services, or for inaccurate location data caused by device performance or the network environment.", "subItems": [] },
+        { "text": "3. The Company is not liable for gaps or delays in background location collection caused by the operating system's battery optimisation or background execution policies, or by the location data subject's device settings (for example Android battery optimisation or iOS Low Power Mode).", "subItems": [] },
+        { "text": "4. The Company is not liable for damage arising from information or material obtained through the location-based service, nor for damage arising because a location data subject did not exercise the rights under Article 5 of these Terms.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 16 (Dispute Resolution and Other Matters)",
+      "content": "1. The Company will consult with location data subjects in good faith to resolve disputes relating to location data.",
+      "items": [
+        { "text": "2. Where consultation does not resolve the matter, an application may be made for adjudication by the Korea Communications Commission under Article 28 of the Korean Location Information Act, or for mediation by the Personal Information Dispute Mediation Committee under Article 40 of the Korean Personal Information Protection Act.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 17 (Company Contact Details)",
+      "content": "The Company's name and contact details are as follows.",
+      "items": [
+        { "text": "Name: Team 동심지키미 (Dongsim Jikimi)", "subItems": [] },
+        { "text": "Enquiries: copsnro66ers@gmail.com", "subItems": [] },
+        { "text": "Location data manager: 동심지키미 (Dongsim Jikimi) (copsnro66ers@gmail.com)", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 18 (Provisions for Users Outside the Republic of Korea)",
+      "content": "These provisions apply to users who reside outside the Republic of Korea and prevail over the other provisions of this document and over the Korean original.",
+      "items": [
+        { "text": "1. The limitations of liability in Articles 14 and 15 do not apply where the Company is liable under mandatory consumer protection law applicable to the user. The Company remains liable for damage caused by its intent or gross negligence, and for damage to life or bodily integrity.", "subItems": [] },
+        { "text": "2. The provisions in Article 7 on guardians of children aged 8 or under and others reflect a scheme under the Korean Location Information Act. They do not imply that an equivalent scheme applies in the user's country of residence.", "subItems": [] },
+        { "text": "3. The handling of location data of such users is also subject to the data protection law that applies in their country of residence, to the extent that law is applicable.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Supplementary Provisions",
+      "content": "These Terms take effect on May 19, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
+      "items": []
+    }
+  ]
+}
