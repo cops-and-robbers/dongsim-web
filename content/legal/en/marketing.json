@@ -1,0 +1,106 @@
+{
+  "title": "Marketing Communications Consent",
+  "effectiveDate": "May 1, 2026",
+  "sections": [
+    {
+      "heading": "",
+      "content": "Cops and Robbers Marketing Communications Consent\nEffective date: May 1, 2026\n\nUnder Article 22 of the Korean Personal Information Protection Act and Article 50 of the Korean Act on Promotion of Information and Communications Network Utilisation and Information Protection (the \"Network Act\"), Team 동심지키미 (Dongsim Jikimi, the \"Company\") obtains consent to send marketing communications so that it can share useful information and benefits with users. Users are free to decide whether to give this consent after reading it in full.",
+      "items": []
+    },
+    {
+      "heading": "Article 1 (Purpose of Marketing Communications)",
+      "content": "The Company sends marketing communications for the following purposes, to support smooth use of the Service and improve satisfaction.",
+      "items": [
+        { "text": "a. Announcements about new features, updates and new services", "subItems": [] },
+        { "text": "b. Information about events, promotions, prizes, rewards and similar benefits", "subItems": [] },
+        { "text": "c. Announcements about seasonal events, limited content and local offline meetups", "subItems": [] },
+        { "text": "d. Invitations to surveys, beta tests and community participation", "subItems": [] },
+        { "text": "e. Official announcements from the Company and information about service improvements", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 2 (Personal Data Collected and Used)",
+      "content": "To send marketing communications the Company uses data it has already collected, and does not collect any additional personal data for this purpose.",
+      "items": [
+        { "text": "a. Data used for delivery (reuse of data already collected): email address (for email), FCM token and device information (for push notifications), nickname", "subItems": [] },
+        { "text": "b. Optional data: in-app activity history, such as how often the user plays and the date of last access", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 3 (Means of Delivery)",
+      "content": "The Company sends marketing communications by the following means.",
+      "items": [
+        { "text": "a. App push notifications: real-time notifications through Firebase Cloud Messaging (FCM)", "subItems": [] },
+        { "text": "b. Email: sent to the email address registered through social login", "subItems": [] },
+        { "text": "c. In-app messages: shown as pop-ups or banners when the app is launched", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 4 (Retention and Use Period)",
+      "content": "1. The data is retained and used from the date of consent until the user withdraws from the Service or withdraws this consent.",
+      "items": [
+        { "text": "2. On withdrawal of consent, use for marketing purposes stops immediately. A record of the withdrawal may be kept for the statutory period under Article 50-8 of the Korean Network Act.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 5 (Right to Refuse and Consequences)",
+      "content": "1. Users have the right to refuse this consent.",
+      "items": [
+        { "text": "2. Refusing does not restrict use of the core features of Cops and Robbers in any way. Users who refuse will simply not receive information about events, benefits and similar offers.", "subItems": [] },
+        { "text": "3. Notifications essential to gameplay - such as arrest notifications, location reveal notifications, area departure notifications and game start and end notifications - are sent regardless of this consent and are handled under the Terms of Service and the Privacy Policy.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 6 (Separate Consent for Night-Time Advertising - Korean Law and Company Policy)",
+      "content": "1. Under Article 50(3) of the Korean Network Act, separate consent is required to send marketing communications between 21:00 and 08:00 the following day.",
+      "items": [
+        { "text": "2. Where a user does not consent to night-time delivery, the Company does not send advertising communications during those hours.", "subItems": [] },
+        { "text": "3. Notifications essential to gameplay, such as arrests and area departures, are not advertising communications and are therefore sent without time restriction.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 7 (How to Withdraw Consent)",
+      "content": "Users may withdraw consent at any time by any of the following means.",
+      "items": [
+        { "text": "a. In-app settings: Settings > Notifications > turn off the marketing communications toggle", "subItems": [] },
+        { "text": "b. Unsubscribe link: click the unsubscribe link at the foot of any marketing email", "subItems": [] },
+        { "text": "c. Device notification settings: block push notifications for the app in device settings", "subItems": [] },
+        { "text": "d. By email: send a request to copsnro66ers@gmail.com", "subItems": [] },
+        { "text": "The Company stops sending marketing communications as soon as it receives a withdrawal request, and notifies the user of the outcome.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 8 (Confirmation of Consent and Periodic Notice)",
+      "content": "1. Under Article 50(8) of the Korean Network Act, the Company confirms every two years whether users still consent, and notifies them of the result.",
+      "items": [
+        { "text": "2. Where a user does not respond after that notice, the existing consent is treated as continuing.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 9 (Changes to This Consent)",
+      "content": "Where the contents of this consent change, the Company will give notice through the app or by email at least 7 days before the effective date, or 30 days in advance where the change is unfavourable to users.",
+      "items": []
+    },
+    {
+      "heading": "Article 10 (Contact)",
+      "content": "For enquiries about marketing communications, withdrawal of consent or the exercise of any other right, please contact us below.",
+      "items": [
+        { "text": "Team: Team 동심지키미 (Dongsim Jikimi)", "subItems": [] },
+        { "text": "Email: copsnro66ers@gmail.com", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Article 11 (Provisions for Users Outside the Republic of Korea)",
+      "content": "These provisions apply to users who reside outside the Republic of Korea and prevail over the other provisions of this document and over the Korean original.",
+      "items": [
+        { "text": "1. The statutes cited in this document are Korean statutes. Advertising communications sent to users outside the Republic of Korea are also subject to the laws on electronic advertising that apply in the user's country of residence.", "subItems": [] },
+        { "text": "2. The night-time delivery restriction in Article 6 is based on Korean law and Company policy, and the Company applies it to users outside the Republic of Korea as well.", "subItems": [] }
+      ]
+    },
+    {
+      "heading": "Supplementary Provisions",
+      "content": "This Marketing Communications Consent takes effect on May 1, 2026.\n\nThe Korean text of this document is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
+      "items": []
+    }
+  ]
+}
