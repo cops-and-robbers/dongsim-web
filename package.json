@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "check:legal-fonts": "node scripts/check-legal-fonts.mjs",
+    "check:ko-only": "node scripts/check-ko-only-paths.mjs",
     "relay": "relay-compiler",
     "relay:watch": "relay-compiler --watch"
   },
