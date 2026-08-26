@@ -61,8 +61,12 @@ export function appIconSrc(locale: Locale): string {
 }
 
 // 영어·일본어로 번역하지 않고 한국어에만 존재하는 실제 페이지들.
-// /en·/ja로 접근하면 proxy가 한국어로 리다이렉트한다(콘텐츠는 그것뿐이므로).
-// 이 목록에 없는 /en·/ja 경로는 그냥 통과 → 없는 경로면 해당 언어의 404가 뜬다.
+// LanguageSwitcher 가 이 목록을 보고, 여기 있는 경로에서 다른 언어로 바꾸면
+// 없는 페이지(404) 대신 그 언어의 홈으로 보낸다.
+//
+// 페이지를 번역해 놓고 여기서 빼지 않으면 번역본이 있는데도 홈으로 가버린다(#58).
+// 반대로 한국어 전용 페이지를 만들고 여기 넣지 않으면 404 로 간다.
+// 양쪽 다 화면을 열어보지 않으면 모르는 종류라 pnpm check:ko-only 로 막는다.
 export const KO_ONLY_PATHS: readonly string[] = [
   "/team/members",
   "/design",
@@ -71,10 +75,6 @@ export const KO_ONLY_PATHS: readonly string[] = [
   "/event",
   "/photobooth",
   "/p",
-  "/terms",
-  "/privacy",
-  "/location",
-  "/marketing",
 ];
 
 export function isKoOnlyPath(basePath: string): boolean {
