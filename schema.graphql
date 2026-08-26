@@ -98,6 +98,31 @@ type Query {
     sortDirection: SortDirection = DESC
   ): AdminBugReportPage!
 
+  """커뮤니티 모집글 신고 목록 (처리 상태 필터·정렬·페이지네이션)"""
+  adminCommunityPostReports(
+    page: Int = 0
+    size: Int = 20
+    status: ReportStatus
+    sortDirection: SortDirection = DESC
+  ): AdminCommunityPostReportPage!
+
+  """커뮤니티 채팅 신고 목록 (처리 상태 필터·정렬·페이지네이션)"""
+  adminCommunityChatReports(
+    page: Int = 0
+    size: Int = 20
+    status: ReportStatus
+    sortDirection: SortDirection = DESC
+  ): AdminCommunityChatReportPage!
+
+  """세 종류 신고를 한 번에 보는 목록. 공통 필드만 내려온다"""
+  adminAllReports(
+    page: Int = 0
+    size: Int = 20
+    status: ReportStatus
+    source: ReportSource
+    sortDirection: SortDirection = DESC
+  ): AdminAllReportPage!
+
   """어드민 대시보드(개요) 집계"""
   adminDashboard: AdminDashboard!
 }
@@ -111,6 +136,20 @@ type Mutation {
     status: ReportStatus!
     adminMemo: String
   ): AdminReport!
+
+  """커뮤니티 모집글 신고 처리 상태 변경"""
+  updateCommunityPostReportStatus(
+    reportId: ID!
+    status: ReportStatus!
+    adminMemo: String
+  ): AdminCommunityPostReport!
+
+  """커뮤니티 채팅 신고 처리 상태 변경"""
+  updateCommunityChatReportStatus(
+    reportId: ID!
+    status: ReportStatus!
+    adminMemo: String
+  ): AdminCommunityChatReport!
 
   """버그 제보 처리 상태 변경"""
   updateBugReportStatus(
@@ -160,6 +199,94 @@ enum ReportType {
   CHEATING
   DEMORALIZATION
   ETC
+}
+
+"""신고가 어디서 접수됐는지"""
+enum ReportSource {
+  GAME_CHAT
+  COMMUNITY_POST
+  COMMUNITY_CHAT
+}
+
+# ── 커뮤니티 모집글 신고 ──
+
+type AdminCommunityPostReportPage {
+  content: [AdminCommunityPostReport!]!
+  totalElements: Int!
+  totalPages: Int!
+  page: Int!
+  size: Int!
+}
+
+type AdminCommunityPostReport {
+  id: ID!
+  postId: ID!
+  postTitle: String!
+  postContent: String!
+  reporterUserId: ID!
+  reporterNickname: String!
+  reportedUserId: ID!
+  reportedNickname: String!
+  reportType: ReportType!
+  """신고 유형이 ETC일 때의 기타 사유"""
+  etcReason: String
+  status: ReportStatus!
+  adminMemo: String
+  createdAt: String!
+}
+
+# ── 커뮤니티 채팅 신고 ──
+
+type AdminCommunityChatReportPage {
+  content: [AdminCommunityChatReport!]!
+  totalElements: Int!
+  totalPages: Int!
+  page: Int!
+  size: Int!
+}
+
+type AdminCommunityChatReport {
+  id: ID!
+  chatMessageId: ID!
+  reporterUserId: ID!
+  reporterNickname: String!
+  reportedUserId: ID!
+  reportedNickname: String!
+  messageContent: String!
+  reportType: ReportType!
+  """신고 유형이 ETC일 때의 기타 사유"""
+  etcReason: String
+  status: ReportStatus!
+  adminMemo: String
+  createdAt: String!
+}
+
+# ── 통합 신고 ──
+
+type AdminAllReportPage {
+  content: [AdminAllReport!]!
+  totalElements: Int!
+  totalPages: Int!
+  page: Int!
+  size: Int!
+}
+
+"""
+세 신고 테이블을 합친 목록의 한 행.
+
+id 는 타입마다 따로 증가한다. 신고 하나를 특정하려면 source 를 함께 봐야 한다.
+content 는 모집글이면 제목, 채팅이면 메시지가 들어온다.
+"""
+type AdminAllReport {
+  id: ID!
+  source: ReportSource!
+  reporterUserId: ID!
+  reporterNickname: String!
+  reportedUserId: ID!
+  reportedNickname: String!
+  content: String!
+  status: ReportStatus!
+  createdAt: String!
 }
 
 # ── 버그 제보 ──
