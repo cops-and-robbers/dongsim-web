@@ -122,12 +122,12 @@ const ko = {
         },
         {
           title: "구역을 정해요",
-          play: "어디까지 도망칠 수 있는지 경계를 정하고, 잡힌 도둑이 머물 감옥을 한 곳 고르세요.",
+          play: "어디까지 도망칠 수 있는지 경계를 정하고, 잡힌 도둑이 갇힐 감옥도 한 곳 정해요.",
           app: "호스트가 지도에 구역과 감옥을 직접 그려요. 벗어나면 화면이 잠겨요.",
         },
         {
           title: "도둑이 먼저 달아나요",
-          play: "경찰이 수를 세는 동안 도둑은 흩어져 숨어요.",
+          play: "경찰이 숫자를 세는 동안 도둑은 흩어져 숨어요.",
           app: "경찰 출동 시간이 끝날 때까지 앱이 대신 세어 줘요.",
         },
         {
@@ -441,7 +441,7 @@ const en: Messages = {
       steps: [
         {
           title: "Split into teams",
-          play: "Pick your cops and your robbers. A few extra robbers keeps the chase alive.",
+          play: "Pick your cops and your robbers. A few extra robbers keep the chase alive.",
           app: "Create a room and invite friends with a code.",
         },
         {
@@ -452,12 +452,12 @@ const en: Messages = {
         {
           title: "Robbers run first",
           play: "While the cops count down, the robbers scatter and hide.",
-          app: "The app counts the head start for you.",
+          app: "The app counts down the head start for you.",
         },
         {
-          title: "Chase and catch",
+          title: "Chase and tag",
           play: "Cops hunt down robbers - one tag and you're caught.",
-          app: "A catch counts when the cop scans the robber's QR. Footprints appear on the map to guide the chase.",
+          app: "A tag counts when a cop scans the robber's QR. Footprints appear on the map to guide the chase.",
         },
         {
           title: "Jail and jailbreak",
@@ -466,7 +466,7 @@ const en: Messages = {
         },
         {
           title: "Win the game",
-          play: "Cops win by catching every robber. If even one survives the clock, the robbers take it.",
+          play: "Cops win by catching every robber. If even one is still free when time runs out, the robbers take it.",
           app: "The timer and arrest count update live.",
         },
       ],
@@ -773,7 +773,7 @@ const ja: Messages = {
       appLabel: "アプリでは",
       steps: [
         {
-          title: "チームを分ける",
+          title: "チームに分かれる",
           play: "警察と泥棒、ふたつのチームに分かれます。泥棒を少し多めにすると追いかけっこが盛り上がります。",
           app: "ルームを作って、招待コードで仲間を集めます。",
         },
@@ -794,12 +794,12 @@ const ja: Messages = {
         },
         {
           title: "牢屋と救出",
-          play: "つかまった泥棒は牢屋で待ちます。仲間がこっそり近づいてタッチすれば、また逃げられます。",
+          play: "つかまった泥棒は牢屋で待ちます。仲間がこっそり近づいてタッチすれば復活、また逃げられます。",
           app: "脱獄もQRで。牢屋の場所は地図でみんなが確認できます。",
         },
         {
           title: "勝負が決まる",
-          play: "泥棒を全員つかまえたら警察の勝ち。時間切れまでひとりでも残れば泥棒の勝ちです。",
+          play: "泥棒を全員つかまえたら警察の勝ち。時間切れまでひとりでも逃げ切れば泥棒の勝ちです。",
           app: "残り時間と逮捕状況はリアルタイムで表示されます。",
         },
       ],
