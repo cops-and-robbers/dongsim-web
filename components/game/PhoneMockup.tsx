@@ -8,6 +8,12 @@ export { ZoneMockup } from "./mockups/ZoneMockup";
 export { LocationMockup } from "./mockups/LocationMockup";
 export { QrMockup } from "./mockups/QrMockup";
 export { ChatMockup } from "./mockups/ChatMockup";
+// v3 출시와 함께 배치할 화면들 (#67) - 컴포넌트만 준비, 페이지 배치는 출시 시점에
+export { CreateRoomMockup } from "./mockups/CreateRoomMockup";
+export {
+  CommunityChatMockup,
+  CommunityListMockup,
+} from "./mockups/CommunityMockup";
 
 // 폰 프레임 - 목업을 감싸는 기기 베젤. 다크 페이지에서는 베젤이 배경에
 // 묻히지 않도록 밝은 외곽선을 한 겹 더 준다.

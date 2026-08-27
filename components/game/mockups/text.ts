@@ -19,6 +19,32 @@ export type MockupText = {
   location: { timer: string; countdown: string };
   qr: { scanTitle: string; title: string; message: string; close: string };
   chat: { title: string; input: string; bubbles: ChatBubbleData[] };
+  v3: {
+    create: {
+      title: string;
+      sub: string;
+      label: string;
+      value: string;
+      hint: string;
+      next: string;
+      chips: [string, string, string];
+    };
+    nav: { home: string; community: string; my: string };
+    communityList: {
+      pageTitle: string;
+      posts: {
+        status: string;
+        title: string;
+        location: string;
+        date: string;
+        count: string;
+      }[];
+    };
+    communityChat: {
+      roomTitle: string;
+      bubbles: ChatBubbleData[];
+    };
+  };
 };
 
 export const MOCKUP_TEXT: Record<Locale, MockupText> = {
@@ -40,6 +66,46 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
       title: "수배 QR",
       message: "경찰에게 QR을 보여주세요",
       close: "닫기",
+    },
+    v3: {
+      create: {
+        title: "기본 정보를 설정해요",
+        sub: "게임을 진행할 때, 꼭 필요한 정보들이에요",
+        label: "참여 인원",
+        value: "50명",
+        hint: "최소 2명부터 게임 진행이 가능해요",
+        next: "다음",
+        chips: ["+ 5명", "+ 10명", "+ 20명"],
+      },
+      nav: { home: "홈", community: "커뮤니티", my: "마이페이지" },
+      communityList: {
+        pageTitle: "커뮤니티",
+        posts: [
+          {
+            status: "모집중",
+            title: "어린이대공원에서 4시에 뛰실 분",
+            location: "광진구 능동",
+            date: "8월 30일 오후 4시",
+            count: "5/8",
+          },
+          {
+            status: "모집중",
+            title: "한강공원 야간 술래잡기",
+            location: "여의도 한강공원",
+            date: "8월 31일 오후 7시",
+            count: "3/10",
+          },
+        ],
+      },
+      communityChat: {
+        roomTitle: "어린이대공원에서 4시에 뛰실 분",
+        bubbles: [
+          { name: "솔", text: "내일 몇 시에 모여요?", side: "left" },
+          { text: "4시까지 정문 앞이요!", side: "right" },
+          { name: "준", text: "물 챙겨갈게요", side: "left" },
+          { text: "좋아요, 내일 봬요", side: "right" },
+        ],
+      },
     },
     chat: {
       title: "팀 채팅",
@@ -72,6 +138,46 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
       message: "Please show the QR code to the Cops",
       close: "Close",
     },
+    v3: {
+      create: {
+        title: "Set up basic information",
+        sub: "This information is essential for running the game",
+        label: "Player count",
+        value: "50 people",
+        hint: "A minimum of 2 players is required to play the game",
+        next: "Next",
+        chips: ["+ 5", "+ 10", "+ 20"],
+      },
+      nav: { home: "Home", community: "Community", my: "My Page" },
+      communityList: {
+        pageTitle: "Community",
+        posts: [
+          {
+            status: "Open",
+            title: "Tag at Central Park, 4 PM",
+            location: "Upper West Side",
+            date: "Aug 30, 4:00 PM",
+            count: "5/8",
+          },
+          {
+            status: "Open",
+            title: "Night tag at Brooklyn Bridge Park",
+            location: "DUMBO, Brooklyn",
+            date: "Aug 31, 7:00 PM",
+            count: "3/10",
+          },
+        ],
+      },
+      communityChat: {
+        roomTitle: "Tag at Central Park, 4 PM",
+        bubbles: [
+          { name: "Sol", text: "What time are we meeting?", side: "left" },
+          { text: "By the fountain at 4!", side: "right" },
+          { name: "Jun", text: "I'll bring some water", side: "left" },
+          { text: "Great, see you tomorrow", side: "right" },
+        ],
+      },
+    },
     chat: {
       title: "Team chat",
       input: "Enter chat message",
@@ -102,6 +208,46 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
       title: "指名手配QR",
       message: "警察にQRコードを見せてください",
       close: "閉じる",
+    },
+    v3: {
+      create: {
+        title: "基本情報を設定します",
+        sub: "ゲームを進行する際、必ず必要な情報です",
+        label: "参加人数",
+        value: "50人",
+        hint: "最低2人からゲームの進行が可能です",
+        next: "次へ",
+        chips: ["+ 5人", "+ 10人", "+ 20人"],
+      },
+      nav: { home: "ホーム", community: "コミュニティ", my: "マイページ" },
+      communityList: {
+        pageTitle: "コミュニティ",
+        posts: [
+          {
+            status: "募集中",
+            title: "代々木公園で16時に走る人",
+            location: "渋谷区 代々木",
+            date: "8月30日 16:00",
+            count: "5/8",
+          },
+          {
+            status: "募集中",
+            title: "多摩川河川敷でナイトケイドロ",
+            location: "世田谷区 二子玉川",
+            date: "8月31日 19:00",
+            count: "3/10",
+          },
+        ],
+      },
+      communityChat: {
+        roomTitle: "代々木公園で16時に走る人",
+        bubbles: [
+          { name: "ソル", text: "明日は何時に集合ですか？", side: "left" },
+          { text: "16時に原宿門で！", side: "right" },
+          { name: "ジュン", text: "水を持っていきますね", side: "left" },
+          { text: "いいですね、また明日", side: "right" },
+        ],
+      },
     },
     chat: {
       title: "チームチャット",
