@@ -699,3 +699,14 @@ body {
     animation: none;
   }
 }
+
+/* 앱의 도둑 테마 서체 (목업 전용) - 원본: cops-and-robbers-FE assets/fonts */
+@font-face {
+  font-family: "Moneygraphy";
+  src: url("/fonts/Moneygraphy-Pixel.ttf") format("truetype");
+  font-display: swap;
+}
+.font-moneygraphy {
+  font-family: "Moneygraphy", var(--font-sans);
+  letter-spacing: -0.32px;
+}
