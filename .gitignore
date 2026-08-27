@@ -42,3 +42,6 @@ next-env.d.ts
 
 # claude code 로컬 설정
 .claude/
+
+# 로컬 Lighthouse CI 실행 산출물
+.lighthouseci/
