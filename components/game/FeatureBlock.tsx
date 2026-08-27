@@ -6,6 +6,8 @@ import {
   LocationMockup,
   QrMockup,
   ChatMockup,
+  CommunityListMockup,
+  CommunityChatMockup,
 } from "./PhoneMockup";
 import type { GameMockup } from "@/lib/constants";
 import type { Messages } from "@/lib/i18n/messages";
@@ -15,6 +17,8 @@ const MOCKUPS = {
   location: <LocationMockup />,
   qr: <QrMockup />,
   chat: <ChatMockup />,
+  communityList: <CommunityListMockup />,
+  communityChat: <CommunityChatMockup />,
 };
 
 type Props = {

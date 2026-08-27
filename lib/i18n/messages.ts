@@ -21,7 +21,7 @@ const ko = {
       lead: "스마트폰 하나면 준비 끝이에요.",
       leadExtra: "진행은 앱이 알아서 해요.",
       free: "무료",
-      players: "최대 50명까지 함께 플레이",
+      players: "최대 150명까지 함께 플레이",
       timeLeft: "남은 시간",
     },
     characters: {
@@ -184,13 +184,32 @@ const ko = {
           "실시간 메시지 동기화",
         ],
       },
+      {
+        title: "동네에서 같이 뛸 사람을 찾아요",
+        description:
+          "같이 할 친구가 부족해도 괜찮아요. 동네 모집 글에서 장소랑 시간, 남은 자리를 보고 마음에 드는 판에 들어가면 돼요.",
+        checks: [
+          "장소·시간·인원 한 줄로 확인",
+          "모집 상태를 배지로 표시",
+          "글쓰기 버튼으로 바로 모집 시작",
+        ],
+      },
+      {
+        title: "약속은 채팅방에서 잡아요",
+        description:
+          "참여를 누르면 같은 판 사람들과의 채팅방이 생겨요. 연락처를 주고받지 않아도, 몇 시에 어디서 만날지 여기서 정하면 돼요.",
+        checks: [
+          "참여하면 바로 채팅방 입장",
+          "연락처 교환 없이 약속 확정",
+        ],
+      },
     ],
     faqHeading: "자주 묻는 질문",
     faq: [
       {
         question: "몇 명이서 할 수 있나요?",
         answer:
-          "최대 50명까지 가능합니다. 경찰 팀과 도둑 팀으로 나눠서 진행합니다.",
+          "최대 150명까지 가능합니다. 경찰 팀과 도둑 팀으로 나눠서 진행합니다.",
       },
       {
         question: "한 판에 얼마나 걸리나요?",
@@ -336,7 +355,7 @@ const en: Messages = {
     meta: {
       title: "Cops and Robbers - Real-Life GPS Tag",
       description:
-        "The cops-and-robbers chase you grew up with, now powered by live GPS. Grab your friends, set your zone, and play with up to 50 people, all on your phone.",
+        "The cops-and-robbers chase you grew up with, now powered by live GPS. Grab your friends, set your zone, and play with up to 150 people, all on your phone.",
     },
     hero: {
       title1: "Cops and Robbers,",
@@ -344,7 +363,7 @@ const en: Messages = {
       lead: "No gear needed. Just your phone.",
       leadExtra: "The app handles the rest.",
       free: "Free",
-      players: "Up to 50 players per game",
+      players: "Up to 150 players per game",
       timeLeft: "Time left",
     },
     characters: {
@@ -511,13 +530,32 @@ const en: Messages = {
           "Messages update instantly",
         ],
       },
+      {
+        title: "Find neighbors to run with",
+        description:
+          "Short on players? Recruiting posts from your area gather in one place - check the spot, the time, and the open slots, then jump in.",
+        checks: [
+          "Place, time, and headcount at a glance",
+          "A status badge shows what's still open",
+          "Start recruiting with one tap",
+        ],
+      },
+      {
+        title: "Plan the meetup in chat",
+        description:
+          "Join a post and a chat room with that group is ready. No swapping contact info - just settle on when and where to meet.",
+        checks: [
+          "You're in the chat as soon as you join",
+          "No contact info needed to make plans",
+        ],
+      },
     ],
     faqHeading: "Frequently asked questions",
     faq: [
       {
         question: "How many people can play?",
         answer:
-          "Up to 50. You split into a cops team and a robbers team.",
+          "Up to 150. You split into a cops team and a robbers team.",
       },
       {
         question: "How long is one game?",
@@ -669,7 +707,7 @@ const ja: Messages = {
     meta: {
       title: "ケイドロ - GPSリアル鬼ごっこ",
       description:
-        "子どもの頃に遊んだケイドロが、リアルタイムGPSで進化。スマホひとつで友達を集めて、最大50人でワイワイ遊ぼう。",
+        "子どもの頃に遊んだケイドロが、リアルタイムGPSで進化。スマホひとつで友達を集めて、最大150人でワイワイ遊ぼう。",
     },
     hero: {
       title1: "ケイドロが、",
@@ -677,7 +715,7 @@ const ja: Messages = {
       lead: "スマホひとつで準備OK。",
       leadExtra: "進行はアプリにおまかせ。",
       free: "無料",
-      players: "最大50人で一緒にプレイ",
+      players: "最大150人で一緒にプレイ",
       timeLeft: "残り時間",
     },
     characters: {
@@ -844,13 +882,32 @@ const ja: Messages = {
           "メッセージをリアルタイムで共有",
         ],
       },
+      {
+        title: "近所で一緒に走る仲間を探そう",
+        description:
+          "人数が足りなくても大丈夫。近くの募集から場所と時間、残り枠を見て、気になるゲームに参加しよう。",
+        checks: [
+          "場所・時間・人数をひと目で確認",
+          "募集状況はバッジで表示",
+          "ボタンひとつで募集開始",
+        ],
+      },
+      {
+        title: "約束はチャットで決めよう",
+        description:
+          "参加すると、同じゲームのメンバーとのチャットルームができる。連絡先を交換しなくても、集合時間と場所はここで決めればOK。",
+        checks: [
+          "参加したらすぐチャットに入れる",
+          "連絡先の交換はいらない",
+        ],
+      },
     ],
     faqHeading: "よくある質問",
     faq: [
       {
         question: "何人で遊べますか？",
         answer:
-          "最大50人まで。警察チームと泥棒チームに分かれて進めます。",
+          "最大150人まで。警察チームと泥棒チームに分かれて進めます。",
       },
       {
         question: "1試合どれくらいかかりますか？",

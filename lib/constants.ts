@@ -187,7 +187,20 @@ export const HOME_FEATURES = [
   },
 ] as const;
 
-export type GameMockup = "zone" | "location" | "qr" | "chat";
+export type GameMockup =
+  | "zone"
+  | "location"
+  | "qr"
+  | "chat"
+  | "communityList"
+  | "communityChat";
 
 // 게임 기능 블록의 목업 순서(언어 무관). 카피는 messages.ts의 game.features와 같은 순서로 대응.
-export const GAME_FEATURE_MOCKUPS: GameMockup[] = ["zone", "location", "qr", "chat"];
+export const GAME_FEATURE_MOCKUPS: GameMockup[] = [
+  "zone",
+  "location",
+  "qr",
+  "chat",
+  "communityList",
+  "communityChat",
+];
