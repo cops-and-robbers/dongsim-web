@@ -32,8 +32,14 @@ export default function GameRulesSection({
 
         <ol className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {copy.steps.map((step, i) => (
-            <ScrollReveal key={step.title} animation="fadeInUp" delayMs={i * 60}>
-              <li className="flex h-full flex-col rounded-2xl bg-slate-50 p-6 transition-colors duration-500 dark:bg-white/5">
+            // ol 의 직계 자식은 li 여야 하므로 ScrollReveal 을 li 로 렌더한다 (접근성)
+            <ScrollReveal
+              key={step.title}
+              as="li"
+              animation="fadeInUp"
+              delayMs={i * 60}
+              className="flex h-full flex-col rounded-2xl bg-slate-50 p-6 transition-colors duration-500 dark:bg-white/5"
+            >
                 <div className="flex items-center gap-3">
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-blue text-sm font-bold text-white dark:bg-brand-green dark:text-app-black">
                     {i + 1}
@@ -45,13 +51,12 @@ export default function GameRulesSection({
                 <p className="mt-3 leading-relaxed text-slate-600 dark:text-slate-300">
                   {step.play}
                 </p>
-                <p className="mt-3 border-l-2 border-brand-blue/30 pl-3 text-sm leading-relaxed text-slate-500 dark:border-brand-green/30 dark:text-slate-400">
+                <p className="mt-3 border-l-2 border-brand-blue/30 pl-3 text-sm leading-relaxed text-slate-600 dark:border-brand-green/30 dark:text-slate-400">
                   <span className="font-semibold text-brand-blue dark:text-brand-green">
                     {copy.appLabel}
                   </span>{" "}
                   {step.app}
                 </p>
-              </li>
             </ScrollReveal>
           ))}
         </ol>
