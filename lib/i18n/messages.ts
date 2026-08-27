@@ -110,6 +110,43 @@ const ko = {
       title2: "이렇게 플레이해요",
       lead: "구역 그리고, 발자국 쫓고, QR로 잡고, 팀끼리 대화까지. 앱 하나에 다 들어 있어요.",
     },
+    rules: {
+      heading: "경찰과 도둑, 이렇게 해요",
+      sub: "어릴 때 하던 그대로예요. 앱은 옆에서 진행만 봐줘요.",
+      appLabel: "앱에서는",
+      steps: [
+        {
+          title: "팀부터 나눠요",
+          play: "경찰 할 사람, 도둑 할 사람을 정해요. 도둑이 좀 더 많아야 쫓고 쫓기는 맛이 나요.",
+          app: "방 만들고 초대 코드만 돌리면 끝이에요.",
+        },
+        {
+          title: "구역을 정해요",
+          play: "여기서부터 저기까지, 도망 다닐 수 있는 범위를 정해요. 잡힌 도둑이 들어갈 감옥 자리도 하나 골라요.",
+          app: "호스트가 지도에 손가락으로 그리면 돼요. 구역 밖으로 나가면 화면이 잠겨요.",
+        },
+        {
+          title: "도둑이 먼저 도망가요",
+          play: "경찰이 열까지 세는 동안 도둑은 최대한 멀리 흩어져요.",
+          app: "몇 분 뒤에 출동할지 정해 두면, 그때까지 앱이 경찰을 붙잡아 둬요.",
+        },
+        {
+          title: "쫓고, 잡아요",
+          play: "도둑을 찾았으면 달려가서 잡으면 돼요.",
+          app: "도둑의 QR을 찍어야 체포예요. 잡았네 안 잡혔네 싸울 일이 없어요. 도둑 위치는 정해진 시간마다 발자국으로 떠요.",
+        },
+        {
+          title: "잡히면 감옥, 터치하면 탈옥",
+          play: "잡힌 도둑은 감옥에서 기다려요. 아직 안 잡힌 동료가 몰래 와서 터치하면 다시 도망갈 수 있어요.",
+          app: "탈옥도 QR로 해요. 감옥이 어딘지는 지도에 항상 떠 있어요.",
+        },
+        {
+          title: "이기는 법",
+          play: "도둑을 다 잡으면 경찰이 이겨요. 시간이 끝날 때까지 한 명이라도 살아남으면 도둑 승리예요.",
+          app: "남은 시간이랑 몇 명 잡았는지는 화면에 계속 떠요.",
+        },
+      ],
+    },
     features: [
       {
         title: "지도에 구역을 그려요",
@@ -388,14 +425,51 @@ const en: Messages = {
   },
   game: {
     meta: {
-      title: "How to Play - Cops and Robbers",
+      title: "How to Play Cops and Robbers - Rules & Game Guide",
       description:
-        "Cops and Robbers is a real-life GPS tag game. Draw your zone, chase the footprints, tag by QR scan, and chat with your team - here are the four features that run the whole game.",
+        "Learn the cops and robbers rules - teams, the zone, jail breaks, and how to win. Then see how the GPS app draws the zone, tracks footprints, and runs the tag for you.",
     },
     hero: {
       title1: "Cops and Robbers,",
       title2: "here's how it plays",
       lead: "Draw your zone, track the footprints, scan to catch, and chat with your team. All in one app.",
+    },
+    rules: {
+      heading: "How to play cops and robbers",
+      sub: "The same rules you grew up with. The app just runs the game.",
+      appLabel: "In the app",
+      steps: [
+        {
+          title: "Split into teams",
+          play: "Pick your cops and your robbers. A few extra robbers keep the chase alive.",
+          app: "Create a room and invite friends with a code.",
+        },
+        {
+          title: "Set the zone",
+          play: "Agree on the boundaries, and pick one spot to be the jail.",
+          app: "The host draws the zone and jail right on the map. Step outside and your screen locks.",
+        },
+        {
+          title: "Robbers run first",
+          play: "While the cops count down, the robbers scatter and hide.",
+          app: "The app counts down the head start for you.",
+        },
+        {
+          title: "Chase and tag",
+          play: "Cops hunt down robbers - one tag and you're caught.",
+          app: "A tag counts when a cop scans the robber's QR. Footprints appear on the map to guide the chase.",
+        },
+        {
+          title: "Jail and jailbreak",
+          play: "Caught robbers wait in jail. A teammate can sneak in and tag them free.",
+          app: "Jailbreaks work by QR too. Everyone can see the jail on the map.",
+        },
+        {
+          title: "Win the game",
+          play: "Cops win by catching every robber. If even one is still free when time runs out, the robbers take it.",
+          app: "The timer and arrest count update live.",
+        },
+      ],
     },
     features: [
       {
@@ -684,14 +758,51 @@ const ja: Messages = {
   },
   game: {
     meta: {
-      title: "遊び方 - ケイドロ",
+      title: "ケイドロ（警泥）の遊び方 - ルールとゲーム紹介",
       description:
-        "ケイドロはGPSを使ったリアル鬼ごっこ。エリアを描いて、足跡を追って、QRでつかまえて、チームでチャット。ゲームを支える4つの機能を紹介します。",
+        "ケイドロのルールをチーム分けから牢屋・脱獄、勝敗まで整理。GPSと地図で進行を支えるリアル鬼ごっこアプリも紹介します。",
     },
     hero: {
       title1: "ケイドロは、",
       title2: "こうやって遊ぶ",
       lead: "エリアを描いて、足跡を追って、QRでつかまえて、仲間と連携。ぜんぶアプリひとつに。",
+    },
+    rules: {
+      heading: "ケイドロの遊び方",
+      sub: "昔ながらのルールそのまま。進行はアプリにおまかせ。",
+      appLabel: "アプリでは",
+      steps: [
+        {
+          title: "チームに分かれる",
+          play: "警察と泥棒、ふたつのチームに分かれます。泥棒を少し多めにすると追いかけっこが盛り上がります。",
+          app: "ルームを作って、招待コードで仲間を集めます。",
+        },
+        {
+          title: "エリアを決める",
+          play: "どこまで逃げていいか範囲を決めて、つかまった泥棒が入る牢屋の場所をひとつ選びます。",
+          app: "ホストが地図にエリアと牢屋を描きます。外に出ると画面がロックされます。",
+        },
+        {
+          title: "泥棒が先に逃げる",
+          play: "警察が数を数えている間に、泥棒は散らばって隠れます。",
+          app: "警察の出動までの時間は、アプリが代わりに数えてくれます。",
+        },
+        {
+          title: "追いかけて、つかまえる",
+          play: "警察が泥棒を見つけてタッチしたら逮捕です。",
+          app: "泥棒のQRをスキャンすると逮捕が成立。一定間隔で足跡が公開され、追跡を助けます。",
+        },
+        {
+          title: "牢屋と救出",
+          play: "つかまった泥棒は牢屋で待ちます。仲間がこっそり近づいてタッチすれば復活、また逃げられます。",
+          app: "脱獄もQRで。牢屋の場所は地図でみんなが確認できます。",
+        },
+        {
+          title: "勝負が決まる",
+          play: "泥棒を全員つかまえたら警察の勝ち。時間切れまでひとりでも逃げ切れば泥棒の勝ちです。",
+          app: "残り時間と逮捕状況はリアルタイムで表示されます。",
+        },
+      ],
     },
     features: [
       {

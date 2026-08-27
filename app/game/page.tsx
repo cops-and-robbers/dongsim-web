@@ -4,9 +4,9 @@ import { alternateLanguages } from "@/lib/i18n/config";
 import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "게임 소개",
+  title: "경찰과 도둑 하는 법 - 규칙과 게임 소개",
   description:
-    "경찰과 도둑(경도) - GPS와 실시간 지도가 진행을 관리하는 위치 기반 술래잡기. 지도에 구역 그리기, 발자국 추적, QR 체포, 팀 채팅까지 4가지 핵심 기능을 소개합니다.",
+    "경찰과 도둑(경도) 하는 법을 팀 나누기부터 감옥 탈출, 승리 조건까지 정리했어요. GPS와 실시간 지도가 진행을 맡는 위치 기반 술래잡기 앱도 함께 소개해요.",
   keywords: [
     "경찰과 도둑 게임",
     "경도 게임 방법",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "게임 소개 | 경찰과 도둑",
+    title: "경찰과 도둑 하는 법 - 규칙과 게임 소개",
     description:
       "구역 그리기, 발자국 추적, QR 체포, 팀 채팅. 술래잡기에 필요한 모든 게 앱 하나에 담겨 있어요.",
     url: "/game",

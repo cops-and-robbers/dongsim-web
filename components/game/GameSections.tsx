@@ -1,4 +1,5 @@
 import GameHeroSection from "@/components/game/GameHeroSection";
+import GameRulesSection from "@/components/game/GameRulesSection";
 import FeatureBlock from "@/components/game/FeatureBlock";
 import GameFaqSection from "@/components/game/GameFaqSection";
 import CtaSection from "@/components/home/CtaSection";
@@ -43,6 +44,7 @@ export default function GameSections({ locale }: { locale: Locale }) {
         ]}
       />
       <GameHeroSection copy={copy.hero} />
+      <GameRulesSection copy={copy.rules} />
       <div className="bg-white transition-colors duration-500 dark:bg-app-black">
         {copy.features.map((feature, i) => (
           <div
