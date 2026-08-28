@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { LocationIcon, PeopleIcon } from "@/components/icons/CommunityIcons";
-import { isOpen, postPath, seatsLeft, type CommunityPost } from "@/lib/community/api";
+import {
+  isOpen,
+  postPath,
+  profileIconSrc,
+  seatsLeft,
+  type CommunityPost,
+} from "@/lib/community/api";
 import { dayLabel, daysUntil, timeLabel } from "@/lib/community/format";
 import { getCommunityText } from "@/lib/i18n/community";
 import type { Locale } from "@/lib/i18n/config";
@@ -89,7 +95,21 @@ export default function PostCard({
 
       {(post.writerNickname || left !== null) && (
         <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-3 text-xs text-slate-400 dark:border-white/5 dark:text-slate-500">
-          {post.writerNickname && <span>{t.host(post.writerNickname)}</span>}
+          {post.writerNickname && (
+            <span className="flex min-w-0 items-center gap-1.5">
+              {profileIconSrc(post.writerProfileIcon) && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profileIconSrc(post.writerProfileIcon)!}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="shrink-0 rounded-full"
+                />
+              )}
+              <span className="truncate">{t.host(post.writerNickname)}</span>
+            </span>
+          )}
           {left !== null && (
             <span className="ml-auto flex items-center gap-1.5 font-bold text-slate-500 tabular-nums dark:text-slate-400">
               <PeopleIcon size={13} />

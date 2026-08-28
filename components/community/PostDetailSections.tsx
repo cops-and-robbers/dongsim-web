@@ -9,6 +9,7 @@ import {
 import {
   countryOf,
   isOpen,
+  profileIconSrc,
   listPosts,
   mapUrl,
   seatsLeft,
@@ -140,8 +141,18 @@ export default async function PostDetailSections({
               <dt className="w-12 shrink-0 text-sm font-semibold text-slate-400 dark:text-slate-500">
                 {t.host}
               </dt>
-              <dd className="min-w-0 font-semibold text-brand-ink dark:text-white">
-                {post.writerNickname}
+              <dd className="flex min-w-0 items-center gap-2 font-semibold text-brand-ink dark:text-white">
+                {profileIconSrc(post.writerProfileIcon) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profileIconSrc(post.writerProfileIcon)!}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="shrink-0 rounded-full"
+                  />
+                )}
+                <span className="min-w-0">{post.writerNickname}</span>
               </dd>
             </div>
           )}

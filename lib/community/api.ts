@@ -185,6 +185,16 @@ export function seatsLeft(post: CommunityPost): number | null {
  *
  * 이름이 아니라 좌표로 보낸다. 이름으로 검색하면 같은 이름의 다른 곳으로 갈 수 있다.
  */
+/**
+ * 작성자 프로필 아이콘 경로. 앱에서 가져온 에셋만 그리고, 모르는 번호는
+ * null 을 줘서 화면이 아이콘 없이도 성립하게 한다. 앱에 스킨이 늘면 여기도 늘린다.
+ */
+export function profileIconSrc(iconNumber: number): string | null {
+  return iconNumber === 1 || iconNumber === 2
+    ? `/community/profile-${iconNumber}.svg`
+    : null;
+}
+
 export function mapUrl(post: CommunityPost): string {
   const { latitude, longitude } = post.location;
   return `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
