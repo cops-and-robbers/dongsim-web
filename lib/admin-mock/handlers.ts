@@ -13,11 +13,16 @@ import {
 import {
   mockListNotices,
   mockGetNotice,
+  mockGetNoticeTranslations,
   mockCreateNotice,
   mockUpdateNotice,
   mockDeleteNotice,
 } from "./notices";
-import type { NoticeCategory, NoticeInput } from "@/lib/admin/notices/api";
+import type {
+  NoticeCategory,
+  NoticeInput,
+  NoticeLanguage,
+} from "@/lib/admin/notices/api";
 import {
   queryGameHistories,
   queryGameHistory,
@@ -197,13 +202,28 @@ export const handlers = [
     const page = Number(url.searchParams.get("page") ?? 0);
     const size = Number(url.searchParams.get("size") ?? 10);
     const category = url.searchParams.get("category") as NoticeCategory | null;
+    const language = url.searchParams.get("language") as NoticeLanguage | null;
     return HttpResponse.json(
-      mockListNotices({ page, size, category: category ?? undefined })
+      mockListNotices({
+        page,
+        size,
+        category: category ?? undefined,
+        language: language ?? undefined,
+      })
     );
   }),
 
-  http.get("/api/notices/:id", async ({ params }) => {
-    const notice = mockGetNotice(Number(params.id));
+  http.get("/api/notices/:id/translations", async ({ params }) => {
+    const data = mockGetNoticeTranslations(Number(params.id));
+    return data
+      ? HttpResponse.json(data)
+      : new HttpResponse(null, { status: 404 });
+  }),
+
+  http.get("/api/notices/:id", async ({ request, params }) => {
+    const url = new URL(request.url);
+    const language = (url.searchParams.get("language") as NoticeLanguage | null) ?? "ko";
+    const notice = mockGetNotice(Number(params.id), language);
     return notice
       ? HttpResponse.json(notice)
       : new HttpResponse(null, { status: 404 });
