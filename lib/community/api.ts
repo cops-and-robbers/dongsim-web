@@ -10,13 +10,16 @@ import { USE_MOCK, mockGet, mockList } from "./mock";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.copsandrobbers.app";
 
-export type PostStatus = "RECRUITING" | "COMPLETED";
+/** ENDED 는 모임 날짜가 지난 글. 화면에서는 COMPLETED 와 같은 "마감"이다. */
+export type PostStatus = "RECRUITING" | "COMPLETED" | "ENDED";
 
 export type PostLocation = {
   latitude: number;
   longitude: number;
   /** 동 단위 지역. 역지오코딩이 실패하면 null */
   region: string | null;
+  /** 지번 주소. BE 가 "노출하지 말고 복사용"이라 명시해서 화면에 그리지 않는다 */
+  address?: string | null;
   /** 작성자가 직접 입력한 만나는 곳. 작성 시 필수라 항상 있다 */
   placeName: string;
   /** ISO 3166-1 alpha-2. 역지오코딩이 실패하면 null */
@@ -26,8 +29,12 @@ export type PostLocation = {
 export type CommunityPost = {
   id: number;
   writerId: number;
-  /** 탈퇴한 작성자면 null */
+  /** 탈퇴한 작성자면 null (BE 의 "알수없음" 문자열은 받는 쪽에서 null 로 바꾼다) */
   writerNickname: string | null;
+  /** 작성자 프로필 아이콘 번호. 앱 에셋과 같은 번호 체계다 */
+  writerProfileIcon: number;
+  /** 내가 이 글 채팅방에 참여 중인지. 웹은 비로그인이라 항상 false 고 쓰지 않는다 */
+  chatJoined?: boolean;
   title: string;
   content: string;
   /** ISO8601 + 오프셋. 예: 2026-08-10T14:00:00+09:00 */
@@ -132,14 +139,27 @@ export async function listPosts({
   const query = new URLSearchParams({ countryCode, size: String(size) });
   if (cursor) query.set("cursor", cursor);
 
-  return (
-    (await get<PostPage>(`/api/community-posts?${query}`, LIST_TTL)) ?? EMPTY_PAGE
-  );
+  const page = await get<PostPage>(`/api/community-posts?${query}`, LIST_TTL);
+  if (!page) return EMPTY_PAGE;
+  return { ...page, content: page.content.map(normalizeWriter) };
 }
 
 export async function getPost(postId: number): Promise<CommunityPost | null> {
   if (USE_MOCK) return mockGet(postId);
-  return get<CommunityPost>(`/api/community-posts/${postId}`, DETAIL_TTL);
+  const post = await get<CommunityPost>(
+    `/api/community-posts/${postId}`,
+    DETAIL_TTL,
+  );
+  return post && normalizeWriter(post);
+}
+
+/**
+ * 탈퇴한 작성자를 BE 는 한국어 "알수없음"으로 준다. 일본어·영어 페이지에
+ * 그대로 내보낼 수 없어서 null 로 바꾸고, 화면은 주최 줄을 통째로 접는다.
+ */
+function normalizeWriter(post: CommunityPost): CommunityPost {
+  if (post.writerNickname !== "알수없음") return post;
+  return { ...post, writerNickname: null };
 }
 
 /** 모집중이면서 약속 시각이 아직 안 지난 글. 목록에서 위로 올린다. */
