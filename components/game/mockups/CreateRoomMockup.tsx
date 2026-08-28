@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { appColors } from "@/lib/app-tokens";
-import { AppScreen } from "./AppScreen";
+import { AppScreen, MOCKUP_VIEW } from "./AppScreen";
 import { MOCKUP_TEXT } from "./text";
 
 // v3 방 생성 - 기본 정보 화면 (basic_settings_form.dart / number_pad.dart).
@@ -16,7 +16,7 @@ import { MOCKUP_TEXT } from "./text";
 // 키패드 361(배경 틴트, 칩 114x34 라운드 9 blueVer2_70 + black700,
 // 숫자 28 black700, 마지막 줄 빈칸/0/지우기).
 export function CreateRoomMockup() {
-  const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const { ref, visible } = useScrollAnimation<HTMLDivElement>(MOCKUP_VIEW);
   const t = MOCKUP_TEXT[useLocale()].v3.create;
 
   return (
@@ -83,12 +83,22 @@ export function CreateRoomMockup() {
             >
               {t.label}
             </p>
-            <p
-              className="text-[16px] font-bold"
-              style={{ color: appColors.black }}
-            >
-              {t.value}
-            </p>
+            <span className="relative block h-[24px]">
+              {/* 폭 확보용 - 타이핑 시퀀스의 최종 값과 같은 자리 */}
+              <span className="invisible text-[16px] font-bold">{t.value}</span>
+              <span
+                className="mockup-typed mockup-typed-1 absolute right-0 top-0 text-[16px] font-bold"
+                style={{ color: appColors.black }}
+              >
+                {t.valueStep}
+              </span>
+              <span
+                className="mockup-typed mockup-typed-2 absolute right-0 top-0 text-[16px] font-bold"
+                style={{ color: appColors.black }}
+              >
+                {t.value}
+              </span>
+            </span>
           </div>
           <div className="h-[6px]" />
           <div className="flex items-center gap-[8px]">
@@ -110,7 +120,7 @@ export function CreateRoomMockup() {
 
       {/* CTA - 키패드에 붙는 전폭 버튼 (keypad_cta_button.dart) */}
       <div
-        className="flex h-[56px] shrink-0 items-center justify-center text-[16px] font-semibold text-white"
+        className="mockup-cta flex h-[56px] shrink-0 items-center justify-center text-[16px] font-semibold text-white"
         style={{ backgroundColor: appColors.blue }}
       >
         {t.next}
@@ -145,10 +155,13 @@ export function CreateRoomMockup() {
             {row.map((digit) => (
               <span
                 key={digit}
-                className="flex flex-1 items-center justify-center text-[28px] font-semibold"
+                className="relative flex flex-1 items-center justify-center text-[28px] font-semibold"
                 style={{ color: appColors.black700 }}
               >
-                {digit}
+                {digit === "5" && (
+                  <span className="mockup-key-glow mockup-key-glow-1" />
+                )}
+                <span className="relative">{digit}</span>
               </span>
             ))}
           </div>
@@ -156,10 +169,11 @@ export function CreateRoomMockup() {
         <div className="flex min-h-0 flex-1">
           <span className="flex-1" />
           <span
-            className="flex flex-1 items-center justify-center text-[28px] font-semibold"
+            className="relative flex flex-1 items-center justify-center text-[28px] font-semibold"
             style={{ color: appColors.black700 }}
           >
-            0
+            <span className="mockup-key-glow mockup-key-glow-2" />
+            <span className="relative">0</span>
           </span>
           <span className="flex flex-1 items-center justify-center">
             {/* 앱과 동일한 Material backspace_outlined 글리프 */}

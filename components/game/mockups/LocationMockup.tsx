@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { appColors } from "@/lib/app-tokens";
-import { AppScreen, STATUS_BAR_INSET } from "./AppScreen";
+import { AppScreen, MOCKUP_VIEW, STATUS_BAR_INSET } from "./AppScreen";
 import { CollapsedChatSheet, FakeMap, ZoneCircle } from "./parts";
 import { MOCKUP_TEXT } from "./text";
 
@@ -104,7 +104,7 @@ function InGameScreen({
 
 export function LocationMockup() {
   const locale = useLocale();
-  const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const { ref, visible } = useScrollAnimation<HTMLDivElement>(MOCKUP_VIEW);
   const t = MOCKUP_TEXT[locale].location;
   const chatHint = MOCKUP_TEXT[locale].chat.input;
 

@@ -25,6 +25,7 @@ export type MockupText = {
       sub: string;
       label: string;
       value: string;
+      valueStep: string;
       hint: string;
       next: string;
       chips: [string, string, string];
@@ -73,6 +74,7 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
         sub: "게임을 진행할 때, 꼭 필요한 정보들이에요",
         label: "참여 인원",
         value: "50명",
+        valueStep: "5명",
         hint: "최소 2명부터 게임 진행이 가능해요",
         next: "다음",
         chips: ["+ 5명", "+ 10명", "+ 20명"],
@@ -144,6 +146,7 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
         sub: "This information is essential for running the game",
         label: "Player count",
         value: "50 people",
+        valueStep: "5 people",
         hint: "A minimum of 2 players is required to play the game",
         next: "Next",
         chips: ["+ 5", "+ 10", "+ 20"],
@@ -215,6 +218,7 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
         sub: "ゲームを進行する際、必ず必要な情報です",
         label: "参加人数",
         value: "50人",
+        valueStep: "5人",
         hint: "最低2人からゲームの進行が可能です",
         next: "次へ",
         chips: ["+ 5人", "+ 10人", "+ 20人"],

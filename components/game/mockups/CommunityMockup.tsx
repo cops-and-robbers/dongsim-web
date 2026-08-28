@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { appColors } from "@/lib/app-tokens";
-import { AppScreen } from "./AppScreen";
+import { AppScreen, MOCKUP_VIEW } from "./AppScreen";
 import { ChatInputField } from "./parts";
 import { MOCKUP_TEXT, type MockupText } from "./text";
 
@@ -42,7 +42,7 @@ function BottomNav({ nav }: { nav: MockupText["v3"]["nav"] }) {
 
 export function CommunityListMockup() {
   const locale = useLocale();
-  const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const { ref, visible } = useScrollAnimation<HTMLDivElement>(MOCKUP_VIEW);
   const t = MOCKUP_TEXT[locale].v3.communityList;
   const nav = MOCKUP_TEXT[locale].v3.nav;
 
@@ -70,7 +70,7 @@ export function CommunityListMockup() {
         className="relative min-h-0 flex-1"
         style={{ backgroundColor: appColors.background }}
       >
-        <div className="flex flex-col gap-[12px] p-[20px]">
+        <div className="mockup-chat-bubbles flex flex-col gap-[12px] p-[20px]">
           {t.posts.map((post) => (
             <div
               key={post.title}
@@ -139,7 +139,7 @@ export function CommunityListMockup() {
 
         {/* 글쓰기 FAB (community_page.dart - 파랑 + icon_write 흰색) */}
         <span
-          className="absolute bottom-[16px] right-[20px] flex size-[56px] items-center justify-center rounded-full shadow-lg"
+          className="mockup-fab absolute bottom-[16px] right-[20px] flex size-[56px] items-center justify-center rounded-full shadow-lg"
           style={{ backgroundColor: appColors.blue }}
         >
           <Image
@@ -163,7 +163,7 @@ const ROOM_TIMES = ["20:12", "20:12", "20:14", "20:15"];
 
 export function CommunityChatMockup() {
   const locale = useLocale();
-  const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const { ref, visible } = useScrollAnimation<HTMLDivElement>(MOCKUP_VIEW);
   const t = MOCKUP_TEXT[locale].v3.communityChat;
   const hint = MOCKUP_TEXT[locale].chat.input;
 
@@ -198,14 +198,16 @@ export function CommunityChatMockup() {
       </div>
 
       <div
-        className="mockup-chat-bubbles flex min-h-0 flex-1 flex-col gap-[12px] overflow-hidden px-[16px] py-[12px]"
+        className="mockup-chat-slow flex min-h-0 flex-1 flex-col gap-[12px] overflow-hidden px-[16px] py-[12px]"
         style={{ backgroundColor: appColors.blueVer2_50 }}
       >
         {t.bubbles.map((bubble, i) => {
           const isMe = bubble.side === "right";
+          // 세 번째 말풍선은 "입력 중" 점 3개를 먼저 보여 준 뒤 본문으로 바뀐다.
+          const typing = !isMe && i === 2;
           const body = (
             <div
-              className="max-w-[275px] px-[12px] py-[8px] text-[14px] leading-[1.4]"
+              className="relative max-w-[275px] px-[12px] py-[8px] text-[14px] leading-[1.4]"
               style={{
                 backgroundColor: isMe
                   ? appColors.blueVer2Basic
@@ -216,7 +218,19 @@ export function CommunityChatMockup() {
                   : "12px 12px 12px 4px",
               }}
             >
-              {bubble.text}
+              {typing && (
+                <span
+                  aria-hidden="true"
+                  className="mockup-typing absolute inset-0 flex items-center justify-center gap-[4px]"
+                >
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              )}
+              <span className={typing ? "mockup-typing-text" : undefined}>
+                {bubble.text}
+              </span>
             </div>
           );
           const time = (

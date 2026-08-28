@@ -3,14 +3,14 @@
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { appColors } from "@/lib/app-tokens";
-import { AppScreen } from "./AppScreen";
+import { AppScreen, MOCKUP_VIEW } from "./AppScreen";
 import { FakeMap, FakeQr } from "./parts";
 import { MOCKUP_TEXT } from "./text";
 
 // QR 체포 - 사이트 테마와 게임 진영을 잇는다.
 // 라이트 = 경찰 시점(스캐너) / 다크 = 도둑 시점(수배 QR 다이얼로그).
 export function QrMockup() {
-  const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const { ref, visible } = useScrollAnimation<HTMLDivElement>(MOCKUP_VIEW);
   const t = MOCKUP_TEXT[useLocale()].qr;
 
   return (
