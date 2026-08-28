@@ -19,6 +19,11 @@ import {
 } from "./notices";
 import type { NoticeCategory, NoticeInput } from "@/lib/admin/notices/api";
 import {
+  countTermsResetTargets,
+  resetTermsAgreement,
+  type TermsType,
+} from "./data";
+import {
   queryGameHistories,
   queryGameHistory,
   type GameEndReason,
@@ -38,6 +43,22 @@ export const GRAPHQL_ENDPOINT = "/graphql";
 const api = graphql.link(GRAPHQL_ENDPOINT);
 
 export const handlers = [
+  api.query("TermsResetPreview", async ({ variables }) => {
+    await delay(250);
+    const { types } = variables as { types: TermsType[] };
+    return HttpResponse.json({
+      data: { termsResetPreview: { affectedUsers: countTermsResetTargets(types) } },
+    });
+  }),
+
+  api.mutation("ResetTermsAgreement", async ({ variables }) => {
+    await delay(500);
+    const { types } = variables as { types: TermsType[] };
+    return HttpResponse.json({
+      data: { resetTermsAgreement: { affectedUsers: resetTermsAgreement(types) } },
+    });
+  }),
+
   api.query("AdminUsers", async ({ variables }) => {
     await delay(400);
     return HttpResponse.json({

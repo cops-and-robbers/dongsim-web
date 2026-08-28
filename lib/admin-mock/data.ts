@@ -31,6 +31,7 @@ export interface MockUser {
   termsOfServiceAgreed: boolean;
   privacyPolicyAgreed: boolean;
   locationTermsAgreed: boolean;
+  allowMarketingPush: boolean;
   createdAt: string;
   device: MockDevice | null;
 }
@@ -187,6 +188,7 @@ export const users: MockUser[] = Array.from({ length: N_USERS }, (_, i) => {
     termsOfServiceAgreed: true,
     privacyPolicyAgreed: true,
     locationTermsAgreed: chance(0.95),
+    allowMarketingPush: chance(0.7),
     createdAt,
     device: hasDevice
       ? { deviceType: chance(0.55) ? "IOS" : "ANDROID", createdAt }
@@ -378,6 +380,35 @@ function paginate<T>(items: T[], page: number, size: number) {
     page,
     size,
   };
+}
+
+export type TermsType =
+  | "TERMS_OF_SERVICE"
+  | "PRIVACY_POLICY"
+  | "LOCATION_TERMS"
+  | "MARKETING";
+
+const TERMS_FLAG: Record<
+  TermsType,
+  "termsOfServiceAgreed" | "privacyPolicyAgreed" | "locationTermsAgreed" | "allowMarketingPush"
+> = {
+  TERMS_OF_SERVICE: "termsOfServiceAgreed",
+  PRIVACY_POLICY: "privacyPolicyAgreed",
+  LOCATION_TERMS: "locationTermsAgreed",
+  MARKETING: "allowMarketingPush",
+};
+
+/** 초기화 대상 = 고른 약관 중 하나라도 아직 동의 상태인 유저. */
+export function countTermsResetTargets(types: TermsType[]): number {
+  return users.filter((user) => types.some((type) => user[TERMS_FLAG[type]])).length;
+}
+
+export function resetTermsAgreement(types: TermsType[]): number {
+  const targets = users.filter((user) => types.some((type) => user[TERMS_FLAG[type]]));
+  for (const user of targets) {
+    for (const type of types) user[TERMS_FLAG[type]] = false;
+  }
+  return targets.length;
 }
 
 export function queryUsers(args: {

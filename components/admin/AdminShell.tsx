@@ -13,6 +13,7 @@ import {
   NoticeIcon,
   ReportIcon,
   BugIcon,
+  TermsIcon,
 } from "@/components/admin/icons";
 import { ToastProvider } from "@/components/admin/Toast";
 import CommandPalette from "@/components/admin/CommandPalette";
@@ -45,6 +46,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/reports", label: "신고", Icon: ReportIcon },
       { href: "/admin/bugs", label: "버그", Icon: BugIcon },
+      { href: "/admin/terms", label: "약관", Icon: TermsIcon },
     ],
   },
   {
