@@ -2,14 +2,20 @@ import Container from "@/components/ui/Container";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import PostCard from "@/components/community/PostCard";
-import { countryOf, isOpen, listPosts } from "@/lib/community/api";
+import {
+  countryOf,
+  isOpen,
+  listPosts,
+  type CommunityPost,
+} from "@/lib/community/api";
 import { getCommunityText } from "@/lib/i18n/community";
 import type { Locale } from "@/lib/i18n/config";
 
 // 모임 목록. 열린 모임을 위에 두고 지난 모임은 아래에 흐리게 남긴다.
 //
-// 서버 정렬(sort=LATEST)은 "글을 쓴 순서"인데 사람은 "모임이 열리는 순서"로 찾는다.
-// 나중에 쓴 먼 날짜 글이 위로 올라오면 목록을 훑는 의미가 없어져서, 받아온 뒤 다시 세운다.
+// 열린 모임은 전부 보여준다. "더 보기"를 두지 않는 대신 서버에서 커서를 따라
+// 끝까지 받는다. 열린 모임은 날짜가 지나면 닫혀서 개수가 저절로 유한하다.
+// 응답이 캐시되는 동안 시각이 흐르므로 받아온 뒤 한 번 더 거르고 세운다.
 //
 // 지난 모임을 지우지 않는 이유: 열린 모임이 두세 개일 때 목록이 텅 비면
 // "아무도 안 하는구나"로 읽힌다. 실제로 열렸던 기록이 신뢰 신호가 된다.
@@ -24,14 +30,45 @@ const RECENT = (a: { meetingAt: string }, b: { meetingAt: string }) => -SOONEST(
 
 const PAST_LIMIT = 4;
 
+/**
+ * 열린 모임 전부. DEADLINE 정렬은 열린 글을 임박순으로 앞에 세워 주므로,
+ * 페이지의 끝이 아직 열린 글이면 다음 장이 남았다는 뜻이라 이어 받는다.
+ * 상한은 폭주 방지용이다. 넘치면 가장 임박한 쪽이 남으니 잘려도 올바르다.
+ */
+const PAGE_SIZE = 48;
+const MAX_OPEN_PAGES = 4;
+
+async function allOpenPosts(
+  countryCode: string,
+  now: number,
+): Promise<CommunityPost[]> {
+  const posts: CommunityPost[] = [];
+  let cursor: string | undefined;
+  for (let i = 0; i < MAX_OPEN_PAGES; i++) {
+    const page = await listPosts({ countryCode, size: PAGE_SIZE, cursor });
+    posts.push(...page.content);
+    const last = page.content[page.content.length - 1];
+    if (!last || !isOpen(last, now) || !page.cursor.nextCursor) break;
+    cursor = page.cursor.nextCursor;
+  }
+  return posts.filter((post) => isOpen(post, now));
+}
+
 export default async function PostListSections({ locale }: { locale: Locale }) {
   // 국가를 안 주면 400 이다. 앱은 현재 위치를 쓰지만 웹은 경로의 언어로 정한다
-  const { content } = await listPosts({ countryCode: countryOf(locale), size: 48 });
+  const countryCode = countryOf(locale);
+  const now = Date.now();
+  // 지난 모임은 "최근에 써진" 순서(LATEST)로 받아야 최근에 지난 것을 집는다
+  const [openAll, latest] = await Promise.all([
+    allOpenPosts(countryCode, now),
+    listPosts({ countryCode, size: PAGE_SIZE, sort: "LATEST" }),
+  ]);
   const t = getCommunityText(locale).list;
 
-  const now = Date.now();
-  const open = content.filter((post) => isOpen(post, now)).sort(SOONEST);
-  const past = content.filter((post) => !isOpen(post, now)).sort(RECENT);
+  const open = openAll.sort(SOONEST);
+  const past = latest.content
+    .filter((post) => !isOpen(post, now))
+    .sort(RECENT);
 
   return (
     <section className="py-16 sm:py-20">

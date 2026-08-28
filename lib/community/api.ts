@@ -125,18 +125,28 @@ async function get<T>(path: string, ttl: number): Promise<T | null> {
   }
 }
 
+/**
+ * 어느 정렬이든 닫힌 글은 열린 글 전부의 뒤에 온다(BE 공통 규칙).
+ * - DEADLINE: 열린 모임이 임박한 순서로 먼저. 열린 모임을 훑는 목록의 기본이다
+ * - LATEST: 최근에 써진 순서. 최근에 지난 모임을 골라낼 때 쓴다
+ *   (닫힌 글을 DEADLINE 으로 받으면 오래된 모임부터 와서 못 쓴다)
+ */
+export type PostSort = "DEADLINE" | "LATEST";
+
 export async function listPosts({
   countryCode,
   size = 24,
   cursor,
+  sort = "DEADLINE",
 }: {
   countryCode: string;
   size?: number;
   cursor?: string;
+  sort?: PostSort;
 }): Promise<PostPage> {
   if (USE_MOCK) return mockList(size, cursor);
 
-  const query = new URLSearchParams({ countryCode, size: String(size) });
+  const query = new URLSearchParams({ countryCode, size: String(size), sort });
   if (cursor) query.set("cursor", cursor);
 
   const page = await get<PostPage>(`/api/community-posts?${query}`, LIST_TTL);
