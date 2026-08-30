@@ -4,7 +4,6 @@ import PostCard from "@/components/community/PostCard";
 import {
   CalendarIcon,
   LocationIcon,
-  PeopleIcon,
 } from "@/components/icons/CommunityIcons";
 import {
   listScopeOf,
@@ -50,25 +49,7 @@ export default async function PostDetailSections({
     <main className="pt-10 pb-28 sm:pt-16 sm:pb-32">
       <Container className="max-w-2xl">
         <header>
-          <div className="flex items-center gap-2">
-            <span
-              className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                open
-                  ? "bg-brand-blue-bg text-brand-blue dark:bg-brand-green/15 dark:text-brand-green"
-                  : "bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-500"
-              }`}
-            >
-              {open ? c.open : c.closed}
-            </span>
-            {left !== null && (
-              <span className="flex items-center gap-1.5 text-sm font-bold text-slate-500 tabular-nums dark:text-slate-400">
-                <PeopleIcon size={14} />
-                {c.seats(post.currentParticipants ?? 0, post.maxParticipants)}
-              </span>
-            )}
-          </div>
-
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-balance text-brand-ink sm:text-4xl dark:text-white">
+          <h1 className="text-3xl font-extrabold tracking-tight text-balance text-brand-ink sm:text-4xl dark:text-white">
             {post.title}
           </h1>
         </header>

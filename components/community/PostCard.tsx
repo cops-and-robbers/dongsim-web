@@ -29,7 +29,6 @@ export default function PostCard({
   const t = getCommunityText(locale).card;
   const open = isOpen(post);
   const left = seatsLeft(post);
-  const tight = left !== null && left > 0 && left <= 2;
   // 며칠 남았는지가 갈지 말지를 가른다. 날짜만 있으면 매번 오늘과 견줘야 한다
   const days = open ? daysUntil(post.meetingAt) : null;
   const until =
@@ -50,17 +49,6 @@ export default function PostCard({
             {timeLabel(post.meetingAt, locale, zoneOf(post.location))}
           </span>
         </p>
-        <span
-          className={`ml-auto shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${
-            !open
-              ? "bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-500"
-              : tight
-                ? "bg-amber-50 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"
-                : "bg-brand-blue-bg text-brand-blue dark:bg-brand-green/15 dark:text-brand-green"
-          }`}
-        >
-          {!open ? t.closed : tight ? t.tight : t.open}
-        </span>
       </div>
 
       {until && (

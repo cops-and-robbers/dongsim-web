@@ -13,7 +13,6 @@ export type CommunityText = {
     lede: string;
     openHeading: string;
     pastHeading: string;
-    pastCount: (n: number) => string;
     emptyTitle: string;
     emptyBody: string;
     ctaHeading: string;
@@ -21,8 +20,6 @@ export type CommunityText = {
     ctaButton: string;
   };
   card: {
-    open: string;
-    tight: string;
     closed: string;
     host: (nickname: string) => string;
     seats: (current: number, max: number) => string;
@@ -63,7 +60,6 @@ const ko: CommunityText = {
     lede: "가까운 날짜부터 보여드려요.",
     openHeading: "지금 열린 모임",
     pastHeading: "지난 모임",
-    pastCount: (n) => `지금까지 ${n}번 열렸어요`,
     emptyTitle: "아직 열린 모임이 없어요",
     emptyBody: "첫 모임을 열어보세요. 장소와 시간만 정하면 돼요.",
     ctaHeading: "직접 모임을 열어보세요",
@@ -71,8 +67,6 @@ const ko: CommunityText = {
     ctaButton: "앱에서 모임 만들기",
   },
   card: {
-    open: "모집중",
-    tight: "자리 얼마 안 남음",
     closed: "마감",
     host: (nickname) => `주최 ${nickname}`,
     seats: (current, max) => `${current} / ${max}명`,
@@ -113,7 +107,6 @@ const en: CommunityText = {
     lede: "Sorted by how soon they start.",
     openHeading: "Open meetups",
     pastHeading: "Past meetups",
-    pastCount: (n) => `${n} meetups so far`,
     emptyTitle: "No open meetups yet",
     emptyBody: "Open the first one. All you need is a place and a time.",
     ctaHeading: "Open your own meetup",
@@ -121,8 +114,6 @@ const en: CommunityText = {
     ctaButton: "Create in the app",
   },
   card: {
-    open: "Open",
-    tight: "Almost full",
     closed: "Closed",
     host: (nickname) => `Host ${nickname}`,
     seats: (current, max) => `${current} / ${max}`,
@@ -163,7 +154,6 @@ const ja: CommunityText = {
     lede: "開催が近い順に並べています。",
     openHeading: "募集中のケイドロ",
     pastHeading: "終わった募集",
-    pastCount: (n) => `これまで${n}回開かれました`,
     emptyTitle: "まだ募集がありません",
     emptyBody: "最初の募集を出してみましょう。場所と時間だけで大丈夫です。",
     ctaHeading: "自分で募集を出す",
@@ -171,8 +161,6 @@ const ja: CommunityText = {
     ctaButton: "アプリで募集を作る",
   },
   card: {
-    open: "募集中",
-    tight: "残りわずか",
     closed: "締め切り",
     host: (nickname) => `主催 ${nickname}`,
     seats: (current, max) => `${current} / ${max}人`,

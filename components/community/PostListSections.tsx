@@ -103,14 +103,9 @@ export default async function PostListSections({ locale }: { locale: Locale }) {
 
         {past.length > 0 && (
           <>
-            <div className="mt-14 flex items-baseline gap-3">
-              <h2 className="text-lg font-extrabold tracking-tight text-brand-ink dark:text-white">
-                {t.pastHeading}
-              </h2>
-              <p className="text-sm text-slate-400 dark:text-slate-500">
-                {t.pastCount(past.length)}
-              </p>
-            </div>
+            <h2 className="mt-14 text-lg font-extrabold tracking-tight text-brand-ink dark:text-white">
+              {t.pastHeading}
+            </h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {past.slice(0, PAST_LIMIT).map((post) => (
                 <PostCard key={post.id} post={post} locale={locale} />
