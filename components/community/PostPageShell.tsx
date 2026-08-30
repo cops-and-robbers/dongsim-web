@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import PostDetailSections from "@/components/community/PostDetailSections";
 import EventJsonLd from "@/components/seo/EventJsonLd";
 import { getPost, localeOfPost, postPath } from "@/lib/community/api";
@@ -22,9 +22,11 @@ export default async function PostPageShell({
   const post = await getPost(id);
   if (!post) notFound();
 
+  // 글의 국가는 바뀌지 않으므로 영구 이동(308). 임시(307)는 검색엔진이
+  // 정본 신호를 온전히 넘기지 않는다
   const path = postPath(post);
   const here = locale === "ko" ? `/g/${id}` : `/${locale}/g/${id}`;
-  if (path !== here) redirect(path);
+  if (path !== here) permanentRedirect(path);
 
   return (
     <>
