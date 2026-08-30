@@ -7,6 +7,18 @@
           {
             "/": "/join/*",
             "comment": "Matches invite join links"
+          },
+          {
+            "/": "/g/*",
+            "comment": "Matches community post links (ko)"
+          },
+          {
+            "/": "/ja/g/*",
+            "comment": "Matches community post links (ja)"
+          },
+          {
+            "/": "/en/g/*",
+            "comment": "Matches community post links (en)"
           }
         ]
       }
