@@ -1,10 +1,10 @@
-import type { CommunityPost, PostPage } from "./api";
+import type { CommunityPost, ListScope, PostPage } from "./api";
 
 // 화면 확인용 표본 데이터. `COMMUNITY_MOCK=true` 일 때만 쓴다.
 //
-// 아직 BE 에 없는 currentParticipants 까지 채워 둔다. 그 값이 생겼을 때
-// 남은 자리 표시가 어떻게 보이는지 미리 보려는 것이 이 파일의 목적이다.
-// 해외 글도 두 건 넣어 region 이 다른 문자로 올 때의 줄바꿈을 함께 본다.
+// currentParticipants 는 채우지 않는다. 자리 표시는 안 하는 방향이라
+// 실서버와 같은 화면(자리 관련 표시가 접힌 상태)이 보여야 한다.
+// 해외 글도 넣어 region 이 다른 문자로 올 때의 줄바꿈을 함께 본다.
 
 /** 오늘을 기준으로 밀거나 당긴 시각. 표본이 시간이 지나도 늘 그럴듯하게 보인다. */
 function at(dayOffset: number, hour: number, minute = 0): string {
@@ -15,6 +15,48 @@ function at(dayOffset: number, hour: number, minute = 0): string {
 }
 
 const POSTS: CommunityPost[] = [
+  {
+    id: 1290,
+    writerId: 21,
+    writerNickname: "SpeedyFox1234",
+    writerProfileIcon: 2,
+    title: "Cops and robbers at Central Park",
+    content:
+      "Meet at the fountain. First timers welcome - we will go over the rules in five minutes, then play two or three rounds.",
+    meetingAt: at(4, 18),
+    location: {
+      latitude: 40.7743,
+      longitude: -73.9708,
+      region: "Manhattan, New York",
+      placeName: "Bethesda Fountain, Central Park",
+      countryCode: "US",
+    },
+    maxParticipants: 12,
+    status: "RECRUITING",
+    createdAt: at(-1, 9),
+    updatedAt: at(-1, 9),
+  },
+  {
+    id: 1291,
+    writerId: 22,
+    writerNickname: "FlinkerFuchs99",
+    writerProfileIcon: 1,
+    title: "Räuber und Gendarm auf dem Tempelhofer Feld",
+    content:
+      "Wir treffen uns am Eingang Columbiadamm. Anfänger sind willkommen, die Regeln erklären wir vor Ort.",
+    meetingAt: at(6, 17),
+    location: {
+      latitude: 52.4736,
+      longitude: 13.4018,
+      region: "Tempelhof, Berlin",
+      placeName: "Tempelhofer Feld, Eingang Columbiadamm",
+      countryCode: "DE",
+    },
+    maxParticipants: 10,
+    status: "RECRUITING",
+    createdAt: at(-2, 15),
+    updatedAt: at(-2, 15),
+  },
   {
     id: 1284,
     writerId: 11,
@@ -31,7 +73,6 @@ const POSTS: CommunityPost[] = [
       placeName: "세종대 정문",
       countryCode: "KR",
     },
-    currentParticipants: 2,
     maxParticipants: 10,
     status: "RECRUITING",
     createdAt: at(-2, 12),
@@ -53,7 +94,6 @@ const POSTS: CommunityPost[] = [
       placeName: "백운호수 무민공원",
       countryCode: "KR",
     },
-    currentParticipants: 9,
     maxParticipants: 10,
     status: "RECRUITING",
     createdAt: at(-1, 20),
@@ -74,7 +114,6 @@ const POSTS: CommunityPost[] = [
       placeName: "어린이대공원 정문",
       countryCode: "KR",
     },
-    currentParticipants: 15,
     maxParticipants: 15,
     status: "COMPLETED",
     createdAt: at(-3, 9),
@@ -95,7 +134,6 @@ const POSTS: CommunityPost[] = [
       placeName: "井の頭公園 西園",
       countryCode: "JP",
     },
-    currentParticipants: 8,
     maxParticipants: 8,
     status: "COMPLETED",
     createdAt: at(-5, 21),
@@ -116,7 +154,6 @@ const POSTS: CommunityPost[] = [
       placeName: "舞鶴公園",
       countryCode: "JP",
     },
-    currentParticipants: 6,
     maxParticipants: 6,
     status: "ENDED",
     createdAt: at(-9, 15),
@@ -126,17 +163,25 @@ const POSTS: CommunityPost[] = [
 
 export const USE_MOCK = process.env.COMMUNITY_MOCK === "true";
 
-export function mockList(size: number, cursor?: string): PostPage {
+export function mockList(size: number, cursor?: string, scope?: ListScope): PostPage {
+  // BE 와 같은 범위 규칙: 국가 하나 또는 제외 목록
+  let posts = POSTS;
+  if (scope?.excludeCountryCodes) {
+    const excluded = scope.excludeCountryCodes;
+    posts = POSTS.filter((post) => !excluded.includes(post.location.countryCode ?? ""));
+  } else if (scope?.countryCode) {
+    posts = POSTS.filter((post) => post.location.countryCode === scope.countryCode);
+  }
   // 커서는 "몇 번째부터"만 담는다. 실서버 커서는 시각+id 를 인코딩하지만
   // 표본에서 그것까지 흉내 낼 이유가 없다
   const start = cursor ? Number(cursor) : 0;
-  const slice = POSTS.slice(start, start + size);
+  const slice = posts.slice(start, start + size);
   const next = start + size;
   return {
     content: slice,
     cursor: {
-      nextCursor: next < POSTS.length ? String(next) : null,
-      hasNext: next < POSTS.length,
+      nextCursor: next < posts.length ? String(next) : null,
+      hasNext: next < posts.length,
     },
   };
 }

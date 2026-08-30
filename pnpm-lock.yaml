@@ -56,6 +56,9 @@ importers:
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
+      tz-lookup:
+        specifier: ^6.1.25
+        version: 6.1.25
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -1590,6 +1593,7 @@ packages:
   eslint@9.39.4:
     resolution: {integrity: sha512-XoMjdBOwe/esVgEvLmNsD3IRHkm7fbKIUGvrleloJXUZgDHig2IPWNniv+GwjyJXzuNqVjlr5+4yVUZjycJwfQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -2738,6 +2742,9 @@ packages:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  tz-lookup@6.1.25:
+    resolution: {integrity: sha512-fFewT9o1uDzsW1QnUU1ValqaihFnwiUiiHr1S79/fxOzKXYYvX+EHeRnpvQJ9B3Qg67wPXT6QF2Esc4pFOrvLg==}
 
   ua-parser-js@1.0.41:
     resolution: {integrity: sha512-LbBDqdIC5s8iROCUjMbW1f5dJQTEFB1+KO9ogbvlb3nm9n4YHa5p4KTvFPWvh2Hs8gZMBuiB1/8+pdfe/tDPug==}
@@ -5756,6 +5763,8 @@ snapshots:
       - supports-color
 
   typescript@5.9.3: {}
+
+  tz-lookup@6.1.25: {}
 
   ua-parser-js@1.0.41: {}
 

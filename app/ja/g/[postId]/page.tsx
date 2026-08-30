@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import PostPageShell from "@/components/community/PostPageShell";
 import { getPost, isOpen, localeOfPost, postPath, seatsLeft } from "@/lib/community/api";
-import { meetingLabel } from "@/lib/community/format";
+import { meetingLabel, zoneOf } from "@/lib/community/format";
 import { getCommunityText } from "@/lib/i18n/community";
 import { SITE_URL } from "@/lib/constants";
 
@@ -15,7 +15,7 @@ function shareLine(post: NonNullable<Awaited<ReturnType<typeof getPost>>>) {
   const locale = localeOfPost(post);
   const c = getCommunityText(locale).card;
   const left = seatsLeft(post);
-  const parts = [post.location.placeName, meetingLabel(post.meetingAt, locale)];
+  const parts = [post.location.placeName, meetingLabel(post.meetingAt, locale, zoneOf(post.location))];
   if (!isOpen(post)) parts.push(c.closed);
   else if (left !== null) parts.push(left > 0 ? c.seatsLeft(left) : c.seatsNone);
   return parts.join(" · ");

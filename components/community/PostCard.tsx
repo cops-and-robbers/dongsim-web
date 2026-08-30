@@ -7,7 +7,7 @@ import {
   seatsLeft,
   type CommunityPost,
 } from "@/lib/community/api";
-import { dayLabel, daysUntil, timeLabel } from "@/lib/community/format";
+import { dayLabel, daysUntil, timeLabel, zoneOf } from "@/lib/community/format";
 import { getCommunityText } from "@/lib/i18n/community";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -45,9 +45,9 @@ export default function PostCard({
     >
       <div className="flex items-start gap-3">
         <p className="min-w-0 font-bold tracking-tight text-brand-ink dark:text-white">
-          {dayLabel(post.meetingAt, locale)}
+          {dayLabel(post.meetingAt, locale, zoneOf(post.location))}
           <span className="ml-1.5 font-medium text-slate-500 dark:text-slate-400">
-            {timeLabel(post.meetingAt, locale)}
+            {timeLabel(post.meetingAt, locale, zoneOf(post.location))}
           </span>
         </p>
         <span

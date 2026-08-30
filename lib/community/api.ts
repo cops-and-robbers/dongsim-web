@@ -57,24 +57,28 @@ export type PostPage = {
 };
 
 /**
- * 목록은 국가를 특정하지 않으면 400 이다. 앱은 현재 위치를 보내지만 웹은 위치 권한이 없다.
+ * 언어별 목록 범위. 앱은 현재 위치를 보내지만 웹은 위치 권한이 없다.
  *
  * IP 로 알아내는 방법은 쓰지 않는다. 페이지가 ISR 로 캐시되는데 IP 로 갈라지면 캐시를
  * 못 쓰고, 무엇보다 검색엔진 크롤러 IP 는 대부분 미국이라 색인이 통째로 미국 목록으로
  * 잡힌다. 검색 유입을 노리는 페이지에서 그건 치명적이다.
  *
- * 그래서 경로가 곧 국가다. URL 이 국가를 정하니 캐시·색인·공유가 모두 성립한다.
- * 영어는 국가를 알려주지 않으므로(영어 사용자가 어디 사는지 알 수 없다) 한국으로 둔다.
- * 영어 라우트를 따로 열 때 그 경로에서 국가를 정하면 된다.
+ * 그래서 경로가 곧 범위다. 상세의 정본 규칙(localeOfPost)과 짝을 이룬다:
+ * 한국어는 한국, 일본어는 일본, 영어는 그 외 모든 나라(KR·JP 제외 조회).
  */
-const COUNTRY_BY_LOCALE: Record<Locale, string> = {
-  ko: "KR",
-  ja: "JP",
-  en: "KR",
+export type ListScope = {
+  countryCode?: string;
+  excludeCountryCodes?: string[];
 };
 
-export function countryOf(locale: Locale): string {
-  return COUNTRY_BY_LOCALE[locale];
+const SCOPE_BY_LOCALE: Record<Locale, ListScope> = {
+  ko: { countryCode: "KR" },
+  ja: { countryCode: "JP" },
+  en: { excludeCountryCodes: ["KR", "JP"] },
+};
+
+export function listScopeOf(locale: Locale): ListScope {
+  return SCOPE_BY_LOCALE[locale];
 }
 
 /**
@@ -135,18 +139,21 @@ export type PostSort = "DEADLINE" | "LATEST";
 
 export async function listPosts({
   countryCode,
+  excludeCountryCodes,
   size = 24,
   cursor,
   sort = "DEADLINE",
-}: {
-  countryCode: string;
+}: ListScope & {
   size?: number;
   cursor?: string;
   sort?: PostSort;
 }): Promise<PostPage> {
-  if (USE_MOCK) return mockList(size, cursor);
+  if (USE_MOCK) return mockList(size, cursor, { countryCode, excludeCountryCodes });
 
-  const query = new URLSearchParams({ countryCode, size: String(size), sort });
+  const query = new URLSearchParams({ size: String(size), sort });
+  // 국가 하나 또는 제외 목록 중 하나가 반드시 있어야 한다. 상호 배타는 BE 가 400 으로 막는다
+  if (excludeCountryCodes) query.set("excludeCountryCodes", excludeCountryCodes.join(","));
+  else if (countryCode) query.set("countryCode", countryCode);
   if (cursor) query.set("cursor", cursor);
 
   const page = await get<PostPage>(`/api/community-posts?${query}`, LIST_TTL);

@@ -3,10 +3,11 @@ import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import PostCard from "@/components/community/PostCard";
 import {
-  countryOf,
   isOpen,
   listPosts,
+  listScopeOf,
   type CommunityPost,
+  type ListScope,
 } from "@/lib/community/api";
 import { getCommunityText } from "@/lib/i18n/community";
 import type { Locale } from "@/lib/i18n/config";
@@ -39,13 +40,13 @@ const PAGE_SIZE = 48;
 const MAX_OPEN_PAGES = 4;
 
 async function allOpenPosts(
-  countryCode: string,
+  scope: ListScope,
   now: number,
 ): Promise<CommunityPost[]> {
   const posts: CommunityPost[] = [];
   let cursor: string | undefined;
   for (let i = 0; i < MAX_OPEN_PAGES; i++) {
-    const page = await listPosts({ countryCode, size: PAGE_SIZE, cursor });
+    const page = await listPosts({ ...scope, size: PAGE_SIZE, cursor });
     posts.push(...page.content);
     const last = page.content[page.content.length - 1];
     if (!last || !isOpen(last, now) || !page.cursor.nextCursor) break;
@@ -54,21 +55,24 @@ async function allOpenPosts(
   return posts.filter((post) => isOpen(post, now));
 }
 
-export default async function PostListSections({ locale }: { locale: Locale }) {
-  // 국가를 안 주면 400 이다. 앱은 현재 위치를 쓰지만 웹은 경로의 언어로 정한다
-  const countryCode = countryOf(locale);
+/** 렌더 밖에서 시각을 한 번 재서, 열린/지난 분류가 한 요청 안에서 일관되게 한다. */
+async function loadPosts(scope: ListScope) {
   const now = Date.now();
   // 지난 모임은 "최근에 써진" 순서(LATEST)로 받아야 최근에 지난 것을 집는다
   const [openAll, latest] = await Promise.all([
-    allOpenPosts(countryCode, now),
-    listPosts({ countryCode, size: PAGE_SIZE, sort: "LATEST" }),
+    allOpenPosts(scope, now),
+    listPosts({ ...scope, size: PAGE_SIZE, sort: "LATEST" }),
   ]);
-  const t = getCommunityText(locale).list;
+  return {
+    open: openAll.sort(SOONEST),
+    past: latest.content.filter((post) => !isOpen(post, now)).sort(RECENT),
+  };
+}
 
-  const open = openAll.sort(SOONEST);
-  const past = latest.content
-    .filter((post) => !isOpen(post, now))
-    .sort(RECENT);
+export default async function PostListSections({ locale }: { locale: Locale }) {
+  // 범위를 안 주면 400 이다. 앱은 현재 위치를 쓰지만 웹은 경로의 언어로 정한다
+  const { open, past } = await loadPosts(listScopeOf(locale));
+  const t = getCommunityText(locale).list;
 
   return (
     <section className="py-16 sm:py-20">

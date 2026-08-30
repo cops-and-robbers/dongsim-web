@@ -7,7 +7,7 @@ import {
   PeopleIcon,
 } from "@/components/icons/CommunityIcons";
 import {
-  countryOf,
+  listScopeOf,
   isOpen,
   profileIconSrc,
   listPosts,
@@ -15,7 +15,7 @@ import {
   seatsLeft,
   type CommunityPost,
 } from "@/lib/community/api";
-import { daysUntil, meetingLabel } from "@/lib/community/format";
+import { daysUntil, meetingLabel, zoneOf } from "@/lib/community/format";
 import { getCommunityText } from "@/lib/i18n/community";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -96,7 +96,7 @@ export default async function PostDetailSections({
                   size={15}
                   className="text-brand-blue dark:text-brand-green"
                 />
-                {meetingLabel(post.meetingAt, locale)}
+                {meetingLabel(post.meetingAt, locale, zoneOf(post.location))}
               </span>
               {until && (
                 <span className="mt-1 block text-sm font-normal text-slate-500 dark:text-slate-400">
@@ -233,8 +233,10 @@ export default async function PostDetailSections({
  * 같은 나라 글만 보여준다. 일본 글 밑에 한국 모임이 뜨면 도움이 안 된다.
  */
 async function otherOpenPosts(post: CommunityPost, locale: Locale, take: number) {
-  const country = post.location.countryCode ?? countryOf(locale);
-  const { content } = await listPosts({ countryCode: country, size: 24 });
+  const scope = post.location.countryCode
+    ? { countryCode: post.location.countryCode }
+    : listScopeOf(locale);
+  const { content } = await listPosts({ ...scope, size: 24 });
   const now = Date.now();
   return content
     .filter((item) => item.id !== post.id && isOpen(item, now))
