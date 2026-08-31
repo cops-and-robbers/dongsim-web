@@ -99,6 +99,13 @@ const ko = {
       bounty: "현상금 🧀 듬뿍",
     },
   },
+  demo: {
+    meta: {
+      title: "설치 없이 한 판 해보기",
+      description:
+        "경찰과 도둑을 웹에서 바로 한 판 해봐요. 방에 들어가고, 발자국을 쫓고, QR로 체포까지 실제 앱 화면 그대로.",
+    },
+  },
   game: {
     meta: {
       title: "게임 소개",
@@ -440,6 +447,13 @@ const en: Messages = {
       button: "Go catch them",
       wantedName: "Cheese Thief",
       bounty: "Reward: 🧀 loads",
+    },
+  },
+  demo: {
+    meta: {
+      title: "Play a Round in Your Browser - No Install",
+      description:
+        "Try Cops and Robbers right in your browser. Join a room, follow the footprints, and make a QR arrest - the real app screens, no download needed.",
     },
   },
   game: {
@@ -792,6 +806,13 @@ const ja: Messages = {
       button: "つかまえに行く",
       wantedName: "チーズ泥棒",
       bounty: "賞金 🧀 たっぷり",
+    },
+  },
+  demo: {
+    meta: {
+      title: "インストール不要で1プレイ体験",
+      description:
+        "ケイドロをブラウザでそのまま1プレイ。部屋に入って足あとを追い、QRで逮捕まで、実際のアプリ画面のまま遊べます。",
     },
   },
   game: {
