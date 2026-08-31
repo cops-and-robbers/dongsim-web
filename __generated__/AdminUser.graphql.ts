@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<b6284bcfa001e4cee9aab04e5fab7889>>
+ * @generated SignedSource<<4935e803c04db91265c0136e6c7d47cc>>
  * @lightSyntaxTransform
  */
 
@@ -18,6 +18,7 @@ export type AdminUser$variables = {
 };
 export type AdminUser$data = {
   readonly adminUser: {
+    readonly allowMarketingPush: boolean;
     readonly createdAt: string;
     readonly device: {
       readonly createdAt: string;
@@ -124,6 +125,13 @@ v2 = [
         "name": "locationTermsAgreed",
         "storageKey": null
       },
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
+        "name": "allowMarketingPush",
+        "storageKey": null
+      },
       (v1/*:: as any*/),
       {
         "alias": null,
@@ -213,16 +221,16 @@ return {
     "selections": (v2/*:: as any*/)
   },
   "params": {
-    "cacheID": "edc0863517e3f664f8df33a613554a20",
+    "cacheID": "b4d7d72b1171517f251ef70c8c0ee503",
     "id": null,
     "metadata": {},
     "name": "AdminUser",
     "operationKind": "query",
-    "text": "query AdminUser(\n  $id: ID!\n) {\n  adminUser(id: $id) {\n    id\n    nickname\n    socialType\n    role\n    termsOfServiceAgreed\n    privacyPolicyAgreed\n    locationTermsAgreed\n    createdAt\n    device {\n      deviceType\n      createdAt\n    }\n    participations {\n      gameId\n      inviteCode\n      team\n      status\n      isHost\n      createdAt\n    }\n  }\n}\n"
+    "text": "query AdminUser(\n  $id: ID!\n) {\n  adminUser(id: $id) {\n    id\n    nickname\n    socialType\n    role\n    termsOfServiceAgreed\n    privacyPolicyAgreed\n    locationTermsAgreed\n    allowMarketingPush\n    createdAt\n    device {\n      deviceType\n      createdAt\n    }\n    participations {\n      gameId\n      inviteCode\n      team\n      status\n      isHost\n      createdAt\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "a16a2a83a4a7c5598297c7d253da54d8";
+(node as any).hash = "32fc1d67760905c32c478af0f6ae633e";
 
 export default node;

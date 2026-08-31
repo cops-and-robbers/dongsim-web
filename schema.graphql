@@ -125,6 +125,9 @@ type Query {
 
   """어드민 대시보드(개요) 집계"""
   adminDashboard: AdminDashboard!
+
+  """약관 초기화 미리보기. 실행 없이 대상 인원만 계산한다"""
+  termsResetPreview(types: [TermsType!]!): TermsResetPreview!
 }
 
 # ── 어드민 뮤테이션 (신고·버그 처리 상태 변경) ──
@@ -157,6 +160,29 @@ type Mutation {
     status: BugReportStatus!
     adminMemo: String
   ): AdminBugReport!
+
+  """
+  약관 동의 일괄 초기화. 되돌릴 수 없으므로 termsResetPreview로
+  대상 인원을 먼저 확인하고 호출한다
+  """
+  resetTermsAgreement(types: [TermsType!]!): ResetTermsAgreementResult!
+}
+
+# ── 약관 재동의 ──
+
+enum TermsType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  LOCATION_TERMS
+  MARKETING
+}
+
+type TermsResetPreview {
+  affectedUsers: Int!
+}
+
+type ResetTermsAgreementResult {
+  affectedUsers: Int!
 }
 
 # ── 신고 ──
@@ -492,6 +518,7 @@ type AdminUser {
   termsOfServiceAgreed: Boolean!
   privacyPolicyAgreed: Boolean!
   locationTermsAgreed: Boolean!
+  allowMarketingPush: Boolean!
   createdAt: String!
   """디바이스 미등록 유저면 null"""
   device: UserDevice

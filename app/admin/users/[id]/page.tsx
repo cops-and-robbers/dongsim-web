@@ -135,6 +135,7 @@ function UserDetail({ id }: { id: string }) {
             <AgreeRow label="서비스 이용약관" ok={user.termsOfServiceAgreed} />
             <AgreeRow label="개인정보 처리방침" ok={user.privacyPolicyAgreed} />
             <AgreeRow label="위치기반 서비스" ok={user.locationTermsAgreed} />
+            <AgreeRow label="마케팅 정보 수신 (선택)" ok={user.allowMarketingPush} />
           </div>
         </SectionCard>
       </div>
