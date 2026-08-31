@@ -26,11 +26,17 @@ import {
 import {
   queryReports,
   queryBugReports,
+  queryCommunityPostReports,
+  queryCommunityChatReports,
+  queryAllReports,
   updateReportStatus,
   updateBugReportStatus,
+  updateCommunityPostReportStatus,
+  updateCommunityChatReportStatus,
   getDashboard,
   type ReportStatus,
   type BugReportStatus,
+  type ReportSource,
 } from "./reports";
 
 export const GRAPHQL_ENDPOINT = "/graphql";
@@ -138,6 +144,55 @@ export const handlers = [
     });
   }),
 
+  api.query("AdminCommunityPostReports", async ({ variables }) => {
+    await delay(400);
+    return HttpResponse.json({
+      data: {
+        adminCommunityPostReports: queryCommunityPostReports(
+          variables as {
+            page?: number;
+            size?: number;
+            status?: ReportStatus;
+            sortDirection?: "ASC" | "DESC";
+          }
+        ),
+      },
+    });
+  }),
+
+  api.query("AdminCommunityChatReports", async ({ variables }) => {
+    await delay(400);
+    return HttpResponse.json({
+      data: {
+        adminCommunityChatReports: queryCommunityChatReports(
+          variables as {
+            page?: number;
+            size?: number;
+            status?: ReportStatus;
+            sortDirection?: "ASC" | "DESC";
+          }
+        ),
+      },
+    });
+  }),
+
+  api.query("AdminAllReports", async ({ variables }) => {
+    await delay(400);
+    return HttpResponse.json({
+      data: {
+        adminAllReports: queryAllReports(
+          variables as {
+            page?: number;
+            size?: number;
+            status?: ReportStatus;
+            source?: ReportSource;
+            sortDirection?: "ASC" | "DESC";
+          }
+        ),
+      },
+    });
+  }),
+
   api.query("AdminBugReports", async ({ variables }) => {
     await delay(400);
     return HttpResponse.json({
@@ -164,6 +219,42 @@ export const handlers = [
     return HttpResponse.json({
       data: {
         updateReportStatus: updateReportStatus(
+          v.reportId,
+          v.status,
+          v.adminMemo ?? null
+        ),
+      },
+    });
+  }),
+
+  api.mutation("UpdateCommunityPostReportStatus", async ({ variables }) => {
+    await delay(300);
+    const v = variables as {
+      reportId: string;
+      status: ReportStatus;
+      adminMemo?: string | null;
+    };
+    return HttpResponse.json({
+      data: {
+        updateCommunityPostReportStatus: updateCommunityPostReportStatus(
+          v.reportId,
+          v.status,
+          v.adminMemo ?? null
+        ),
+      },
+    });
+  }),
+
+  api.mutation("UpdateCommunityChatReportStatus", async ({ variables }) => {
+    await delay(300);
+    const v = variables as {
+      reportId: string;
+      status: ReportStatus;
+      adminMemo?: string | null;
+    };
+    return HttpResponse.json({
+      data: {
+        updateCommunityChatReportStatus: updateCommunityChatReportStatus(
           v.reportId,
           v.status,
           v.adminMemo ?? null
