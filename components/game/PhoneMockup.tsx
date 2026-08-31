@@ -17,12 +17,15 @@ export {
 
 // 폰 프레임 - 목업을 감싸는 기기 베젤. 다크 페이지에서는 베젤이 배경에
 // 묻히지 않도록 밝은 외곽선을 한 겹 더 준다.
+// [clock] 은 상태바 시각 - 데모처럼 실제 시각을 띄우고 싶을 때 넘긴다.
 export function PhoneFrame({
   children,
   className = "",
+  clock = "9:41",
 }: {
   children: ReactNode;
   className?: string;
+  clock?: string;
 }) {
   return (
     <div
@@ -31,7 +34,7 @@ export function PhoneFrame({
       <div className="relative h-full w-full overflow-hidden rounded-4xl bg-white">
         <div className="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-slate-900" />
         <div className="absolute left-0 right-0 top-0 z-10 flex h-9 items-center justify-between px-6 pt-2 text-[10px] font-semibold text-slate-600">
-          <span>9:41</span>
+          <span>{clock}</span>
           <span className="flex items-center gap-1">
             <span className="inline-block h-1 w-1 rounded-full bg-slate-400" />
             <span className="inline-block h-1 w-1 rounded-full bg-slate-400" />
