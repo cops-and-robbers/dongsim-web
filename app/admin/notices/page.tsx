@@ -20,6 +20,9 @@ import {
   deleteNotice,
   NOTICE_CATEGORY,
   type Notice,
+  NOTICE_LANGUAGE,
+  NOTICE_LANGUAGES,
+  type NoticeLanguage,
   type NoticeCategory,
   type NoticeList,
 } from "@/lib/admin/notices/api";
@@ -30,6 +33,7 @@ type Filter = "" | NoticeCategory;
 
 export default function NoticesPage() {
   const [category, setCategory] = useState<Filter>("");
+  const [language, setLanguage] = useState<NoticeLanguage>("ko");
   const [page, setPage] = useState(0);
   const [data, setData] = useState<NoticeList | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +46,7 @@ export default function NoticesPage() {
     setLoading(true);
     try {
       const res = await listNotices({
+        language,
         page,
         size: PAGE_SIZE,
         category: category || undefined,
@@ -52,7 +57,7 @@ export default function NoticesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, category, toast]);
+  }, [page, category, language, toast]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -86,7 +91,7 @@ export default function NoticesPage() {
         }
       />
 
-      <div className="mb-5">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <SegmentedControl<Filter>
           value={category}
           onChange={(v) => {
@@ -100,6 +105,17 @@ export default function NoticesPage() {
             { label: "이벤트", value: "EVENT" },
             { label: "업데이트", value: "UPDATE" },
           ]}
+        />
+        <SegmentedControl<NoticeLanguage>
+          value={language}
+          onChange={(v) => {
+            setLanguage(v);
+            setPage(0);
+          }}
+          options={NOTICE_LANGUAGES.map((lang) => ({
+            label: NOTICE_LANGUAGE[lang].label,
+            value: lang,
+          }))}
         />
       </div>
 
@@ -172,6 +188,14 @@ export default function NoticesPage() {
                         <span className="font-semibold text-sd-fg transition hover:text-accent">
                           {n.title}
                         </span>
+                        {n.language !== n.requestedLanguage && (
+                          <span
+                            className="shrink-0 rounded-md bg-sd-gray-200 px-1.5 py-0.5 text-[11px] font-semibold text-sd-fg-muted"
+                            title={`${NOTICE_LANGUAGE[n.requestedLanguage].label} 번역이 아직 없어 ${NOTICE_LANGUAGE[n.language].label} 원문이 표시돼요`}
+                          >
+                            {NOTICE_LANGUAGE[n.language].label} 대체
+                          </span>
+                        )}
                       </button>
                     </Td>
                     <Td>

@@ -6,11 +6,24 @@ import { useToast } from "@/components/admin/Toast";
 import {
   createNotice,
   updateNotice,
+  fetchNoticeTranslations,
   NOTICE_CATEGORY,
   NOTICE_CATEGORIES,
+  NOTICE_LANGUAGE,
+  NOTICE_LANGUAGES,
   type Notice,
   type NoticeCategory,
+  type NoticeLanguage,
+  type NoticeTranslationInput,
 } from "@/lib/admin/notices/api";
+
+type Draft = Record<NoticeLanguage, { title: string; content: string }>;
+
+const EMPTY_DRAFT: Draft = {
+  ko: { title: "", content: "" },
+  ja: { title: "", content: "" },
+  en: { title: "", content: "" },
+};
 
 export default function NoticeEditor({
   notice,
@@ -21,12 +34,15 @@ export default function NoticeEditor({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [title, setTitle] = useState(notice?.title ?? "");
-  const [content, setContent] = useState(notice?.content ?? "");
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [activeLang, setActiveLang] = useState<NoticeLanguage>("ko");
+  const [originalLanguage, setOriginalLanguage] = useState<NoticeLanguage>("ko");
   const [pinned, setPinned] = useState(notice?.pinned ?? false);
   const [category, setCategory] = useState<NoticeCategory>(
     notice?.category ?? "NOTICE"
   );
+  // 수정 진입 시 언어별 번역을 불러오는 동안 폼을 잠근다
+  const [loading, setLoading] = useState(notice !== null);
   const [saving, setSaving] = useState(false);
   const toast = useToast();
 
@@ -38,19 +54,61 @@ export default function NoticeEditor({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // 목록 응답에는 한 언어만 있어서, 수정할 땐 번역 전체를 따로 불러와 채운다
+  useEffect(() => {
+    if (!notice) return;
+    let cancelled = false;
+    fetchNoticeTranslations(notice.id)
+      .then((data) => {
+        if (cancelled) return;
+        setOriginalLanguage(data.originalLanguage);
+        setDraft({ ...EMPTY_DRAFT, ...data.translations });
+      })
+      .catch(() => {
+        if (!cancelled) toast("번역을 불러오지 못했어요");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [notice, toast]);
+
+  const setField = (field: "title" | "content", value: string) =>
+    setDraft((prev) => ({
+      ...prev,
+      [activeLang]: { ...prev[activeLang], [field]: value },
+    }));
+
+  const filled = (lang: NoticeLanguage) =>
+    draft[lang].title.trim() !== "" && draft[lang].content.trim() !== "";
+  const partiallyFilled = (lang: NoticeLanguage) =>
+    !filled(lang) &&
+    (draft[lang].title.trim() !== "" || draft[lang].content.trim() !== "");
+
   const save = async () => {
-    if (!title.trim() || !content.trim()) {
-      toast("제목과 내용을 입력해 주세요");
+    if (!filled(originalLanguage)) {
+      toast(`원문 언어(${NOTICE_LANGUAGE[originalLanguage].label})의 제목과 내용을 입력해 주세요`);
+      setActiveLang(originalLanguage);
       return;
     }
+    const partial = NOTICE_LANGUAGES.find(partiallyFilled);
+    if (partial) {
+      toast(`${NOTICE_LANGUAGE[partial].label}의 제목과 내용을 모두 채우거나 비워 주세요`);
+      setActiveLang(partial);
+      return;
+    }
+    const translations: NoticeTranslationInput[] = NOTICE_LANGUAGES.filter(filled).map(
+      (language) => ({
+        language,
+        title: draft[language].title.trim(),
+        content: draft[language].content.trim(),
+      })
+    );
     setSaving(true);
     try {
-      const input = {
-        title: title.trim(),
-        content: content.trim(),
-        pinned,
-        category,
-      };
+      const input = { pinned, category, originalLanguage, translations };
       if (notice) {
         await updateNotice(notice.id, input);
         toast("공지를 수정했어요");
@@ -118,25 +176,79 @@ export default function NoticeEditor({
             </div>
           </Field>
 
-          <Field label="제목">
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={100}
-              placeholder="공지 제목"
-              className={inputCls}
-            />
+          <Field label="원문 언어">
+            <div className="flex flex-wrap gap-1.5">
+              {NOTICE_LANGUAGES.map((lang) => {
+                const active = originalLanguage === lang;
+                return (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setOriginalLanguage(lang)}
+                    className={`rounded-lg px-3 py-1.5 text-[13px] font-semibold transition ${
+                      active
+                        ? "bg-accent-weak text-accent"
+                        : "bg-sd-fill text-sd-fg-subtle hover:text-sd-fg-muted"
+                    }`}
+                  >
+                    {NOTICE_LANGUAGE[lang].label}
+                  </button>
+                );
+              })}
+            </div>
           </Field>
 
-          <Field label="내용">
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={8}
-              placeholder="공지 내용"
-              className={`${inputCls} resize-none leading-relaxed`}
-            />
-          </Field>
+          {/* 언어 탭 - 채워진 언어에 점을 찍어 어떤 번역이 있는지 한눈에 보이게 */}
+          <div className="flex gap-1 border-b border-sd-hairline">
+            {NOTICE_LANGUAGES.map((lang) => {
+              const active = activeLang === lang;
+              return (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => setActiveLang(lang)}
+                  className={`flex items-center gap-1.5 rounded-t-lg px-3.5 py-2 text-[13px] font-semibold transition ${
+                    active
+                      ? "border-b-2 border-accent text-accent"
+                      : "text-sd-fg-subtle hover:text-sd-fg-muted"
+                  }`}
+                >
+                  {NOTICE_LANGUAGE[lang].label}
+                  {filled(lang) && (
+                    <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {loading ? (
+            <p className="py-8 text-center text-[13px] text-sd-fg-subtle">
+              번역을 불러오는 중...
+            </p>
+          ) : (
+            <>
+              <Field label={`제목 (${NOTICE_LANGUAGE[activeLang].label})`}>
+                <input
+                  value={draft[activeLang].title}
+                  onChange={(e) => setField("title", e.target.value)}
+                  maxLength={100}
+                  placeholder="공지 제목"
+                  className={inputCls}
+                />
+              </Field>
+
+              <Field label={`내용 (${NOTICE_LANGUAGE[activeLang].label})`}>
+                <textarea
+                  value={draft[activeLang].content}
+                  onChange={(e) => setField("content", e.target.value)}
+                  rows={8}
+                  placeholder="공지 내용"
+                  className={`${inputCls} resize-none leading-relaxed`}
+                />
+              </Field>
+            </>
+          )}
 
           <label className="flex cursor-pointer items-center gap-2.5">
             <input
@@ -153,7 +265,7 @@ export default function NoticeEditor({
           <Button variant="neutral" onClick={onClose}>
             취소
           </Button>
-          <Button variant="brand" onClick={save} disabled={saving}>
+          <Button variant="brand" onClick={save} disabled={saving || loading}>
             {saving ? "저장 중..." : "저장"}
           </Button>
         </div>
