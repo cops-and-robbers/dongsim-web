@@ -86,6 +86,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     },
     {
+      url: `${BASE_URL}/demo`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/demo"),
+      },
+    },
+    {
+      url: `${BASE_URL}/en/demo`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/demo"),
+      },
+    },
+    {
+      url: `${BASE_URL}/ja/demo`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/demo"),
+      },
+    },
+    {
       url: `${BASE_URL}/team`,
       lastModified: now,
       changeFrequency: "monthly",

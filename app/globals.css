@@ -850,3 +850,37 @@ body {
   font-family: "Moneygraphy", var(--font-sans);
   letter-spacing: -0.32px;
 }
+
+/* ---------- 앱 데모 (#77) - 각본으로 등장하는 요소들 ---------- */
+.demo-footprint {
+  animation: mockupFootprintReveal 0.4s ease-out both;
+}
+@keyframes demoPingRipple {
+  from {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1.9);
+    opacity: 0;
+  }
+}
+.demo-pulse {
+  animation: demoPingRipple 1.6s ease-out infinite;
+}
+/* 결과 다이얼로그 캐릭터 몸통 - 카드 뒤에 숨었다가 솟아올라 살짝 튕기며 앉는다
+   (game_over_result_dialog.dart의 _RiseIn 재현) */
+.demo-rise {
+  animation: demoRiseIn 0.5s ease-out both;
+}
+@keyframes demoRiseIn {
+  0% {
+    transform: translateY(100px);
+  }
+  70% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
