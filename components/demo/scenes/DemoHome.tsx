@@ -2,18 +2,20 @@
 
 import Image from "next/image";
 import { appColors } from "@/lib/app-tokens";
+import { DEMO_NICKNAME } from "@/lib/demo/scenes";
 import { useDemoCopy } from "../demo-copy";
 
 // 홈 화면 (home_page.dart 실측). 헤더 125(상태바 포함) + 프로필 56 +
 // 일러스트 330 + 버튼 176x56 두 개. 배경·캐릭터·아이콘은 앱 에셋 그대로고
 // 문구·로고는 앱의 로케일 번역을 따른다.
-// 코스에 따라 방 만들기/방 참여하기 중 하나만 눌린다.
+// 코스에 따라 방 만들기/방 참여하기 중 하나만 눌린다. 커뮤니티 코스는
+// 다음 걸음이 하단 탭이라 둘 다 잠긴다("none").
 export function DemoHome({
   active,
   onCreate,
   onJoin,
 }: {
-  active: "create" | "join";
+  active: "create" | "join" | "none";
   onCreate: () => void;
   onJoin: () => void;
 }) {
@@ -42,12 +44,12 @@ export function DemoHome({
           style={{ backgroundColor: appColors.white }}
         >
           <Image src="/app-icons/profile_1.svg" alt="" width={34} height={34} />
-          {/* 앱이 실제로 만들어 주는 형식의 닉네임을 그대로 쓴다 */}
+          {/* 앱이 실제로 만들어 주는 형식의 닉네임 - 커뮤니티 채팅과 같은 사람이다 */}
           <span
             className="text-[16px] font-semibold"
             style={{ color: appColors.black800 }}
           >
-            민첩한괴도5308
+            {DEMO_NICKNAME}
           </span>
         </div>
 
