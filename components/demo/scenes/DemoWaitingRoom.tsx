@@ -11,40 +11,93 @@ import { useDemoCopy } from "../demo-copy";
 // 팀 섹션 = 아이콘 28 + 팀명 + n명, 카드 Wrap(간격 16, 좌30 우24 하20),
 // 첫 칸이 + 슬롯(black100, icon_change)이고 카드는 팀 캐릭터 SVG 72x84 다.
 // 팀 이동은 앱과 같이 상대 팀의 + 슬롯을 탭해서 한다.
+//
+// [host] 모드(방 만들기 코스)에서는 내가 방장이다. 참가자들이 각본대로
+// 입장·준비하고, 전원 준비되면 하단의 게임 시작 버튼이 켜진다.
 const ME = "민첩한괴도5308";
 
 type Member = { name: string; host?: boolean; ready?: boolean };
+type Guest = { name: string; team: "police" | "robber"; ready: boolean };
+
+// 방장 시점 각본 - 입장 시점(ms)과 준비 시점(ms)
+const GUEST_SCRIPT: readonly {
+  name: string;
+  team: "police" | "robber";
+  joinAt: number;
+  readyAt: number;
+}[] = [
+  { name: "든든한보안관3402", team: "police", joinAt: 1200, readyAt: 3400 },
+  { name: "잽싼그림자7215", team: "robber", joinAt: 2400, readyAt: 4600 },
+];
 
 export function DemoWaitingRoom({
+  host = false,
   onTeamMoved,
   onReady,
   onStart,
   onLeave,
 }: {
+  host?: boolean;
   onTeamMoved: () => void;
   onReady: () => void;
   onStart: (myTeam: "police" | "robber") => void;
   onLeave: () => void;
 }) {
   const { app } = useDemoCopy();
-  const [myTeam, setMyTeam] = useState<"police" | "robber">("robber");
+  const [myTeam, setMyTeam] = useState<"police" | "robber">(
+    host ? "police" : "robber",
+  );
   const [ready, setReady] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [guests, setGuests] = useState<Guest[]>([]);
 
-  // 준비를 마치면 잠시 뒤 방장이 게임을 시작한다. 인게임이 내 팀을 이어받는다
+  // 참가자 모드: 준비를 마치면 잠시 뒤 방장이 게임을 시작한다
   useEffect(() => {
-    if (!ready) return;
+    if (host || !ready) return;
     const t = window.setTimeout(() => onStart(myTeam), 2000);
     return () => window.clearTimeout(t);
-  }, [ready, myTeam, onStart]);
+  }, [host, ready, myTeam, onStart]);
 
-  const me: Member = { name: ME, ready };
+  // 방장 모드: 각본대로 참가자가 들어오고 준비를 마친다
+  useEffect(() => {
+    if (!host) return;
+    const timers: number[] = [];
+    for (const g of GUEST_SCRIPT) {
+      timers.push(
+        window.setTimeout(
+          () => setGuests((prev) => [...prev, { name: g.name, team: g.team, ready: false }]),
+          g.joinAt,
+        ),
+        window.setTimeout(
+          () =>
+            setGuests((prev) =>
+              prev.map((p) => (p.name === g.name ? { ...p, ready: true } : p)),
+            ),
+          g.readyAt,
+        ),
+      );
+    }
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [host]);
+
+  const allReady = guests.length === GUEST_SCRIPT.length && guests.every((g) => g.ready);
+
+  const me: Member = host
+    ? { name: ME, host: true, ready: true }
+    : { name: ME, ready };
+  const scripted = (team: "police" | "robber"): Member[] =>
+    host
+      ? guests.filter((g) => g.team === team)
+      : team === "police"
+        ? [{ name: "든든한보안관3402", host: true, ready: true }]
+        : [{ name: "잽싼그림자7215", ready: true }];
+
   const police: Member[] = [
-    { name: "든든한보안관3402", host: true, ready: true },
+    ...scripted("police"),
     ...(myTeam === "police" ? [me] : []),
   ];
   const robber: Member[] = [
-    { name: "잽싼그림자7215", ready: true },
+    ...scripted("robber"),
     ...(myTeam === "robber" ? [me] : []),
   ];
 
@@ -173,25 +226,41 @@ export function DemoWaitingRoom({
         {section("robber", app.teamRobber, "/demo/icon_team_robber.svg", robber)}
       </div>
 
-      {/* 하단 준비 버튼 (비방장, waiting_room_page.dart): 준비 전 파랑,
-          준비 완료는 blue100 바탕 + 파랑 글자 */}
+      {/* 하단 버튼 (waiting_room_page.dart _buildBottomButton):
+          방장은 전원 준비 시 켜지는 게임 시작, 참가자는 준비 토글 */}
       <div className="shrink-0 px-[20px] pb-[20px] pt-[12px]">
-        <button
-          type="button"
-          disabled={ready}
-          onClick={() => {
-            setReady(true);
-            onReady();
-          }}
-          className="flex h-[56px] w-full items-center justify-center rounded-[12px] text-[16px] font-semibold transition-transform active:scale-95"
-          style={
-            ready
-              ? { backgroundColor: appColors.blue100, color: appColors.blue }
-              : { backgroundColor: appColors.blue, color: appColors.white }
-          }
-        >
-          {ready ? app.readyDone : app.ready}
-        </button>
+        {host ? (
+          <button
+            type="button"
+            disabled={!allReady}
+            onClick={() => onStart(myTeam)}
+            className="flex h-[56px] w-full items-center justify-center rounded-[12px] text-[16px] font-semibold transition-transform active:scale-95"
+            style={
+              allReady
+                ? { backgroundColor: appColors.blue, color: appColors.white }
+                : { backgroundColor: appColors.black200, color: appColors.black400 }
+            }
+          >
+            {app.startGame}
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={ready}
+            onClick={() => {
+              setReady(true);
+              onReady();
+            }}
+            className="flex h-[56px] w-full items-center justify-center rounded-[12px] text-[16px] font-semibold transition-transform active:scale-95"
+            style={
+              ready
+                ? { backgroundColor: appColors.blue100, color: appColors.blue }
+                : { backgroundColor: appColors.blue, color: appColors.white }
+            }
+          >
+            {ready ? app.readyDone : app.ready}
+          </button>
+        )}
       </div>
 
       {/* 방 나가기 확인 (dialogLeaveRoom 문구 그대로) */}

@@ -7,7 +7,16 @@ import { useDemoCopy } from "../demo-copy";
 // 홈 화면 (home_page.dart 실측). 헤더 125(상태바 포함) + 프로필 56 +
 // 일러스트 330 + 버튼 176x56 두 개. 배경·캐릭터·아이콘은 앱 에셋 그대로고
 // 문구·로고는 앱의 로케일 번역을 따른다.
-export function DemoHome({ onJoin }: { onJoin: () => void }) {
+// 코스에 따라 방 만들기/방 참여하기 중 하나만 눌린다.
+export function DemoHome({
+  active,
+  onCreate,
+  onJoin,
+}: {
+  active: "create" | "join";
+  onCreate: () => void;
+  onJoin: () => void;
+}) {
   const { app } = useDemoCopy();
   const [welcomeLine1, welcomeLine2] = app.welcome.split("\n");
   return (
@@ -77,14 +86,22 @@ export function DemoHome({ onJoin }: { onJoin: () => void }) {
 
         <div className="h-[14px] shrink-0" />
 
-        {/* 버튼 두 개 (app_button.dart 기본 56, radius 12, 아이콘 20) */}
+        {/* 버튼 두 개 (app_button.dart 기본 56, radius 12, 아이콘 20).
+            지금 코스의 다음 걸음만 실제 버튼이다 */}
         <div className="flex shrink-0 justify-center gap-[8px]">
-          <span className="flex h-[56px] w-[176px] items-center justify-center gap-[8px] rounded-[12px] text-[16px] font-semibold text-white shadow-md" style={{ backgroundColor: appColors.blue }}>
-            <Image src="/demo/icon_default_light.svg" alt="" width={20} height={20} style={{ height: 20, width: "auto" }} />
-            {app.createRoom}
-          </span>
           <button
             type="button"
+            disabled={active !== "create"}
+            onClick={onCreate}
+            className="flex h-[56px] w-[176px] items-center justify-center gap-[8px] rounded-[12px] text-[16px] font-semibold text-white shadow-md transition-transform active:scale-95"
+            style={{ backgroundColor: appColors.blue }}
+          >
+            <Image src="/demo/icon_default_light.svg" alt="" width={20} height={20} style={{ height: 20, width: "auto" }} />
+            {app.createRoom}
+          </button>
+          <button
+            type="button"
+            disabled={active !== "join"}
             onClick={onJoin}
             className="flex h-[56px] w-[176px] items-center justify-center gap-[8px] rounded-[12px] text-[16px] font-semibold shadow-md transition-transform active:scale-95"
             style={{ backgroundColor: appColors.white, color: appColors.black600 }}
