@@ -527,7 +527,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "경찰로 플레이",
         stage: {
           h1: ["도둑이 지금", "달아나고 있어요"],
-          lead: "설치 없이 여기서 바로 쫓아가 보세요. 말풍선이 알려주는 대로 누르다 보면 체포까지 한 판이 끝나요.",
+          lead: "설치 없이 지금 바로 쫓아가 보세요. 말풍선만 따라가면 체포까지 금방이에요.",
         },
         steps: [
           { label: "친구 방에 들어가요", short: "방 입장", scenes: ["home", "join"] },
@@ -542,7 +542,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "도둑으로 플레이",
         stage: {
           h1: ["경찰이 바짝", "쫓아오고 있어요"],
-          lead: "설치 없이 여기서 바로 달아나 보세요. 발자국을 숨기고 버티면 생존 승리로 한 판이 끝나요.",
+          lead: "설치 없이 지금 바로 달아나 보세요. 끝까지 안 잡히면 그게 승리예요.",
         },
         steps: [
           { label: "친구 방에 들어가요", short: "방 입장", scenes: ["home", "join"] },
@@ -557,7 +557,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "방장으로 플레이",
         stage: {
           h1: ["오늘 판은", "내가 깔아요"],
-          lead: "구역을 그리고 규칙을 정하면 친구들이 모여요. 방 만들기부터 게임 시작까지 직접 해보세요.",
+          lead: "구역도 규칙도 내 마음대로예요. 방을 열면 친구들이 모여요.",
         },
         steps: [
           { label: "방 만들기를 시작해요", short: "홈", scenes: ["homeCreate"] },
@@ -572,7 +572,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "모임 찾아 플레이",
         stage: {
           h1: ["같이 뛸 사람,", "여기 다 있어요"],
-          lead: "모집글을 읽고 채팅으로 인사해 보세요. 초대장이 도착하면 바로 합류예요.",
+          lead: "마음에 드는 모집글에 인사만 남겨 보세요. 초대장이 오면 바로 게임이에요.",
         },
         steps: [
           {
@@ -932,7 +932,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "Play as Cop",
         stage: {
           h1: ["A robber is", "on the run"],
-          lead: "Chase them down right here, no install needed. Follow the speech bubble and you'll make an arrest in one quick round.",
+          lead: "Chase them down right here - no install needed. Follow the speech bubble and the arrest is minutes away.",
         },
         steps: [
           { label: "Join a friend's room", short: "Join", scenes: ["home", "join"] },
@@ -947,7 +947,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "Play as Robber",
         stage: {
           h1: ["The cops are", "closing in"],
-          lead: "Run for it right here, no install needed. Hide your footprints, hold out, and finish the round with a survival win.",
+          lead: "Make your getaway right here - no install needed. Stay uncaught to the end and the win is yours.",
         },
         steps: [
           { label: "Join a friend's room", short: "Join", scenes: ["home", "join"] },
@@ -962,7 +962,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "Play as Host",
         stage: {
           h1: ["Tonight's game", "starts with you"],
-          lead: "Draw the zone, set the rules, and friends will gather. Host it yourself, from room setup to game start.",
+          lead: "The zone, the rules - all yours to set. Open a room and friends will come.",
         },
         steps: [
           { label: "Start creating a room", short: "Home", scenes: ["homeCreate"] },
@@ -977,7 +977,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "Join a meetup",
         stage: {
           h1: ["Your next crew", "is right here"],
-          lead: "Read a post, say hi in chat, and join the moment the invite arrives.",
+          lead: "Pick a post you like and just say hi. When the invite arrives, you're in.",
         },
         steps: [
           {
@@ -1337,7 +1337,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "警察でプレイ",
         stage: {
           h1: ["泥棒が今", "逃げています"],
-          lead: "インストール不要で、ここでそのまま追いかけられます。吹き出しの案内どおりにタップすれば、逮捕まで1プレイ遊べます。",
+          lead: "インストール不要で、ここでそのまま追いかけられます。吹き出しに沿って進めば、逮捕まであっという間です。",
         },
         steps: [
           { label: "友だちの部屋に入る", short: "入室", scenes: ["home", "join"] },
@@ -1352,7 +1352,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "泥棒でプレイ",
         stage: {
           h1: ["警察がすぐ", "そこまで来ています"],
-          lead: "インストール不要で、ここでそのまま逃げられます。足あとを隠して逃げ切れば、生存勝利で1プレイ完了です。",
+          lead: "インストール不要で、ここでそのまま逃げられます。最後まで捕まらなければ、その時点で勝ちです。",
         },
         steps: [
           { label: "友だちの部屋に入る", short: "入室", scenes: ["home", "join"] },
@@ -1367,7 +1367,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "ホストでプレイ",
         stage: {
           h1: ["今日の勝負は", "自分が仕切る"],
-          lead: "エリアを描いてルールを決めれば、友だちが集まります。部屋づくりからゲーム開始まで体験できます。",
+          lead: "エリアもルールも思いのまま。部屋を開けば友だちが集まります。",
         },
         steps: [
           { label: "部屋づくりを始める", short: "ホーム", scenes: ["homeCreate"] },
@@ -1382,7 +1382,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         title: "募集から合流",
         stage: {
           h1: ["一緒に走る仲間が", "ここにいます"],
-          lead: "募集を読んでチャットであいさつ。招待が届いたらすぐ合流です。",
+          lead: "気になる募集にあいさつするだけ。招待状が届いたら、すぐゲームです。",
         },
         steps: [
           {
