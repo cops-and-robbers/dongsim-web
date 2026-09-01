@@ -11,7 +11,7 @@ export default function DemoSections({ locale }: { locale: Locale }) {
       <section className="overflow-x-clip border-b border-slate-200 bg-slate-50 transition-colors duration-500 dark:border-white/10 dark:bg-app-black-900">
         <DemoStage locale={locale} />
       </section>
-      <CtaSection copy={getMessages(locale).home.finalCta} />
+      <CtaSection copy={getMessages(locale).home.finalCta} locale={locale} demoLink={false} />
     </main>
   );
 }

@@ -239,7 +239,7 @@ export default function HomePage() {
       <HowItWorksSection copy={copy.how} />
       <FeaturesSection copy={copy.features} />
       <MinigameTeaserSection copy={copy.minigame} locale="ko" />
-      <CtaSection copy={copy.finalCta} />
+      <CtaSection copy={copy.finalCta} locale="ko" />
     </>
   );
 }

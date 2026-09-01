@@ -65,7 +65,7 @@ export default function GameSections({ locale }: { locale: Locale }) {
         ))}
       </div>
       <GameFaqSection heading={copy.faqHeading} items={copy.faq} />
-      <CtaSection copy={getMessages(locale).home.finalCta} />
+      <CtaSection copy={getMessages(locale).home.finalCta} locale={locale} />
     </>
   );
 }

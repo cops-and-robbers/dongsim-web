@@ -87,8 +87,9 @@ const ko = {
     },
     finalCta: {
       title: "이제 공원에서 만나요",
-      lead1: "친구에게 초대 코드나 QR만 보내면 준비 끝이에요.",
-      lead2: "가까운 공원으로 나가볼까요?",
+      lead1: "같이 뛸 사람이 없다고요? 커뮤니티에서 구하면 돼요.",
+      lead2: "폰 하나만 들고 나가면 준비 끝이에요.",
+      demoCta: "설치 전에 한 판 해보기",
     },
     minigame: {
       badge: "🧀 미니게임",
@@ -437,8 +438,9 @@ const en: Messages = {
     },
     finalCta: {
       title: "See you at the park",
-      lead1: "Send your friends an invite code or QR. That's the whole setup.",
-      lead2: "Ready to head to the nearest park?",
+      lead1: "No one to play with? Recruit them in the community.",
+      lead2: "All you need to bring is your phone.",
+      demoCta: "Play a round before you install",
     },
     minigame: {
       badge: "🧀 Mini-game",
@@ -796,8 +798,9 @@ const ja: Messages = {
     },
     finalCta: {
       title: "さあ、公園で会おう",
-      lead1: "友達に招待コードかQRを送るだけで準備完了。",
-      lead2: "近くの公園に、出かけてみない？",
+      lead1: "一緒に走る仲間がいない？コミュニティで集めればOK。",
+      lead2: "持ち物はスマホひとつ。それで準備完了。",
+      demoCta: "インストール前に1プレイ",
     },
     minigame: {
       badge: "🧀 ミニゲーム",
