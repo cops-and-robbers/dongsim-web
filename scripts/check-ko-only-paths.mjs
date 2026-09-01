@@ -37,33 +37,39 @@ function readList() {
 }
 
 /**
- * app 아래 한국어 page.tsx 의 경로를 모은다.
+ * 폴더 아래 page.tsx 의 경로를 모은다.
  *
  * 동적 조각에서 끊는다. `/join/[code]` 는 `/join` 으로 본다.
  * isKoOnlyPath 가 접두사로 비교하기 때문에 목록에도 `/join` 만 있으면 된다.
  *
  * page.tsx 가 있는 폴더만 센다. route.ts 만 있는 폴더는 화면이 아니라
  * 언어 전환 대상이 아니다(`/legal/[doc]/embed` 처럼).
+ *
+ * 한국어(app)와 번역(app/en·app/ja) 양쪽을 같은 규칙으로 모아야 한다 -
+ * 번역 쪽만 문자 그대로 찾으면 `/en/g/[postId]` 처럼 번역본까지 동적인
+ * 라우트가 없는 것으로 오탐된다(#92).
  */
-function collectKoPages(dir = APP, base = "") {
+function collectPages(dir, base = "", skipTop = new Set()) {
   const found = [];
   for (const name of readdirSync(dir)) {
-    if (base === "" && SKIP_TOP.has(name)) continue;
+    if (base === "" && skipTop.has(name)) continue;
     const full = join(dir, name);
     if (!statSync(full).isDirectory()) continue;
     const dynamic = name.startsWith("[");
     const path = dynamic ? base : `${base}/${name}`;
     if (path !== "" && existsSync(join(full, "page.tsx"))) found.push(path);
-    found.push(...collectKoPages(full, path));
+    found.push(...collectPages(full, path, skipTop));
   }
   return [...new Set(found)];
 }
 
 const list = readList();
-const koPages = collectKoPages();
-const translated = (path) =>
-  existsSync(join(APP, "en", path, "page.tsx")) ||
-  existsSync(join(APP, "ja", path, "page.tsx"));
+const koPages = collectPages(APP, "", SKIP_TOP);
+const translatedPages = new Set([
+  ...collectPages(join(APP, "en")),
+  ...collectPages(join(APP, "ja")),
+]);
+const translated = (path) => translatedPages.has(path);
 
 const problems = [];
 
