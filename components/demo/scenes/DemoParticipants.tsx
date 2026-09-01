@@ -5,14 +5,21 @@ import { useState } from "react";
 import { appColors } from "@/lib/app-tokens";
 import { useDemoCopy } from "../demo-copy";
 
-// 인게임 참가자 목록 (participant_overlay.dart 실측). 흰 화면에 팀 섹션
-// 두 개 - 경찰은 접힘, 도둑은 펼침이 기본이고 헤더를 눌러 여닫는다.
+// 인게임 참가자 목록 (participant_overlay.dart 실측). 팀 섹션 두 개 -
+// 경찰은 접힘, 도둑은 펼침이 기본이고 헤더를 눌러 여닫는다.
 // 도둑 섹션 머리에는 "현재 N명 도주 중!" 배지가 붙는다.
+// [dark] 는 도둑 시점의 다크 화면이다 - 배경 black900, 배지 초록 (실측).
 const ME = "민첩한괴도5308";
 
 type Member = { name: string; host?: boolean };
 
-export function DemoParticipants({ myTeam }: { myTeam: "police" | "robber" }) {
+export function DemoParticipants({
+  myTeam,
+  dark = false,
+}: {
+  myTeam: "police" | "robber";
+  dark?: boolean;
+}) {
   const { app } = useDemoCopy();
   const [policeOpen, setPoliceOpen] = useState(false);
   const [robberOpen, setRobberOpen] = useState(true);
@@ -47,7 +54,16 @@ export function DemoParticipants({ myTeam }: { myTeam: "police" | "robber" }) {
           )}
           <span
             className={`truncate text-[10px] ${mine ? "font-bold" : ""}`}
-            style={{ color: mine ? appColors.black600 : appColors.black800 }}
+            style={{
+              // 다크(도둑 시점)에서는 검정 배경 위라 밝은 회색 단으로 뒤집는다
+              color: dark
+                ? mine
+                  ? appColors.black400
+                  : appColors.black200
+                : mine
+                  ? appColors.black600
+                  : appColors.black800,
+            }}
           >
             {member.name}
           </span>
@@ -74,7 +90,7 @@ export function DemoParticipants({ myTeam }: { myTeam: "police" | "robber" }) {
         <Image src={icon} alt="" width={28} height={28} />
         <span
           className="ml-[8px] text-[16px] font-semibold"
-          style={{ color: appColors.black }}
+          style={{ color: dark ? appColors.white : appColors.black }}
         >
           {label}
         </span>
@@ -99,7 +115,7 @@ export function DemoParticipants({ myTeam }: { myTeam: "police" | "robber" }) {
   return (
     <div
       className="min-h-0 flex-1 overflow-y-auto"
-      style={{ backgroundColor: appColors.white }}
+      style={{ backgroundColor: dark ? appColors.black900 : appColors.white }}
     >
       {section(
         "police",
@@ -109,7 +125,10 @@ export function DemoParticipants({ myTeam }: { myTeam: "police" | "robber" }) {
         policeOpen,
         () => setPoliceOpen((v) => !v),
       )}
-      <div className="h-px" style={{ backgroundColor: appColors.black200 }} />
+      <div
+        className="h-px"
+        style={{ backgroundColor: dark ? appColors.black800 : appColors.black200 }}
+      />
       {section(
         "robber",
         app.teamRobber,
@@ -117,9 +136,15 @@ export function DemoParticipants({ myTeam }: { myTeam: "police" | "robber" }) {
         robber,
         robberOpen,
         () => setRobberOpen((v) => !v),
-        <span className="text-[12px]" style={{ color: appColors.blue800 }}>
+        <span
+          className="text-[12px]"
+          style={{ color: dark ? appColors.green800 : appColors.blue800 }}
+        >
           {app.overlayCurrent}{" "}
-          <span className="font-bold" style={{ color: appColors.blue }}>
+          <span
+            className="font-bold"
+            style={{ color: dark ? appColors.green : appColors.blue }}
+          >
             {app.overlayCount(robber.length)}
           </span>{" "}
           {app.escaping}

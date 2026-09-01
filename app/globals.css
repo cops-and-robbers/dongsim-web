@@ -930,3 +930,17 @@ body {
     transform: translateY(0);
   }
 }
+
+/* 체포 알림 배너 - 긴 문장이 오른쪽에서 왼쪽으로 흘러간다
+   (marquee_alert_banner.dart의 가로 마퀴 재현) */
+.demo-marquee {
+  animation: demoMarquee 7s linear infinite;
+}
+@keyframes demoMarquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
