@@ -16,6 +16,9 @@ import { DemoVictory } from "./scenes/DemoVictory";
 import { DemoZoneSetup, defaultZone, type ZoneDraft } from "./scenes/DemoZoneSetup";
 import { DemoCreateBasic, defaultSettings, type SettingValues } from "./scenes/DemoCreateBasic";
 import { DemoCreateConfirm } from "./scenes/DemoCreateConfirm";
+import { DemoCommunityList } from "./scenes/DemoCommunityList";
+import { DemoCommunityDetail } from "./scenes/DemoCommunityDetail";
+import { DemoCommunityChat } from "./scenes/DemoCommunityChat";
 import { appColors } from "@/lib/app-tokens";
 
 // 상태바에 실제 시각을 띄우기 위한 라이브 시계.
@@ -46,6 +49,15 @@ type DemoFlow =
   | "createConfirm"
   | "hostWaiting";
 
+// 커뮤니티 탭 안의 흐름. 앱처럼 상세·채팅은 목록 위로 쌓인다 (#86)
+type CommunityFlow = "list" | "detail" | "chat";
+
+const COMMUNITY_SCENE: Record<CommunityFlow, DemoSceneId> = {
+  list: "community",
+  detail: "communityDetail",
+  chat: "communityChat",
+};
+
 // 만져보는 앱 데모 (#77). 장면은 데이터(copy.scenes)로 정의하고
 // 여기서는 어느 장면인지와 해볼 것의 완료만 들고 있는다.
 // [course] 가 홈에서 열리는 길을 정하고, [onSceneChange] 로 여정에 알린다.
@@ -58,6 +70,7 @@ export function DemoApp({
 }) {
   const [tab, setTab] = useState<DemoTab>("home");
   const [flow, setFlow] = useState<DemoFlow>("home");
+  const [communityFlow, setCommunityFlow] = useState<CommunityFlow>("list");
   const [joinOpen, setJoinOpen] = useState(false);
   // 대기실에서 정한 팀 - 인게임 참가자 목록이 이어받는다
   const [myTeam, setMyTeam] = useState<"police" | "robber">("robber");
@@ -71,15 +84,19 @@ export function DemoApp({
   const copy = useDemoCopy();
 
   const sceneId: DemoSceneId =
-    tab !== "home"
-      ? tab
-      : joinOpen
-        ? "join"
-        : flow === "home"
-          ? course === "create"
-            ? "homeCreate"
-            : "home"
-          : flow;
+    tab === "community"
+      ? COMMUNITY_SCENE[communityFlow]
+      : tab === "my"
+        ? "my"
+        : joinOpen
+          ? "join"
+          : flow === "home"
+            ? course === "create"
+              ? "homeCreate"
+              : course === "community"
+                ? "homeCommunity"
+                : "home"
+            : flow;
   const scene = copy.scenes[sceneId];
 
   useEffect(() => {
@@ -100,6 +117,12 @@ export function DemoApp({
       next.add(taskId);
       return next;
     });
+
+  // 커뮤니티 코스의 첫 해볼 일이 탭 누르기라 탭 이동도 여기서 채점한다
+  const selectTab = (next: DemoTab) => {
+    if (next === "community") markDone("community-tab");
+    setTab(next);
+  };
 
   // 인게임·결과는 지도가 상태바 뒤까지 깔리고, 나머지는 흰 상태바다
   const statusBar =
@@ -124,7 +147,9 @@ export function DemoApp({
           {tab === "home" && flow === "home" && (
             <>
               <DemoHome
-                active={course === "create" ? "create" : "join"}
+                active={
+                  course === "create" ? "create" : course === "community" ? "none" : "join"
+                }
                 onCreate={() => {
                   markDone("create-start");
                   setFlow("createZone");
@@ -134,7 +159,7 @@ export function DemoApp({
                   setJoinOpen(true);
                 }}
               />
-              <DemoTabBar active={tab} onSelect={setTab} />
+              <DemoTabBar active={tab} onSelect={selectTab} />
               {joinOpen && (
                 <DemoJoinDialog
                   onClose={() => setJoinOpen(false)}
@@ -231,22 +256,42 @@ export function DemoApp({
               onHome={() => setFlow("home")}
             />
           )}
-          {tab !== "home" && (
+          {tab === "community" && communityFlow === "list" && (
+            <>
+              <DemoCommunityList
+                onOpenPost={() => {
+                  markDone("community-open");
+                  setCommunityFlow("detail");
+                }}
+              />
+              <DemoTabBar active={tab} onSelect={selectTab} />
+            </>
+          )}
+          {tab === "community" && communityFlow === "detail" && (
+            <DemoCommunityDetail
+              onBack={() => setCommunityFlow("list")}
+              onJoinChat={() => setCommunityFlow("chat")}
+              onTask={markDone}
+            />
+          )}
+          {tab === "community" && communityFlow === "chat" && (
+            <DemoCommunityChat
+              onBack={() => setCommunityFlow("detail")}
+              onJoinRoom={() => {
+                // 초대 코드가 곧 경찰 코스의 그 방이다 - 대기실로 합류한다
+                setTab("home");
+                setFlow("waiting");
+              }}
+              onTask={markDone}
+            />
+          )}
+          {tab === "my" && (
             <>
               <div
                 className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[14px]"
                 style={{ backgroundColor: appColors.background }}
               >
-                <Image
-                  src={
-                    tab === "community"
-                      ? "/characters/robber.svg"
-                      : "/characters/police.svg"
-                  }
-                  alt=""
-                  width={96}
-                  height={87}
-                />
+                <Image src="/characters/police.svg" alt="" width={96} height={87} />
                 <p
                   className="text-[15px] font-semibold"
                   style={{ color: appColors.black600 }}
@@ -254,7 +299,7 @@ export function DemoApp({
                   {copy.nextUpdate}
                 </p>
               </div>
-              <DemoTabBar active={tab} onSelect={setTab} />
+              <DemoTabBar active={tab} onSelect={selectTab} />
             </>
           )}
         </AppScreen>
