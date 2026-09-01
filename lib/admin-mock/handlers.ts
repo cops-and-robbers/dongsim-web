@@ -13,11 +13,21 @@ import {
 import {
   mockListNotices,
   mockGetNotice,
+  mockGetNoticeTranslations,
   mockCreateNotice,
   mockUpdateNotice,
   mockDeleteNotice,
 } from "./notices";
-import type { NoticeCategory, NoticeInput } from "@/lib/admin/notices/api";
+import type {
+  NoticeCategory,
+  NoticeInput,
+  NoticeLanguage,
+} from "@/lib/admin/notices/api";
+import {
+  countTermsResetTargets,
+  resetTermsAgreement,
+  type TermsType,
+} from "./data";
 import {
   queryGameHistories,
   queryGameHistory,
@@ -26,11 +36,17 @@ import {
 import {
   queryReports,
   queryBugReports,
+  queryCommunityPostReports,
+  queryCommunityChatReports,
+  queryAllReports,
   updateReportStatus,
   updateBugReportStatus,
+  updateCommunityPostReportStatus,
+  updateCommunityChatReportStatus,
   getDashboard,
   type ReportStatus,
   type BugReportStatus,
+  type ReportSource,
 } from "./reports";
 
 export const GRAPHQL_ENDPOINT = "/graphql";
@@ -38,6 +54,22 @@ export const GRAPHQL_ENDPOINT = "/graphql";
 const api = graphql.link(GRAPHQL_ENDPOINT);
 
 export const handlers = [
+  api.query("TermsResetPreview", async ({ variables }) => {
+    await delay(250);
+    const { types } = variables as { types: TermsType[] };
+    return HttpResponse.json({
+      data: { termsResetPreview: { affectedUsers: countTermsResetTargets(types) } },
+    });
+  }),
+
+  api.mutation("ResetTermsAgreement", async ({ variables }) => {
+    await delay(500);
+    const { types } = variables as { types: TermsType[] };
+    return HttpResponse.json({
+      data: { resetTermsAgreement: { affectedUsers: resetTermsAgreement(types) } },
+    });
+  }),
+
   api.query("AdminUsers", async ({ variables }) => {
     await delay(400);
     return HttpResponse.json({
@@ -138,6 +170,55 @@ export const handlers = [
     });
   }),
 
+  api.query("AdminCommunityPostReports", async ({ variables }) => {
+    await delay(400);
+    return HttpResponse.json({
+      data: {
+        adminCommunityPostReports: queryCommunityPostReports(
+          variables as {
+            page?: number;
+            size?: number;
+            status?: ReportStatus;
+            sortDirection?: "ASC" | "DESC";
+          }
+        ),
+      },
+    });
+  }),
+
+  api.query("AdminCommunityChatReports", async ({ variables }) => {
+    await delay(400);
+    return HttpResponse.json({
+      data: {
+        adminCommunityChatReports: queryCommunityChatReports(
+          variables as {
+            page?: number;
+            size?: number;
+            status?: ReportStatus;
+            sortDirection?: "ASC" | "DESC";
+          }
+        ),
+      },
+    });
+  }),
+
+  api.query("AdminAllReports", async ({ variables }) => {
+    await delay(400);
+    return HttpResponse.json({
+      data: {
+        adminAllReports: queryAllReports(
+          variables as {
+            page?: number;
+            size?: number;
+            status?: ReportStatus;
+            source?: ReportSource;
+            sortDirection?: "ASC" | "DESC";
+          }
+        ),
+      },
+    });
+  }),
+
   api.query("AdminBugReports", async ({ variables }) => {
     await delay(400);
     return HttpResponse.json({
@@ -172,6 +253,42 @@ export const handlers = [
     });
   }),
 
+  api.mutation("UpdateCommunityPostReportStatus", async ({ variables }) => {
+    await delay(300);
+    const v = variables as {
+      reportId: string;
+      status: ReportStatus;
+      adminMemo?: string | null;
+    };
+    return HttpResponse.json({
+      data: {
+        updateCommunityPostReportStatus: updateCommunityPostReportStatus(
+          v.reportId,
+          v.status,
+          v.adminMemo ?? null
+        ),
+      },
+    });
+  }),
+
+  api.mutation("UpdateCommunityChatReportStatus", async ({ variables }) => {
+    await delay(300);
+    const v = variables as {
+      reportId: string;
+      status: ReportStatus;
+      adminMemo?: string | null;
+    };
+    return HttpResponse.json({
+      data: {
+        updateCommunityChatReportStatus: updateCommunityChatReportStatus(
+          v.reportId,
+          v.status,
+          v.adminMemo ?? null
+        ),
+      },
+    });
+  }),
+
   api.mutation("UpdateBugReportStatus", async ({ variables }) => {
     await delay(300);
     const v = variables as {
@@ -197,13 +314,28 @@ export const handlers = [
     const page = Number(url.searchParams.get("page") ?? 0);
     const size = Number(url.searchParams.get("size") ?? 10);
     const category = url.searchParams.get("category") as NoticeCategory | null;
+    const language = url.searchParams.get("language") as NoticeLanguage | null;
     return HttpResponse.json(
-      mockListNotices({ page, size, category: category ?? undefined })
+      mockListNotices({
+        page,
+        size,
+        category: category ?? undefined,
+        language: language ?? undefined,
+      })
     );
   }),
 
-  http.get("/api/notices/:id", async ({ params }) => {
-    const notice = mockGetNotice(Number(params.id));
+  http.get("/api/notices/:id/translations", async ({ params }) => {
+    const data = mockGetNoticeTranslations(Number(params.id));
+    return data
+      ? HttpResponse.json(data)
+      : new HttpResponse(null, { status: 404 });
+  }),
+
+  http.get("/api/notices/:id", async ({ request, params }) => {
+    const url = new URL(request.url);
+    const language = (url.searchParams.get("language") as NoticeLanguage | null) ?? "ko";
+    const notice = mockGetNotice(Number(params.id), language);
     return notice
       ? HttpResponse.json(notice)
       : new HttpResponse(null, { status: 404 });

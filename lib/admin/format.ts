@@ -95,6 +95,12 @@ export const REPORT_TYPE_LABEL: Record<string, string> = {
   ETC: "기타",
 };
 
+export const REPORT_SOURCE_LABEL: Record<string, string> = {
+  GAME_CHAT: "게임 채팅",
+  COMMUNITY_POST: "모집글",
+  COMMUNITY_CHAT: "커뮤니티 채팅",
+};
+
 export const REPORT_STATUS_LABEL: Record<string, string> = {
   PENDING: "미처리",
   RESOLVED: "처리 완료",

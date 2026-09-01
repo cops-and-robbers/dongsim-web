@@ -161,6 +161,17 @@ export function BugIcon({ className }: IconProps) {
   );
 }
 
+export function TermsIcon({ className }: IconProps) {
+  // 문서 + 체크. 다른 기능 아이콘과 같은 듀오톤(불투명도) 방식.
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
+      <path opacity="0.32" d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" />
+      <path d="M15 2v5h5l-5-5Z" />
+      <path d="M8.6 14.6a1 1 0 0 1 1.4-1.4l1.3 1.3 3.1-3.1a1 1 0 1 1 1.4 1.4l-3.8 3.8a1 1 0 0 1-1.4 0l-2-2Z" />
+    </svg>
+  );
+}
+
 export function SunIcon({ className }: IconProps) {
   return (
     <Line className={className}>

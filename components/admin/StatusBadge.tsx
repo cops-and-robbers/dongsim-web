@@ -9,6 +9,7 @@ import {
   REPORT_STATUS_LABEL,
   BUG_STATUS_LABEL,
   REPORT_TYPE_LABEL,
+  REPORT_SOURCE_LABEL,
   labelOf,
 } from "@/lib/admin/format";
 
@@ -107,6 +108,20 @@ export function BugStatusBadge({ status }: { status: string }) {
 
 export function ReportTypeBadge({ type }: { type: string }) {
   return <Pill tone="slate">{labelOf(REPORT_TYPE_LABEL, type)}</Pill>;
+}
+
+const REPORT_SOURCE_TONE: Record<string, Tone> = {
+  GAME_CHAT: "blue",
+  COMMUNITY_POST: "green",
+  COMMUNITY_CHAT: "amber",
+};
+
+export function ReportSourceBadge({ source }: { source: string }) {
+  return (
+    <Pill tone={REPORT_SOURCE_TONE[source] ?? "slate"}>
+      {labelOf(REPORT_SOURCE_LABEL, source)}
+    </Pill>
+  );
 }
 
 export function SocialBadge({ social }: { social: string }) {

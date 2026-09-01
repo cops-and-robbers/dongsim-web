@@ -25,20 +25,6 @@ function RolePattern({ tone }: { tone: "blue" | "green" }) {
       aria-hidden="true"
     >
       <defs>
-        <pattern
-          id={`cs-grid-${tone}`}
-          width="28"
-          height="28"
-          patternUnits="userSpaceOnUse"
-        >
-          <path
-            d="M 28 0 L 0 0 0 28"
-            fill="none"
-            stroke={color}
-            strokeWidth="0.5"
-            className="opacity-25 dark:opacity-15"
-          />
-        </pattern>
         <symbol id={`cs-sp-${tone}`} viewBox="0 0 28 28">
           <path d={SHOEPRINT_PATH} fill={color} />
         </symbol>
@@ -73,7 +59,6 @@ function RolePattern({ tone }: { tone: "blue" | "green" }) {
           />
         </radialGradient>
       </defs>
-      <rect width="400" height="300" fill={`url(#cs-grid-${tone})`} />
       {tone === "blue" ? (
         <g>
           <use
@@ -163,13 +148,14 @@ function RoleCard({
   const accentText = isPolice
     ? "text-brand-blue"
     : "text-emerald-700 dark:text-brand-green";
-  const accentBar = isPolice ? "bg-brand-blue" : "bg-brand-green";
+  // 팀 색으로 채워진 무대 - 위가 또렷하고 아래로 갈수록 카드 배경에 섞인다
   const bgTint = isPolice
-    ? "from-brand-blue-bg via-white to-white dark:from-app-black-900 dark:via-app-black dark:to-app-black"
-    : "from-emerald-50 via-white to-white dark:from-app-black-900 dark:via-app-black dark:to-app-black";
+    ? "from-brand-blue-lighter/45 via-brand-blue-bg to-white dark:from-app-black-900 dark:via-app-black dark:to-app-black"
+    : "from-emerald-100/70 via-emerald-50 to-white dark:from-app-black-900 dark:via-app-black dark:to-app-black";
+  // 선택된 카드만 팀 색이 옅게 도는 얇은 테두리
   const selectedRing = isPolice
-    ? "ring-2 ring-brand-blue dark:ring-brand-blue"
-    : "ring-2 ring-emerald-500 dark:ring-brand-green";
+    ? "ring-1 ring-brand-blue/50 dark:ring-brand-blue/45"
+    : "ring-1 ring-emerald-500/50 dark:ring-brand-green/40";
   const idleRing = "ring-1 ring-slate-200 dark:ring-white/10";
 
   return (
@@ -182,8 +168,6 @@ function RoleCard({
         isSelected ? selectedRing : idleRing
       }`}
     >
-      <div className={`h-1 w-full ${accentBar}`} aria-hidden="true" />
-
       <div
         className={`relative flex aspect-4/3 items-end justify-center overflow-hidden bg-linear-to-b ${bgTint}`}
       >

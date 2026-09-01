@@ -11,6 +11,7 @@ export const AdminUserQuery = graphql`
       termsOfServiceAgreed
       privacyPolicyAgreed
       locationTermsAgreed
+      allowMarketingPush
       createdAt
       device {
         deviceType

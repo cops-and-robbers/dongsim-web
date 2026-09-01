@@ -1,0 +1,95 @@
+{
+  "members": [
+    {
+      "name": "홍의민",
+      "role": "Frontend",
+      "photos": ["/credits/FE-Hong1.jpg", "/credits/FE-Hong2.jpg"],
+      "links": [
+        { "type": "github", "url": "https://github.com/EM-H20" },
+        { "type": "instagram", "url": "https://www.instagram.com/e_m_hong" },
+        { "type": "linkedin", "url": "https://www.linkedin.com/in/eui-min-hong" }
+      ]
+    },
+    {
+      "name": "박찬빈",
+      "role": "Frontend",
+      "photos": [
+        "/credits/FE-Park1.jpeg",
+        "/credits/FE-Park2.jpeg",
+        "/credits/FE-Park3.jpeg",
+        "/credits/FE-Park4.jpeg"
+      ],
+      "links": [{ "type": "github", "url": "https://github.com/INSANE-P" }]
+    },
+    {
+      "name": "이창희",
+      "role": "Backend",
+      "photos": ["/credits/BE-Lee.jpeg"],
+      "links": [
+        { "type": "github", "url": "https://github.com/chxghee" },
+        { "type": "instagram", "url": "https://www.instagram.com/chxghee" }
+      ]
+    },
+    {
+      "name": "정상희",
+      "role": "Backend",
+      "photos": ["/credits/BE-JEONG.jpeg"],
+      "links": [
+        { "type": "github", "url": "https://github.com/SANGHEEJEONG" },
+        { "type": "instagram", "url": "https://www.instagram.com/shar_o.o_" }
+      ]
+    },
+    {
+      "name": "황혜림",
+      "role": "Backend",
+      "photos": ["/credits/BE-HWANG.jpg"],
+      "links": [
+        { "type": "github", "url": "https://github.com/HyerimH" },
+        { "type": "instagram", "url": "https://www.instagram.com/h._xelim" }
+      ]
+    },
+    {
+      "name": "윤지희",
+      "role": "Design",
+      "photos": ["/credits/DESIGN-YOON1.jpeg", "/credits/DESIGN-YOON2.jpeg"],
+      "links": [
+        { "type": "github", "url": "https://github.com/jihee127" },
+        { "type": "instagram", "url": "https://www.instagram.com/jihee_o4" },
+        { "type": "blog", "url": "https://m.blog.naver.com/chic_sara" }
+      ]
+    },
+    {
+      "name": "김다임",
+      "role": "Design",
+      "photos": ["/credits/DESIGN-KIM1.png", "/credits/DESIGN-KIM2.jpeg"],
+      "links": [
+        { "type": "instagram", "url": "https://www.instagram.com/daimmmmi" },
+        { "type": "linkedin", "url": "https://www.linkedin.com/in/daim-kim" }
+      ]
+    },
+    {
+      "name": "최유정",
+      "role": "Marketing",
+      "photos": ["/credits/MKT-Choi.jpeg"],
+      "links": []
+    }
+  ],
+  "helpers": [
+    { "name": "신지훈", "role": "Infra Provision", "tier": "tier4" },
+    { "name": "남해윤", "role": "QA", "tier": "tier2" },
+    { "name": "송혜정", "role": "QA", "tier": "tier2" },
+    { "name": "이진", "role": "QA", "tier": "tier2" },
+    { "name": "안금서", "role": "QA", "tier": "tier1" },
+    { "name": "손건우", "role": "QA", "tier": "tier1" },
+    { "name": "신혜빈", "role": "QA", "tier": "tier1" },
+    { "name": "정창우", "role": "QA", "tier": "tier1" },
+    { "name": "허석준", "role": "QA", "tier": "tier1" },
+    { "name": "서현진", "role": "QA", "tier": "tier1" },
+    { "name": "오동현", "role": "QA", "tier": "tier1" },
+    { "name": "최승훈", "role": "QA", "tier": "tier1" },
+    { "name": "김민욱", "role": "QA", "tier": "tier1" },
+    { "name": "정명준", "role": "QA", "tier": "tier1" },
+    { "name": "강대현", "role": "QA", "tier": "tier1" },
+    { "name": "심 혁", "role": "QA", "tier": "tier1" }
+  ]
+}

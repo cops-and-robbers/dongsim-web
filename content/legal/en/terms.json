@@ -1,10 +1,10 @@
 {
   "title": "Terms of Service",
-  "effectiveDate": "June 29, 2026",
+  "effectiveDate": "September 8, 2026",
   "sections": [
     {
       "heading": "",
-      "content": "Cops and Robbers Terms of Service\nEffective date: June 29, 2026",
+      "content": "Cops and Robbers Terms of Service\nEffective date: September 8, 2026",
       "items": []
     },
     {
@@ -16,20 +16,52 @@
       "heading": "Article 2 (Definitions)",
       "content": "1. \"Service\" means the location-based offline chase game application and related services provided by the Company.",
       "items": [
-        { "text": "2. \"User\" means a member or non-member who uses the Service under these Terms.", "subItems": [] },
-        { "text": "3. \"Member\" means a person who has entered into a service agreement with the Company and has been granted a user account.", "subItems": [] },
-        { "text": "4. \"Game session\" means a single round of play in a game room created by a host.", "subItems": [] },
-        { "text": "5. \"Play area\" means the geographic boundary set by the host for the game.", "subItems": [] },
-        { "text": "6. \"Background location collection\" means collecting a user's location during a game while the app is not shown on screen (screen off, another app in the foreground, and similar states), using the mechanism provided by each operating system (Android Foreground Service, iOS UIBackgroundModes location).", "subItems": [] }
+        {
+          "text": "2. \"User\" means a member or non-member who uses the Service under these Terms.",
+          "subItems": []
+        },
+        {
+          "text": "3. \"Member\" means a person who has entered into a service agreement with the Company and has been granted a user account.",
+          "subItems": []
+        },
+        {
+          "text": "4. \"Game session\" means a single round of play in a game room created by a host.",
+          "subItems": []
+        },
+        {
+          "text": "5. \"Play area\" means the geographic boundary set by the host for the game.",
+          "subItems": []
+        },
+        {
+          "text": "6. \"Background location collection\" means collecting a user's location during a game while the app is not shown on screen (screen off, another app in the foreground, and similar states), using the mechanism provided by each operating system (Android Foreground Service, iOS UIBackgroundModes location).",
+          "subItems": []
+        },
+        {
+          "text": "7. \"Community service\" means the board for finding players to play with, post chat, comments, community notifications and all other features the Company provides for interaction between users.",
+          "subItems": []
+        },
+        {
+          "text": "8. \"Post\" means any content a user creates on the community service, including posts (title and body), comments and chat messages.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 3 (Effect and Amendment of the Terms)",
       "content": "1. These Terms take effect when posted on the Service screen or otherwise announced to users.",
       "items": [
-        { "text": "2. The Company may amend these Terms to the extent that the amendment does not violate applicable laws.", "subItems": [] },
-        { "text": "3. Where the Terms are amended, the Company will state the changes and the effective date and give notice within the Service or through the app stores at least 7 days in advance, or 30 days in advance where the change is unfavourable to users or otherwise material.", "subItems": [] },
-        { "text": "4. A user who does not agree to the amended Terms may stop using the Service and withdraw. Continuing to use the Service after the effective date of the amended Terms is treated as acceptance of the amendment.", "subItems": [] }
+        {
+          "text": "2. The Company may amend these Terms to the extent that the amendment does not violate applicable laws.",
+          "subItems": []
+        },
+        {
+          "text": "3. Where the Terms are amended, the Company will state the changes and the effective date and give notice within the Service or through the app stores at least 7 days in advance, or 30 days in advance where the change is unfavourable to users or otherwise material.",
+          "subItems": []
+        },
+        {
+          "text": "4. A user who does not agree to the amended Terms may stop using the Service and withdraw. Continuing to use the Service after the effective date of the amended Terms is treated as acceptance of the amendment.",
+          "subItems": []
+        }
       ]
     },
     {
@@ -46,22 +78,56 @@
             "e. The applicant does not meet other conditions of use set by the Company."
           ]
         },
-        { "text": "3. At sign-up the Company checks age through an \"I am 14 or older\" confirmation step and blocks registration by children under 14. If it is confirmed that a child under 14 registered by misstating their age, the Company will delete that account and the related information without delay.", "subItems": [] }
+        {
+          "text": "3. At sign-up the Company checks age through an \"I am 14 or older\" confirmation step and blocks registration by children under 14. If it is confirmed that a child under 14 registered by misstating their age, the Company will delete that account and the related information without delay.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 5 (Contents of the Service)",
       "content": "1. The Company provides the following.",
       "items": [
-        { "text": "a. Creating and joining game rooms", "subItems": [] },
-        { "text": "b. Setting the play area and the jail area", "subItems": [] },
-        { "text": "c. Real-time location-based gameplay, including foreground and background location collection", "subItems": [] },
-        { "text": "d. Team chat", "subItems": [] },
-        { "text": "e. Game event notifications", "subItems": [] },
-        { "text": "f. Game statistics on the result screen, such as the user's own route, distance travelled and average speed", "subItems": [] },
-        { "text": "g. Other services the Company develops or provides through partnerships", "subItems": [] },
-        { "text": "2. The details of the Service may change in accordance with the Company's policy.", "subItems": [] },
-        { "text": "3. The Company displays advertising within the Service. Matters relating to advertising identifiers and similar data processed for advertising are governed by the Privacy Policy. The Company may add paid services (in-app purchases) in future, in which case it will give notice in advance and amend these Terms if required.", "subItems": [] }
+        {
+          "text": "a. Creating and joining game rooms",
+          "subItems": []
+        },
+        {
+          "text": "b. Setting the play area and the jail area",
+          "subItems": []
+        },
+        {
+          "text": "c. Real-time location-based gameplay, including foreground and background location collection",
+          "subItems": []
+        },
+        {
+          "text": "d. Team chat",
+          "subItems": []
+        },
+        {
+          "text": "e. Game event notifications",
+          "subItems": []
+        },
+        {
+          "text": "f. Game statistics on the result screen, such as the user's own route, distance travelled and average speed",
+          "subItems": []
+        },
+        {
+          "text": "g. Community service — a board for finding players to play with, post chat, comments and community notifications",
+          "subItems": []
+        },
+        {
+          "text": "h. Other services the Company develops or provides through partnerships",
+          "subItems": []
+        },
+        {
+          "text": "2. The details of the Service may change in accordance with the Company's policy.",
+          "subItems": []
+        },
+        {
+          "text": "3. The Company displays advertising within the Service. Matters relating to advertising identifiers and similar data processed for advertising are governed by the Privacy Policy. The Company may add paid services (in-app purchases) in future, in which case it will give notice in advance and amend these Terms if required.",
+          "subItems": []
+        }
       ]
     },
     {
@@ -77,7 +143,10 @@
             "d. Other cases where the Company determines that it is difficult to provide the Service"
           ]
         },
-        { "text": "3. The Company may change the contents, method of use and hours of the Service, and will give notice of such changes within the Service.", "subItems": [] }
+        {
+          "text": "3. The Company may change the contents, method of use and hours of the Service, and will give notice of such changes within the Service.",
+          "subItems": []
+        }
       ]
     },
     {
@@ -91,160 +160,433 @@
             "b. iOS: collection through the UIBackgroundModes location option, with the blue location indicator shown in the system status bar"
           ]
         },
-        { "text": "3. Background location collection is active only while a game session is in progress (IN_PROGRESS) and stops automatically as soon as the game ends (GAME_OVER).", "subItems": [] },
-        { "text": "4. To use the game features of the Service, a user must consent to location collection, including background collection. If a user does not consent, or revokes or restricts location permission in device settings, core location-based features such as joining a game may be unavailable.", "subItems": [] },
-        { "text": "5. On some Android devices, background location collection may not work reliably because of the operating system's battery optimisation policy. Users may exclude this app from battery optimisation in device settings for a more stable experience.", "subItems": [] },
-        { "text": "6. The Company processes location data only for the purpose of running games and does not use location data for advertising. Data processed by advertising and analytics SDKs is governed by the Privacy Policy.", "subItems": [] },
-        { "text": "7. Details of the collection, use, provision and destruction of location data, and of users' rights, are governed by the separate Location Data Terms and the Privacy Policy.", "subItems": [] }
+        {
+          "text": "3. Background location collection is active only while a game session is in progress (IN_PROGRESS) and stops automatically as soon as the game ends (GAME_OVER).",
+          "subItems": []
+        },
+        {
+          "text": "4. To use the game features of the Service, a user must consent to location collection, including background collection. If a user does not consent, or revokes or restricts location permission in device settings, core location-based features such as joining a game may be unavailable.",
+          "subItems": []
+        },
+        {
+          "text": "5. On some Android devices, background location collection may not work reliably because of the operating system's battery optimisation policy. Users may exclude this app from battery optimisation in device settings for a more stable experience.",
+          "subItems": []
+        },
+        {
+          "text": "6. The Company processes location data only for the purpose of running games and does not use location data for advertising. Data processed by advertising and analytics SDKs is governed by the Privacy Policy.",
+          "subItems": []
+        },
+        {
+          "text": "7. Details of the collection, use, provision and destruction of location data, and of users' rights, are governed by the separate Location Data Terms and the Privacy Policy.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 8 (Obligations of Users)",
       "content": "1. Users must not do any of the following.",
       "items": [
-        { "text": "a. Use another person's information, or register false information", "subItems": [] },
-        { "text": "b. Copy, distribute, promote or commercially exploit information obtained through the Service without the Company's prior consent", "subItems": [] },
-        { "text": "c. Damage the reputation of the Company or a third party, or interfere with their business", "subItems": [] },
-        { "text": "d. Publish or post obscene or violent messages, or other content contrary to public order and morals, on the Service", "subItems": [] },
-        { "text": "e. Interfere with the stable operation of the Service", "subItems": [] },
-        { "text": "f. Use the Service to do anything prohibited by law or by these Terms", "subItems": [] },
-        { "text": "g. Collect, store or disclose other users' personal data", "subItems": [] },
-        { "text": "h. Use the Service or access its systems by abnormal means", "subItems": [] },
-        { "text": "i. Deliberately falsify location data or attempt GPS spoofing during a game", "subItems": [] },
-        { "text": "j. Circumvent or tamper with the Foreground Service notification, or evade the background location collection mechanism by abnormal means", "subItems": [] },
-        { "text": "k. Any other unlawful or improper act", "subItems": [] },
-        { "text": "2. Users must comply with applicable laws, these Terms, the usage guidance and any precautions announced in connection with the Service.", "subItems": [] },
-        { "text": "3. Users are responsible for their own safety while playing.", "subItems": [] }
+        {
+          "text": "a. Use another person's information, or register false information",
+          "subItems": []
+        },
+        {
+          "text": "b. Copy, distribute, promote or commercially exploit information obtained through the Service without the Company's prior consent",
+          "subItems": []
+        },
+        {
+          "text": "c. Damage the reputation of the Company or a third party, or interfere with their business",
+          "subItems": []
+        },
+        {
+          "text": "d. Publish or post obscene or violent messages, or other content contrary to public order and morals, on the Service",
+          "subItems": []
+        },
+        {
+          "text": "e. Interfere with the stable operation of the Service",
+          "subItems": []
+        },
+        {
+          "text": "f. Use the Service to do anything prohibited by law or by these Terms",
+          "subItems": []
+        },
+        {
+          "text": "g. Collect, store or disclose other users' personal data",
+          "subItems": []
+        },
+        {
+          "text": "h. Use the Service or access its systems by abnormal means",
+          "subItems": []
+        },
+        {
+          "text": "i. Deliberately falsify location data or attempt GPS spoofing during a game",
+          "subItems": []
+        },
+        {
+          "text": "j. Circumvent or tamper with the Foreground Service notification, or evade the background location collection mechanism by abnormal means",
+          "subItems": []
+        },
+        {
+          "text": "k. Post commercial advertising or promotional material on the community service, or repeatedly post identical or similar posts (spamming)",
+          "subItems": []
+        },
+        {
+          "text": "l. Solicit meetings unrelated to the Service's intended purpose, such as recruiting players for a game, or post or distribute another person's personal data learned through the community service without that person's consent",
+          "subItems": []
+        },
+        {
+          "text": "m. Any other unlawful or improper act",
+          "subItems": []
+        },
+        {
+          "text": "2. Users must comply with applicable laws, these Terms, the usage guidance and any precautions announced in connection with the Service.",
+          "subItems": []
+        },
+        {
+          "text": "3. Users are responsible for their own safety while playing.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 9 (Precautions When Playing)",
       "content": "1. Before joining a game, users should understand and accept the following.",
       "items": [
-        { "text": "a. The Service is a game that involves real physical movement outdoors.", "subItems": [] },
-        { "text": "b. Users must pay attention to their surroundings and to traffic.", "subItems": [] },
-        { "text": "c. Users should take their own health and fitness into account before taking part.", "subItems": [] },
-        { "text": "d. Users must not enter private property, restricted areas or dangerous places.", "subItems": [] },
-        { "text": "e. When playing at night, users should take particular care with visibility and safety.", "subItems": [] },
-        { "text": "f. Because location is collected in the background during a game, the battery may drain faster than usual. Users should check that they have enough battery before joining.", "subItems": [] },
-        { "text": "2. Users should confirm that they are in a state of health suited to the physical activity involved.", "subItems": [] },
-        { "text": "3. Hosts are responsible for setting a safe play area and should take care not to include dangerous places.", "subItems": [] }
+        {
+          "text": "a. The Service is a game that involves real physical movement outdoors.",
+          "subItems": []
+        },
+        {
+          "text": "b. Users must pay attention to their surroundings and to traffic.",
+          "subItems": []
+        },
+        {
+          "text": "c. Users should take their own health and fitness into account before taking part.",
+          "subItems": []
+        },
+        {
+          "text": "d. Users must not enter private property, restricted areas or dangerous places.",
+          "subItems": []
+        },
+        {
+          "text": "e. When playing at night, users should take particular care with visibility and safety.",
+          "subItems": []
+        },
+        {
+          "text": "f. Because location is collected in the background during a game, the battery may drain faster than usual. Users should check that they have enough battery before joining.",
+          "subItems": []
+        },
+        {
+          "text": "2. Users should confirm that they are in a state of health suited to the physical activity involved.",
+          "subItems": []
+        },
+        {
+          "text": "3. Hosts are responsible for setting a safe play area and should take care not to include dangerous places.",
+          "subItems": []
+        }
+      ]
+    },
+    {
+      "heading": "Article 9-2 (Community Service and Posts)",
+      "content": "1. The Company provides a community service (a board for finding players to play with, post chat, comments and community notifications) so that users can find and communicate with other players.",
+      "items": [
+        {
+          "text": "2. Copyright and other rights in a post belong to the user who created it. By publishing a post, however, the user grants the Company a licence to store, reproduce, modify, transmit to the public, display and distribute the post to the extent necessary to operate, improve and promote the Service.",
+          "subItems": []
+        },
+        {
+          "text": "3. Posts on the recruitment board (including comments) may be visible to users who are not signed in and to visitors to the Company's website. Users should decide whether to publish a post in the knowledge that it may appear outside the app.",
+          "subItems": []
+        },
+        {
+          "text": "4. Even after a user closes their account, posts they have already published remain on the Service and are not deleted; the author's name is anonymised. Before closing their account, users can delete their own posts directly, and any post by a departing user that was still recruiting is marked as closed.",
+          "subItems": []
+        },
+        {
+          "text": "5. Where the Company judges that a post falls under the prohibited acts in Article 8 or breaches applicable law, it may suspend, delete or restrict the display of that post without prior notice. Legal responsibility for a post lies with the user who published it.",
+          "subItems": []
+        },
+        {
+          "text": "6. Users can report posts or chat messages that fall under the prohibited acts using the in-app reporting feature, and the Company will review reports and take the necessary action. The Company applies a zero-tolerance policy to objectionable content and abusive users.",
+          "subItems": []
+        },
+        {
+          "text": "7. Meetups arranged through the community service take place at the users' own initiative, and users must look after their own safety when attending an offline meetup.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 10 (Disclaimer - General)",
       "content": "1. The Company is released from responsibility for providing the Service where it cannot do so because of natural disaster, war, suspension of service by a telecommunications carrier, a technical defect that is difficult to resolve, or other force majeure.",
       "items": [
-        { "text": "2. The Company is not liable for disruption to use of the Service caused by reasons attributable to the user.", "subItems": [] },
-        { "text": "3. The Company is not liable for profits a user expected but failed to obtain through the Service, nor for damage arising from material obtained through the Service.", "subItems": [] },
-        { "text": "4. The Company is not liable for the reliability or accuracy of information, materials or statements posted or transmitted by users.", "subItems": [] },
-        { "text": "5. The Company is not liable in connection with use of the Service provided free of charge, unless applicable law provides otherwise.", "subItems": [] }
+        {
+          "text": "2. The Company is not liable for disruption to use of the Service caused by reasons attributable to the user.",
+          "subItems": []
+        },
+        {
+          "text": "3. The Company is not liable for profits a user expected but failed to obtain through the Service, nor for damage arising from material obtained through the Service.",
+          "subItems": []
+        },
+        {
+          "text": "4. The Company is not liable for the reliability or accuracy of information, materials or statements posted or transmitted by users.",
+          "subItems": []
+        },
+        {
+          "text": "5. The Company's liability in connection with the Service provided free of charge is governed by the proviso to Article 19, Paragraph 1.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 11 (Disclaimer - Location Data and Technical Limits)",
       "content": "Unless there is intent or negligence on the part of the Company, the Company is not liable for problems arising from any of the following.",
       "items": [
-        { "text": "a. Errors, delays or gaps in location data inherent in GPS signals", "subItems": [] },
-        { "text": "b. Inaccurate location data caused by the GPS performance, settings or battery state of the user's device", "subItems": [] },
-        { "text": "c. Reduced service quality in areas with weak GPS signal, such as indoors, underground or in tunnels", "subItems": [] },
-        { "text": "d. Disruption caused by the user's network environment, such as Wi-Fi or mobile data", "subItems": [] },
-        { "text": "e. Gaps, delays or interruption in background location collection caused by the operating system's battery optimisation or background execution policies, or by the user's device settings (for example Android battery optimisation, iOS Low Power Mode, or disabled Background App Refresh)", "subItems": [] },
-        { "text": "f. Interruption of location collection because the user dismissed the Foreground Service notification, or because the system terminated the app due to low memory or similar reasons", "subItems": [] },
-        { "text": "g. Errors, inaccuracy or outages in third-party map services such as Google Maps", "subItems": [] },
-        { "text": "h. Temporary outages caused by server failure, network errors or system maintenance", "subItems": [] },
-        { "text": "i. Disruption caused by device compatibility issues, operating system versions or app versions", "subItems": [] }
+        {
+          "text": "a. Errors, delays or gaps in location data inherent in GPS signals",
+          "subItems": []
+        },
+        {
+          "text": "b. Inaccurate location data caused by the GPS performance, settings or battery state of the user's device",
+          "subItems": []
+        },
+        {
+          "text": "c. Reduced service quality in areas with weak GPS signal, such as indoors, underground or in tunnels",
+          "subItems": []
+        },
+        {
+          "text": "d. Disruption caused by the user's network environment, such as Wi-Fi or mobile data",
+          "subItems": []
+        },
+        {
+          "text": "e. Gaps, delays or interruption in background location collection caused by the operating system's battery optimisation or background execution policies, or by the user's device settings (for example Android battery optimisation, iOS Low Power Mode, or disabled Background App Refresh)",
+          "subItems": []
+        },
+        {
+          "text": "f. Interruption of location collection because the user dismissed the Foreground Service notification, or because the system terminated the app due to low memory or similar reasons",
+          "subItems": []
+        },
+        {
+          "text": "g. Errors, inaccuracy or outages in third-party map services such as Google Maps",
+          "subItems": []
+        },
+        {
+          "text": "h. Temporary outages caused by server failure, network errors or system maintenance",
+          "subItems": []
+        },
+        {
+          "text": "i. Disruption caused by device compatibility issues, operating system versions or app versions",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 12 (Disclaimer - Physical Safety)",
       "content": "1. Unless there is intent or negligence on the part of the Company, the Company is not liable for physical injury, accident or illness suffered by a user while playing. This includes, but is not limited to, the following.",
       "items": [
-        { "text": "a. Injuries such as muscle strain, sprains or fractures arising during physical activity such as running or walking", "subItems": [] },
-        { "text": "b. Injuries from falling, collision or a fall from height", "subItems": [] },
-        { "text": "c. Exhaustion, heatstroke or hypothermia caused by excessive exertion", "subItems": [] },
-        { "text": "d. Aggravation of a pre-existing condition", "subItems": [] },
-        { "text": "e. Allergic reactions, insect bites or injury caused by animals", "subItems": [] },
-        { "text": "f. Medical emergencies such as cardiac arrest or breathing difficulty", "subItems": [] },
-        { "text": "2. Unless there is intent or negligence on the part of the Company, the Company is not liable where a user is involved in or causes a traffic accident while playing.", "subItems": [] },
-        { "text": "3. Unless there is intent or negligence on the part of the Company, the Company is not liable for injury caused by physical collision with a third party while playing.", "subItems": [] },
-        { "text": "4. The Company does not know a user's state of health, fitness level or physical limitations, and is not liable for problems arising from them.", "subItems": [] },
-        { "text": "5. Users should check their own state of health before joining a game and, where necessary, consult a medical professional first.", "subItems": [] }
+        {
+          "text": "a. Injuries such as muscle strain, sprains or fractures arising during physical activity such as running or walking",
+          "subItems": []
+        },
+        {
+          "text": "b. Injuries from falling, collision or a fall from height",
+          "subItems": []
+        },
+        {
+          "text": "c. Exhaustion, heatstroke or hypothermia caused by excessive exertion",
+          "subItems": []
+        },
+        {
+          "text": "d. Aggravation of a pre-existing condition",
+          "subItems": []
+        },
+        {
+          "text": "e. Allergic reactions, insect bites or injury caused by animals",
+          "subItems": []
+        },
+        {
+          "text": "f. Medical emergencies such as cardiac arrest or breathing difficulty",
+          "subItems": []
+        },
+        {
+          "text": "2. Unless there is intent or negligence on the part of the Company, the Company is not liable where a user is involved in or causes a traffic accident while playing.",
+          "subItems": []
+        },
+        {
+          "text": "3. Unless there is intent or negligence on the part of the Company, the Company is not liable for injury caused by physical collision with a third party while playing.",
+          "subItems": []
+        },
+        {
+          "text": "4. The Company does not know a user's state of health, fitness level or physical limitations, and is not liable for problems arising from them.",
+          "subItems": []
+        },
+        {
+          "text": "5. Users should check their own state of health before joining a game and, where necessary, consult a medical professional first.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 13 (Disclaimer - Property and Device Loss)",
       "content": "1. Unless there is intent or negligence on the part of the Company, the Company is not liable for personal belongings lost, stolen or damaged while playing. This includes, but is not limited to, the following.",
       "items": [
-        { "text": "a. Mobile devices such as smartphones and tablets", "subItems": [] },
-        { "text": "b. Personal items such as wallets, keys and identification", "subItems": [] },
-        { "text": "c. Clothing, footwear and accessories", "subItems": [] },
-        { "text": "2. Unless there is intent or negligence on the part of the Company, the Company is not liable for damage to, water ingress into, or failure of a user's device while playing.", "subItems": [] },
-        { "text": "3. The Company is not liable for battery consumption or data usage on a user's device arising from play. Users acknowledge in advance that, because location is collected in the background, the battery may drain faster than usual during a game.", "subItems": [] },
-        { "text": "4. Unless there is intent or negligence on the part of the Company, the Company is not liable for damage caused by a user to a third party's property while playing.", "subItems": [] }
+        {
+          "text": "a. Mobile devices such as smartphones and tablets",
+          "subItems": []
+        },
+        {
+          "text": "b. Personal items such as wallets, keys and identification",
+          "subItems": []
+        },
+        {
+          "text": "c. Clothing, footwear and accessories",
+          "subItems": []
+        },
+        {
+          "text": "2. Unless there is intent or negligence on the part of the Company, the Company is not liable for damage to, water ingress into, or failure of a user's device while playing.",
+          "subItems": []
+        },
+        {
+          "text": "3. The Company is not liable for battery consumption or data usage on a user's device arising from play. Users acknowledge in advance that, because location is collected in the background, the battery may drain faster than usual during a game.",
+          "subItems": []
+        },
+        {
+          "text": "4. Unless there is intent or negligence on the part of the Company, the Company is not liable for damage caused by a user to a third party's property while playing.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 14 (Disclaimer - Environment and External Factors)",
       "content": "Unless there is intent or negligence on the part of the Company, the Company is not liable for problems arising from any of the following.",
       "items": [
-        { "text": "a. Weather conditions such as rain, snow, extreme heat, extreme cold, strong wind or lightning", "subItems": [] },
-        { "text": "b. Terrain, road conditions or obstacles within the play area", "subItems": [] },
-        { "text": "c. Crime, violence or dangerous situations within or near the play area", "subItems": [] },
-        { "text": "d. A user entering private property, a restricted area or a dangerous place", "subItems": [] },
-        { "text": "e. Poor visibility or lack of lighting when playing at night", "subItems": [] },
-        { "text": "f. Encounters with wild animals, stray animals or insects while playing", "subItems": [] }
+        {
+          "text": "a. Weather conditions such as rain, snow, extreme heat, extreme cold, strong wind or lightning",
+          "subItems": []
+        },
+        {
+          "text": "b. Terrain, road conditions or obstacles within the play area",
+          "subItems": []
+        },
+        {
+          "text": "c. Crime, violence or dangerous situations within or near the play area",
+          "subItems": []
+        },
+        {
+          "text": "d. A user entering private property, a restricted area or a dangerous place",
+          "subItems": []
+        },
+        {
+          "text": "e. Poor visibility or lack of lighting when playing at night",
+          "subItems": []
+        },
+        {
+          "text": "f. Encounters with wild animals, stray animals or insects while playing",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 15 (Disclaimer - Disputes Between Users)",
       "content": "1. Unless there is intent or negligence on the part of the Company, the Company is not liable for disputes arising between users. This includes, but is not limited to, the following.",
       "items": [
-        { "text": "a. Disputes about game rules or the outcome of a game", "subItems": [] },
-        { "text": "b. Arguments, abuse or defamation through chat", "subItems": [] },
-        { "text": "c. Physical collision or assault between users", "subItems": [] },
-        { "text": "d. Personal disputes unrelated to the game", "subItems": [] },
-        { "text": "2. Unless there is intent or negligence on the part of the Company, the Company is not liable for disputes about a host's settings for the play area or the game rules.", "subItems": [] },
-        { "text": "3. Unless there is intent or negligence on the part of the Company, the Company is not liable for problems arising from a user's relationship with a third party met through the Service.", "subItems": [] }
+        {
+          "text": "a. Disputes about game rules or the outcome of a game",
+          "subItems": []
+        },
+        {
+          "text": "b. Arguments, abuse or defamation through chat",
+          "subItems": []
+        },
+        {
+          "text": "c. Physical collision or assault between users",
+          "subItems": []
+        },
+        {
+          "text": "d. Disputes arising through community posts, comments or chat, and disputes arising from meetups arranged through the community service",
+          "subItems": []
+        },
+        {
+          "text": "e. Personal disputes unrelated to the game",
+          "subItems": []
+        },
+        {
+          "text": "2. Unless there is intent or negligence on the part of the Company, the Company is not liable for disputes about a host's settings for the play area or the game rules.",
+          "subItems": []
+        },
+        {
+          "text": "3. Unless there is intent or negligence on the part of the Company, the Company is not liable for problems arising in a user's relationship with a third party met through the game or the community service.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 16 (Disclaimer - Third-Party Services)",
       "content": "1. Unless there is intent or negligence on the part of the Company, the Company is not liable for problems arising from errors, outages or changes in third-party services such as social login, maps or push notifications.",
       "items": [
-        { "text": "2. The Company is not responsible for how third-party services handle personal data; the privacy policy of the service concerned applies.", "subItems": [] },
-        { "text": "3. The Company is not liable for restrictions on use of the Service arising from policy changes or service outages at the app stores (Google Play, App Store).", "subItems": [] }
+        {
+          "text": "2. The Company is not responsible for how third-party services handle personal data; the privacy policy of the service concerned applies.",
+          "subItems": []
+        },
+        {
+          "text": "3. The Company is not liable for restrictions on use of the Service arising from policy changes or service outages at the app stores (Google Play, App Store).",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 17 (Disclaimer - Legal Matters)",
       "content": "1. Unless there is intent or negligence on the part of the Company, the Company is not liable for legal consequences arising from a user's breach of applicable law while playing, such as road traffic law, minor offences law or trespass.",
       "items": [
-        { "text": "2. Unless there is intent or negligence on the part of the Company, the Company is not liable for problems arising from a user's infringement of a third party's rights, such as privacy, image rights or property rights, while playing.", "subItems": [] },
-        { "text": "3. The Company is not responsible where a user misuses the Service to follow, stalk or harass another person, and may restrict that user's access to the Service.", "subItems": [] }
+        {
+          "text": "2. Unless there is intent or negligence on the part of the Company, the Company is not liable for problems arising from a user's infringement of a third party's rights, such as privacy, image rights or property rights, while playing.",
+          "subItems": []
+        },
+        {
+          "text": "3. The Company is not responsible where a user misuses the Service to follow, stalk or harass another person, and may restrict that user's access to the Service.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 18 (Disclaimer - Minors)",
       "content": "1. The Company provides the Service to users aged 14 and over, and clearly states within the Service that use by those under 14 is not permitted.",
       "items": [
-        { "text": "2. Downloads through the app stores (Google Play, App Store) are governed by each store operator's policies, and the Company cannot technically block a download at the store itself. The Company is not liable for problems arising because a child under 14 downloaded the app in this way.", "subItems": [] },
-        { "text": "3. The Company is not liable where a child under 14 uses the Service by misstating their age or otherwise circumventing the age restriction.", "subItems": [] },
-        { "text": "4. The Company is not liable for problems arising where a minor uses the Service without the consent of their legal representative.", "subItems": [] },
-        { "text": "5. Responsibility for supervising a minor's use of the Service rests with their legal representative.", "subItems": [] }
+        {
+          "text": "2. Downloads through the app stores (Google Play, App Store) are governed by each store operator's policies, and the Company cannot technically block a download at the store itself. The Company is not liable for problems arising because a child under 14 downloaded the app in this way.",
+          "subItems": []
+        },
+        {
+          "text": "3. The Company is not liable where a child under 14 uses the Service by misstating their age or otherwise circumventing the age restriction.",
+          "subItems": []
+        },
+        {
+          "text": "4. The Company is not liable for problems arising where a minor uses the Service without the consent of their legal representative.",
+          "subItems": []
+        },
+        {
+          "text": "5. Responsibility for supervising a minor's use of the Service rests with their legal representative.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 19 (Compensation for Damages)",
       "content": "1. Where the Company causes damage to a user through a cause attributable to the Company, it is liable to compensate that damage in accordance with applicable law. However, in relation to services provided free of charge, and unless applicable law provides otherwise, the Company is liable only where it has acted with intent or gross negligence.",
       "items": [
-        { "text": "2. Where a user causes damage to the Company by breaching these Terms, the user must compensate that damage.", "subItems": [] },
-        { "text": "3. Where the Company receives a claim for damages, litigation or any other objection from a third party because of a user's unlawful act or breach of these Terms in using the Service, that user must indemnify the Company at their own responsibility and expense; if the Company is not so indemnified, the user must compensate all damage thereby caused to the Company.", "subItems": [] }
+        {
+          "text": "2. Where a user causes damage to the Company by breaching these Terms, the user must compensate that damage.",
+          "subItems": []
+        },
+        {
+          "text": "3. Where the Company receives a claim for damages, litigation or any other objection from a third party because of a user's unlawful act or breach of these Terms in using the Service, that user must indemnify the Company at their own responsibility and expense; if the Company is not so indemnified, the user must compensate all damage thereby caused to the Company.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 20 (Restriction of Use and Termination)",
-      "content": "1. Where a user breaches these Terms or interferes with the normal operation of the Service, the Company may restrict use in stages, by warning, temporary suspension or permanent suspension.",
+      "content": "1. Where a user breaches these Terms or interferes with the normal operation of the Service, the Company may restrict use in stages, by deleting or restricting the display of posts, restricting use of the community service, or by warning, temporary suspension or permanent suspension of the Service.",
       "items": [
         {
           "text": "2. The Company may immediately restrict use or terminate the service agreement without prior notice in any of the following cases.",
@@ -256,14 +598,20 @@
             "e. The user has otherwise breached applicable law or the conditions of use set by the Company."
           ]
         },
-        { "text": "3. A user may apply to terminate the service agreement at any time, and the Company will handle the application in accordance with applicable law.", "subItems": [] }
+        {
+          "text": "3. A user may apply to terminate the service agreement at any time, and the Company will handle the application in accordance with applicable law.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 21 (Governing Law and Jurisdiction)",
       "content": "1. These Terms are governed by and construed in accordance with the laws of the Republic of Korea.",
       "items": [
-        { "text": "2. Jurisdiction over litigation arising from use of the Service follows the provisions on jurisdiction of the Korean Civil Procedure Act.", "subItems": [] }
+        {
+          "text": "2. Jurisdiction over litigation arising from use of the Service follows the provisions on jurisdiction of the Korean Civil Procedure Act.",
+          "subItems": []
+        }
       ]
     },
     {
@@ -278,35 +626,75 @@
             "c. Marketing Communications Consent (for users who have opted in)"
           ]
         },
-        { "text": "3. Matters not provided for in these Terms, and the interpretation of these Terms, follow applicable law and commercial practice.", "subItems": [] },
-        { "text": "4. If any provision of these Terms is held invalid, the validity of the remaining provisions is not affected.", "subItems": [] }
+        {
+          "text": "3. Matters not provided for in these Terms, and the interpretation of these Terms, follow applicable law and commercial practice.",
+          "subItems": []
+        },
+        {
+          "text": "4. If any provision of these Terms is held invalid, the validity of the remaining provisions is not affected.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 23 (Confirmation of User Consent)",
       "content": "Users confirm that they have read and understood these Terms in full, and in particular that they clearly understand and agree to the following.",
       "items": [
-        { "text": "a. The Service is a location-based game that involves real physical movement outdoors.", "subItems": [] },
-        { "text": "b. Responsibility for physical injury, loss of property, legal issues and similar consequences arising from taking part rests with the user, to the extent permitted by applicable law.", "subItems": [] },
-        { "text": "c. The Company's liability is limited within the scope of the disclaimers set out in these Terms.", "subItems": [] },
-        { "text": "d. Users must manage their own safety and pay attention to their surroundings.", "subItems": [] },
-        { "text": "e. Location data is collected for gameplay even while the screen is off or another app is running in the foreground, and users take part on that basis.", "subItems": [] },
-        { "text": "f. Details of the collection and use of location data are governed by the separate Location Data Terms and the Privacy Policy.", "subItems": [] }
+        {
+          "text": "a. The Service is a location-based game that involves real physical movement outdoors.",
+          "subItems": []
+        },
+        {
+          "text": "b. Responsibility for physical injury, loss of property, legal issues and similar consequences arising from taking part rests with the user, to the extent permitted by applicable law.",
+          "subItems": []
+        },
+        {
+          "text": "c. The Company's liability is limited within the scope of the disclaimers set out in these Terms.",
+          "subItems": []
+        },
+        {
+          "text": "d. Users must manage their own safety and pay attention to their surroundings.",
+          "subItems": []
+        },
+        {
+          "text": "e. Location data is collected for gameplay even while the screen is off or another app is running in the foreground, and users take part on that basis.",
+          "subItems": []
+        },
+        {
+          "text": "f. Details of the collection and use of location data are governed by the separate Location Data Terms and the Privacy Policy.",
+          "subItems": []
+        },
+        {
+          "text": "g. Community posts (recruitment posts and comments) may be visible to users who are not signed in and to visitors to the Company's website.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Article 24 (Provisions for Users Outside the Republic of Korea)",
       "content": "These provisions apply to users who reside outside the Republic of Korea and prevail over the other provisions of this document and over the Korean original.",
       "items": [
-        { "text": "1. Minors: the age at which a person ceases to be a minor is determined by the law of the user's country of residence. A minor must obtain the consent of their legal representative before using the Service. The references to \"14 years of age\" in Articles 4 and 18 are read accordingly.", "subItems": [] },
-        { "text": "2. Limitation of liability: the disclaimers and limitations of liability in Articles 10 to 19 do not apply where the Company is liable under mandatory consumer protection law applicable to the user. The Company remains liable for damage caused by its intent or gross negligence, and for damage to life or bodily integrity.", "subItems": [] },
-        { "text": "3. Governing law and jurisdiction: Article 21 does not exclude the application of mandatory consumer protection law of the user's country of residence, nor the user's right to bring proceedings before the courts of that country where such a right is granted by law.", "subItems": [] },
-        { "text": "4. Amendment: an amendment under Article 3 takes effect for such users only where it is reasonable, taking into account the need for the amendment, the appropriateness of its content and other relevant circumstances.", "subItems": [] }
+        {
+          "text": "1. Minors: the age at which a person ceases to be a minor is determined by the law of the user's country of residence. A minor must obtain the consent of their legal representative before using the Service. The references to \"14 years of age\" in Articles 4 and 18 are read accordingly.",
+          "subItems": []
+        },
+        {
+          "text": "2. Limitation of liability: the disclaimers and limitations of liability in Articles 10 to 19 do not apply where the Company is liable under mandatory consumer protection law applicable to the user. The Company remains liable for damage caused by its intent or gross negligence, and for damage to life or bodily integrity.",
+          "subItems": []
+        },
+        {
+          "text": "3. Governing law and jurisdiction: Article 21 does not exclude the application of mandatory consumer protection law of the user's country of residence, nor the user's right to bring proceedings before the courts of that country where such a right is granted by law.",
+          "subItems": []
+        },
+        {
+          "text": "4. Amendment: an amendment under Article 3 takes effect for such users only where it is reasonable, taking into account the need for the amendment, the appropriateness of its content and other relevant circumstances.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "Supplementary Provisions",
-      "content": "These Terms take effect on June 29, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.\n\nContact: copsnro66ers@gmail.com",
+      "content": "These Terms take effect on June 29, 2026.\n\nThese amended Terms (adding the community service provisions and adjusting the liability standards) take effect on September 8, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.\n\nContact: copsnro66ers@gmail.com",
       "items": []
     }
   ]
