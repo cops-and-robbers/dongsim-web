@@ -1,10 +1,10 @@
 {
   "title": "Privacy Policy",
-  "effectiveDate": "June 29, 2026",
+  "effectiveDate": "September 8, 2026",
   "sections": [
     {
       "heading": "",
-      "content": "Cops and Robbers Privacy Policy\nEffective date: June 29, 2026\nLast updated: June 29, 2026",
+      "content": "Cops and Robbers Privacy Policy\nEffective date: September 8, 2026\nLast updated: September 8, 2026",
       "items": []
     },
     {
@@ -16,8 +16,14 @@
       "heading": "1. Data Controller",
       "content": "",
       "items": [
-        { "text": "Service provider: Team 동심지키미 (Dongsim Jikimi)", "subItems": [] },
-        { "text": "Enquiries: copsnro66ers@gmail.com", "subItems": [] }
+        {
+          "text": "Service provider: Team 동심지키미 (Dongsim Jikimi)",
+          "subItems": []
+        },
+        {
+          "text": "Enquiries: copsnro66ers@gmail.com",
+          "subItems": []
+        }
       ]
     },
     {
@@ -32,7 +38,7 @@
         {
           "text": "a. Account data (social login)",
           "subItems": [
-            "Data: social account identifier (Google/Apple), email address, profile information",
+            "Data: social account identifier (Google/Apple), email address, profile information, nickname (up to 20 characters), selected profile icon number",
             "Purpose: identifying and authenticating members, providing the Service",
             "Retention: until the member withdraws",
             "Note: Android supports Google sign-in only; iOS supports both Google and Apple sign-in."
@@ -41,7 +47,7 @@
         {
           "text": "b. Game participation data",
           "subItems": [
-            "Data: nickname (2-10 characters), team selection (police/robber), ready state",
+            "Data: team selection (police/robber), ready state",
             "Purpose: in-game identification, team composition, arrest and chat features, checking game start conditions",
             "Retention: until the game session ends"
           ]
@@ -54,7 +60,7 @@
             "When collected: only while a game session is in progress (IN_PROGRESS), both while the app is on screen (foreground) and while the screen is off or another app is running (background). Collection stops automatically as soon as the game ends (GAME_OVER).",
             "Background collection on Android: collected only through a Foreground Service (foregroundServiceType=\"location\") that displays a persistent notification indicating that a game is in progress.",
             "Background collection on iOS: collected through the UIBackgroundModes location option, with the blue location indicator shown in the system status bar so that users can see that background location is in use.",
-            "Retention: real-time coordinates are discarded immediately after delivery to participants in the same game and deleted from the server as soon as the session ends. Location reveal records (footprints) are deleted as soon as the session ends. Accumulated route and statistics are discarded from the user's device memory as soon as the result screen is closed."
+            "Retention: real-time coordinates are held temporarily on the server in encrypted form during the game for location reveals and game progression, and deleted from the server as soon as the session ends. Location reveal records (footprints) are deleted as soon as the session ends. Accumulated route and statistics are discarded from the user's device memory as soon as the result screen is closed."
           ]
         },
         {
@@ -98,50 +104,127 @@
           ]
         },
         {
+          "text": "i. Community activity data",
+          "subItems": [
+            "Data: recruitment posts (title, body, party size and time, meetup address and venue details, posting country), comments, post chat messages, like and bookmark records, community notification history, reports",
+            "Purpose: providing the community board, post chat, comments and notifications; handling reports and maintaining order in the community",
+            "Retention: a post is kept until its author deletes it; deleting a post also immediately deletes that post's comments, chat messages, likes, bookmarks and notification history. A comment deleted individually is no longer shown to other users, but the original is kept on the server until the post is deleted so that the reply structure is preserved. Posts, comments and chat messages already published are not deleted when the member withdraws; the author's name is anonymised. They can be deleted directly in the app before withdrawal. The community notification history covers the most recent 60 days in the app. Reports are kept for handling and for maintaining order in the community.",
+            "Note: recruitment posts and comments may be visible to users who are not signed in and to visitors to the Company's website."
+          ]
+        },
+        {
           "text": "Note: we use Google AdMob and Firebase Analytics to collect and use advertising identifiers (AAID, IDFA and similar) and usage data for advertising and analytics. Whether personalised advertising is shown depends on the user's consent and device settings. Users can opt out of personalised advertising or reset their advertising identifier as follows.",
           "subItems": [
             "iOS: Settings > Privacy & Security > Tracking (turn off \"Allow Apps to Request to Track\")",
             "Android: Settings > Google > Ads (reset the advertising ID or opt out of personalised ads)"
           ]
         },
-        { "text": "Note: we do not collect Korean resident registration numbers, sensitive data or unique identification information.", "subItems": [] }
+        {
+          "text": "Note: we do not collect Korean resident registration numbers, sensitive data or unique identification information.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "2-2. How Personal Data Is Collected",
       "content": "Cops and Robbers collects personal data in the following ways.",
       "items": [
-        { "text": "a. Through social login (Firebase Authentication - Google/Apple)", "subItems": [] },
-        { "text": "b. Directly from what the user enters (nickname, team selection)", "subItems": [] },
-        { "text": "c. Automatically while the app runs and games are played (GPS location, device information)", "subItems": [] },
-        { "text": "d. Through the background location collection mechanism of each operating system (Android Foreground Service, iOS UIBackgroundModes location)", "subItems": [] },
-        { "text": "e. Through external SDKs (Firebase Authentication, Firebase Cloud Messaging, Firebase Crashlytics, Firebase Remote Config, Firebase Analytics, Google Mobile Ads (AdMob), Google Maps SDK - see section 6 for details)", "subItems": [] }
+        {
+          "text": "a. Through social login (Firebase Authentication - Google/Apple)",
+          "subItems": []
+        },
+        {
+          "text": "b. Directly from what the user enters (nickname, team selection, community posts, comments and chat messages)",
+          "subItems": []
+        },
+        {
+          "text": "c. Automatically while the app runs and games are played (GPS location, device information)",
+          "subItems": []
+        },
+        {
+          "text": "d. Through the background location collection mechanism of each operating system (Android Foreground Service, iOS UIBackgroundModes location)",
+          "subItems": []
+        },
+        {
+          "text": "e. Through external SDKs (Firebase Authentication, Firebase Cloud Messaging, Firebase Crashlytics, Firebase Remote Config, Firebase Analytics, Google Mobile Ads (AdMob), Google Maps SDK - see section 6 for details)",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "3. Legal Basis for Processing",
       "content": "Cops and Robbers processes personal data on the following bases under Korean law.",
       "items": [
-        { "text": "a. The user's consent (at sign-up, for location collection when joining a game, and for marketing communications)", "subItems": [] },
-        { "text": "b. Performance of the contract to provide the Service", "subItems": [] },
-        { "text": "c. Legitimate interests in improving the Service and ensuring its stability", "subItems": [] },
-        { "text": "d. Compliance with applicable law (the Korean Act on the Protection and Use of Location Information, the Korean Personal Information Protection Act and others)", "subItems": [] }
+        {
+          "text": "a. The user's consent (at sign-up, for location collection when joining a game, and for marketing communications)",
+          "subItems": []
+        },
+        {
+          "text": "b. Performance of the contract to provide the Service",
+          "subItems": []
+        },
+        {
+          "text": "c. Legitimate interests in improving the Service and ensuring its stability",
+          "subItems": []
+        },
+        {
+          "text": "d. Compliance with applicable law (the Korean Act on the Protection and Use of Location Information, the Korean Personal Information Protection Act and others)",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "4. Purposes of Use",
       "content": "",
       "items": [
-        { "text": "a. Registering members, verifying identity, and maintaining and managing membership", "subItems": [] },
-        { "text": "b. Joining and running games, identifying players by nickname, forming teams and assigning roles", "subItems": [] },
-        { "text": "c. Providing location-based services (real-time location sharing during play, periodic location reveals, area departure detection, confirming arrival at jail)", "subItems": [] },
-        { "text": "d. Providing core game features (arrests, the jail system, determining when a game ends)", "subItems": [] },
-        { "text": "e. Showing the user's own route, distance travelled and average speed on the game result screen", "subItems": [] },
-        { "text": "f. Providing team chat channels", "subItems": [] },
-        { "text": "g. Sending game event notifications (arrests, location reveals, area departures, game start and end and similar)", "subItems": [] },
-        { "text": "h. Improving service quality and analysing errors", "subItems": [] },
-        { "text": "i. Displaying advertising within the Service and improving features through statistical analysis of usage", "subItems": [] },
-        { "text": "j. Providing marketing information (only where separate consent has been given; see the separate Marketing Communications Consent)", "subItems": [] }
+        {
+          "text": "a. Registering members, verifying identity, and maintaining and managing membership",
+          "subItems": []
+        },
+        {
+          "text": "b. Joining and running games, identifying players by nickname, forming teams and assigning roles",
+          "subItems": []
+        },
+        {
+          "text": "c. Providing location-based services (real-time location sharing during play, periodic location reveals, area departure detection, confirming arrival at jail)",
+          "subItems": []
+        },
+        {
+          "text": "d. Providing core game features (arrests, the jail system, determining when a game ends)",
+          "subItems": []
+        },
+        {
+          "text": "e. Showing the user's own route, distance travelled and average speed on the game result screen",
+          "subItems": []
+        },
+        {
+          "text": "f. Providing team chat channels",
+          "subItems": []
+        },
+        {
+          "text": "g. Sending game event notifications (arrests, location reveals, area departures, game start and end and similar)",
+          "subItems": []
+        },
+        {
+          "text": "h. Improving service quality and analysing errors",
+          "subItems": []
+        },
+        {
+          "text": "i. Displaying advertising within the Service and improving features through statistical analysis of usage",
+          "subItems": []
+        },
+        {
+          "text": "j. Providing marketing information (only where separate consent has been given; see the separate Marketing Communications Consent)",
+          "subItems": []
+        },
+        {
+          "text": "k. Providing the community service (the recruitment board, post chat, comments and community notifications)",
+          "subItems": []
+        },
+        {
+          "text": "l. Receiving and handling reports, and maintaining order in the community",
+          "subItems": []
+        }
       ]
     },
     {
@@ -153,82 +236,278 @@
       "heading": "5-1. Collection and Use of Location Data",
       "content": "",
       "items": [
-        { "text": "Collected by: Team 동심지키미 (Dongsim Jikimi)", "subItems": [] },
-        { "text": "Purpose: running the game (location reveals, area departure detection, the jail system, game statistics)", "subItems": [] },
-        { "text": "Method: automatic collection through the device's GPS sensor", "subItems": [] },
-        { "text": "Interval: real-time collection every 3 to 5 seconds while a game is in progress", "subItems": [] },
-        { "text": "When: only while a game session is in progress (IN_PROGRESS), in both foreground and background states. No location data is collected before a game starts or after it ends (GAME_OVER).", "subItems": [] },
-        { "text": "Limits on background collection: background location collection takes place only within the legitimate purpose of running a game, and no location data is collected at any time while a game is not in progress.", "subItems": [] },
-        { "text": "Retention: deleted immediately when the game session ends. Records confirming collection, use and provision are kept for at least six months under the Korean Location Information Act.", "subItems": [] }
+        {
+          "text": "Collected by: Team 동심지키미 (Dongsim Jikimi)",
+          "subItems": []
+        },
+        {
+          "text": "Purpose: running the game (location reveals, area departure detection, the jail system, game statistics)",
+          "subItems": []
+        },
+        {
+          "text": "Method: automatic collection through the device's GPS sensor",
+          "subItems": []
+        },
+        {
+          "text": "Interval: real-time collection while a game is in progress — updates are driven by changes in the device's position, not by a fixed time interval",
+          "subItems": []
+        },
+        {
+          "text": "When: only while a game session is in progress (IN_PROGRESS), in both foreground and background states. No location data is collected before a game starts or after it ends (GAME_OVER).",
+          "subItems": []
+        },
+        {
+          "text": "Limits on background collection: background location collection takes place only within the legitimate purpose of running a game, and no location data is collected in the background at any time while a game is not in progress. Temporary use of location data in the community service is governed by 5-2.",
+          "subItems": []
+        },
+        {
+          "text": "Retention: deleted immediately when the game session ends. Records confirming collection, use and provision are kept for at least six months under the Korean Location Information Act.",
+          "subItems": []
+        }
       ]
     },
     {
-      "heading": "5-2. Provision of Location Data to Third Parties",
+      "heading": "5-2. Use of Location Data in the Community Service",
+      "content": "In the community service, unlike real-time collection during a game, location data is used temporarily at the moment the user uses a feature, while the app is on screen (foreground).",
+      "items": [
+        {
+          "text": "a. Writing a recruitment post: the meetup coordinates chosen by the user are converted into an administrative-district and lot-number address shown on the post. For the conversion, coordinates in Korea are sent to VWorld, operated by the Korean Ministry of Land, Infrastructure and Transport, and coordinates outside Korea are sent to Geoapify (see Section 7).",
+          "subItems": []
+        },
+        {
+          "text": "b. Sorting the list by distance: the user's current coordinates are used only to calculate distances and are not stored.",
+          "subItems": []
+        },
+        {
+          "text": "The meetup location shown on a post is a place the user chose for the post, not a real-time location. Details are governed by Article 4-2 of the Location Data Terms.",
+          "subItems": []
+        }
+      ]
+    },
+    {
+      "heading": "5-3. Provision of Location Data to Third Parties",
       "content": "To the extent essential to running a game, the Company provides location data only to participants in the same game session, as follows.",
       "items": [
-        { "text": "a. To the police team in the same session, the GPS coordinates of the robber team are provided at the reveal interval set by the host.", "subItems": [] },
-        { "text": "b. To members of the robber team in the same session, the GPS coordinates of fellow robbers are provided at the reveal interval set by the host (the same moment as the reveal to the police team).", "subItems": [] },
-        { "text": "Participants in the same game session who receive location data can view it only while the game is in progress, and all sharing stops as soon as the game ends. The Company imposes on recipients obligations to protect personal data equivalent to those in this Privacy Policy.", "subItems": [] }
+        {
+          "text": "a. To the police team in the same session, the GPS coordinates of the robber team are provided at the reveal interval set by the host.",
+          "subItems": []
+        },
+        {
+          "text": "b. To members of the robber team in the same session, the GPS coordinates of fellow robbers are provided at the reveal interval set by the host (the same moment as the reveal to the police team).",
+          "subItems": []
+        },
+        {
+          "text": "Participants in the same game session who receive location data can view it only while the game is in progress, and all sharing stops as soon as the game ends. The Company imposes on recipients obligations to protect personal data equivalent to those in this Privacy Policy.",
+          "subItems": []
+        }
       ]
     },
     {
-      "heading": "5-3. Planned Features",
+      "heading": "5-4. Planned Features",
       "content": "The Company may introduce the following features in stages. Each is enabled only where the user has given separate consent.",
       "items": [
-        { "text": "a. Local storage of the user's own game records: with the user's consent, their game records (route, statistics and similar) may be kept in local storage on their device for a period, to support a \"replay my past games\" feature.", "subItems": [] },
-        { "text": "b. Server storage and sharing of game records: with the user's consent, their game records may be kept on the Company's servers and routes, MVP information and similar may be shared with other participants.", "subItems": [] },
-        { "text": "These features will be introduced together with a separate consent process, and the corresponding provisions of this Policy will be set out in detail at that time.", "subItems": [] }
+        {
+          "text": "a. Local storage of the user's own game records: with the user's consent, their game records (route, statistics and similar) may be kept in local storage on their device for a period, to support a \"replay my past games\" feature.",
+          "subItems": []
+        },
+        {
+          "text": "b. Server storage and sharing of game records: with the user's consent, their game records may be kept on the Company's servers and routes, MVP information and similar may be shared with other participants.",
+          "subItems": []
+        },
+        {
+          "text": "These features will be introduced together with a separate consent process, and the corresponding provisions of this Policy will be set out in detail at that time.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "6. Automatic Collection Tools (SDKs)",
       "content": "Cops and Robbers uses the following external SDKs.",
       "items": [
-        { "text": "Firebase Authentication", "subItems": ["Purpose: social login authentication (Google, Apple)", "Data: social account identifier, email address, profile information"] },
-        { "text": "Firebase Cloud Messaging (FCM)", "subItems": ["Purpose: sending game event push notifications", "Data: FCM token, device information"] },
-        { "text": "Firebase Crashlytics", "subItems": ["Purpose: analysing app crashes and improving stability", "Data: crash logs, device state (device model, OS version, kernel information), time of error"] },
-        { "text": "Firebase Remote Config", "subItems": ["Purpose: managing app versions and controlling access to the Service", "Data: app instance ID, app version, device information"] },
-        { "text": "Google Maps SDK", "subItems": ["Purpose: displaying maps and visualising areas", "Data: location coordinates (for map rendering)"] },
-        { "text": "Firebase Analytics", "subItems": ["Purpose: statistical analysis of usage and feature improvement", "Data: app instance ID, event logs (app launches, screen views, game progress stages and similar), device information, approximate location from IP address, and on Android the advertising identifier"] },
-        { "text": "Google Mobile Ads (AdMob)", "subItems": ["Purpose: displaying advertising within the Service", "Data: advertising identifier (AAID/IDFA), advertising interaction data, device information, IP address"] },
-        { "text": "Data collected through these SDKs is handled in accordance with each provider's privacy policy.", "subItems": [] }
+        {
+          "text": "Firebase Authentication",
+          "subItems": [
+            "Purpose: social login authentication (Google, Apple)",
+            "Data: social account identifier, email address, profile information"
+          ]
+        },
+        {
+          "text": "Firebase Cloud Messaging (FCM)",
+          "subItems": [
+            "Purpose: sending game event push notifications",
+            "Data: FCM token, device information"
+          ]
+        },
+        {
+          "text": "Firebase Crashlytics",
+          "subItems": [
+            "Purpose: analysing app crashes and improving stability",
+            "Data: crash logs, device state (device model, OS version, kernel information), time of error"
+          ]
+        },
+        {
+          "text": "Firebase Remote Config",
+          "subItems": [
+            "Purpose: managing app versions and controlling access to the Service",
+            "Data: app instance ID, app version, device information"
+          ]
+        },
+        {
+          "text": "Google Maps SDK",
+          "subItems": [
+            "Purpose: displaying maps and visualising areas",
+            "Data: location coordinates (for map rendering)"
+          ]
+        },
+        {
+          "text": "Firebase Analytics",
+          "subItems": [
+            "Purpose: statistical analysis of usage and feature improvement",
+            "Data: app instance ID, event logs (app launches, screen views, game progress stages and similar), device information, approximate location from IP address, and on Android the advertising identifier"
+          ]
+        },
+        {
+          "text": "Google Mobile Ads (AdMob)",
+          "subItems": [
+            "Purpose: displaying advertising within the Service",
+            "Data: advertising identifier (AAID/IDFA), advertising interaction data, device information, IP address"
+          ]
+        },
+        {
+          "text": "Data collected through these SDKs is handled in accordance with each provider's privacy policy.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "7. Provision to Third Parties and Outsourcing",
       "content": "Cops and Robbers outsources the processing of personal data as follows in order to operate the Service.",
       "items": [
-        { "text": "Google LLC (Firebase, AdMob)", "subItems": ["Outsourced work: social login authentication (Google, Apple), sending push notifications, analysing app crashes, analysing usage, displaying advertising", "Retention and use period: until the member withdraws or the outsourcing agreement ends"] },
-        { "text": "The Company imposes on its processors obligations to protect personal data equivalent to those in this Policy, and enters into agreements setting out technical and administrative measures for secure processing.", "subItems": [] }
+        {
+          "text": "Google LLC (Firebase, AdMob)",
+          "subItems": [
+            "Outsourced work: social login authentication (Google, Apple), sending push notifications, analysing app crashes, analysing usage, displaying advertising",
+            "Retention and use period: until the member withdraws or the outsourcing agreement ends"
+          ]
+        },
+        {
+          "text": "VWorld (Korean Ministry of Land, Infrastructure and Transport)",
+          "subItems": [
+            "Outsourced work: converting the meetup coordinates of community recruitment posts into addresses (coordinates within Korea)",
+            "Retention and use period: within the scope of the outsourced work (in accordance with each provider's privacy policy)"
+          ]
+        },
+        {
+          "text": "KEPTAGO LTD (operator of Geoapify)",
+          "subItems": [
+            "Outsourced work: converting the meetup coordinates of community recruitment posts into addresses (coordinates outside Korea)",
+            "Retention and use period: within the scope of the outsourced work (in accordance with each provider's privacy policy)"
+          ]
+        },
+        {
+          "text": "The Company imposes on its processors obligations to protect personal data equivalent to those in this Policy, and enters into agreements setting out technical and administrative measures for secure processing.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "8. Transfer of Personal Data Abroad",
       "content": "Under Article 28-8 of the Korean Personal Information Protection Act, the Company transfers personal data abroad as follows.",
       "items": [
-        { "text": "Recipient: Google LLC", "subItems": [] },
-        { "text": "Contact: https://support.google.com/policies/contact/general_privacy_form", "subItems": [] },
-        { "text": "Destination country: United States", "subItems": [] },
-        { "text": "Time and method of transfer: transmitted over the network (HTTPS) at the time the Service is used", "subItems": [] },
-        { "text": "Data transferred: social account identifier, email address, profile information, FCM token, device identifier, device model, OS version, app crash logs, advertising identifier (AAID/IDFA), app instance ID, event logs (usage data)", "subItems": [] },
-        { "text": "Recipient's purpose: social login authentication, sending push notifications, analysing app crashes, managing app versions, analysing usage, displaying advertising", "subItems": [] },
-        { "text": "Recipient's retention and use period: until the member withdraws or the outsourcing agreement ends", "subItems": [] },
-        { "text": "Safeguards: encryption in transit (HTTPS) and Google's Data Processing and Security Terms", "subItems": [] },
-        { "text": "Users have the right to refuse this transfer abroad. If they do, use of core services based on Firebase may be restricted.", "subItems": [] }
+        {
+          "text": "Recipient: Google LLC",
+          "subItems": []
+        },
+        {
+          "text": "Contact: https://support.google.com/policies/contact/general_privacy_form",
+          "subItems": []
+        },
+        {
+          "text": "Destination country: United States",
+          "subItems": []
+        },
+        {
+          "text": "Time and method of transfer: transmitted over the network (HTTPS) at the time the Service is used",
+          "subItems": []
+        },
+        {
+          "text": "Data transferred: social account identifier, email address, profile information, FCM token, device identifier, device model, OS version, app crash logs, advertising identifier (AAID/IDFA), app instance ID, event logs (usage data)",
+          "subItems": []
+        },
+        {
+          "text": "Recipient's purpose: social login authentication, sending push notifications, analysing app crashes, managing app versions, analysing usage, displaying advertising",
+          "subItems": []
+        },
+        {
+          "text": "Recipient's retention and use period: until the member withdraws or the outsourcing agreement ends",
+          "subItems": []
+        },
+        {
+          "text": "Safeguards: encryption in transit (HTTPS) and Google's Data Processing and Security Terms",
+          "subItems": []
+        },
+        {
+          "text": "Users have the right to refuse this transfer abroad. If they do, use of core services based on Firebase may be restricted.",
+          "subItems": []
+        },
+        {
+          "text": "Separately from the transfer above, data is transferred as follows to convert the meetup coordinates of community recruitment posts into addresses (coordinates outside Korea only).",
+          "subItems": [
+            "Recipient: KEPTAGO LTD (operator of Geoapify)",
+            "Contact: https://www.geoapify.com",
+            "Country: Cyprus",
+            "When and how: sent over the network (HTTPS) when a post is created with a meetup location outside Korea",
+            "Data transferred: meetup coordinates",
+            "Recipient's purpose of use: converting coordinates into an address",
+            "Recipient's retention and use period: within the scope of the outsourced work (in accordance with Geoapify's privacy policy)"
+          ]
+        }
       ]
     },
     {
       "heading": "9. Retention and Destruction",
       "content": "Personal data is destroyed without delay once the purpose of collection and use has been achieved. Data held in electronic file form is deleted in a manner that makes it impossible to restore.",
       "items": [
-        { "text": "a. Account data (social account identifier, email address): deleted immediately on withdrawal", "subItems": [] },
-        { "text": "b. Game session data (nickname, team, state): deleted as soon as the session ends", "subItems": [] },
-        { "text": "c. Real-time location data: discarded immediately after delivery to participants in the same game, and deleted from the server as soon as the session ends (not stored permanently on the Company's servers unless separate consent is given)", "subItems": [] },
-        { "text": "d. Location reveal records (footprints): deleted as soon as the game session ends", "subItems": [] },
-        { "text": "e. Route and statistics accumulated during a game: discarded from the user's device memory as soon as the result screen is closed", "subItems": [] },
-        { "text": "f. Records confirming collection, use and provision of location data: kept for at least six months under Article 16(2) of the Korean Location Information Act, then permanently deleted in an unrecoverable manner", "subItems": [] },
-        { "text": "g. Error analysis data: automatically deleted 90 days after collection", "subItems": [] },
-        { "text": "h. Advertising and analytics data: retained in accordance with Google's policy. Users can reset or delete advertising identifiers at any time in device settings.", "subItems": [] },
+        {
+          "text": "a. Account data (social account identifier, email address): deleted immediately on withdrawal",
+          "subItems": []
+        },
+        {
+          "text": "b. Game session data (nickname, team, state): deleted as soon as the session ends",
+          "subItems": []
+        },
+        {
+          "text": "c. Real-time location data: held temporarily on the server in encrypted form during the game, and deleted from the server as soon as the session ends (not stored permanently on the Company's servers unless separate consent is given)",
+          "subItems": []
+        },
+        {
+          "text": "d. Location reveal records (footprints): deleted as soon as the game session ends",
+          "subItems": []
+        },
+        {
+          "text": "e. Route and statistics accumulated during a game: discarded from the user's device memory as soon as the result screen is closed",
+          "subItems": []
+        },
+        {
+          "text": "f. Records confirming collection, use and provision of location data: kept for at least six months under Article 16(2) of the Korean Location Information Act, then permanently deleted in an unrecoverable manner",
+          "subItems": []
+        },
+        {
+          "text": "g. Error analysis data: automatically deleted 90 days after collection",
+          "subItems": []
+        },
+        {
+          "text": "h. Advertising and analytics data: retained in accordance with Google's policy. Users can reset or delete advertising identifiers at any time in device settings.",
+          "subItems": []
+        },
+        {
+          "text": "i. Community posts: deleted immediately when the author deletes them — the post's comments, chat messages, likes, bookmarks and notifications are deleted with it. They are not deleted on withdrawal; the author's name is anonymised instead (see Section 2, item i)",
+          "subItems": []
+        },
+        {
+          "text": "j. Community notification history: deleted when the related post is deleted",
+          "subItems": []
+        },
         {
           "text": "Where retention is required by law, the data is kept for the relevant period and then destroyed.",
           "subItems": [
@@ -242,40 +521,89 @@
       "heading": "10. Users' Rights and How to Exercise Them",
       "content": "Users may exercise the following rights at any time.",
       "items": [
-        { "text": "a. Request access to, correction of, deletion of, or suspension of the processing of their personal data", "subItems": [] },
-        { "text": "b. Request withdrawal from the Service", "subItems": [] },
+        {
+          "text": "a. Request access to, correction of, deletion of, or suspension of the processing of their personal data",
+          "subItems": []
+        },
+        {
+          "text": "b. Request withdrawal from the Service",
+          "subItems": []
+        },
         {
           "text": "c. Withdraw consent to the use of location data",
           "subItems": [
-            "By revoking the app's location permission in device settings (in-app Settings > Location permission opens the OS permission screen directly)",
+            "By revoking the app's location permission in device settings",
             "By leaving the game or ending the game session (no location data is collected while a game is not in progress)"
           ]
         },
-        { "text": "d. Withdraw consent to marketing communications (turn off the toggle in in-app settings)", "subItems": [] },
-        { "text": "e. Opt out of personalised advertising and reset the advertising identifier (iOS: Settings > Privacy & Security > Tracking / Android: Settings > Google > Ads)", "subItems": [] },
-        { "text": "f. Refuse the transfer of personal data abroad", "subItems": [] },
-        { "text": "Temporary location data processed during a game is discarded automatically when the game ends, so it is not retained even if no deletion request is made. Other rights may be exercised by email (copsnro66ers@gmail.com); the Company will verify identity and take the necessary steps without delay.", "subItems": [] }
+        {
+          "text": "d. Withdraw consent to marketing communications (turn it off under My Page > Terms settings)",
+          "subItems": []
+        },
+        {
+          "text": "e. Opt out of personalised advertising and reset the advertising identifier (iOS: Settings > Privacy & Security > Tracking / Android: Settings > Google > Ads)",
+          "subItems": []
+        },
+        {
+          "text": "f. Refuse the transfer of personal data abroad",
+          "subItems": []
+        },
+        {
+          "text": "g. Delete their own community posts and comments directly (using the in-app delete feature)",
+          "subItems": []
+        },
+        {
+          "text": "Temporary location data processed during a game is discarded automatically when the game ends, so it is not retained even if no deletion request is made. Other rights may be exercised by email (copsnro66ers@gmail.com); the Company will verify identity and take the necessary steps without delay.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "11. Children Under 14",
       "content": "",
       "items": [
-        { "text": "1. Under Article 22-2 of the Korean Personal Information Protection Act and Article 25 of the Korean Act on the Protection and Use of Location Information, Cops and Robbers does not knowingly collect personal data from children under 14.", "subItems": [] },
-        { "text": "2. At sign-up the Company includes an \"I am 14 or older\" confirmation step to block registration by children under 14.", "subItems": [] },
-        { "text": "3. If it is confirmed that a child under 14 registered by misstating their age, the account and personal data are deleted immediately.", "subItems": [] },
-        { "text": "4. A legal representative may request access to, correction of, deletion of, or suspension of the processing of a child's personal data, and the Company will take the necessary steps without delay.", "subItems": [] }
+        {
+          "text": "1. Under Article 22-2 of the Korean Personal Information Protection Act and Article 25 of the Korean Act on the Protection and Use of Location Information, Cops and Robbers does not knowingly collect personal data from children under 14.",
+          "subItems": []
+        },
+        {
+          "text": "2. At sign-up the Company includes an \"I am 14 or older\" confirmation step to block registration by children under 14.",
+          "subItems": []
+        },
+        {
+          "text": "3. If it is confirmed that a child under 14 registered by misstating their age, the account and personal data are deleted immediately.",
+          "subItems": []
+        },
+        {
+          "text": "4. A legal representative may request access to, correction of, deletion of, or suspension of the processing of a child's personal data, and the Company will take the necessary steps without delay.",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "12. Security Measures",
       "content": "Cops and Robbers takes the following measures to keep personal data secure.",
       "items": [
-        { "text": "a. Minimising access rights to personal data", "subItems": [] },
-        { "text": "b. Encryption in transit (HTTPS/WSS)", "subItems": [] },
-        { "text": "c. Protecting location data (deleted immediately when a game session ends; background collection limited to while a game is in progress)", "subItems": [] },
-        { "text": "d. Technical measures that disable the location collection mechanism outside gameplay", "subItems": [] },
-        { "text": "e. Regular security reviews", "subItems": [] },
+        {
+          "text": "a. Minimising access rights to personal data",
+          "subItems": []
+        },
+        {
+          "text": "b. Encryption in transit (HTTPS/WSS)",
+          "subItems": []
+        },
+        {
+          "text": "c. Protecting location data (deleted immediately when a game session ends; background collection limited to while a game is in progress)",
+          "subItems": []
+        },
+        {
+          "text": "d. Technical measures that disable the location collection mechanism outside gameplay",
+          "subItems": []
+        },
+        {
+          "text": "e. Regular security reviews",
+          "subItems": []
+        },
         {
           "text": "f. Countries where data is processed: the Company processes personal data in the countries below, and has taken the security measures above having regard to the data protection regime in each.",
           "subItems": [
@@ -290,18 +618,36 @@
       "heading": "13. Remedies for Infringement",
       "content": "If you need help with a personal data infringement, you can contact the following bodies.",
       "items": [
-        { "text": "Personal Information Dispute Mediation Committee (Korea): 1833-6972 / www.kopico.go.kr", "subItems": [] },
-        { "text": "Privacy Infringement Report Centre (Korea): 118 / privacy.kisa.or.kr", "subItems": [] },
-        { "text": "Supreme Prosecutors' Office Cyber Investigation Division (Korea): 1301 / www.spo.go.kr", "subItems": [] },
-        { "text": "National Police Agency Cyber Bureau (Korea): 182 / cyberbureau.police.go.kr", "subItems": [] }
+        {
+          "text": "Personal Information Dispute Mediation Committee (Korea): 1833-6972 / www.kopico.go.kr",
+          "subItems": []
+        },
+        {
+          "text": "Privacy Infringement Report Centre (Korea): 118 / privacy.kisa.or.kr",
+          "subItems": []
+        },
+        {
+          "text": "Supreme Prosecutors' Office Cyber Investigation Division (Korea): 1301 / www.spo.go.kr",
+          "subItems": []
+        },
+        {
+          "text": "National Police Agency Cyber Bureau (Korea): 182 / cyberbureau.police.go.kr",
+          "subItems": []
+        }
       ]
     },
     {
       "heading": "14. Data Protection Officer",
       "content": "",
       "items": [
-        { "text": "Data protection officer: 동심지키미 (Dongsim Jikimi)", "subItems": [] },
-        { "text": "Enquiries: copsnro66ers@gmail.com", "subItems": [] }
+        {
+          "text": "Data protection officer: 동심지키미 (Dongsim Jikimi)",
+          "subItems": []
+        },
+        {
+          "text": "Enquiries: copsnro66ers@gmail.com",
+          "subItems": []
+        }
       ]
     },
     {
@@ -343,7 +689,7 @@
     },
     {
       "heading": "[Supplementary Provisions]",
-      "content": "This Privacy Policy takes effect on June 29, 2026.\n\nThe Korean text of this Policy is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
+      "content": "This Privacy Policy takes effect on June 29, 2026.\n\nThis amended Policy (reflecting the processing of community activity data and related changes) takes effect on September 8, 2026.\n\nThe Korean text of this Policy is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
       "items": []
     }
   ]
