@@ -1,5 +1,5 @@
 import type { Locale } from "@/lib/i18n/config";
-import type { DemoSceneId, DemoScene, DemoCourseStep } from "@/lib/demo/scenes";
+import type { DemoSceneId, DemoScene, DemoCourse } from "@/lib/demo/scenes";
 
 // 데모 문구 단일 출처. 클라이언트 트리 전체가 쓰므로 messages.ts와 분리해
 // 번들을 작게 유지한다 (chrome.ts와 같은 이유. 페이지 메타만 messages.ts).
@@ -61,13 +61,63 @@ export type DemoAppStrings = {
   /** buttonGoHome / buttonPlayAgain */
   goHome: string;
   playAgain: string;
+  /** zonePlayground / zoneJail */
+  zonePlayground: string;
+  zoneJail: string;
+  /** areaTypeSetByDistance / areaTypeSetByPin */
+  byDistance: string;
+  byPin: string;
+  /** setupPlayground(Pin)Description / setupPrison(Pin)Description */
+  playgroundDesc: string;
+  playgroundPinDesc: string;
+  jailDesc: string;
+  jailPinDesc: string;
+  /** zoneRadiusLabel / zoneRadiusValue / zoneAreaLabel / zoneAreaValue / zoneClearAllPins */
+  radiusLabel: string;
+  radiusValue: (value: string) => string;
+  areaLabel: string;
+  areaValue: (value: string) => string;
+  clearAllPins: string;
+  /** buttonDone / buttonNext / buttonCompleteSetup / buttonConfirm */
+  done: string;
+  next: string;
+  completeSetup: string;
+  confirm: string;
+  /** sessionCreationStep* */
+  basicTitle: string;
+  basicHint: string;
+  reviewTitle: string;
+  reviewHint: string;
+  participantsHint: string;
+  /** gameSettingNoLocationShareWarning / gameSettingPoliceStart* */
+  noShareWarning: string;
+  policePrefix: string;
+  policeSuffix: string;
+  /** unitMinutes / unitPerson */
+  unitMinutes: string;
+  unitPerson: string;
+  /** sectionTitleZone / sectionTitleSettings */
+  sectionZone: string;
+  sectionSettings: string;
+  /** labelParticipantCount / fieldRoundTimeLimit / fieldLocationShareInterval / fieldPoliceDispatchTime */
+  fieldParticipants: string;
+  fieldRound: string;
+  fieldShare: string;
+  fieldPolice: string;
+  /** gameSettingMaxPlayers / gameSettingRoundMinutes */
+  maxPlayers: (n: number) => string;
+  minutesValue: (n: number) => string;
+  /** buttonStartGame */
+  startGame: string;
+  /** errorJailOutsidePlayground */
+  jailOutside: string;
 };
 
 export type DemoCopy = {
   app: DemoAppStrings;
   stage: { h1: [string, string]; lead: string };
   scenes: Record<DemoSceneId, DemoScene>;
-  courseSteps: readonly DemoCourseStep[];
+  courses: readonly DemoCourse[];
   /** 각본 채팅 - 팀원 첫 메시지와 답장 */
   chatScript: { opener: string; reply: string };
   /** 체포 연출 문구 (데모 전용) */
@@ -114,6 +164,43 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       remainingRobbers: "남은 도둑",
       goHome: "홈으로",
       playAgain: "한 번 더",
+      zonePlayground: "플레이그라운드",
+      zoneJail: "감옥",
+      byDistance: "거리로 설정",
+      byPin: "핀으로 설정",
+      playgroundDesc: "게임이 진행될 전체 구역의 크기를 설정해요",
+      playgroundPinDesc: "게임이 진행될 전체 구역을 선택해요",
+      jailDesc: "도둑을 잡아둘 감옥의 위치와 크기를 설정해요",
+      jailPinDesc: "도둑을 잡아둘 감옥 구역을 선택해요",
+      radiusLabel: "반경",
+      radiusValue: (v) => `반경 ${v}`,
+      areaLabel: "면적",
+      areaValue: (v) => `면적 ${v}`,
+      clearAllPins: "전체 해제",
+      done: "완료",
+      next: "다음",
+      completeSetup: "완료하기",
+      confirm: "확인",
+      basicTitle: "기본 정보를 설정해요",
+      basicHint: "게임을 진행할 때, 꼭 필요한 정보들이에요",
+      reviewTitle: "최종 설정을 확인해요",
+      reviewHint: "방 생성 전 마지막으로 설정을 확인할까요?",
+      participantsHint: "최소 2명부터 게임 진행이 가능해요",
+      noShareWarning: "도둑의 위치가 공유되지 않아요!",
+      policePrefix: "도둑 시작 후",
+      policeSuffix: "뒤",
+      unitMinutes: "분",
+      unitPerson: "명",
+      sectionZone: "구역",
+      sectionSettings: "설정",
+      fieldParticipants: "참여 인원",
+      fieldRound: "게임 시간",
+      fieldShare: "도둑 위치 공유 간격",
+      fieldPolice: "경찰 시작 시간",
+      maxPlayers: (n) => `${n}명`,
+      minutesValue: (n) => `${n}분`,
+      startGame: "게임 시작",
+      jailOutside: "감옥이 플레이그라운드 범위를 벗어났어요",
     },
     stage: {
       h1: ["도둑이 지금", "달아나고 있어요"],
@@ -170,12 +257,66 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         intro: "내 전적과 기록이 쌓이는 곳이에요. 곧 열어 둘게요.",
         tasks: [],
       },
+      homeCreate: {
+        id: "homeCreate",
+        title: "홈",
+        intro: "이번엔 내가 방장이 되어 볼 차례예요.",
+        tasks: [{ id: "create-start", label: "방 만들기를 눌러 보세요" }],
+      },
+      createZone: {
+        id: "createZone",
+        title: "플레이그라운드",
+        intro: "게임이 벌어질 구역을 정해요. 핀으로 직접 그릴 수도 있어요.",
+        tasks: [{ id: "create-zone", label: "반경을 조절하고 완료를 눌러 보세요" }],
+      },
+      createJail: {
+        id: "createJail",
+        title: "감옥",
+        intro: "잡힌 도둑이 갇힐 자리예요. 플레이그라운드 안에 있어야 해요.",
+        tasks: [{ id: "create-jail", label: "감옥을 정하고 완료를 눌러 보세요" }],
+      },
+      createBasic: {
+        id: "createBasic",
+        title: "기본 정보",
+        intro: "키패드로 하나씩 정해요. 위의 칩으로 빠르게 더할 수도 있어요.",
+        tasks: [{ id: "create-basic", label: "네 항목을 채우고 완료하기를 눌러 보세요" }],
+      },
+      createConfirm: {
+        id: "createConfirm",
+        title: "최종 확인",
+        intro: "설정이 한눈에 보여요. 행을 누르면 고치러 갈 수 있어요.",
+        tasks: [{ id: "create-confirm", label: "방 만들기를 눌러 보세요" }],
+      },
+      hostWaiting: {
+        id: "hostWaiting",
+        title: "방장 대기실",
+        intro: "친구들이 들어오고 있어요. 모두 준비되면 시작할 수 있어요.",
+        tasks: [{ id: "host-start", label: "모두 준비되면 게임 시작을 눌러 보세요" }],
+      },
     },
-    courseSteps: [
-      { label: "친구 방에 들어가요", short: "방 입장", scenes: ["home", "join"] },
-      { label: "팀을 정하고 준비해요", short: "팀 준비", scenes: ["waiting"] },
-      { label: "발자국을 따라 도둑을 쫓아요", short: "추격", scenes: ["ingame"] },
-      { label: "체포하고 기록 카드를 받아요", short: "체포", scenes: ["victory"] },
+    courses: [
+      {
+        id: "police",
+        title: "경찰로 플레이",
+        steps: [
+          { label: "친구 방에 들어가요", short: "방 입장", scenes: ["home", "join"] },
+          { label: "팀을 정하고 준비해요", short: "팀 준비", scenes: ["waiting"] },
+          { label: "발자국을 따라 도둑을 쫓아요", short: "추격", scenes: ["ingame"] },
+          { label: "체포하고 기록 카드를 받아요", short: "체포", scenes: ["victory"] },
+        ],
+        finish: "victory",
+      },
+      {
+        id: "create",
+        title: "방장으로 플레이",
+        steps: [
+          { label: "방 만들기를 시작해요", short: "홈", scenes: ["homeCreate"] },
+          { label: "구역과 감옥을 그려요", short: "구역", scenes: ["createZone", "createJail"] },
+          { label: "게임 정보를 정해요", short: "설정", scenes: ["createBasic", "createConfirm"] },
+          { label: "친구를 모아 게임을 시작해요", short: "시작", scenes: ["hostWaiting"] },
+        ],
+        finish: "ingame",
+      },
     ],
     chatScript: {
       opener: "북문 쪽에서 발자국 봤어요!",
@@ -221,6 +362,43 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       remainingRobbers: "Remaining Robbers",
       goHome: "Go to home",
       playAgain: "One more time",
+      zonePlayground: "Playground",
+      zoneJail: "Jail",
+      byDistance: "Set by distance",
+      byPin: "Set by pins",
+      playgroundDesc: "Set up the size of the total game area where the game will take place",
+      playgroundPinDesc: "Select the whole area where the game will take place",
+      jailDesc: "Set up the location and size of the jail to hold the Robbers",
+      jailPinDesc: "Select the jail area to hold the thieves",
+      radiusLabel: "Radius",
+      radiusValue: (v) => `Radius ${v}`,
+      areaLabel: "Area",
+      areaValue: (v) => `Area ${v}`,
+      clearAllPins: "Clear all",
+      done: "Confirm",
+      next: "Next",
+      completeSetup: "Done",
+      confirm: "Confirm",
+      basicTitle: "Set up basic information",
+      basicHint: "This information is essential for running the game",
+      reviewTitle: "Verify final settings",
+      reviewHint: "Shall we check the settings one last time before creating the room?",
+      participantsHint: "A minimum of 2 players is required to play the game",
+      noShareWarning: "The Robbers' locations will not be shared!",
+      policePrefix: "After Robbers start,",
+      policeSuffix: "later",
+      unitMinutes: "min",
+      unitPerson: "people",
+      sectionZone: "Game area",
+      sectionSettings: "Settings",
+      fieldParticipants: "Player count",
+      fieldRound: "Game time",
+      fieldShare: "Robber location share interval",
+      fieldPolice: "Cop start time",
+      maxPlayers: (n) => `${n} players`,
+      minutesValue: (n) => `${n} min`,
+      startGame: "Game start",
+      jailOutside: "The jail is out of the playground range",
     },
     stage: {
       h1: ["A robber is", "on the run"],
@@ -277,12 +455,66 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         intro: "Your stats and records live here. Opening soon.",
         tasks: [],
       },
+      homeCreate: {
+        id: "homeCreate",
+        title: "Home",
+        intro: "This time, you're the host.",
+        tasks: [{ id: "create-start", label: "Tap Create room" }],
+      },
+      createZone: {
+        id: "createZone",
+        title: "Playground",
+        intro: "Pick where the game happens. You can also draw it with pins.",
+        tasks: [{ id: "create-zone", label: "Adjust the radius, then tap Confirm" }],
+      },
+      createJail: {
+        id: "createJail",
+        title: "Jail",
+        intro: "Where caught robbers go. It has to fit inside the playground.",
+        tasks: [{ id: "create-jail", label: "Place the jail, then tap Confirm" }],
+      },
+      createBasic: {
+        id: "createBasic",
+        title: "Basic info",
+        intro: "Set each value on the keypad. The chips above add fast.",
+        tasks: [{ id: "create-basic", label: "Fill all four, then tap Done" }],
+      },
+      createConfirm: {
+        id: "createConfirm",
+        title: "Final check",
+        intro: "Everything at a glance. Tap a row to go fix it.",
+        tasks: [{ id: "create-confirm", label: "Tap Create room" }],
+      },
+      hostWaiting: {
+        id: "hostWaiting",
+        title: "Host's room",
+        intro: "Friends are joining. Once everyone's ready, you can start.",
+        tasks: [{ id: "host-start", label: "When all are ready, tap Game start" }],
+      },
     },
-    courseSteps: [
-      { label: "Join a friend's room", short: "Join", scenes: ["home", "join"] },
-      { label: "Pick a team and ready up", short: "Team", scenes: ["waiting"] },
-      { label: "Follow footprints, chase the robber", short: "Chase", scenes: ["ingame"] },
-      { label: "Make the arrest, get your record", short: "Arrest", scenes: ["victory"] },
+    courses: [
+      {
+        id: "police",
+        title: "Play as Cop",
+        steps: [
+          { label: "Join a friend's room", short: "Join", scenes: ["home", "join"] },
+          { label: "Pick a team and ready up", short: "Team", scenes: ["waiting"] },
+          { label: "Follow footprints, chase the robber", short: "Chase", scenes: ["ingame"] },
+          { label: "Make the arrest, get your record", short: "Arrest", scenes: ["victory"] },
+        ],
+        finish: "victory",
+      },
+      {
+        id: "create",
+        title: "Play as Host",
+        steps: [
+          { label: "Start creating a room", short: "Home", scenes: ["homeCreate"] },
+          { label: "Draw the playground and jail", short: "Zone", scenes: ["createZone", "createJail"] },
+          { label: "Set the game rules", short: "Rules", scenes: ["createBasic", "createConfirm"] },
+          { label: "Gather friends and start", short: "Start", scenes: ["hostWaiting"] },
+        ],
+        finish: "ingame",
+      },
     ],
     chatScript: {
       opener: "Saw footprints near the north gate!",
@@ -328,6 +560,43 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       remainingRobbers: "残りの泥棒",
       goHome: "ホームへ",
       playAgain: "もう一度",
+      zonePlayground: "プレイグラウンド",
+      zoneJail: "牢屋",
+      byDistance: "距離で設定",
+      byPin: "ピンで設定",
+      playgroundDesc: "ゲームを行うエリア全体の大きさを設定します",
+      playgroundPinDesc: "ゲームを行うエリア全体を選択します",
+      jailDesc: "泥棒を拘束しておく牢屋の位置と大きさを設定します",
+      jailPinDesc: "泥棒を拘束しておく牢屋エリアを選択します",
+      radiusLabel: "半径",
+      radiusValue: (v) => `半径 ${v}`,
+      areaLabel: "面積",
+      areaValue: (v) => `面積 ${v}`,
+      clearAllPins: "すべて解除",
+      done: "完了",
+      next: "次へ",
+      completeSetup: "完了する",
+      confirm: "確認",
+      basicTitle: "基本情報を設定します",
+      basicHint: "ゲームを進行する際、必ず必要な情報です",
+      reviewTitle: "最終設定を確認します",
+      reviewHint: "待機室を作る前に最後に設定を確認しましょうか",
+      participantsHint: "最低2人からゲームの進行が可能です",
+      noShareWarning: "泥棒の位置が公開されません！",
+      policePrefix: "泥棒スタートから",
+      policeSuffix: "後",
+      unitMinutes: "分",
+      unitPerson: "人",
+      sectionZone: "エリア",
+      sectionSettings: "設定",
+      fieldParticipants: "参加人数",
+      fieldRound: "ゲーム時間",
+      fieldShare: "泥棒の位置公開間隔",
+      fieldPolice: "警察スタート時間",
+      maxPlayers: (n) => `${n}人`,
+      minutesValue: (n) => `${n}分`,
+      startGame: "ゲーム開始",
+      jailOutside: "牢屋がプレイグラウンドの範囲を超えています",
     },
     stage: {
       h1: ["泥棒が今", "逃げています"],
@@ -384,12 +653,66 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         intro: "自分の戦績と記録が集まる場所です。近日公開。",
         tasks: [],
       },
+      homeCreate: {
+        id: "homeCreate",
+        title: "ホーム",
+        intro: "今度は自分がホストになる番です。",
+        tasks: [{ id: "create-start", label: "「待機室を作る」をタップ" }],
+      },
+      createZone: {
+        id: "createZone",
+        title: "プレイグラウンド",
+        intro: "ゲームの舞台を決めます。ピンで自由に描くこともできます。",
+        tasks: [{ id: "create-zone", label: "半径を調整して「完了」をタップ" }],
+      },
+      createJail: {
+        id: "createJail",
+        title: "牢屋",
+        intro: "捕まった泥棒が入る場所です。プレイグラウンドの中に置きます。",
+        tasks: [{ id: "create-jail", label: "牢屋を決めて「完了」をタップ" }],
+      },
+      createBasic: {
+        id: "createBasic",
+        title: "基本情報",
+        intro: "キーパッドで1つずつ決めます。上のチップで素早く足せます。",
+        tasks: [{ id: "create-basic", label: "4項目を埋めて「完了する」をタップ" }],
+      },
+      createConfirm: {
+        id: "createConfirm",
+        title: "最終確認",
+        intro: "設定がひと目で見えます。行をタップすると直しに行けます。",
+        tasks: [{ id: "create-confirm", label: "「待機室を作る」をタップ" }],
+      },
+      hostWaiting: {
+        id: "hostWaiting",
+        title: "ホストの待機室",
+        intro: "友だちが入ってきています。全員準備できたら始められます。",
+        tasks: [{ id: "host-start", label: "全員準備できたら「ゲーム開始」をタップ" }],
+      },
     },
-    courseSteps: [
-      { label: "友だちの部屋に入る", short: "入室", scenes: ["home", "join"] },
-      { label: "チームを決めて準備", short: "準備", scenes: ["waiting"] },
-      { label: "足あとを追って泥棒を追跡", short: "追跡", scenes: ["ingame"] },
-      { label: "逮捕して記録カードをもらう", short: "逮捕", scenes: ["victory"] },
+    courses: [
+      {
+        id: "police",
+        title: "警察でプレイ",
+        steps: [
+          { label: "友だちの部屋に入る", short: "入室", scenes: ["home", "join"] },
+          { label: "チームを決めて準備", short: "準備", scenes: ["waiting"] },
+          { label: "足あとを追って泥棒を追跡", short: "追跡", scenes: ["ingame"] },
+          { label: "逮捕して記録カードをもらう", short: "逮捕", scenes: ["victory"] },
+        ],
+        finish: "victory",
+      },
+      {
+        id: "create",
+        title: "ホストでプレイ",
+        steps: [
+          { label: "部屋づくりを始める", short: "ホーム", scenes: ["homeCreate"] },
+          { label: "エリアと牢屋を描く", short: "エリア", scenes: ["createZone", "createJail"] },
+          { label: "ゲームのルールを決める", short: "設定", scenes: ["createBasic", "createConfirm"] },
+          { label: "友だちを集めてスタート", short: "開始", scenes: ["hostWaiting"] },
+        ],
+        finish: "ingame",
+      },
     ],
     chatScript: {
       opener: "北門のあたりで足あとを見ました！",
