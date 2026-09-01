@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PhoneFrame } from "@/components/game/PhoneMockup";
 import { AppScreen } from "@/components/game/mockups/AppScreen";
-import type { DemoSceneId, DemoTab } from "@/lib/demo/scenes";
+import type { DemoCourseId, DemoSceneId, DemoTab } from "@/lib/demo/scenes";
 import { useDemoCopy } from "./demo-copy";
 import { DemoGuide } from "./DemoGuide";
 import { DemoTabBar } from "./DemoTabBar";
@@ -13,6 +13,9 @@ import { DemoJoinDialog } from "./scenes/DemoJoinDialog";
 import { DemoWaitingRoom } from "./scenes/DemoWaitingRoom";
 import { DemoInGame } from "./scenes/DemoInGame";
 import { DemoVictory } from "./scenes/DemoVictory";
+import { DemoZoneSetup, defaultZone, type ZoneDraft } from "./scenes/DemoZoneSetup";
+import { DemoCreateBasic, defaultSettings, type SettingValues } from "./scenes/DemoCreateBasic";
+import { DemoCreateConfirm } from "./scenes/DemoCreateConfirm";
 import { appColors } from "@/lib/app-tokens";
 
 // 상태바에 실제 시각을 띄우기 위한 라이브 시계.
@@ -31,30 +34,52 @@ function useLiveClock() {
   return clock;
 }
 
-// 만져보는 앱 데모 (#77 1단계). 장면은 데이터(DEMO_SCENES)로 정의하고
+// 홈 탭 안의 게임 흐름. 방 참여(경찰 코스)와 방 만들기 코스가 갈라진다
+type DemoFlow =
+  | "home"
+  | "waiting"
+  | "ingame"
+  | "victory"
+  | "createZone"
+  | "createJail"
+  | "createBasic"
+  | "createConfirm"
+  | "hostWaiting";
+
+// 만져보는 앱 데모 (#77). 장면은 데이터(copy.scenes)로 정의하고
 // 여기서는 어느 장면인지와 해볼 것의 완료만 들고 있는다.
-// 흐름은 앱 그대로다: 홈 → 참여 다이얼로그 → 대기실(팀 이동·준비) → 인게임.
-// [onSceneChange] 로 바깥(여정 목록)에 현재 장면을 알린다.
+// [course] 가 홈에서 열리는 길을 정하고, [onSceneChange] 로 여정에 알린다.
 export function DemoApp({
+  course = "police",
   onSceneChange,
 }: {
+  course?: DemoCourseId;
   onSceneChange?: (sceneId: DemoSceneId) => void;
 }) {
   const [tab, setTab] = useState<DemoTab>("home");
-  // 홈 탭 안의 게임 흐름. 탭을 떠나도 진행은 남는다
-  const [flow, setFlow] = useState<"home" | "waiting" | "ingame" | "victory">(
-    "home",
-  );
+  const [flow, setFlow] = useState<DemoFlow>("home");
   const [joinOpen, setJoinOpen] = useState(false);
   // 대기실에서 정한 팀 - 인게임 참가자 목록이 이어받는다
   const [myTeam, setMyTeam] = useState<"police" | "robber">("robber");
   const [done, setDone] = useState<Set<string>>(new Set());
+  // 방 만들기 초안 - 구역·감옥·기본 정보가 화면 사이를 오간다
+  const [zone, setZone] = useState<ZoneDraft>(() => defaultZone(500));
+  const [jail, setJail] = useState<ZoneDraft>(() => defaultZone(100));
+  const [settings, setSettings] = useState<SettingValues>(() => defaultSettings());
   const screenRef = useRef<HTMLDivElement>(null);
   const clock = useLiveClock();
   const copy = useDemoCopy();
 
   const sceneId: DemoSceneId =
-    tab !== "home" ? tab : joinOpen ? "join" : flow;
+    tab !== "home"
+      ? tab
+      : joinOpen
+        ? "join"
+        : flow === "home"
+          ? course === "create"
+            ? "homeCreate"
+            : "home"
+          : flow;
   const scene = copy.scenes[sceneId];
 
   useEffect(() => {
@@ -99,6 +124,11 @@ export function DemoApp({
           {tab === "home" && flow === "home" && (
             <>
               <DemoHome
+                active={course === "create" ? "create" : "join"}
+                onCreate={() => {
+                  markDone("create-start");
+                  setFlow("createZone");
+                }}
                 onJoin={() => {
                   markDone("home-join");
                   setJoinOpen(true);
@@ -122,6 +152,68 @@ export function DemoApp({
               onTeamMoved={() => markDone("waiting-team")}
               onReady={() => markDone("waiting-ready")}
               onStart={startGame}
+              onLeave={leaveToHome}
+            />
+          )}
+          {tab === "home" && flow === "createZone" && (
+            <DemoZoneSetup
+              variant="playground"
+              initial={zone}
+              onBack={leaveToHome}
+              onDone={(next) => {
+                setZone(next);
+                markDone("create-zone");
+                setFlow("createJail");
+              }}
+            />
+          )}
+          {tab === "home" && flow === "createJail" && (
+            <DemoZoneSetup
+              variant="jail"
+              playground={zone}
+              initial={jail}
+              onBack={() => setFlow("createZone")}
+              onDone={(next) => {
+                setJail(next);
+                markDone("create-jail");
+                setFlow("createBasic");
+              }}
+            />
+          )}
+          {tab === "home" && flow === "createBasic" && (
+            <DemoCreateBasic
+              initial={settings}
+              onBack={() => setFlow("createJail")}
+              onDone={(next) => {
+                setSettings(next);
+                markDone("create-basic");
+                setFlow("createConfirm");
+              }}
+            />
+          )}
+          {tab === "home" && flow === "createConfirm" && (
+            <DemoCreateConfirm
+              zone={zone}
+              jail={jail}
+              settings={settings}
+              onBack={() => setFlow("createBasic")}
+              onEditZone={() => setFlow("createZone")}
+              onEditSettings={() => setFlow("createBasic")}
+              onCreate={() => {
+                markDone("create-confirm");
+                setFlow("hostWaiting");
+              }}
+            />
+          )}
+          {tab === "home" && flow === "hostWaiting" && (
+            <DemoWaitingRoom
+              host
+              onTeamMoved={() => {}}
+              onReady={() => {}}
+              onStart={(team) => {
+                markDone("host-start");
+                startGame(team);
+              }}
               onLeave={leaveToHome}
             />
           )}

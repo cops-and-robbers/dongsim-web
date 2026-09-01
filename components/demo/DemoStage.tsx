@@ -1,28 +1,49 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DemoApp } from "./DemoApp";
 import { DemoCopyProvider } from "./demo-copy";
 import { DEMO_COPY } from "@/lib/demo/copy";
-import { courseProgress, type DemoSceneId } from "@/lib/demo/scenes";
+import {
+  courseProgress,
+  type DemoCourseId,
+  type DemoSceneId,
+} from "@/lib/demo/scenes";
 import type { Locale } from "@/lib/i18n/config";
 
-// 데모 무대 - 왼쪽 소개 글·여정 목록, 오른쪽 폰. 여정은 코스 데이터에서
-// 나오고 데모 진행에 따라 실시간으로 채워진다. 코스가 늘어나면
-// 이 상태를 선택 UI에 물리기만 하면 된다.
+// 데모 무대 - 왼쪽 소개 글·코스 선택·여정 목록, 오른쪽 폰.
+// 코스를 고르면 여정과 폰 흐름이 통째로 갈아끼워지고,
+// 여정은 데모 진행에 따라 실시간으로 채워진다.
 export function DemoStage({ locale = "ko" }: { locale?: Locale }) {
   const copy = DEMO_COPY[locale];
-  const steps = copy.courseSteps;
+  const [courseId, setCourseId] = useState<DemoCourseId>("police");
   const [progress, setProgress] = useState({ step: 0, finished: false });
+  const course = useMemo(
+    () => copy.courses.find((c) => c.id === courseId) ?? copy.courses[0],
+    [copy, courseId],
+  );
+  const steps = course.steps;
 
   const handleSceneChange = useCallback(
     (sceneId: DemoSceneId) => {
-      const next = courseProgress(steps, sceneId);
-      // 코스 밖 장면(커뮤니티·마이 탭)은 직전 진행을 그대로 둔다
-      if (next.step !== -1) setProgress(next);
+      const next = courseProgress(course, sceneId);
+      // 코스 밖 장면(커뮤니티·마이 탭)은 직전 진행을 그대로 둔다.
+      // 완주 장면은 단계 목록 밖에 있어도(방 만들기의 인게임 진입) 반영한다
+      if (next.step === -1 && !next.finished) return;
+      setProgress({
+        step: next.step === -1 ? course.steps.length - 1 : next.step,
+        finished: next.finished,
+      });
     },
-    [steps],
+    [course],
   );
+
+  const selectCourse = (id: DemoCourseId) => {
+    if (id === courseId) return;
+    setCourseId(id);
+    // 폰은 key 로 새로 시작하므로 여정도 처음으로 되돌린다
+    setProgress({ step: 0, finished: false });
+  };
 
   const stepState = (i: number) => {
     if (progress.finished || i < progress.step) return "done" as const;
@@ -62,8 +83,29 @@ export function DemoStage({ locale = "ko" }: { locale?: Locale }) {
           {copy.stage.lead}
         </p>
 
+        {/* 코스 선택 - 고르면 여정과 폰이 그 경험으로 바뀐다 */}
+        <div className="mt-5 flex justify-center gap-2 lg:justify-start">
+          {copy.courses.map((c) => {
+            const selected = c.id === courseId;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => selectCourse(c.id)}
+                className={`rounded-full border px-4 py-1.5 text-[13px] font-semibold transition-colors ${
+                  selected
+                    ? "border-brand-blue bg-brand-blue text-white dark:border-brand-green dark:bg-brand-green dark:text-slate-900"
+                    : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
+                }`}
+              >
+                {c.title}
+              </button>
+            );
+          })}
+        </div>
+
         {/* 여정 - 데스크톱은 세로 목록 */}
-        <ol className="mt-10 hidden flex-col gap-5 lg:flex">
+        <ol className="mt-8 hidden flex-col gap-5 lg:flex">
           {steps.map((item, i) => {
             const state = stepState(i);
             return (
@@ -132,7 +174,8 @@ export function DemoStage({ locale = "ko" }: { locale?: Locale }) {
           모바일 말풍선은 흐름 안에 있어서 따로 비울 필요가 없다 */}
       <div className="flex min-h-0 flex-1 items-center justify-center pt-6 lg:pt-0 lg:pr-64 xl:pr-72">
         <DemoCopyProvider locale={locale}>
-          <DemoApp onSceneChange={handleSceneChange} />
+          {/* 코스가 바뀌면 폰을 처음부터 새로 시작한다 */}
+          <DemoApp key={courseId} course={courseId} onSceneChange={handleSceneChange} />
         </DemoCopyProvider>
       </div>
     </div>
