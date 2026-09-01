@@ -15,9 +15,13 @@ export type DemoSceneId =
   | "createJail"
   | "createBasic"
   | "createConfirm"
-  | "hostWaiting";
+  | "hostWaiting"
+  // 커뮤니티 코스 (#86)
+  | "homeCommunity"
+  | "communityDetail"
+  | "communityChat";
 
-export type DemoCourseId = "police" | "create";
+export type DemoCourseId = "police" | "create" | "community";
 
 export type DemoTask = { id: string; label: string };
 
@@ -50,8 +54,18 @@ export type DemoCourse = {
 };
 
 // 데모에서 쓰는 방 코드. 참여 다이얼로그에 미리 채워져 있고
-// 대기실 앱바에도 그대로 보인다.
+// 대기실 앱바에도 그대로 보이며, 커뮤니티 채팅의 게임 초대 카드도 같은
+// 코드를 준다 - 어느 길로 와도 같은 방에 닿는 것처럼 보이게.
 export const DEMO_ROOM_CODE = "K9X2QP";
+
+// 데모 방문자의 닉네임. 홈 프로필 카드와 커뮤니티 채팅(참여 알림·내 말풍선)이
+// 같은 사람이어야 하므로 한 곳에서 정한다. 앱이 실제로 만들어 주는 형식이다.
+export const DEMO_NICKNAME = "민첩한괴도5308";
+
+// 커뮤니티 채팅 각본의 타이밍(ms). 인사를 보내면 [답장 지연] 뒤 방장이 답하고,
+// 답장에서 다시 [초대 지연] 뒤 게임 초대 카드가 도착한다.
+export const COMMUNITY_REPLY_DELAY_MS = 1600;
+export const COMMUNITY_INVITE_DELAY_MS = 1800;
 
 // 장면이 코스의 몇 번째 단계인지. 코스 밖 장면(커뮤니티·마이 탭)은 -1 이라
 // 무대가 직전 진행을 그대로 들고 있으면 된다. finish 장면에 닿으면 완주다.

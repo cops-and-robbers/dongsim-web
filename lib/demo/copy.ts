@@ -111,6 +111,80 @@ export type DemoAppStrings = {
   startGame: string;
   /** errorJailOutsidePlayground */
   jailOutside: string;
+  /** pageCommunityTitle / communityScope* / communitySortLatest */
+  communityTitle: string;
+  scopeAll: string;
+  scopeNearby: string;
+  scopeMine: string;
+  sortLatest: string;
+  /** communityCreatePost / comingSoonMessage */
+  createPost: string;
+  comingSoon: string;
+  /** communityStatusRecruiting / communityStatusCompleted / communityHeadcount */
+  statusRecruiting: string;
+  statusCompleted: string;
+  headcount: (current: number, max: number) => string;
+  /** pageCommunityDetailTitle / communityDetailJoinChat / communityDetailShare */
+  detailTitle: string;
+  joinChat: string;
+  share: string;
+  /** communityDetailCommentCount / communityCommentHint */
+  commentCount: (n: number) => string;
+  commentHint: string;
+  /** communityChatInputHint / communityChatSystemJoined */
+  communityChatHint: string;
+  systemJoined: (nickname: string) => string;
+  /** communityChatViewLocation / communityChatMeetingMembers */
+  viewLocation: string;
+  meetingMembers: (current: number, max: number) => string;
+  /** communityChatInvite* (카드) */
+  inviteOpened: string;
+  inviteTitle: (nickname: string, roomTitle: string) => string;
+  inviteCodeLine: (code: string) => string;
+  inviteJoin: string;
+  /** communityChatInviteDialog* (초대장 다이얼로그) */
+  inviteDialogTitle: string;
+  inviteDialogBody: (nickname: string) => string;
+  inviteDialogCodeLabel: string;
+  inviteDialogDecline: string;
+  inviteDialogEnter: string;
+};
+
+// 커뮤니티 코스의 목데이터 (#86). 폰 안에 보이는 내용이라 로케일마다 배경
+// 도시를 옮긴다 (#67 목업과 같은 관례 - en 뉴욕, ja 도쿄).
+export type DemoCommunityPost = {
+  /** 모집중 첫 글만 눌린다. 마감 글은 앱처럼 흐려진다 */
+  status: "recruiting" | "completed";
+  title: string;
+  location: string;
+  /** 모임 일시 - 앱의 communityMeetingAt 형식으로 미리 조립해 둔다 */
+  meetingAt: string;
+  headcount: readonly [number, number];
+  likes: number;
+  scraps: number;
+};
+
+export type DemoCommunityData = {
+  posts: readonly DemoCommunityPost[];
+  /** 첫 모집글의 상세 - 본문과 댓글 */
+  detail: {
+    content: string;
+    comments: readonly {
+      name: string;
+      text: string;
+      time: string;
+      profile: 1 | 2;
+    }[];
+  };
+  /** 채팅 각본 - 방장 인사, 미리 든 내 인사, 방장 답장 순서다 */
+  chat: {
+    /** 모집글 작성자 = 채팅 방장 */
+    host: string;
+    opener: string;
+    /** 입력창에 미리 들어 있는 내 인사 */
+    draft: string;
+    reply: string;
+  };
 };
 
 export type DemoCopy = {
@@ -122,8 +196,10 @@ export type DemoCopy = {
   chatScript: { opener: string; reply: string };
   /** 체포 연출 문구 (데모 전용) */
   caught: string;
-  /** 커뮤니티·마이 탭 자리 문구 */
+  /** 마이 탭 자리 문구 */
   nextUpdate: string;
+  /** 커뮤니티 코스 목데이터 (#86) */
+  community: DemoCommunityData;
 };
 
 export const DEMO_COPY: Record<Locale, DemoCopy> = {
@@ -201,6 +277,34 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       minutesValue: (n) => `${n}분`,
       startGame: "게임 시작",
       jailOutside: "감옥이 플레이그라운드 범위를 벗어났어요",
+      communityTitle: "커뮤니티",
+      scopeAll: "전체",
+      scopeNearby: "우리 동네",
+      scopeMine: "내 모임",
+      sortLatest: "최신순",
+      createPost: "모집글 작성",
+      comingSoon: "준비 중이에요",
+      statusRecruiting: "모집중",
+      statusCompleted: "마감",
+      headcount: (c, m) => `${c}/${m}명`,
+      detailTitle: "모집글",
+      joinChat: "채팅 참여하기",
+      share: "공유",
+      commentCount: (n) => `댓글 ${n}`,
+      commentHint: "댓글을 남겨보세요",
+      communityChatHint: "메시지 보내기",
+      systemJoined: (n) => `${n}님이 참여했어요`,
+      viewLocation: "장소 보기",
+      meetingMembers: (c, m) => `현재 인원 ${c}/${m}명`,
+      inviteOpened: "게임이 열렸어요!",
+      inviteTitle: (n, r) => `${n}님이 [${r}] 방에 초대했어요`,
+      inviteCodeLine: (c) => `초대코드 ${c}`,
+      inviteJoin: "게임 참여",
+      inviteDialogTitle: "게임 초대장",
+      inviteDialogBody: (n) => `${n}님이\n게임에 초대했어요`,
+      inviteDialogCodeLabel: "방 코드",
+      inviteDialogDecline: "거절",
+      inviteDialogEnter: "입장",
     },
     stage: {
       h1: ["도둑이 지금", "달아나고 있어요"],
@@ -248,8 +352,8 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       community: {
         id: "community",
         title: "커뮤니티",
-        intro: "같이 뛸 사람을 모으는 곳이에요. 곧 여기서도 구경할 수 있어요.",
-        tasks: [],
+        intro: "동네 모임이 모이는 곳이에요. 마음에 드는 글을 골라 보세요.",
+        tasks: [{ id: "community-open", label: "맨 위 모집글을 눌러 보세요" }],
       },
       my: {
         id: "my",
@@ -293,6 +397,30 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         intro: "친구들이 들어오고 있어요. 모두 준비되면 시작할 수 있어요.",
         tasks: [{ id: "host-start", label: "모두 준비되면 게임 시작을 눌러 보세요" }],
       },
+      homeCommunity: {
+        id: "homeCommunity",
+        title: "홈",
+        intro: "이번엔 같이 뛸 사람부터 찾아볼까요?",
+        tasks: [{ id: "community-tab", label: "아래 커뮤니티 탭을 눌러 보세요" }],
+      },
+      communityDetail: {
+        id: "communityDetail",
+        title: "모집글",
+        intro: "모임 정보가 한눈에 보여요.",
+        tasks: [
+          { id: "detail-like", label: "좋아요로 마음을 표현해 보세요" },
+          { id: "detail-join", label: "채팅 참여하기를 눌러 보세요" },
+        ],
+      },
+      communityChat: {
+        id: "communityChat",
+        title: "모임 채팅",
+        intro: "방장이 기다리고 있어요.",
+        tasks: [
+          { id: "chat-send", label: "전송 버튼으로 인사를 보내 보세요" },
+          { id: "chat-invite", label: "초대 카드의 게임 참여를 눌러 보세요" },
+        ],
+      },
     },
     courses: [
       {
@@ -317,6 +445,21 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         ],
         finish: "ingame",
       },
+      {
+        id: "community",
+        title: "모임 찾아 플레이",
+        steps: [
+          {
+            label: "커뮤니티에서 모집글을 골라요",
+            short: "커뮤니티",
+            scenes: ["homeCommunity", "community"],
+          },
+          { label: "모집글을 읽고 채팅에 들어가요", short: "모집글", scenes: ["communityDetail"] },
+          { label: "인사하면 게임 초대가 와요", short: "채팅", scenes: ["communityChat"] },
+          { label: "초대 코드로 대기실에 합류해요", short: "합류", scenes: ["waiting"] },
+        ],
+        finish: "waiting",
+      },
     ],
     chatScript: {
       opener: "북문 쪽에서 발자국 봤어요!",
@@ -324,6 +467,61 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
     },
     caught: "체포 성공!",
     nextUpdate: "다음 업데이트에서 열려요",
+    community: {
+      posts: [
+        {
+          status: "recruiting",
+          title: "어린이대공원에서 4시에 뛰실 분",
+          location: "광진구 능동",
+          meetingAt: "9/5 (토) 16:00",
+          headcount: [3, 8],
+          likes: 12,
+          scraps: 4,
+        },
+        {
+          status: "recruiting",
+          title: "한강공원 야간 술래잡기",
+          location: "영등포구 여의도동",
+          meetingAt: "9/6 (일) 19:30",
+          headcount: [5, 10],
+          likes: 8,
+          scraps: 2,
+        },
+        {
+          status: "completed",
+          title: "퇴근 후 한 판, 초보 환영",
+          location: "서초구 반포동",
+          meetingAt: "9/3 (목) 19:00",
+          headcount: [10, 10],
+          likes: 21,
+          scraps: 7,
+        },
+      ],
+      detail: {
+        content:
+          "토요일 오후에 어린이대공원에서 경찰과 도둑 한 판 해요. 정문 분수대 앞에서 모여서 구역 정하고 바로 시작할 거예요. 앱만 설치하고 오시면 나머지는 다 알려드려요. 처음이어도 괜찮아요!",
+        comments: [
+          {
+            name: "달리는치타22",
+            text: "처음 해보는데 껴도 되나요?",
+            time: "09/02 14:10",
+            profile: 1,
+          },
+          {
+            name: "동네보안관",
+            text: "그럼요! 규칙은 만나서 알려드려요",
+            time: "09/02 14:32",
+            profile: 2,
+          },
+        ],
+      },
+      chat: {
+        host: "동네보안관",
+        opener: "어서 오세요! 토요일 4시, 정문 분수대 앞에서 만나요",
+        draft: "안녕하세요! 저도 토요일에 갈게요",
+        reply: "좋아요! 연습 삼아 미리 한 판 열게요",
+      },
+    },
   },
   en: {
     app: {
@@ -399,6 +597,34 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       minutesValue: (n) => `${n} min`,
       startGame: "Game start",
       jailOutside: "The jail is out of the playground range",
+      communityTitle: "Community",
+      scopeAll: "All",
+      scopeNearby: "Nearby",
+      scopeMine: "My meetups",
+      sortLatest: "Latest",
+      createPost: "New post",
+      comingSoon: "Coming soon",
+      statusRecruiting: "Open",
+      statusCompleted: "Closed",
+      headcount: (c, m) => `${c}/${m}`,
+      detailTitle: "Post",
+      joinChat: "Join the chat",
+      share: "Share",
+      commentCount: (n) => `Comments ${n}`,
+      commentHint: "Leave a comment",
+      communityChatHint: "Send a message",
+      systemJoined: (n) => `${n} joined`,
+      viewLocation: "View location",
+      meetingMembers: (c, m) => `${c}/${m} members`,
+      inviteOpened: "The game has started!",
+      inviteTitle: (n, r) => `${n} invited you to [${r}]`,
+      inviteCodeLine: (c) => `Invite code ${c}`,
+      inviteJoin: "Join game",
+      inviteDialogTitle: "Game invitation",
+      inviteDialogBody: (n) => `${n} invited you\nto a game`,
+      inviteDialogCodeLabel: "Room code",
+      inviteDialogDecline: "Decline",
+      inviteDialogEnter: "Enter",
     },
     stage: {
       h1: ["A robber is", "on the run"],
@@ -446,8 +672,8 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       community: {
         id: "community",
         title: "Community",
-        intro: "Find people to play with here. Coming to the demo soon.",
-        tasks: [],
+        intro: "Where neighborhood meetups gather. Pick a post you like.",
+        tasks: [{ id: "community-open", label: "Tap the first post" }],
       },
       my: {
         id: "my",
@@ -491,6 +717,30 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         intro: "Friends are joining. Once everyone's ready, you can start.",
         tasks: [{ id: "host-start", label: "When all are ready, tap Game start" }],
       },
+      homeCommunity: {
+        id: "homeCommunity",
+        title: "Home",
+        intro: "This time, let's find people to run with.",
+        tasks: [{ id: "community-tab", label: "Tap the Community tab below" }],
+      },
+      communityDetail: {
+        id: "communityDetail",
+        title: "Post",
+        intro: "Everything about the meetup at a glance.",
+        tasks: [
+          { id: "detail-like", label: "Tap the like button" },
+          { id: "detail-join", label: "Tap Join the chat" },
+        ],
+      },
+      communityChat: {
+        id: "communityChat",
+        title: "Meetup chat",
+        intro: "The host is waiting for you.",
+        tasks: [
+          { id: "chat-send", label: "Send your hello with the send button" },
+          { id: "chat-invite", label: "Tap Join game on the invite card" },
+        ],
+      },
     },
     courses: [
       {
@@ -515,6 +765,21 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         ],
         finish: "ingame",
       },
+      {
+        id: "community",
+        title: "Join a meetup",
+        steps: [
+          {
+            label: "Pick a post in Community",
+            short: "Browse",
+            scenes: ["homeCommunity", "community"],
+          },
+          { label: "Read the post, join the chat", short: "Post", scenes: ["communityDetail"] },
+          { label: "Say hi and get invited", short: "Chat", scenes: ["communityChat"] },
+          { label: "Enter the room with the code", short: "Join", scenes: ["waiting"] },
+        ],
+        finish: "waiting",
+      },
     ],
     chatScript: {
       opener: "Saw footprints near the north gate!",
@@ -522,6 +787,61 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
     },
     caught: "Arrested!",
     nextUpdate: "Coming in the next update",
+    community: {
+      posts: [
+        {
+          status: "recruiting",
+          title: "Tag at Central Park, 4 PM",
+          location: "Upper West Side",
+          meetingAt: "9/5 (Sat) 16:00",
+          headcount: [3, 8],
+          likes: 12,
+          scraps: 4,
+        },
+        {
+          status: "recruiting",
+          title: "Night tag at Brooklyn Bridge Park",
+          location: "DUMBO, Brooklyn",
+          meetingAt: "9/6 (Sun) 19:30",
+          headcount: [5, 10],
+          likes: 8,
+          scraps: 2,
+        },
+        {
+          status: "completed",
+          title: "After-work round, beginners welcome",
+          location: "Riverside Park",
+          meetingAt: "9/3 (Thu) 19:00",
+          headcount: [10, 10],
+          likes: 21,
+          scraps: 7,
+        },
+      ],
+      detail: {
+        content:
+          "We're playing cops and robbers at Central Park on Saturday afternoon. Meet by the fountain at the main entrance - we'll set the zone and start right away. Just install the app and we'll walk you through the rest. First-timers welcome!",
+        comments: [
+          {
+            name: "RunningCheetah22",
+            text: "Is it okay if it's my first time?",
+            time: "09/02 14:10",
+            profile: 1,
+          },
+          {
+            name: "TownSheriff",
+            text: "Of course! We'll go over the rules when we meet",
+            time: "09/02 14:32",
+            profile: 2,
+          },
+        ],
+      },
+      chat: {
+        host: "TownSheriff",
+        opener: "Welcome! See you Saturday at 4 by the fountain",
+        draft: "Hi! I'll be there on Saturday",
+        reply: "Great! Let's open a practice round right now",
+      },
+    },
   },
   ja: {
     app: {
@@ -597,6 +917,34 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       minutesValue: (n) => `${n}分`,
       startGame: "ゲーム開始",
       jailOutside: "牢屋がプレイグラウンドの範囲を超えています",
+      communityTitle: "コミュニティ",
+      scopeAll: "すべて",
+      scopeNearby: "近所",
+      scopeMine: "マイ募集",
+      sortLatest: "新着順",
+      createPost: "募集を作成",
+      comingSoon: "準備中です",
+      statusRecruiting: "募集中",
+      statusCompleted: "締切",
+      headcount: (c, m) => `${c}/${m}人`,
+      detailTitle: "募集",
+      joinChat: "チャットに参加する",
+      share: "共有",
+      commentCount: (n) => `コメント ${n}`,
+      commentHint: "コメントを残してみましょう",
+      communityChatHint: "メッセージを送る",
+      systemJoined: (n) => `${n}さんが参加しました`,
+      viewLocation: "場所を見る",
+      meetingMembers: (c, m) => `現在 ${c}/${m}名`,
+      inviteOpened: "ゲームが始まりました!",
+      inviteTitle: (n, r) => `${n}さんが[${r}]部屋に招待しました`,
+      inviteCodeLine: (c) => `招待コード ${c}`,
+      inviteJoin: "ゲームに参加",
+      inviteDialogTitle: "ゲーム招待状",
+      inviteDialogBody: (n) => `${n}さんが\nゲームに招待しました`,
+      inviteDialogCodeLabel: "ルームコード",
+      inviteDialogDecline: "拒否",
+      inviteDialogEnter: "入場",
     },
     stage: {
       h1: ["泥棒が今", "逃げています"],
@@ -644,8 +992,8 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       community: {
         id: "community",
         title: "コミュニティ",
-        intro: "一緒に遊ぶ仲間を集める場所です。デモにも近日追加予定。",
-        tasks: [],
+        intro: "近所の集まりが見つかる場所です。気になる募集を選びましょう。",
+        tasks: [{ id: "community-open", label: "一番上の募集をタップ" }],
       },
       my: {
         id: "my",
@@ -689,6 +1037,30 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         intro: "友だちが入ってきています。全員準備できたら始められます。",
         tasks: [{ id: "host-start", label: "全員準備できたら「ゲーム開始」をタップ" }],
       },
+      homeCommunity: {
+        id: "homeCommunity",
+        title: "ホーム",
+        intro: "今度は一緒に走る仲間を探してみましょう。",
+        tasks: [{ id: "community-tab", label: "下のコミュニティタブをタップ" }],
+      },
+      communityDetail: {
+        id: "communityDetail",
+        title: "募集",
+        intro: "集まりの情報がひと目でわかります。",
+        tasks: [
+          { id: "detail-like", label: "いいねをタップ" },
+          { id: "detail-join", label: "「チャットに参加する」をタップ" },
+        ],
+      },
+      communityChat: {
+        id: "communityChat",
+        title: "募集チャット",
+        intro: "ホストが待っています。",
+        tasks: [
+          { id: "chat-send", label: "送信ボタンであいさつを送る" },
+          { id: "chat-invite", label: "招待カードの「ゲームに参加」をタップ" },
+        ],
+      },
     },
     courses: [
       {
@@ -713,6 +1085,21 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         ],
         finish: "ingame",
       },
+      {
+        id: "community",
+        title: "募集から合流",
+        steps: [
+          {
+            label: "コミュニティで募集を選ぶ",
+            short: "募集",
+            scenes: ["homeCommunity", "community"],
+          },
+          { label: "内容を読んでチャットに参加", short: "詳細", scenes: ["communityDetail"] },
+          { label: "あいさつすると招待が届く", short: "チャット", scenes: ["communityChat"] },
+          { label: "招待コードで待機室に合流", short: "合流", scenes: ["waiting"] },
+        ],
+        finish: "waiting",
+      },
     ],
     chatScript: {
       opener: "北門のあたりで足あとを見ました！",
@@ -720,5 +1107,60 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
     },
     caught: "逮捕成功！",
     nextUpdate: "次のアップデートで開放",
+    community: {
+      posts: [
+        {
+          status: "recruiting",
+          title: "代々木公園で16時に走る人",
+          location: "渋谷区 代々木",
+          meetingAt: "9/5 (土) 16:00",
+          headcount: [3, 8],
+          likes: 12,
+          scraps: 4,
+        },
+        {
+          status: "recruiting",
+          title: "多摩川河川敷でナイトケイドロ",
+          location: "世田谷区 二子玉川",
+          meetingAt: "9/6 (日) 19:30",
+          headcount: [5, 10],
+          likes: 8,
+          scraps: 2,
+        },
+        {
+          status: "completed",
+          title: "仕事帰りに一戦、初心者歓迎",
+          location: "港区 芝公園",
+          meetingAt: "9/3 (木) 19:00",
+          headcount: [10, 10],
+          likes: 21,
+          scraps: 7,
+        },
+      ],
+      detail: {
+        content:
+          "土曜の午後、代々木公園でケイドロをします。原宿門の前に集合して、エリアを決めたらすぐ始めます。アプリを入れて来てもらえれば、あとは全部教えます。初めてでも大丈夫です！",
+        comments: [
+          {
+            name: "はしるチーター22",
+            text: "初めてでも参加できますか？",
+            time: "09/02 14:10",
+            profile: 1,
+          },
+          {
+            name: "まちの保安官",
+            text: "もちろんです！ルールは会ってから教えますね",
+            time: "09/02 14:32",
+            profile: 2,
+          },
+        ],
+      },
+      chat: {
+        host: "まちの保安官",
+        opener: "ようこそ！土曜16時、原宿門の前で会いましょう",
+        draft: "こんにちは！土曜、私も行きます",
+        reply: "いいですね！練習に今から1プレイ開きます",
+      },
+    },
   },
 };
