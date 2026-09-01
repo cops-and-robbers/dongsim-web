@@ -17,7 +17,7 @@ export default function HomeSections({ locale }: { locale: Locale }) {
       <HowItWorksSection copy={copy.how} />
       <FeaturesSection copy={copy.features} />
       <MinigameTeaserSection copy={copy.minigame} locale={locale} />
-      <CtaSection copy={copy.finalCta} />
+      <CtaSection copy={copy.finalCta} locale={locale} />
     </>
   );
 }

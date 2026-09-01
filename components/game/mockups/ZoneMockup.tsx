@@ -3,7 +3,7 @@
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { appColors } from "@/lib/app-tokens";
-import { AppScreen } from "./AppScreen";
+import { AppScreen, MOCKUP_VIEW } from "./AppScreen";
 import { FakeMap, ZoneCircle } from "./parts";
 import { MOCKUP_TEXT } from "./text";
 
@@ -15,7 +15,7 @@ import { MOCKUP_TEXT } from "./text";
 // 버튼(40, 라운드 12), 우하단 반경 칩(110x40, 파랑). 슬라이더는 지도 아래
 // 흰 배경 좌우 20 이다 (zone_setting_widget.dart).
 export function ZoneMockup() {
-  const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const { ref, visible } = useScrollAnimation<HTMLDivElement>(MOCKUP_VIEW);
   const t = MOCKUP_TEXT[useLocale()].zone;
 
   return (

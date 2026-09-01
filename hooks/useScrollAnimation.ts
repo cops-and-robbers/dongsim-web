@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>() {
+type ScrollAnimationOptions = {
+  threshold?: number;
+  rootMargin?: string;
+};
+
+export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>({
+  threshold = 0.1,
+  rootMargin = "0px 0px -100px 0px",
+}: ScrollAnimationOptions = {}) {
   const ref = useRef<T | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -19,12 +27,12 @@ export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>() {
           }
         }
       },
-      { threshold: 0.1, rootMargin: "0px 0px -100px 0px" },
+      { threshold, rootMargin },
     );
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [threshold, rootMargin]);
 
   return { ref, visible };
 }

@@ -5,6 +5,10 @@ import { ReactNode, RefObject, useEffect, useRef, useState } from "react";
 // 실기기 세이프 에어리어 (앱 기준 기기 393x852)
 export const STATUS_BAR_INSET = 59;
 
+// 목업 재생 시점 - 프레임이 절반쯤 보일 때 시작한다. 기본값(10%)으로는
+// 사용자가 스크롤로 도착하기 전에 연출이 끝나 버린다.
+export const MOCKUP_VIEW = { threshold: 0.45, rootMargin: "0px" };
+
 // 컨테이너 실제 폭을 재서 앱 원본 좌표계(393)를 프레임에 맞추는 배율을 구한다.
 // CSS 컨테이너 단위는 브라우저·중첩 조건을 타서, 관측값으로 확실하게 건다.
 function useAppScale() {

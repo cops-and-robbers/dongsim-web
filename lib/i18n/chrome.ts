@@ -24,6 +24,7 @@ export type Chrome = {
 const ko: Chrome = {
   nav: [
     { path: "/game", label: "게임 소개" },
+    { path: "/demo", label: "체험하기" },
     { path: "/blog", label: "이야기" },
     { path: "/team", label: "팀 소개" },
   ],
@@ -50,6 +51,7 @@ const ko: Chrome = {
 const en: Chrome = {
   nav: [
     { path: "/game", label: "Game" },
+    { path: "/demo", label: "Try it" },
     { path: "/blog", label: "Stories" },
     { path: "/team", label: "Team" },
   ],
@@ -76,6 +78,7 @@ const en: Chrome = {
 const ja: Chrome = {
   nav: [
     { path: "/game", label: "ゲーム紹介" },
+    { path: "/demo", label: "体験する" },
     { path: "/blog", label: "ストーリー" },
     { path: "/team", label: "チーム紹介" },
   ],

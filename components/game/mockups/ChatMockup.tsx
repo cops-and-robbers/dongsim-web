@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { appColors } from "@/lib/app-tokens";
-import { AppScreen } from "./AppScreen";
+import { AppScreen, MOCKUP_VIEW } from "./AppScreen";
 import {
   Bubble,
   ChatInputField,
@@ -99,7 +99,7 @@ function ChatScreen({ dark, t }: { dark: boolean; t: MockupText["chat"] }) {
 }
 
 export function ChatMockup() {
-  const { ref, visible } = useScrollAnimation<HTMLDivElement>();
+  const { ref, visible } = useScrollAnimation<HTMLDivElement>(MOCKUP_VIEW);
   const t = MOCKUP_TEXT[useLocale()].chat;
 
   return (

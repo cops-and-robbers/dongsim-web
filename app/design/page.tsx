@@ -10,6 +10,16 @@ import Input from "@/components/ui/Input";
 import SectionHeading from "@/components/ui/SectionHeading";
 import UiSection from "@/components/ui/Section";
 import type { BlogPost } from "@/lib/blog/notion";
+import {
+  ChatMockup,
+  CommunityChatMockup,
+  CommunityListMockup,
+  CreateRoomMockup,
+  LocationMockup,
+  PhoneFrame,
+  QrMockup,
+  ZoneMockup,
+} from "@/components/game/PhoneMockup";
 
 // 내부용 스타일가이드 - 디자인 토큰과 UI 프리미티브를 한 페이지에 전시한다.
 // 실제 프로덕션 컴포넌트를 그대로 렌더하므로 코드와 항상 동기화된다.
@@ -238,6 +248,21 @@ export default function DesignPage() {
           hint="ui/Input - 포커스 시 브랜드색 테두리"
         >
           <Input placeholder="닉네임" className="w-64" />
+        </Section>
+
+        <Section
+          title="폰 목업"
+          hint="game/mockups - 앱 실측값 목업. 위 4종은 /game 게재 중, 아래 3종은 v3 출시 대기(#67). 테마를 바꾸면 경찰/도둑 시점이 전환돼요"
+        >
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-4">
+            <PhoneFrame><ZoneMockup /></PhoneFrame>
+            <PhoneFrame><LocationMockup /></PhoneFrame>
+            <PhoneFrame><QrMockup /></PhoneFrame>
+            <PhoneFrame><ChatMockup /></PhoneFrame>
+            <PhoneFrame><CreateRoomMockup /></PhoneFrame>
+            <PhoneFrame><CommunityListMockup /></PhoneFrame>
+            <PhoneFrame><CommunityChatMockup /></PhoneFrame>
+          </div>
         </Section>
 
         <Section
