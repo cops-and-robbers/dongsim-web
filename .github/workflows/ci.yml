@@ -34,6 +34,14 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      # 페이지 구성과 어긋나면 조용히 낡는 목록들 - 로컬에서만 돌리다
+      # main이 초록인 채로 어긋난 적이 있어 CI 에 둔다 (#92)
+      - name: Check ko-only paths
+        run: pnpm run check:ko-only
+
+      - name: Check legal font subsets
+        run: pnpm run check:legal-fonts
+
       - name: Build
         run: pnpm run build
 
