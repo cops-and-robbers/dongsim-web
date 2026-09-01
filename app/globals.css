@@ -868,6 +868,52 @@ body {
 .demo-pulse {
   animation: demoPingRipple 1.6s ease-out infinite;
 }
+/* 구역 반경 슬라이더 (zone_setting_widget.dart의 AppSlider 재현) -
+   채워진 트랙·트랙·썸 색은 인라인 CSS 변수로 받는다 (플레이그라운드 파랑 / 감옥 빨강) */
+.demo-range {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 20px;
+  background: transparent;
+}
+.demo-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--range-fill) var(--range-pct),
+    var(--range-track) var(--range-pct)
+  );
+}
+.demo-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: var(--range-thumb);
+  box-shadow: 0 1px 4px rgba(8, 10, 12, 0.25);
+}
+.demo-range::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--range-track);
+}
+.demo-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--range-fill);
+}
+.demo-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: var(--range-thumb);
+  box-shadow: 0 1px 4px rgba(8, 10, 12, 0.25);
+}
+
 /* 결과 다이얼로그 캐릭터 몸통 - 카드 뒤에 숨었다가 솟아올라 살짝 튕기며 앉는다
    (game_over_result_dialog.dart의 _RiseIn 재현) */
 .demo-rise {
