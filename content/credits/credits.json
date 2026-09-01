@@ -3,7 +3,7 @@
     {
       "name": "홍의민",
       "role": "Frontend",
-      "photos": ["/credits/FE-Hong1.jpeg", "/credits/FE-Hong2.JPG"],
+      "photos": ["/credits/FE-Hong1.jpg", "/credits/FE-Hong2.jpg"],
       "links": [
         { "type": "github", "url": "https://github.com/EM-H20" },
         { "type": "instagram", "url": "https://www.instagram.com/e_m_hong" },
