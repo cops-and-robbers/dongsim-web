@@ -134,9 +134,16 @@ export function DemoApp({
     setTab(next);
   };
 
-  // 인게임·결과는 지도가 상태바 뒤까지 깔리고, 나머지는 흰 상태바다
+  // 결과 화면은 지도가 상태바 뒤까지 깔리고, 인게임은 앱바 색이 상태바까지
+  // 이어진다(앱의 SafeArea 배경과 동일) - 색 없이 두면 노치가 타이머를 가린다.
+  // 나머지 화면은 흰 상태바다.
   const inGameView = (flow === "ingame" || flow === "victory") && tab === "home";
-  const statusBar = inGameView ? undefined : appColors.white;
+  const statusBar =
+    flow === "victory" && tab === "home"
+      ? undefined
+      : inGameView && myTeam === "robber"
+        ? appColors.black900
+        : appColors.white;
   // 도둑 시점은 상태바 뒤가 어두워 시계를 밝은 톤으로 뒤집는다
   const darkStatus = inGameView && myTeam === "robber";
 
