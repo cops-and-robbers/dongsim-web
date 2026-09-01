@@ -12,10 +12,13 @@ import { useDemoCopy } from "../demo-copy";
 // 다음 걸음이 하단 탭이라 둘 다 잠긴다("none").
 export function DemoHome({
   active,
+  profileIcon,
   onCreate,
   onJoin,
 }: {
   active: "create" | "join" | "none";
+  /** 마이페이지에서 고른 프로필 아이콘 - 같은 사람이 이어져 보인다 (#88) */
+  profileIcon: 1 | 2;
   onCreate: () => void;
   onJoin: () => void;
 }) {
@@ -43,7 +46,7 @@ export function DemoHome({
           className="flex h-[56px] shrink-0 items-center gap-[10px] rounded-[12px] px-[24px]"
           style={{ backgroundColor: appColors.white }}
         >
-          <Image src="/app-icons/profile_1.svg" alt="" width={34} height={34} />
+          <Image src={`/app-icons/profile_${profileIcon}.svg`} alt="" width={34} height={34} />
           {/* 앱이 실제로 만들어 주는 형식의 닉네임 - 커뮤니티 채팅과 같은 사람이다 */}
           <span
             className="text-[16px] font-semibold"

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PhoneFrame } from "@/components/game/PhoneMockup";
 import { AppScreen } from "@/components/game/mockups/AppScreen";
@@ -12,6 +11,8 @@ import { DemoHome } from "./scenes/DemoHome";
 import { DemoJoinDialog } from "./scenes/DemoJoinDialog";
 import { DemoWaitingRoom } from "./scenes/DemoWaitingRoom";
 import { DemoInGame } from "./scenes/DemoInGame";
+import { DemoInGameRobber } from "./scenes/DemoInGameRobber";
+import { DemoMyPage } from "./scenes/DemoMyPage";
 import { DemoVictory } from "./scenes/DemoVictory";
 import { DemoZoneSetup, defaultZone, type ZoneDraft } from "./scenes/DemoZoneSetup";
 import { DemoCreateBasic, defaultSettings, type SettingValues } from "./scenes/DemoCreateBasic";
@@ -72,8 +73,11 @@ export function DemoApp({
   const [flow, setFlow] = useState<DemoFlow>("home");
   const [communityFlow, setCommunityFlow] = useState<CommunityFlow>("list");
   const [joinOpen, setJoinOpen] = useState(false);
-  // 대기실에서 정한 팀 - 인게임 참가자 목록이 이어받는다
+  // 대기실에서 정한 팀. 인게임과 결과는 코스가 아니라 이 팀을 따라간다 -
+  // 어느 코스에서든 도둑팀으로 시작하면 도둑 시점이 나온다 (#88)
   const [myTeam, setMyTeam] = useState<"police" | "robber">("robber");
+  // 마이페이지에서 고른 프로필 - 홈 프로필 카드와 같은 값이다
+  const [profileIcon, setProfileIcon] = useState<1 | 2>(1);
   const [done, setDone] = useState<Set<string>>(new Set());
   // 방 만들기 초안 - 구역·감옥·기본 정보가 화면 사이를 오간다
   const [zone, setZone] = useState<ZoneDraft>(() => defaultZone(500));
@@ -96,7 +100,13 @@ export function DemoApp({
               : course === "community"
                 ? "homeCommunity"
                 : "home"
-            : flow;
+            : flow === "waiting" && course === "robber"
+              ? "waitingRobber"
+              : (flow === "ingame" || flow === "victory") && myTeam === "robber"
+                ? flow === "ingame"
+                  ? "ingameRobber"
+                  : "victoryRobber"
+                : flow;
   const scene = copy.scenes[sceneId];
 
   useEffect(() => {
@@ -125,10 +135,10 @@ export function DemoApp({
   };
 
   // 인게임·결과는 지도가 상태바 뒤까지 깔리고, 나머지는 흰 상태바다
-  const statusBar =
-    (flow === "ingame" || flow === "victory") && tab === "home"
-      ? undefined
-      : appColors.white;
+  const inGameView = (flow === "ingame" || flow === "victory") && tab === "home";
+  const statusBar = inGameView ? undefined : appColors.white;
+  // 도둑 시점은 상태바 뒤가 어두워 시계를 밝은 톤으로 뒤집는다
+  const darkStatus = inGameView && myTeam === "robber";
 
   return (
     // 폰 높이를 화면에 맞춘다 - 폭 = 남는 높이 x 9/19 (프레임 비율)
@@ -137,7 +147,7 @@ export function DemoApp({
       style={{ width: "clamp(220px, calc((100dvh - 13rem) * 9 / 19), 300px)" }}
     >
       <DemoGuide scene={scene} done={done} />
-      <PhoneFrame clock={clock}>
+      <PhoneFrame clock={clock} darkStatus={darkStatus}>
         <AppScreen
           playing
           scrollRef={screenRef}
@@ -150,6 +160,7 @@ export function DemoApp({
                 active={
                   course === "create" ? "create" : course === "community" ? "none" : "join"
                 }
+                profileIcon={profileIcon}
                 onCreate={() => {
                   markDone("create-start");
                   setFlow("createZone");
@@ -175,7 +186,9 @@ export function DemoApp({
           {tab === "home" && flow === "waiting" && (
             <DemoWaitingRoom
               onTeamMoved={() => markDone("waiting-team")}
-              onReady={() => markDone("waiting-ready")}
+              onReady={() =>
+                markDone(course === "robber" ? "waiting-robber-ready" : "waiting-ready")
+              }
               onStart={startGame}
               onLeave={leaveToHome}
             />
@@ -242,16 +255,25 @@ export function DemoApp({
               onLeave={leaveToHome}
             />
           )}
-          {tab === "home" && flow === "ingame" && (
-            <DemoInGame
-              myTeam={myTeam}
-              onTask={markDone}
-              onVictory={() => setFlow("victory")}
-              onLeave={leaveToHome}
-            />
-          )}
+          {tab === "home" &&
+            flow === "ingame" &&
+            (myTeam === "robber" ? (
+              <DemoInGameRobber
+                onTask={markDone}
+                onSurvive={() => setFlow("victory")}
+                onLeave={leaveToHome}
+              />
+            ) : (
+              <DemoInGame
+                myTeam={myTeam}
+                onTask={markDone}
+                onVictory={() => setFlow("victory")}
+                onLeave={leaveToHome}
+              />
+            ))}
           {tab === "home" && flow === "victory" && (
             <DemoVictory
+              team={myTeam}
               onReplay={() => setFlow("ingame")}
               onHome={() => setFlow("home")}
             />
@@ -287,18 +309,11 @@ export function DemoApp({
           )}
           {tab === "my" && (
             <>
-              <div
-                className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[14px]"
-                style={{ backgroundColor: appColors.background }}
-              >
-                <Image src="/characters/police.svg" alt="" width={96} height={87} />
-                <p
-                  className="text-[15px] font-semibold"
-                  style={{ color: appColors.black600 }}
-                >
-                  {copy.nextUpdate}
-                </p>
-              </div>
+              <DemoMyPage
+                profileIcon={profileIcon}
+                onSelectIcon={setProfileIcon}
+                onTask={markDone}
+              />
               <DemoTabBar active={tab} onSelect={selectTab} />
             </>
           )}
