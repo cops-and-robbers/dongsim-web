@@ -148,6 +148,50 @@ export type DemoAppStrings = {
   inviteDialogCodeLabel: string;
   inviteDialogDecline: string;
   inviteDialogEnter: string;
+  /** gameQrDisplayTitle / gameQrDisplayMessage - 도둑의 수배 QR 다이얼로그 */
+  qrDisplayTitle: string;
+  qrDisplayMessage: string;
+  /** gamePoliceStartCountdown */
+  policeStartCountdown: (formatted: string) => string;
+  /** gameEventArrestNotice - @icon_police·@icon_robber 자리에 진영 아이콘이 들어간다 */
+  arrestNotice: (policeNickname: string, robberNickname: string) => string;
+  /** pageSettingsTitle / mypageProfileIconLabel */
+  settingsTitle: string;
+  profileIconLabel: string;
+  /** settingsSection* */
+  sectionAccount: string;
+  sectionApp: string;
+  sectionGuide: string;
+  sectionEtc: string;
+  /** settingsAccountChangeNickname / settingsAccountMyScraps */
+  changeNickname: string;
+  myScraps: string;
+  /** settingsApp*Notification* */
+  gameNotification: string;
+  gameNotificationDesc: string;
+  communityNotification: string;
+  communityNotificationDesc: string;
+  generalNotification: string;
+  generalNotificationHighlight: string;
+  generalNotificationDetail: string;
+  /** settingsLanguageLabel / settingsLanguageOptionSystem */
+  languageLabel: string;
+  languageSystem: string;
+  /** settingsAppLocationPermission* */
+  locationPermission: string;
+  locationPermissionDesc: string;
+  /** settingsAppVersionLabel / settingsGuide* */
+  appVersionLabel: string;
+  tutorialRewatch: string;
+  tutorialReset: string;
+  bugReport: string;
+  openSourceLicenses: string;
+  agreements: string;
+  /** buttonLogout / settingsEtcDeleteAccount */
+  logout: string;
+  deleteAccount: string;
+  /** settingsSnsPrompt - 공식 SNS 채널 안내 */
+  snsPrompt: string;
 };
 
 // 커뮤니티 코스의 목데이터 (#86). 폰 안에 보이는 내용이라 로케일마다 배경
@@ -189,15 +233,16 @@ export type DemoCommunityData = {
 
 export type DemoCopy = {
   app: DemoAppStrings;
-  stage: { h1: [string, string]; lead: string };
+  /** 진영 칩 옆 안내 - 테마가 곧 진영이라는 힌트 (#88) */
+  themeHint: string;
   scenes: Record<DemoSceneId, DemoScene>;
   courses: readonly DemoCourse[];
-  /** 각본 채팅 - 팀원 첫 메시지와 답장 */
+  /** 각본 채팅 - 팀원 첫 메시지와 답장 (경찰 시점) */
   chatScript: { opener: string; reply: string };
+  /** 각본 채팅 - 도둑 시점. 경찰이 안 보이는 도둑에게는 팀 채팅이 눈이다 (#88) */
+  robberChatScript: { opener: string; reply: string };
   /** 체포 연출 문구 (데모 전용) */
   caught: string;
-  /** 마이 탭 자리 문구 */
-  nextUpdate: string;
   /** 커뮤니티 코스 목데이터 (#86) */
   community: DemoCommunityData;
 };
@@ -305,11 +350,40 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       inviteDialogCodeLabel: "방 코드",
       inviteDialogDecline: "거절",
       inviteDialogEnter: "입장",
+      qrDisplayTitle: "수배 QR",
+      qrDisplayMessage: "경찰에게 QR을 보여주세요",
+      policeStartCountdown: (t) => `경찰 시작까지 ${t}`,
+      arrestNotice: (p, r) => `@icon_police [${p}]님이 @icon_robber [${r}]님을 체포했어요!`,
+      settingsTitle: "설정",
+      profileIconLabel: "프로필 아이콘",
+      sectionAccount: "계정",
+      sectionApp: "앱 설정",
+      sectionGuide: "이용 안내",
+      sectionEtc: "기타",
+      changeNickname: "닉네임 변경",
+      myScraps: "내 스크랩",
+      gameNotification: "게임 알림",
+      gameNotificationDesc: "게임 진행 중 발생하는 이벤트 알림을 설정해요",
+      communityNotification: "커뮤니티 알림",
+      communityNotificationDesc: "댓글·대댓글·채팅 푸시를 받아요. 꺼도 알림함에는 쌓여요",
+      generalNotification: "알림",
+      generalNotificationHighlight: "게임 중 알림",
+      generalNotificationDetail: "을 포함한 앱에서 보내는 모든 알림을 설정해요",
+      languageLabel: "언어",
+      languageSystem: "시스템",
+      locationPermission: "위치 권한 관리",
+      locationPermissionDesc: "기기 설정에서 위치 권한을 변경할 수 있어요",
+      appVersionLabel: "앱 버전",
+      tutorialRewatch: "튜토리얼 다시 보기",
+      tutorialReset: "튜토리얼 초기화",
+      bugReport: "버그 제보",
+      openSourceLicenses: "오픈소스 라이선스",
+      agreements: "이용약관 및 정책",
+      logout: "로그아웃",
+      deleteAccount: "회원 탈퇴",
+      snsPrompt: "더 많은 소식이 궁금하다면 👀",
     },
-    stage: {
-      h1: ["도둑이 지금", "달아나고 있어요"],
-      lead: "설치 없이 여기서 바로 쫓아가 보세요. 말풍선이 알려주는 대로 누르다 보면 체포까지 한 판이 끝나요.",
-    },
+    themeHint: "테마를 바꾸면 반대 진영으로 뛰어요",
     scenes: {
       home: {
         id: "home",
@@ -358,8 +432,11 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       my: {
         id: "my",
         title: "마이페이지",
-        intro: "내 전적과 기록이 쌓이는 곳이에요. 곧 열어 둘게요.",
-        tasks: [],
+        intro: "프로필과 설정이 모여 있어요. 구석에 숨은 것도 있어요.",
+        tasks: [
+          { id: "my-icon", label: "프로필 아이콘을 바꿔 보세요" },
+          { id: "my-version", label: "앱 버전을 다섯 번 눌러 보세요" },
+        ],
       },
       homeCreate: {
         id: "homeCreate",
@@ -421,11 +498,37 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
           { id: "chat-invite", label: "초대 카드의 게임 참여를 눌러 보세요" },
         ],
       },
+      waitingRobber: {
+        id: "waitingRobber",
+        title: "대기실",
+        intro: "이번 판, 나는 도둑이에요. 이대로 준비하면 돼요.",
+        tasks: [{ id: "waiting-robber-ready", label: "준비 버튼을 눌러 보세요" }],
+      },
+      ingameRobber: {
+        id: "ingameRobber",
+        title: "도주전",
+        intro: "곧 경찰이 출발해요. 내 위치는 주기마다 발자국으로 공개돼요.",
+        tasks: [
+          { id: "robber-qr", label: "수배 QR을 열어 확인해 보세요" },
+          { id: "robber-ping", label: "지도를 길게 눌러 경찰 위치에 핑을 남겨 보세요" },
+          { id: "robber-chat", label: "채팅으로 팀에게 상황을 알려 보세요" },
+        ],
+      },
+      victoryRobber: {
+        id: "victoryRobber",
+        title: "생존 승리",
+        intro: "실제 게임에서는 이 순간을 발로 뛰어서 지켜내요.",
+        tasks: [],
+      },
     },
     courses: [
       {
         id: "police",
         title: "경찰로 플레이",
+        stage: {
+          h1: ["도둑이 지금", "달아나고 있어요"],
+          lead: "설치 없이 여기서 바로 쫓아가 보세요. 말풍선이 알려주는 대로 누르다 보면 체포까지 한 판이 끝나요.",
+        },
         steps: [
           { label: "친구 방에 들어가요", short: "방 입장", scenes: ["home", "join"] },
           { label: "팀을 정하고 준비해요", short: "팀 준비", scenes: ["waiting"] },
@@ -435,8 +538,27 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         finish: "victory",
       },
       {
+        id: "robber",
+        title: "도둑으로 플레이",
+        stage: {
+          h1: ["경찰이 바짝", "쫓아오고 있어요"],
+          lead: "설치 없이 여기서 바로 달아나 보세요. 발자국을 숨기고 버티면 생존 승리로 한 판이 끝나요.",
+        },
+        steps: [
+          { label: "친구 방에 들어가요", short: "방 입장", scenes: ["home", "join"] },
+          { label: "도둑팀으로 준비해요", short: "팀 준비", scenes: ["waitingRobber"] },
+          { label: "발자국을 숨기며 달아나요", short: "도주", scenes: ["ingameRobber"] },
+          { label: "끝까지 살아남아 승리해요", short: "생존", scenes: ["victoryRobber"] },
+        ],
+        finish: "victoryRobber",
+      },
+      {
         id: "create",
         title: "방장으로 플레이",
+        stage: {
+          h1: ["오늘 판은", "내가 깔아요"],
+          lead: "구역을 그리고 규칙을 정하면 친구들이 모여요. 방 만들기부터 게임 시작까지 직접 해보세요.",
+        },
         steps: [
           { label: "방 만들기를 시작해요", short: "홈", scenes: ["homeCreate"] },
           { label: "구역과 감옥을 그려요", short: "구역", scenes: ["createZone", "createJail"] },
@@ -448,6 +570,10 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       {
         id: "community",
         title: "모임 찾아 플레이",
+        stage: {
+          h1: ["같이 뛸 사람,", "여기 다 있어요"],
+          lead: "모집글을 읽고 채팅으로 인사해 보세요. 초대장이 도착하면 바로 합류예요.",
+        },
         steps: [
           {
             label: "커뮤니티에서 모집글을 골라요",
@@ -465,8 +591,11 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       opener: "북문 쪽에서 발자국 봤어요!",
       reply: "오케이, 저는 동쪽을 막을게요!",
     },
+    robberChatScript: {
+      opener: "경찰 두 명이 북문 쪽으로 올라갔어요!",
+      reply: "좋아요, 저는 공원 쪽으로 돌게요!",
+    },
     caught: "체포 성공!",
-    nextUpdate: "다음 업데이트에서 열려요",
     community: {
       posts: [
         {
@@ -625,11 +754,41 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       inviteDialogCodeLabel: "Room code",
       inviteDialogDecline: "Decline",
       inviteDialogEnter: "Enter",
+      qrDisplayTitle: "Wanted QR code",
+      qrDisplayMessage: "Please show the QR code to the Cops",
+      policeStartCountdown: (t) => `Until Cops start: ${t}`,
+      arrestNotice: (p, r) => `@icon_police [${p}] arrested @icon_robber [${r}]!`,
+      settingsTitle: "Settings",
+      profileIconLabel: "Profile icon",
+      sectionAccount: "Account",
+      sectionApp: "App settings",
+      sectionGuide: "Guide",
+      sectionEtc: "Others",
+      changeNickname: "Change nickname",
+      myScraps: "My scraps",
+      gameNotification: "Game notifications",
+      gameNotificationDesc: "Configure notifications for events occurring during the game",
+      communityNotification: "Community notifications",
+      communityNotificationDesc:
+        "Get push alerts for comments, replies, and chats. Your inbox keeps them even when this is off",
+      generalNotification: "Notification",
+      generalNotificationHighlight: "In-game notifications",
+      generalNotificationDetail: "Configure all notifications sent by the app including",
+      languageLabel: "Language",
+      languageSystem: "System",
+      locationPermission: "Manage location permissions",
+      locationPermissionDesc: "You can change location permissions in device settings",
+      appVersionLabel: "App version",
+      tutorialRewatch: "Replay tutorial",
+      tutorialReset: "Reset tutorial",
+      bugReport: "Bug report",
+      openSourceLicenses: "Open source licenses",
+      agreements: "Terms and policies",
+      logout: "Sign out",
+      deleteAccount: "Delete account",
+      snsPrompt: "Curious about more updates? 👀",
     },
-    stage: {
-      h1: ["A robber is", "on the run"],
-      lead: "Chase them down right here, no install needed. Follow the speech bubble and you'll make an arrest in one quick round.",
-    },
+    themeHint: "Switch the theme to play the other side",
     scenes: {
       home: {
         id: "home",
@@ -678,8 +837,11 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       my: {
         id: "my",
         title: "My Page",
-        intro: "Your stats and records live here. Opening soon.",
-        tasks: [],
+        intro: "Your profile and settings live here. Something is hidden, too.",
+        tasks: [
+          { id: "my-icon", label: "Change your profile icon" },
+          { id: "my-version", label: "Tap the app version five times" },
+        ],
       },
       homeCreate: {
         id: "homeCreate",
@@ -741,11 +903,37 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
           { id: "chat-invite", label: "Tap Join game on the invite card" },
         ],
       },
+      waitingRobber: {
+        id: "waitingRobber",
+        title: "Waiting room",
+        intro: "This round, you're a robber. Just ready up as you are.",
+        tasks: [{ id: "waiting-robber-ready", label: "Tap Ready" }],
+      },
+      ingameRobber: {
+        id: "ingameRobber",
+        title: "The getaway",
+        intro: "The cops start soon. Your location drops as footprints at intervals.",
+        tasks: [
+          { id: "robber-qr", label: "Open your wanted QR code" },
+          { id: "robber-ping", label: "Long-press the map to ping the cops" },
+          { id: "robber-chat", label: "Tell your team what's happening in chat" },
+        ],
+      },
+      victoryRobber: {
+        id: "victoryRobber",
+        title: "Survived",
+        intro: "In the real game, you defend this moment on foot.",
+        tasks: [],
+      },
     },
     courses: [
       {
         id: "police",
         title: "Play as Cop",
+        stage: {
+          h1: ["A robber is", "on the run"],
+          lead: "Chase them down right here, no install needed. Follow the speech bubble and you'll make an arrest in one quick round.",
+        },
         steps: [
           { label: "Join a friend's room", short: "Join", scenes: ["home", "join"] },
           { label: "Pick a team and ready up", short: "Team", scenes: ["waiting"] },
@@ -755,8 +943,27 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         finish: "victory",
       },
       {
+        id: "robber",
+        title: "Play as Robber",
+        stage: {
+          h1: ["The cops are", "closing in"],
+          lead: "Run for it right here, no install needed. Hide your footprints, hold out, and finish the round with a survival win.",
+        },
+        steps: [
+          { label: "Join a friend's room", short: "Join", scenes: ["home", "join"] },
+          { label: "Ready up on the robber team", short: "Team", scenes: ["waitingRobber"] },
+          { label: "Run while hiding your footprints", short: "Run", scenes: ["ingameRobber"] },
+          { label: "Survive to the end and win", short: "Survive", scenes: ["victoryRobber"] },
+        ],
+        finish: "victoryRobber",
+      },
+      {
         id: "create",
         title: "Play as Host",
+        stage: {
+          h1: ["Tonight's game", "starts with you"],
+          lead: "Draw the zone, set the rules, and friends will gather. Host it yourself, from room setup to game start.",
+        },
         steps: [
           { label: "Start creating a room", short: "Home", scenes: ["homeCreate"] },
           { label: "Draw the playground and jail", short: "Zone", scenes: ["createZone", "createJail"] },
@@ -768,6 +975,10 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       {
         id: "community",
         title: "Join a meetup",
+        stage: {
+          h1: ["Your next crew", "is right here"],
+          lead: "Read a post, say hi in chat, and join the moment the invite arrives.",
+        },
         steps: [
           {
             label: "Pick a post in Community",
@@ -785,8 +996,11 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       opener: "Saw footprints near the north gate!",
       reply: "Copy that, I'll cover the east side!",
     },
+    robberChatScript: {
+      opener: "Two cops just headed for the north gate!",
+      reply: "Got it, I'll loop around the park!",
+    },
     caught: "Arrested!",
-    nextUpdate: "Coming in the next update",
     community: {
       posts: [
         {
@@ -945,11 +1159,41 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       inviteDialogCodeLabel: "ルームコード",
       inviteDialogDecline: "拒否",
       inviteDialogEnter: "入場",
+      qrDisplayTitle: "指名手配QR",
+      qrDisplayMessage: "警察にQRコードを見せてください",
+      policeStartCountdown: (t) => `警察開始まで ${t}`,
+      arrestNotice: (p, r) => `@icon_police [${p}]が@icon_robber [${r}]を逮捕しました!`,
+      settingsTitle: "設定",
+      profileIconLabel: "プロフィールアイコン",
+      sectionAccount: "アカウント",
+      sectionApp: "アプリ設定",
+      sectionGuide: "利用案内",
+      sectionEtc: "その他",
+      changeNickname: "ニックネーム変更",
+      myScraps: "マイスクラップ",
+      gameNotification: "ゲーム通知",
+      gameNotificationDesc: "ゲーム進行中に発生するイベントの通知を設定します",
+      communityNotification: "コミュニティ通知",
+      communityNotificationDesc:
+        "コメント・返信・チャットのプッシュ通知を受け取ります。オフにしても通知ボックスには残ります",
+      generalNotification: "通知",
+      generalNotificationHighlight: "ゲーム中通知",
+      generalNotificationDetail: "を含む、アプリから送信されるすべての通知を設定します",
+      languageLabel: "言語",
+      languageSystem: "システム",
+      locationPermission: "位置情報の権限管理",
+      locationPermissionDesc: "端末の設定で位置情報の権限を変更できます",
+      appVersionLabel: "アプリバージョン",
+      tutorialRewatch: "チュートリアルをもう一度見る",
+      tutorialReset: "チュートリアル初期化",
+      bugReport: "バグ報告",
+      openSourceLicenses: "オープンソースライセンス",
+      agreements: "利用規約とポリシー",
+      logout: "ログアウト",
+      deleteAccount: "退会",
+      snsPrompt: "もっと最新情報が気になるなら 👀",
     },
-    stage: {
-      h1: ["泥棒が今", "逃げています"],
-      lead: "インストール不要で、ここでそのまま追いかけられます。吹き出しの案内どおりにタップすれば、逮捕まで1プレイ遊べます。",
-    },
+    themeHint: "テーマを切り替えると反対チームでプレイできます",
     scenes: {
       home: {
         id: "home",
@@ -998,8 +1242,11 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       my: {
         id: "my",
         title: "マイページ",
-        intro: "自分の戦績と記録が集まる場所です。近日公開。",
-        tasks: [],
+        intro: "プロフィールと設定が集まる場所です。隅に隠しものもあります。",
+        tasks: [
+          { id: "my-icon", label: "プロフィールアイコンを変えてみて" },
+          { id: "my-version", label: "アプリバージョンを5回タップ" },
+        ],
       },
       homeCreate: {
         id: "homeCreate",
@@ -1061,11 +1308,37 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
           { id: "chat-invite", label: "招待カードの「ゲームに参加」をタップ" },
         ],
       },
+      waitingRobber: {
+        id: "waitingRobber",
+        title: "待機室",
+        intro: "今回は泥棒です。このまま準備すればOKです。",
+        tasks: [{ id: "waiting-robber-ready", label: "「準備完了」をタップ" }],
+      },
+      ingameRobber: {
+        id: "ingameRobber",
+        title: "逃走戦",
+        intro: "まもなく警察が出発します。自分の位置は定期的に足あとで公開されます。",
+        tasks: [
+          { id: "robber-qr", label: "指名手配QRを開いて確認" },
+          { id: "robber-ping", label: "地図を長押しして警察の位置にピンを残す" },
+          { id: "robber-chat", label: "チャットでチームに状況を共有" },
+        ],
+      },
+      victoryRobber: {
+        id: "victoryRobber",
+        title: "生存勝利",
+        intro: "実際のゲームでは、この瞬間を自分の足で守り抜きます。",
+        tasks: [],
+      },
     },
     courses: [
       {
         id: "police",
         title: "警察でプレイ",
+        stage: {
+          h1: ["泥棒が今", "逃げています"],
+          lead: "インストール不要で、ここでそのまま追いかけられます。吹き出しの案内どおりにタップすれば、逮捕まで1プレイ遊べます。",
+        },
         steps: [
           { label: "友だちの部屋に入る", short: "入室", scenes: ["home", "join"] },
           { label: "チームを決めて準備", short: "準備", scenes: ["waiting"] },
@@ -1075,8 +1348,27 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         finish: "victory",
       },
       {
+        id: "robber",
+        title: "泥棒でプレイ",
+        stage: {
+          h1: ["警察がすぐ", "そこまで来ています"],
+          lead: "インストール不要で、ここでそのまま逃げられます。足あとを隠して逃げ切れば、生存勝利で1プレイ完了です。",
+        },
+        steps: [
+          { label: "友だちの部屋に入る", short: "入室", scenes: ["home", "join"] },
+          { label: "泥棒チームで準備", short: "準備", scenes: ["waitingRobber"] },
+          { label: "足あとを隠しながら逃げる", short: "逃走", scenes: ["ingameRobber"] },
+          { label: "最後まで生き残って勝利", short: "生存", scenes: ["victoryRobber"] },
+        ],
+        finish: "victoryRobber",
+      },
+      {
         id: "create",
         title: "ホストでプレイ",
+        stage: {
+          h1: ["今日の勝負は", "自分が仕切る"],
+          lead: "エリアを描いてルールを決めれば、友だちが集まります。部屋づくりからゲーム開始まで体験できます。",
+        },
         steps: [
           { label: "部屋づくりを始める", short: "ホーム", scenes: ["homeCreate"] },
           { label: "エリアと牢屋を描く", short: "エリア", scenes: ["createZone", "createJail"] },
@@ -1088,6 +1380,10 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       {
         id: "community",
         title: "募集から合流",
+        stage: {
+          h1: ["一緒に走る仲間が", "ここにいます"],
+          lead: "募集を読んでチャットであいさつ。招待が届いたらすぐ合流です。",
+        },
         steps: [
           {
             label: "コミュニティで募集を選ぶ",
@@ -1105,8 +1401,11 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       opener: "北門のあたりで足あとを見ました！",
       reply: "了解、東側は任せてください！",
     },
+    robberChatScript: {
+      opener: "警察2人が北門の方に向かいました！",
+      reply: "了解、私は公園側に回ります！",
+    },
     caught: "逮捕成功！",
-    nextUpdate: "次のアップデートで開放",
     community: {
       posts: [
         {

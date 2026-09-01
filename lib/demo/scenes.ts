@@ -19,9 +19,13 @@ export type DemoSceneId =
   // 커뮤니티 코스 (#86)
   | "homeCommunity"
   | "communityDetail"
-  | "communityChat";
+  | "communityChat"
+  // 도둑 코스 (#88)
+  | "waitingRobber"
+  | "ingameRobber"
+  | "victoryRobber";
 
-export type DemoCourseId = "police" | "create" | "community";
+export type DemoCourseId = "police" | "robber" | "create" | "community";
 
 export type DemoTask = { id: string; label: string };
 
@@ -43,11 +47,13 @@ export type DemoCourseStep = {
 };
 
 // 코스 = 장면들을 하나의 경험으로 묶은 것. 무대에서 골라 여정과 폰 흐름을
-// 갈아끼운다. 도둑 시점 같은 코스가 생기면 copy.ts에 하나 더 정의한다.
+// 갈아끼운다. 새 경험이 생기면 copy.ts에 하나 더 정의한다.
 export type DemoCourse = {
   id: DemoCourseId;
   /** 무대의 코스 선택 칩에 보이는 이름 */
   title: string;
+  /** 무대 헤드라인 - 코스를 고르면 무대의 h1·리드가 이 문구로 바뀐다 (#88) */
+  stage: { h1: readonly [string, string]; lead: string };
   steps: readonly DemoCourseStep[];
   /** 이 장면에 닿으면 코스 완주 - 여정이 전부 체크된다 */
   finish: DemoSceneId;
@@ -105,3 +111,33 @@ export const FOOTPRINT_SCRIPT = [
   { left: "62%", top: "66%", rotate: 14 },
 ] as const;
 export const FOOTPRINT_INTERVAL_MS = 2200;
+
+// 도둑 인게임 각본 (#88). 내가 지나는 경로 - 위치가 공개될 때마다 지나온
+// 자리에 초록 발자국이 남고, 내 점은 다음 지점으로 옮겨 간다.
+export const ROBBER_PATH = [
+  { left: "34%", top: "62%", rotate: -12 },
+  { left: "42%", top: "48%", rotate: 10 },
+  { left: "56%", top: "42%", rotate: 22 },
+  { left: "66%", top: "54%", rotate: -6 },
+] as const;
+
+// 경찰 추격 각본 - 시작 카운트다운이 끝나면 이 경로로 다가온다.
+// 마지막 지점이 내 발자국 근처라 아슬아슬하게 스치는 그림이 된다.
+export const POLICE_CHASE_PATH = [
+  { left: "82%", top: "16%" },
+  { left: "70%", top: "26%" },
+  { left: "58%", top: "34%" },
+  { left: "48%", top: "44%" },
+] as const;
+
+/** 경찰이 출발하기까지의 카운트다운(초) - 도둑에게 주어지는 선행 시간이다 */
+export const ROBBER_POLICE_START_SECONDS = 12;
+/** 도둑 라운드의 남은 시간(초). 0이 되면 생존 승리다 */
+export const ROBBER_ROUND_SECONDS = 40;
+/** 내 위치가 공개되는 간격(ms) - 발자국이 찍히고 내 점이 옮겨 가는 주기 */
+export const ROBBER_REVEAL_INTERVAL_MS = 7000;
+/** 경찰이 한 걸음 다가오는 간격(ms) */
+export const POLICE_STEP_INTERVAL_MS = 6000;
+
+// 마이페이지의 앱 버전 표기 (#88). v3 데모이므로 v3 버전을 쓴다.
+export const DEMO_APP_VERSION = "3.0.0";
