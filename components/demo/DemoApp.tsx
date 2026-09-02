@@ -62,12 +62,20 @@ const COMMUNITY_SCENE: Record<CommunityFlow, DemoSceneId> = {
 // 만져보는 앱 데모 (#77). 장면은 데이터(copy.scenes)로 정의하고
 // 여기서는 어느 장면인지와 해볼 것의 완료만 들고 있는다.
 // [course] 가 홈에서 열리는 길을 정하고, [onSceneChange] 로 여정에 알린다.
+// [fullscreen] 이면 화면 전체를 덮는 고정 레이어로 그린다 - iOS 사파리가
+// 요소 Fullscreen API를 지원하지 않아 CSS 오버레이 방식이다 (#95).
 export function DemoApp({
   course = "police",
   onSceneChange,
+  fullscreen = false,
+  onEnterFullscreen,
+  onExitFullscreen,
 }: {
   course?: DemoCourseId;
   onSceneChange?: (sceneId: DemoSceneId) => void;
+  fullscreen?: boolean;
+  onEnterFullscreen?: () => void;
+  onExitFullscreen?: () => void;
 }) {
   const [tab, setTab] = useState<DemoTab>("home");
   const [flow, setFlow] = useState<DemoFlow>("home");
@@ -147,14 +155,62 @@ export function DemoApp({
   // 도둑 시점은 상태바 뒤가 어두워 시계를 밝은 톤으로 뒤집는다
   const darkStatus = inGameView && myTeam === "robber";
 
+  // 전체 화면 동안 뒤 페이지가 스크롤되지 않게 잠근다
+  useEffect(() => {
+    if (!fullscreen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [fullscreen]);
+
   return (
-    // 폰 높이를 화면에 맞춘다 - 폭 = 남는 높이 x 9/19 (프레임 비율)
+    // 폰 높이를 화면에 맞춘다 - 폭 = 남는 높이 x 9/19 (프레임 비율).
+    // dvh가 아니라 svh인 이유: 모바일 주소창이 접힐 때마다 dvh가 변해
+    // 스크롤 중에 폰이 실시간으로 커졌다 작아진다 (#95).
+    // 길게 누르기(핑)가 iOS 이미지 콜아웃·텍스트 선택으로 새지 않게
+    // 데모 전체에서 콜아웃·선택·컨텍스트 메뉴를 끈다.
     <div
-      className="relative"
-      style={{ width: "clamp(220px, calc((100dvh - 13rem) * 9 / 19), 300px)" }}
+      className={
+        fullscreen
+          ? "fixed inset-0 z-[60] flex select-none items-center justify-center bg-slate-950 [-webkit-touch-callout:none]"
+          : "relative select-none [-webkit-touch-callout:none]"
+      }
+      style={
+        fullscreen
+          ? undefined
+          : { width: "clamp(220px, calc((100svh - 13rem) * 9 / 19), 300px)" }
+      }
+      onContextMenu={(e) => e.preventDefault()}
     >
-      <DemoGuide scene={scene} done={done} />
-      <PhoneFrame clock={clock} darkStatus={darkStatus}>
+      {fullscreen && (
+        <button
+          type="button"
+          onClick={onExitFullscreen}
+          aria-label={copy.fullscreenExit}
+          className="absolute right-3 top-3 z-30 flex size-10 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+        >
+          <svg viewBox="0 0 20 20" className="size-5" aria-hidden="true">
+            <path
+              d="m5 5 10 10M15 5 5 15"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      )}
+      <div
+        className="relative"
+        style={
+          fullscreen
+            ? { width: "min(100vw - 12px, calc((100svh - 12px) * 9 / 19))" }
+            : undefined
+        }
+      >
+      <DemoGuide scene={scene} done={done} overlay={fullscreen} />
+      <PhoneFrame clock={clock} darkStatus={darkStatus} unbounded={fullscreen}>
         <AppScreen
           playing
           scrollRef={screenRef}
@@ -326,6 +382,28 @@ export function DemoApp({
           )}
         </AppScreen>
       </PhoneFrame>
+      </div>
+
+      {/* 폰에서는 사이트 레이아웃 안이 좁다 - 앱처럼 꽉 채워 해보는 문 */}
+      {!fullscreen && onEnterFullscreen && (
+        <button
+          type="button"
+          onClick={onEnterFullscreen}
+          className="mx-auto mt-3 flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors active:bg-slate-100 lg:hidden dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300"
+        >
+          <svg viewBox="0 0 20 20" className="size-3.5" aria-hidden="true">
+            <path
+              d="M8 3H3v5M12 3h5v5M8 17H3v-5M12 17h5v-5"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </svg>
+          {copy.fullscreenCta}
+        </button>
+      )}
     </div>
   );
 }

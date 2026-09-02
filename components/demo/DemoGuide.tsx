@@ -12,21 +12,35 @@ import type { DemoScene } from "@/lib/demo/scenes";
 export function DemoGuide({
   scene,
   done,
+  overlay = false,
 }: {
   scene: DemoScene;
   done: Set<string>;
+  /** 전체 화면 모드 - 흐름에 두는 대신 폰 위에 띄운다 (#95) */
+  overlay?: boolean;
 }) {
   const { team } = useTheme();
   const current = scene.tasks.find((task) => !done.has(task.id));
   const message = current ? current.label : scene.intro;
 
   return (
-    <div className="pointer-events-none z-10 mb-3 flex min-h-28 items-end justify-center lg:absolute lg:left-full lg:top-16 lg:mb-0 lg:ml-5 lg:min-h-0 lg:items-start lg:justify-start">
+    <div
+      className={
+        overlay
+          ? "pointer-events-none absolute inset-x-0 top-4 z-20 flex justify-center px-4"
+          : "pointer-events-none z-10 mb-3 flex min-h-28 items-end justify-center lg:absolute lg:left-full lg:top-16 lg:mb-0 lg:ml-5 lg:min-h-0 lg:items-start lg:justify-start"
+      }
+    >
       <div className="relative w-max max-w-64 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-lg lg:max-w-56 xl:max-w-64 dark:border-slate-600 dark:bg-slate-800">
         {/* 꼬리 - 모바일은 아래(폰), 데스크톱은 왼쪽(폰). 카드와 같은 면·테두리를
             가진 회전 사각형이라 다크에서도 테두리 선이 끊기지 않고 이어진다 */}
-        <span className="absolute left-1/2 top-full size-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-slate-200 bg-white lg:hidden dark:border-slate-600 dark:bg-slate-800" />
-        <span className="absolute right-full top-6 hidden size-3 translate-x-1/2 rotate-45 border-b border-l border-slate-200 bg-white lg:block dark:border-slate-600 dark:bg-slate-800" />
+        {/* 오버레이(전체 화면)에서는 화면 폭과 무관하게 항상 아래(폰) 꼬리다 */}
+        <span
+          className={`absolute left-1/2 top-full size-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-800 ${overlay ? "" : "lg:hidden"}`}
+        />
+        <span
+          className={`absolute right-full top-6 hidden size-3 translate-x-1/2 rotate-45 border-b border-l border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-800 ${overlay ? "" : "lg:block"}`}
+        />
 
         <div className="flex items-start gap-3">
           {/* 진영이 곧 안내자다. 캐릭터마다 비율이 달라 높이로 맞춘다 */}
