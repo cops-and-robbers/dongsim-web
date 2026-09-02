@@ -450,7 +450,7 @@ export function DemoInGameRobber({
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendChat()}
                   placeholder={app.chatHint}
-                  className="min-w-0 flex-1 bg-transparent text-[16px] font-medium text-white outline-none"
+                  className="select-text min-w-0 flex-1 bg-transparent text-[16px] font-medium text-white outline-none"
                   style={{ caretColor: appColors.green }}
                 />
                 <button

@@ -24,6 +24,8 @@ export function DemoStage({ locale = "ko" }: { locale?: Locale }) {
   const { team } = useTheme();
   const chaseId: DemoCourseId = team === "robber" ? "robber" : "police";
   const [slot, setSlot] = useState<DemoSlot>("chase");
+  // 모바일 전체 화면 모드 - 폰이 화면을 덮는다. 코스 상태는 그대로 유지된다
+  const [fullscreen, setFullscreen] = useState(false);
   const courseId = slot === "chase" ? chaseId : slot;
   const [progress, setProgress] = useState({ step: 0, finished: false });
   const course = useMemo(
@@ -91,7 +93,7 @@ export function DemoStage({ locale = "ko" }: { locale?: Locale }) {
         : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400";
 
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-6xl flex-col px-4 pb-8 pt-24 lg:flex-row lg:items-center lg:gap-10 lg:pt-16">
+    <div className="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-6xl flex-col px-4 pb-8 pt-24 lg:flex-row lg:items-center lg:gap-10 lg:pt-16">
       <div className="shrink-0 text-center lg:w-80 lg:text-left xl:w-96">
         {/* 헤드라인은 코스 데이터에서 온다 - 고른 경험과 문구가 어긋날 수 없다 */}
         <h1 className="text-balance text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl dark:text-white">
@@ -199,7 +201,14 @@ export function DemoStage({ locale = "ko" }: { locale?: Locale }) {
       <div className="flex min-h-0 flex-1 items-center justify-center pt-6 lg:pt-0 lg:pr-64 xl:pr-72">
         <DemoCopyProvider locale={locale}>
           {/* 코스가 바뀌면(테마 전환 포함) 폰을 처음부터 새로 시작한다 */}
-          <DemoApp key={courseId} course={courseId} onSceneChange={handleSceneChange} />
+          <DemoApp
+            key={courseId}
+            course={courseId}
+            onSceneChange={handleSceneChange}
+            fullscreen={fullscreen}
+            onEnterFullscreen={() => setFullscreen(true)}
+            onExitFullscreen={() => setFullscreen(false)}
+          />
         </DemoCopyProvider>
       </div>
     </div>

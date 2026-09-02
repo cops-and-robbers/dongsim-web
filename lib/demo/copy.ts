@@ -235,6 +235,9 @@ export type DemoCopy = {
   app: DemoAppStrings;
   /** 진영 칩 옆 안내 - 테마가 곧 진영이라는 힌트 (#88) */
   themeHint: string;
+  /** 모바일 전체 화면 모드 열기/닫기 (#95) */
+  fullscreenCta: string;
+  fullscreenExit: string;
   scenes: Record<DemoSceneId, DemoScene>;
   courses: readonly DemoCourse[];
   /** 각본 채팅 - 팀원 첫 메시지와 답장 (경찰 시점) */
@@ -384,6 +387,8 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       snsPrompt: "더 많은 소식이 궁금하다면 👀",
     },
     themeHint: "테마를 바꾸면 반대 진영으로 뛰어요",
+    fullscreenCta: "전체 화면으로",
+    fullscreenExit: "전체 화면 닫기",
     scenes: {
       home: {
         id: "home",
@@ -789,6 +794,8 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       snsPrompt: "Curious about more updates? 👀",
     },
     themeHint: "Switch the theme to play the other side",
+    fullscreenCta: "Go fullscreen",
+    fullscreenExit: "Exit fullscreen",
     scenes: {
       home: {
         id: "home",
@@ -1194,6 +1201,8 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       snsPrompt: "もっと最新情報が気になるなら 👀",
     },
     themeHint: "テーマを切り替えると反対チームでプレイできます",
+    fullscreenCta: "全画面で遊ぶ",
+    fullscreenExit: "全画面を閉じる",
     scenes: {
       home: {
         id: "home",

@@ -20,20 +20,24 @@ export {
 // [clock] 은 상태바 시각 - 데모처럼 실제 시각을 띄우고 싶을 때 넘긴다.
 // [darkStatus] 는 상태바 뒤가 어두운 화면(도둑 인게임 등)일 때 시각을
 // 밝은 톤으로 뒤집는다 - 검정 위 slate-600은 읽히지 않는다.
+// [unbounded] 는 기본 폭 상한(300px)을 푼다 - 전체 화면 모드처럼
+// 부모가 폭을 직접 정하는 자리에서 쓴다 (#95).
 export function PhoneFrame({
   children,
   className = "",
   clock = "9:41",
   darkStatus = false,
+  unbounded = false,
 }: {
   children: ReactNode;
   className?: string;
   clock?: string;
   darkStatus?: boolean;
+  unbounded?: boolean;
 }) {
   return (
     <div
-      className={`relative mx-auto aspect-9/19 w-full max-w-75 rounded-[2.5rem] bg-slate-900 p-2 shadow-[0_40px_80px_-30px_rgba(15,23,42,0.35)] ring-1 ring-black/5 dark:ring-white/15 ${className}`}
+      className={`relative mx-auto aspect-9/19 w-full ${unbounded ? "" : "max-w-75"} rounded-[2.5rem] bg-slate-900 p-2 shadow-[0_40px_80px_-30px_rgba(15,23,42,0.35)] ring-1 ring-black/5 dark:ring-white/15 ${className}`}
     >
       <div className="relative h-full w-full overflow-hidden rounded-4xl bg-white">
         <div className="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-slate-900" />

@@ -412,7 +412,7 @@ export function DemoInGame({
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendChat()}
                   placeholder={app.chatHint}
-                  className="min-w-0 flex-1 bg-transparent text-[16px] font-medium outline-none placeholder:text-[#B4BFC6]"
+                  className="select-text min-w-0 flex-1 bg-transparent text-[16px] font-medium outline-none placeholder:text-[#B4BFC6]"
                   style={{ color: appColors.black }}
                 />
                 <button
