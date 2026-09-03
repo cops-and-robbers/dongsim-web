@@ -99,6 +99,25 @@ const ko = {
       wantedName: "치즈 도둑",
       bounty: "현상금 🧀 듬뿍",
     },
+    v3Notice: {
+      badge: "v3 새 소식",
+      tag: "v3 업데이트",
+      title: "경찰과 도둑이 새로워졌어요",
+      highlights: [
+        {
+          title: "같이 뛸 사람을 구해요",
+          description:
+            "'토요일에 동네 공원에서 뛰실 분!' 이런 글을 보고 마음에 들면 바로 참여할 수 있어요.",
+        },
+        {
+          title: "약속은 채팅방에서 잡아요",
+          description:
+            "참여하면 채팅방이 열려서, 번호 몰라도 약속을 잡고 게임 초대까지 받을 수 있어요.",
+        },
+      ],
+      demoCta: "웹에서 미리 체험하기",
+      close: "닫기",
+    },
   },
   demo: {
     meta: {
@@ -449,6 +468,25 @@ const en: Messages = {
       button: "Go catch them",
       wantedName: "Cheese Thief",
       bounty: "Reward: 🧀 loads",
+    },
+    v3Notice: {
+      badge: "What's new in v3",
+      tag: "v3 update",
+      title: "Cops and Robbers just got a big update",
+      highlights: [
+        {
+          title: "Find people to run with",
+          description:
+            "Short on players? Browse recruiting posts, check the spot, time, and open slots, and jump into a game you like.",
+        },
+        {
+          title: "Plan it in the group chat",
+          description:
+            "Joining a post opens a chat with everyone in it. Set the plan and get your game invite right there - no swapping numbers.",
+        },
+      ],
+      demoCta: "Try it on the web first",
+      close: "Close",
     },
   },
   demo: {
@@ -809,6 +847,25 @@ const ja: Messages = {
       button: "つかまえに行く",
       wantedName: "チーズ泥棒",
       bounty: "賞金 🧀 たっぷり",
+    },
+    v3Notice: {
+      badge: "v3の新機能",
+      tag: "v3アップデート",
+      title: "ケイドロが大きく新しくなりました",
+      highlights: [
+        {
+          title: "一緒に走る仲間を探せます",
+          description:
+            "人数が足りなくても大丈夫。募集の投稿から場所・時間・残り枠を見て、気になるゲームに参加できます。",
+        },
+        {
+          title: "約束はグループチャットで",
+          description:
+            "参加すると同じゲームの仲間とチャットが開きます。連絡先を交換しなくても、約束もゲームへの招待もそこで完結します。",
+        },
+      ],
+      demoCta: "まずウェブで体験する",
+      close: "閉じる",
     },
   },
   demo: {
