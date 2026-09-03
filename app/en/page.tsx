@@ -3,6 +3,8 @@ import HomeSections from "@/components/home/HomeSections";
 import { getMessages } from "@/lib/i18n/messages";
 import { alternateLanguages } from "@/lib/i18n/config";
 import WebsiteJsonLd from "@/components/seo/WebsiteJsonLd";
+import V3AnnouncementModal from "@/components/home/V3AnnouncementModal";
+import { isV3AnnouncementLive } from "@/lib/app-version";
 import { SITE_URL } from "@/lib/constants";
 
 const meta = getMessages("en").home.meta;
@@ -39,10 +41,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomeEnPage() {
+export default async function HomeEnPage() {
+  const v3Live = await isV3AnnouncementLive();
   return (
     <>
       <WebsiteJsonLd locale="en" />
+      <V3AnnouncementModal enabled={v3Live} />
       <HomeSections locale="en" />
     </>
   );
