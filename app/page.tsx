@@ -8,6 +8,8 @@ import CtaSection from "@/components/home/CtaSection";
 import { getMessages } from "@/lib/i18n/messages";
 import { alternateLanguages } from "@/lib/i18n/config";
 import EventModal from "@/components/home/EventModal";
+import V3AnnouncementModal from "@/components/home/V3AnnouncementModal";
+import { isV3AnnouncementLive } from "@/lib/app-version";
 import WebsiteJsonLd from "@/components/seo/WebsiteJsonLd";
 import { APP_LINKS, SITE_URL } from "@/lib/constants";
 
@@ -171,8 +173,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
   const copy = getMessages("ko").home;
+  const v3Live = await isV3AnnouncementLive();
   return (
     <>
       <WebsiteJsonLd locale="ko" />
@@ -183,6 +186,7 @@ export default function HomePage() {
         }}
       />
       <EventModal />
+      <V3AnnouncementModal enabled={v3Live} />
       <HeroSection copy={copy.hero} locale="ko" />
       <section
         id="game-intro"
