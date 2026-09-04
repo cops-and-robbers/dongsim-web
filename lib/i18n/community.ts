@@ -41,6 +41,8 @@ export type CommunityText = {
     fullBody: string;
     joinButton: string;
     joinHint: string;
+    escapeTitle: string;
+    escapeBody: string;
     otherButton: string;
     otherHint: string;
     moreHeading: string;
@@ -88,6 +90,8 @@ const ko: CommunityText = {
     fullBody: "다음 모임을 기다리거나 직접 열어보세요.",
     joinButton: "앱에서 참여하기",
     joinHint: "참여 신청은 앱에서 할 수 있어요",
+    escapeTitle: "한 단계만 더!",
+    escapeBody: "오른쪽 위 ⋯에서 '다른 브라우저로 열기'를 누르면 이어져요.",
     otherButton: "앱 받으러 가기",
     otherHint: "다른 모임도 앱에서 볼 수 있어요",
     moreHeading: "이런 모임도 열려 있어요",
@@ -135,6 +139,8 @@ const en: CommunityText = {
     fullBody: "Wait for the next one, or open your own.",
     joinButton: "Join in the app",
     joinHint: "Joining happens in the app",
+    escapeTitle: "One more step!",
+    escapeBody: "Tap ⋯ at the top right and choose 'Open in browser' to continue.",
     otherButton: "Get the app",
     otherHint: "Other meetups are in the app too",
     moreHeading: "These are open too",
@@ -182,6 +188,8 @@ const ja: CommunityText = {
     fullBody: "次の募集を待つか、自分で開いてみてください。",
     joinButton: "アプリで参加する",
     joinHint: "参加の申し込みはアプリからです",
+    escapeTitle: "あと一歩！",
+    escapeBody: "右上の⋯から「他のブラウザで開く」を押すと続けられます。",
     otherButton: "アプリを入れる",
     otherHint: "ほかの募集もアプリで見られます",
     moreHeading: "こちらも募集中です",

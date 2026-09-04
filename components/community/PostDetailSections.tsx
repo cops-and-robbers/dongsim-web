@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Container from "@/components/ui/Container";
 import PostCard from "@/components/community/PostCard";
+import OpenInAppButton from "@/components/community/OpenInAppButton";
 import {
   CalendarIcon,
   LocationIcon,
@@ -197,12 +198,23 @@ export default async function PostDetailSections({
           <p className="hidden text-xs text-slate-400 sm:block dark:text-slate-500">
             {open ? t.joinHint : t.otherHint}
           </p>
-          <Link
-            href="/download"
-            className="ml-auto rounded-full bg-brand-blue px-7 py-3 text-center font-bold text-white transition hover:-translate-y-0.5 active:scale-95 max-sm:w-full dark:bg-brand-green dark:text-app-black"
-          >
-            {open ? t.joinButton : t.otherButton}
-          </Link>
+          {open ? (
+            // 설치자는 앱의 글 상세로 바로 - 인앱 브라우저 탈출까지 처리한다 (#101)
+            <OpenInAppButton
+              postId={post.id}
+              label={t.joinButton}
+              guideTitle={t.escapeTitle}
+              guideBody={t.escapeBody}
+              className="ml-auto rounded-full bg-brand-blue px-7 py-3 text-center font-bold text-white transition hover:-translate-y-0.5 active:scale-95 max-sm:w-full dark:bg-brand-green dark:text-app-black"
+            />
+          ) : (
+            <Link
+              href="/download"
+              className="ml-auto rounded-full bg-brand-blue px-7 py-3 text-center font-bold text-white transition hover:-translate-y-0.5 active:scale-95 max-sm:w-full dark:bg-brand-green dark:text-app-black"
+            >
+              {t.otherButton}
+            </Link>
+          )}
         </Container>
       </div>
     </main>
