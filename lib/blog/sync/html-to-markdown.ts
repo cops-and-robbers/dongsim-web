@@ -294,9 +294,43 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
       /*
         [!callout] 마커로 인용문과 구분한다 (#109). 우리 화면은 인용(왼쪽 선)과
         콜아웃(옅은 면 상자)이 다른 요소다 - 마커가 없으면 렌더가 둘을 가를 수 없다.
-        마커는 remark-callout 이 렌더 시점에 걷어낸다.
+
+        마커는 **자기 줄**에 둔다. 내용 첫 줄 앞에 인라인으로 붙였더니, 콜아웃이
+        헤딩으로 시작하는 글에서 "## 제목"이 헤딩이 아니라 글자로 노출됐다 (실측).
+        마커 줄은 remark-callout 이 렌더 시점에 통째로 걷어낸다.
+
+        아이콘도 같은 이유로 첫 줄 앞에 그냥 붙이면 안 된다. 내용이 헤딩이면
+        헤딩 글자 안으로 넣는다 - 노션 화면에서도 아이콘은 첫 줄 왼쪽에 붙는다.
+        아이콘이 이모지가 아니라 노션 내장 경로(/icons/xx.svg)면 버린다 -
+        그대로 두면 화면에 경로가 글자로 보인다.
       */
-      return asBlockquote(`[!callout] ${icon ? `${icon} ` : ""}${body}`);
+      const cleanIcon = icon && !/^\/icons\//.test(icon) ? icon : "";
+      let content = body.replace(/^\/icons\/\S+\.(?:svg|png)\s*/, "");
+
+      /*
+        콜아웃 안의 토글 헤딩부터는 상자 밖으로 뺀다 (실물 + 팀원 확인).
+
+        노션 화면에서 콜아웃은 한두 줄짜리 배너이고 토글은 접혀 있는데,
+        API 는 접힌 내용 전체(1만 자짜리 룰 설명까지)를 콜아웃 자식으로
+        내보낸다. 그대로 상자에 담으면 글 절반이 콜아웃 안에 갇힌 화면이
+        된다. 배너 줄만 상자에 남기고, 토글 헤딩부터는 일반 본문으로 잇는다 -
+        토글을 펼친 채 렌더하는 <details> 처리와 같은 판단이다.
+      */
+      const bodyLines = content.split("\n");
+      const toggleAt = bodyLines.findIndex((l) => /\{toggle="true"\}/i.test(l));
+      let popped = "";
+      if (toggleAt >= 0) {
+        popped = `\n\n${bodyLines.slice(toggleAt).join("\n")}\n\n`;
+        content = bodyLines.slice(0, toggleAt).join("\n").trim();
+        if (!content) return popped; // 배너 줄이 없으면 상자도 만들지 않는다
+      }
+
+      if (cleanIcon) {
+        content = /^#{1,6}\s/.test(content)
+          ? content.replace(/^(#{1,6})\s+/, `$1 ${cleanIcon} `)
+          : `${cleanIcon} ${content}`;
+      }
+      return asBlockquote(`[!callout]\n${content}`) + popped;
     })
 
     // 토글 → 요약 줄을 굵게, 내용은 펼친 채로.
@@ -317,11 +351,11 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
       검은 상자에 갇힌다 (실측). 마커를 떼고 들여쓰기를 벗겨
       위 <details> 와 같은 판단(펼친 채)으로 되돌린다.
 
-      탭 뒤가 목록 마커(- , 1. )인 줄은 건드리지 않는다 —
-      그건 토글 내용이 아니라 중첩 목록의 들여쓰기다.
+      들여쓰기는 여기서 벗기지 않는다 — 어떤 탭이 중첩 목록이고 어떤 탭이
+      토글·콜아웃 내용인지는 앞뒤 줄을 봐야 알 수 있어서, 태그를 다 바꾼 뒤
+      줄 단위로 한 번에 정리한다(아래 구조 정리 단계).
     */
     .replace(/\s*\{toggle="true"\}/gi, "")
-    .replace(/^((?:>\s*)?)\t+(?![-*+] |\d+\. )/gm, "$1")
 
     /*
       콜아웃의 노션 내장 아이콘 — 이모지가 아니라 `/icons/hand_blue.svg` 같은
@@ -374,8 +408,20 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
       return end ? `${start} ~ ${end}` : start;
     })
 
-    // 문단 안 줄바꿈. 마크다운에서 줄바꿈은 "공백 두 개 + 개행"이다
-    .replace(/<br\s*\/?>/gi, "  \n")
+    /*
+      문단 안 줄바꿈 <br>. 마크다운에서 줄바꿈은 "공백 두 개 + 개행"인데,
+      무턱대고 바꾸면 두 곳이 깨진다 (실측).
+
+        헤딩 줄 - 헤딩은 한 줄이라, 개행이 들어가면 뒷부분이 헤딩 밖으로
+                  떨어져 나간다. 공백으로 잇는다 (화면에서는 자연 줄바꿈).
+        인용 줄 - 새로 생긴 줄에 "> " 가 없으면 그 줄부터 인용(콜아웃) 밖으로
+                  샌다. 원래 줄의 인용 접두를 이어 붙인다.
+    */
+    .replace(/^.*<br\s*\/?>.*$/gim, (line: string) => {
+      if (/^(?:> ?)*\t*#{1,6}\s/.test(line)) return line.replace(/\s*<br\s*\/?>\s*/gi, " ");
+      const quote = line.match(/^((?:> ?)*)/)?.[1] ?? "";
+      return line.replace(/<br\s*\/?>/gi, `  \n${quote}`);
+    })
 
     // 남은 태그 — 껍데기만 벗기고 글자는 남긴다. 무엇이었는지는 보고한다.
     .replace(/<\/?([a-zA-Z0-9_-]+)[^>]*>/g, (_m, name: string) => {
@@ -383,6 +429,116 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
       if (!HANDLED.has(tag)) unknown.add(tag);
       return "";
     });
+
+  /*
+    구조 정리 (#109, 실물 전수 대조로 확정한 규칙).
+
+    노션은 블록의 부모-자식을 탭 들여쓰기로 내보낸다. 마크다운에서 탭은
+    코드 블록이라 그대로 두면 본문이 검은 상자에 갇히는데, 탭의 뜻이 문맥마다
+    달라 정규식 한 줄로는 못 벗긴다. 줄 단위로 앞 줄을 보며 정리한다.
+
+      헤딩 줄            탭을 전부 벗긴다. 들여쓴 헤딩은 마크다운에 없다.
+      탭 + 목록 줄       바로 위가 인용이면 인용 자식이 샌 것 → "> " 를 붙여
+                         인용으로 되돌린다 (인용 블록의 목록 자식 실물).
+                         바로 위가 목록이면 중첩 목록 → 그대로 둔다.
+                         그 밖이면 부모 잃은 목록 → 탭만 벗긴다.
+      그 밖의 탭 줄      토글·콜아웃 내용의 들여쓰기 → 탭을 벗긴다.
+      내용 없는 ">" 줄   다음 줄이 빈 줄이면 빈 인용 찌꺼기 → 버린다.
+                         (노션이 인용 블록과 그 자식을 따로 내보낼 때 생긴다)
+  */
+  {
+    const lines = work.split("\n");
+    const isList = (s: string) => /^(?:[-*+]|\d+\.)\s/.test(s);
+    const out: string[] = [];
+    let prevRest = ""; // 마지막 내용 있는 줄의, 인용 접두를 벗긴 내용
+    let prevQuoted = false;
+    for (let i = 0; i < lines.length; i += 1) {
+      const m = lines[i].match(/^((?:> ?)*)(\t*)(.*)$/);
+      if (!m) {
+        out.push(lines[i]);
+        continue;
+      }
+      let [, quote, tabs, rest] = m;
+      if (!quote && !rest.trim()) {
+        out.push(""); // 탭·공백만 남은 줄(벗겨낸 태그 자리)은 빈 줄로
+        continue;
+      }
+      if (quote && !rest.trim()) {
+        if (!(lines[i + 1] ?? "").trim()) continue; // 빈 인용 찌꺼기
+        out.push(">"); // 인용 안 문단 구분
+        prevRest = "";
+        prevQuoted = true;
+        continue;
+      }
+      if (/^#{1,6}\s/.test(rest)) {
+        tabs = "";
+      } else if (tabs && isList(rest)) {
+        if (!quote && prevQuoted) {
+          quote = "> ";
+          tabs = "";
+        } else if (!isList(prevRest)) {
+          tabs = "";
+        }
+      } else if (tabs) {
+        tabs = "";
+      }
+      /*
+        인용 바로 다음의 일반 줄 앞에는 빈 줄을 넣는다. 마크다운은 인용에
+        붙은 다음 줄을 인용의 연속으로 삼키는데(lazy continuation), 노션
+        실물에서 인용(💡 한 줄)과 뒷문장은 형제 블록이다 - 빈 줄이 없으면
+        뒷문장과 이미지까지 인용 안으로 끌려 들어간다 (실측).
+      */
+      const last = out.length > 0 ? out[out.length - 1] : "";
+      if (last.startsWith(">") && !quote && rest.trim()) out.push("");
+      out.push(quote + tabs + rest);
+      prevRest = rest;
+      prevQuoted = quote.length > 0;
+    }
+    work = out.join("\n");
+  }
+
+  /*
+    굵은 글씨 가장자리 공백 (실물: "앱은** '경도를…' **라는").
+
+    노션은 굵은 범위의 안쪽 가장자리에 공백을 붙여 내보내는 일이 잦은데,
+    표준 마크다운은 "** 글자"나 "글자 **" 를 여닫이로 인정하지 않아
+    별표가 그대로 화면에 찍힌다. 안쪽 가장자리 공백을 걷어낸다.
+    (경계에 한글이 붙는 문제는 렌더의 remark-cjk-friendly 가 맡는다)
+
+    코드가 자리표로 빠져 있는 시점이라 코드 안의 별표와 짝지어질 일은 없다.
+
+    정확히 별표 두 개짜리 여닫이만 짝짓는다. 노션은 "****제목****" 처럼
+    겹친 굵게도 내보내는데, 이걸 두 개씩 잘라 물면 짝이 한 칸씩 어긋나
+    멀쩡한 다음 줄까지 안쪽 공백이라며 잡아먹는다 (실측: 목록 줄이 통째로
+    옆 줄에 붙어 버렸다). 겹친 굵게는 그대로 둬도 굵게로 렌더된다.
+    문단 경계(빈 줄)를 넘는 짝도 물지 않는다 - 홀로 남은 별표가 있어도
+    피해가 그 문단 안에서 끝난다.
+  */
+  /*
+    공백만 굵게 한 것 먼저 걷어낸다 (실물: <span>** **</span>).
+
+    노션에서 스타일 입힌 공백 한 칸이 "** **" 로 나온다. 앞 굵기와 붙으면
+    "**글자**** **" 처럼 별표 네 개 런이 생기는데, 이 안의 "** **" 는 어떤
+    파서도 못 닫아 별표가 그대로 화면에 찍힌다. 공백 자체로 되돌린다.
+  */
+  work = work.replace(/\*\*(\s+)\*\*(?!\*)/g, "$1");
+
+  work = work.replace(
+    /(?<!\*)\*\*(?!\*)((?:(?!\n\n)[^*])+?)(?<!\*)\*\*(?!\*)/g,
+    (_m, inner: string) => {
+      const t = inner.replace(/^\s+/, "").replace(/\s+$/, "");
+      return t ? `**${t}**` : "";
+    },
+  );
+
+  // 굵은 기울임(***)의 가장자리 공백도 같은 문제다 (실물: "*** ”대충...” ***포장")
+  work = work.replace(
+    /(?<!\*)\*\*\*(?!\*)((?:(?!\n\n)[^*])+?)(?<!\*)\*\*\*(?!\*)/g,
+    (_m, inner: string) => {
+      const t = inner.replace(/^\s+/, "").replace(/\s+$/, "");
+      return t ? `***${t}***` : "";
+    },
+  );
 
   // 코드를 되돌린다. 펜스 코드 안에 인라인 코드가 들어 있을 수 있어 자리표가 없어질 때까지 돈다.
   const holder = new RegExp(`${MARK}(\\d+)${MARK}`, "g");
