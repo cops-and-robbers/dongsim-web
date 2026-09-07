@@ -1,6 +1,7 @@
 import { LEGAL_DOCS } from "@/lib/legal/documents";
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog/notion";
+import { allPostsByLatest, isOpen, listScopeOf, postPath } from "@/lib/community/api";
 import { LOCALES, alternateLanguages, localizedPath } from "@/lib/i18n/config";
 
 const BASE_URL = "https://copsandrobbers.app";
@@ -15,6 +16,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 언어 구분 없이 받아 각 글을 자기 언어 경로로 넣는다. 연동 미설정·오류 시 빈 배열.
   const allPosts = await getAllPosts();
   const posts = allPosts.filter((post) => post.locale === "ko");
+
+  // 모집글 상세 전량. 글마다 지역·장소 이름이 들어가 지역 검색 유입 경로가
+  // 된다(#107). 글 하나에 주소도 하나라(postPath - 국가가 언어를 정한다)
+  // 중복 색인이 없다. 종료 글도 넣는다 - 페이지가 영구히 존재하는 실제
+  // 콘텐츠이고, 오래된 지역 글이 롱테일 검색에 걸리는 게 노리는 유입이다.
+  // 열린 글만 모집 상태가 바뀔 수 있어 주기·우선순위를 높게 준다.
+  const meetupNow = Date.now();
+  const meetupPages = (
+    await Promise.all(
+      LOCALES.map((locale) => allPostsByLatest(listScopeOf(locale))),
+    )
+  )
+    .flat()
+    .map((post) => ({
+      url: `${BASE_URL}${postPath(post)}`,
+      lastModified: new Date(post.updatedAt),
+      changeFrequency: isOpen(post, meetupNow)
+        ? ("daily" as const)
+        : ("monthly" as const),
+      priority: isOpen(post, meetupNow) ? 0.6 : 0.4,
+    }));
 
   return [
     {
@@ -200,5 +222,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.3,
       })),
     ),
+    ...meetupPages,
   ];
 }
