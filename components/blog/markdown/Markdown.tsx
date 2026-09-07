@@ -1,5 +1,13 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+/*
+  CJK 플랭킹 보정. 표준 마크다운은 굵게·취소선의 여닫이 판정을 서구권
+  구두점 기준으로 해서, `**굵게**도` 처럼 닫는 표시에 한글이 붙으면
+  별표가 그대로 화면에 찍힌다 (실측: "**`줌바댄스 클럽`**도"). 이 두 플러그인이
+  그 판정을 한중일 글자에 맞게 고친다.
+*/
+import remarkCjkFriendly from "remark-cjk-friendly";
+import remarkCjkFriendlyGfmStrikethrough from "remark-cjk-friendly-gfm-strikethrough";
 import rehypeHighlight from "rehype-highlight";
 import { remarkCallout } from "./remark-callout";
 import { remarkHighlight } from "./remark-highlight";
@@ -72,6 +80,29 @@ export function Markdown({ children }: { children: string }) {
         <h4 className="mt-8 mb-2 text-lg font-bold text-brand-ink sm:text-xl dark:text-white">
           {children}
         </h4>
+      );
+    },
+    // 노션 헤딩은 3단계까지지만, 토글 안 헤딩이 #### 로 내려와 실물에 존재한다.
+    // 컴포넌트가 없으면 맨몸 태그로 렌더돼 본문과 구분이 안 된다.
+    h4({ children }) {
+      return (
+        <h5 className="mt-6 mb-2 text-base font-bold text-brand-ink sm:text-lg dark:text-white">
+          {children}
+        </h5>
+      );
+    },
+    h5({ children }) {
+      return (
+        <h6 className="mt-6 mb-2 text-base font-bold text-brand-ink dark:text-white">
+          {children}
+        </h6>
+      );
+    },
+    h6({ children }) {
+      return (
+        <h6 className="mt-6 mb-2 text-base font-bold text-brand-ink dark:text-white">
+          {children}
+        </h6>
       );
     },
 
@@ -150,10 +181,16 @@ export function Markdown({ children }: { children: string }) {
     // 콜아웃(노션의 면 상자)과 인용은 다른 요소다 - remark-callout 이 심어 둔
     // 표시로 가른다. 스타일은 둘 다 NotionBlocks 의 것 그대로.
     blockquote({ children, node }) {
-      const isCallout = (node?.properties as Record<string, unknown>)?.dataCallout === "true";
+      const props = (node?.properties ?? {}) as Record<string, unknown>;
+      const isCallout = props.dataCallout === "true" || props["data-callout"] === "true";
       if (isCallout) {
+        /*
+          안의 헤딩이 본문용 위 여백(mt-12)을 끌고 들어오면 글자가 상자
+          아래로 쏠려 보인다. 여백을 눌러 상자 세로 가운데에 오게 한다.
+          가로는 본문과 같이 왼쪽 정렬이다 (팀원 확인).
+        */
         return (
-          <blockquote className="my-6 rounded-2xl bg-brand-blue-bg px-5 py-4 not-italic dark:bg-app-black-900 dark:ring-1 dark:ring-white/10 [&>p]:my-1.5">
+          <blockquote className="my-6 rounded-2xl bg-brand-blue-bg px-5 py-4 not-italic dark:bg-app-black-900 dark:ring-1 dark:ring-white/10 [&>p]:my-1.5 [&>h2]:my-0 [&>h3]:my-0 [&>h4]:my-0 [&>h5]:my-0">
             {children}
           </blockquote>
         );
@@ -227,7 +264,13 @@ export function Markdown({ children }: { children: string }) {
 
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkHighlight, remarkCallout]}
+      remarkPlugins={[
+        remarkGfm,
+        remarkCjkFriendly,
+        remarkCjkFriendlyGfmStrikethrough,
+        remarkHighlight,
+        remarkCallout,
+      ]}
       rehypePlugins={[rehypeHighlight]}
       remarkRehypeOptions={{
         // 기본값은 "Footnotes"·"Back to content" 라 한글 글 끝에 영문이 혼자 선다
