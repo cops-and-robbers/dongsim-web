@@ -211,6 +211,35 @@ export async function allOpenPosts(
 }
 
 /**
+ * 전 글을 최근 작성순으로 끝까지. 사이트맵이 쓴다(#107).
+ *
+ * 종료 글 페이지도 장소·내용이 남는 실제 콘텐츠로 영구히 존재하므로, 존재하는
+ * 글 전부가 수록 대상이다 (사이트맵 한도는 파일당 5만 URL 로 여유가 크다).
+ * 상한은 폭주 방지용이다. 글이 상한(20장 x 48 = 960/범위)을 넘게 쌓이면
+ * 잘라내는 게 아니라 사이트맵 분할로 확장할 때가 된 것이다.
+ */
+const MAX_ALL_PAGES = 20;
+
+export async function allPostsByLatest(
+  scope: ListScope,
+): Promise<CommunityPost[]> {
+  const posts: CommunityPost[] = [];
+  let cursor: string | undefined;
+  for (let i = 0; i < MAX_ALL_PAGES; i++) {
+    const page = await listPosts({
+      ...scope,
+      size: OPEN_PAGE_SIZE,
+      cursor,
+      sort: "LATEST",
+    });
+    posts.push(...page.content);
+    if (!page.cursor.hasNext || !page.cursor.nextCursor) break;
+    cursor = page.cursor.nextCursor;
+  }
+  return posts;
+}
+
+/**
  * 남은 자리. 참여 인원을 모르면 null 을 준다.
  * 이 값이 null 이면 화면에서 자리 관련 표시를 통째로 접는다.
  */
