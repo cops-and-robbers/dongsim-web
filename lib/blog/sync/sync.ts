@@ -223,9 +223,19 @@ export async function syncFromNotion(
       const post = toPost(page, converted.markdown);
       slug = post.slug || "(슬러그 없음)";
 
-      // 슬러그가 없으면 URL을 만들 수 없다 - 반영하지 않고 실패로 집계한다
+      /*
+        슬러그가 없으면 URL을 만들 수 없다.
+
+        초안이면 조용히 건너뛰지만, **발행 체크가 켜진 글은 실패로 격상한다** -
+        팀원이 슬러그를 깜빡한 채 발행을 누르면 "동기화는 성공했는데 사이트에
+        글이 없는" 상태가 되는데, 그걸 200 으로 돌리면 아무도 알아채지 못한다.
+      */
       if (!post.slug) {
-        result.skipped.push({ slug: post.title, reason: "슬러그가 비어 있음" });
+        if (post.published) {
+          result.failed.push({ slug: post.title, error: "발행 글에 슬러그가 비어 있음" });
+        } else {
+          result.skipped.push({ slug: post.title, reason: "슬러그가 비어 있음(초안)" });
+        }
         continue;
       }
 
