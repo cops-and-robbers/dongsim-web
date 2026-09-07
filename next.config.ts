@@ -75,6 +75,18 @@ const nextConfig: NextConfig = {
   async headers() {
     const json = [{ key: "Content-Type", value: "application/json" }];
     return [
+      // 어드민 서브도메인은 본체와 같은 앱을 통째로 서빙하므로, 검색엔진이
+      // 같은 콘텐츠를 두 주소로 보게 된다(#105). 실제로 서치 콘솔에
+      // admin.copsandrobbers.app/blog 등이 크롤링돼 본체 색인 판단을 흐렸다.
+      // /admin 라우트의 robots 메타만으로는 부족해서(본체 라우트가 어드민
+      // 호스트로도 열린다) 호스트 단위로 색인을 금지한다.
+      // robots.txt 차단은 쓰지 않는다 - 크롤 자체를 막으면 봇이 이 헤더를
+      // 읽지 못해 "차단됐지만 색인됨" 상태가 남을 수 있다.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "admin.copsandrobbers.app" }],
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
       { source: "/.well-known/apple-app-site-association", headers: json },
       { source: "/.well-known/assetlinks.json", headers: json },
       // 법적 문서 폰트는 파일 이름에 내용 해시가 들어간다(#49). 이름이 같으면 내용도
