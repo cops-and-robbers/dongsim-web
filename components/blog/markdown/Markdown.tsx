@@ -1,6 +1,7 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
+import { remarkCallout } from "./remark-callout";
 import { remarkHighlight } from "./remark-highlight";
 import { CodeBlock } from "./CodeBlock";
 /*
@@ -146,7 +147,17 @@ export function Markdown({ children }: { children: string }) {
       return <li className="leading-relaxed">{children}</li>;
     },
 
-    blockquote({ children }) {
+    // 콜아웃(노션의 면 상자)과 인용은 다른 요소다 - remark-callout 이 심어 둔
+    // 표시로 가른다. 스타일은 둘 다 NotionBlocks 의 것 그대로.
+    blockquote({ children, node }) {
+      const isCallout = (node?.properties as Record<string, unknown>)?.dataCallout === "true";
+      if (isCallout) {
+        return (
+          <blockquote className="my-6 rounded-2xl bg-brand-blue-bg px-5 py-4 not-italic dark:bg-app-black-900 dark:ring-1 dark:ring-white/10 [&>p]:my-1.5">
+            {children}
+          </blockquote>
+        );
+      }
       return (
         <blockquote className="my-6 border-l-4 border-brand-blue/60 pl-5 italic text-slate-500 dark:border-brand-green/60 dark:text-slate-400">
           {children}
@@ -216,7 +227,7 @@ export function Markdown({ children }: { children: string }) {
 
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkHighlight]}
+      remarkPlugins={[remarkGfm, remarkHighlight, remarkCallout]}
       rehypePlugins={[rehypeHighlight]}
       remarkRehypeOptions={{
         // 기본값은 "Footnotes"·"Back to content" 라 한글 글 끝에 영문이 혼자 선다

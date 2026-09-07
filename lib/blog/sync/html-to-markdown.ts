@@ -291,7 +291,12 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
       const body = inner.replace(/<empty-block\s*\/?>/gi, "").trim();
       if (!body) return "";
       const icon = attr(head, "icon");
-      return asBlockquote(icon ? `${icon} ${body}` : body);
+      /*
+        [!callout] 마커로 인용문과 구분한다 (#109). 우리 화면은 인용(왼쪽 선)과
+        콜아웃(옅은 면 상자)이 다른 요소다 - 마커가 없으면 렌더가 둘을 가를 수 없다.
+        마커는 remark-callout 이 렌더 시점에 걷어낸다.
+      */
+      return asBlockquote(`[!callout] ${icon ? `${icon} ` : ""}${body}`);
     })
 
     // 토글 → 요약 줄을 굵게, 내용은 펼친 채로.
