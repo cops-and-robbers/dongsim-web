@@ -45,6 +45,11 @@ create trigger posts_set_updated_at
   before update on posts
   for each row execute function set_updated_at();
 
+-- 프로젝트가 "새 테이블 자동 노출"을 끄고 만들어져서, 권한을 명시로 준다.
+-- 안 주면 service role 조차 permission denied 가 난다 (실측).
+grant all on posts to service_role;
+grant select on posts to anon, authenticated;
+
 -- 읽기는 서버(service role)만 하지만, 키 노출 사고에 대비해 RLS 를 켜 둔다.
 -- anon 에게는 발행된 글만 보인다.
 alter table posts enable row level security;
