@@ -185,6 +185,32 @@ export function isOpen(post: CommunityPost, now: number = Date.now()): boolean {
 }
 
 /**
+ * 열린 모임 전부. DEADLINE 정렬은 열린 글을 임박순으로 앞에 세워 주므로,
+ * 페이지의 끝이 아직 열린 글이면 다음 장이 남았다는 뜻이라 이어 받는다.
+ * 상한은 폭주 방지용이다. 넘치면 가장 임박한 쪽이 남으니 잘려도 올바르다.
+ *
+ * 목록 화면과 사이트맵이 같이 쓴다(#107).
+ */
+const OPEN_PAGE_SIZE = 48;
+const MAX_OPEN_PAGES = 4;
+
+export async function allOpenPosts(
+  scope: ListScope,
+  now: number = Date.now(),
+): Promise<CommunityPost[]> {
+  const posts: CommunityPost[] = [];
+  let cursor: string | undefined;
+  for (let i = 0; i < MAX_OPEN_PAGES; i++) {
+    const page = await listPosts({ ...scope, size: OPEN_PAGE_SIZE, cursor });
+    posts.push(...page.content);
+    const last = page.content[page.content.length - 1];
+    if (!last || !isOpen(last, now) || !page.cursor.nextCursor) break;
+    cursor = page.cursor.nextCursor;
+  }
+  return posts.filter((post) => isOpen(post, now));
+}
+
+/**
  * 남은 자리. 참여 인원을 모르면 null 을 준다.
  * 이 값이 null 이면 화면에서 자리 관련 표시를 통째로 접는다.
  */

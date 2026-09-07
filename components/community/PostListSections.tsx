@@ -3,10 +3,10 @@ import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import PostCard from "@/components/community/PostCard";
 import {
+  allOpenPosts,
   isOpen,
   listPosts,
   listScopeOf,
-  type CommunityPost,
   type ListScope,
 } from "@/lib/community/api";
 import { getCommunityText } from "@/lib/i18n/community";
@@ -31,29 +31,8 @@ const RECENT = (a: { meetingAt: string }, b: { meetingAt: string }) => -SOONEST(
 
 const PAST_LIMIT = 4;
 
-/**
- * 열린 모임 전부. DEADLINE 정렬은 열린 글을 임박순으로 앞에 세워 주므로,
- * 페이지의 끝이 아직 열린 글이면 다음 장이 남았다는 뜻이라 이어 받는다.
- * 상한은 폭주 방지용이다. 넘치면 가장 임박한 쪽이 남으니 잘려도 올바르다.
- */
+// 열린 모임 전량 수집(allOpenPosts)은 사이트맵과 같이 쓰므로 api 로 옮겼다(#107).
 const PAGE_SIZE = 48;
-const MAX_OPEN_PAGES = 4;
-
-async function allOpenPosts(
-  scope: ListScope,
-  now: number,
-): Promise<CommunityPost[]> {
-  const posts: CommunityPost[] = [];
-  let cursor: string | undefined;
-  for (let i = 0; i < MAX_OPEN_PAGES; i++) {
-    const page = await listPosts({ ...scope, size: PAGE_SIZE, cursor });
-    posts.push(...page.content);
-    const last = page.content[page.content.length - 1];
-    if (!last || !isOpen(last, now) || !page.cursor.nextCursor) break;
-    cursor = page.cursor.nextCursor;
-  }
-  return posts.filter((post) => isOpen(post, now));
-}
 
 /** 렌더 밖에서 시각을 한 번 재서, 열린/지난 분류가 한 요청 안에서 일관되게 한다. */
 async function loadPosts(scope: ListScope) {
