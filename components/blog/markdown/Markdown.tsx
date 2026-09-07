@@ -10,6 +10,7 @@ import remarkCjkFriendly from "remark-cjk-friendly";
 import remarkCjkFriendlyGfmStrikethrough from "remark-cjk-friendly-gfm-strikethrough";
 import rehypeHighlight from "rehype-highlight";
 import { remarkCallout } from "./remark-callout";
+import { remarkToggle } from "./remark-toggle";
 import { remarkHighlight } from "./remark-highlight";
 import { CodeBlock } from "./CodeBlock";
 /*
@@ -19,7 +20,7 @@ import { CodeBlock } from "./CodeBlock";
   타입 검사는 이 경계를 보지 못한다 - pnpm build 만 잡는다. (개인 블로그 실측)
 */
 import { YouTube } from "./YouTube";
-import { youTubeId } from "@/lib/blog/sync/youtube-id";
+import { isYouTubeShorts, youTubeId } from "@/lib/blog/sync/youtube-id";
 import { plainText, slugify } from "./headings";
 
 /** hast 노드에서 사람이 읽는 글자만 모은다 - 앵커 id 와 복사 버튼에 넘길 원문 */
@@ -117,14 +118,23 @@ export function Markdown({ children }: { children: string }) {
       const only = kids.length === 1 ? kids[0] : undefined;
       if (only && only.type === "element" && only.tagName === "img") {
         const props = only.properties as { src?: string; alt?: string };
-        return <Figure src={String(props.src ?? "")} rawCaption={props.alt ?? ""} />;
+        // 콜아웃 아이콘(alt "icon")은 그림이 아니라 글자 크기 장식이다 - figure 로 키우지 않는다
+        if (props.alt !== "icon") {
+          return <Figure src={String(props.src ?? "")} rawCaption={props.alt ?? ""} />;
+        }
       }
       if (only && only.type === "element" && only.tagName === "a") {
         const props = only.properties as { href?: string; title?: string };
-        const id = youTubeId(String(props.href ?? ""));
+        const href = String(props.href ?? "");
+        const id = youTubeId(href);
         if (id) {
           return (
-            <YouTube id={id} title={textOf(only as HastNode)} channel={props.title || undefined} />
+            <YouTube
+              id={id}
+              title={textOf(only as HastNode)}
+              channel={props.title || undefined}
+              vertical={isYouTubeShorts(href)}
+            />
           );
         }
       }
@@ -133,6 +143,19 @@ export function Markdown({ children }: { children: string }) {
 
     // 문단 안에 글과 섞인 이미지. figure 로 감싸지 않는다(위와 같은 DOM 이유).
     img({ src, alt }) {
+      // 콜아웃 아이콘(동기화가 alt "icon" 으로 표시). 글자 높이에 맞춰
+      // 인라인으로 그린다 - 장식이므로 읽어 줄 대체 글자는 없다.
+      if (alt === "icon") {
+        return (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={String(src ?? "")}
+            alt=""
+            className="inline-block h-[1.2em] w-auto align-[-0.2em]"
+            loading="lazy"
+          />
+        );
+      }
       const size = sizeOf(String(src ?? ""));
       return (
         // 그림은 R2 에서 오고 치수를 파일 이름으로 안다. next/image 가 할 일이 없다
@@ -206,6 +229,33 @@ export function Markdown({ children }: { children: string }) {
       return <hr className="my-10 border-slate-200 dark:border-white/10" />;
     },
 
+    /*
+      토글(노션의 접는 블록). remark-toggle 이 [!toggle] 인용을 details 로
+      바꿔 보낸다. summary 의 기본 화살표(플랫폼마다 제각각)를 지우고
+      우리 쉐브론을 그린다 - 열리면 group-open 으로 돌아간다.
+    */
+    details({ children }) {
+      return (
+        <details className="group my-4 rounded-2xl border border-slate-200 px-5 py-3.5 dark:border-white/10">
+          {children}
+        </details>
+      );
+    },
+    summary({ children }) {
+      return (
+        <summary className="flex cursor-pointer list-none items-baseline gap-2 font-bold text-brand-ink [&::-webkit-details-marker]:hidden dark:text-white">
+          <svg
+            viewBox="0 0 12 12"
+            aria-hidden
+            className="size-3 shrink-0 self-center transition-transform group-open:rotate-90"
+          >
+            <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span>{children}</span>
+        </summary>
+      );
+    },
+
     code({ children, className }) {
       // 블록 코드는 pre 가 감싸므로 여기 오는 것은 인라인뿐이다
       if (className?.includes("language-") || className?.includes("hljs")) {
@@ -270,6 +320,7 @@ export function Markdown({ children }: { children: string }) {
         remarkCjkFriendlyGfmStrikethrough,
         remarkHighlight,
         remarkCallout,
+        remarkToggle,
       ]}
       rehypePlugins={[rehypeHighlight]}
       remarkRehypeOptions={{

@@ -31,3 +31,15 @@ export function youTubeId(url: string): string | undefined {
   }
   return undefined;
 }
+
+/**
+ * 쇼츠 주소인가. 쇼츠는 세로 영상이라 화면이 다른 틀(9:16 세로 칸)로 그린다 -
+ * 16:9 칸에 넣으면 양옆이 검은 띠로 채워진다.
+ */
+export function isYouTubeShorts(url: string): boolean {
+  try {
+    return /^\/shorts\//.test(new URL(url).pathname);
+  } catch {
+    return false;
+  }
+}
