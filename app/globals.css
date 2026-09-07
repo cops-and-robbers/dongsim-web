@@ -944,3 +944,31 @@ body {
     transform: translateX(-100%);
   }
 }
+
+/*
+  블로그 코드 하이라이트(highlight.js 토큰) - #109 2단계.
+  색을 네 갈래로만 쓴다 - 주석·키워드·문자열·숫자. 토큰마다 색을 주면
+  코드가 알록달록해져서 정작 눈이 가야 할 곳을 잃는다.
+  코드 상자는 테마와 무관하게 항상 검정(bg-app-black)이라 값도 한 벌이다.
+*/
+.hljs-comment,
+.hljs-quote {
+  color: #7d8b9c;
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-title,
+.hljs-name,
+.hljs-section {
+  color: #8ab8ff;
+}
+.hljs-string,
+.hljs-attr {
+  color: #8fd6ae;
+}
+.hljs-number,
+.hljs-literal {
+  color: #e0b073;
+}
