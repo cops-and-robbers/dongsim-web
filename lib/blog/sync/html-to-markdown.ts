@@ -489,6 +489,14 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
         }
         if (!quote) {
           out.push(""); // 탭·공백만 남은 줄(벗겨낸 태그 자리)은 빈 줄로
+          /*
+            빈 줄은 인용 문맥을 끊는다. 노션 실물에서 인용의 자식은 인용 줄
+            **바로 다음** 탭 줄로만 온다 - 빈 줄(벗겨낸 컬럼 태그 자리 포함)
+            건너 나온 탭 줄까지 인용에 붙이면, 컬럼에 넣어 둔 그림이 앞 인용
+            상자 안으로 끌려 들어간다 (실측: 💡 인용 뒤 역할표 사진 두 장).
+          */
+          prevRest = "";
+          prevQuoted = false;
           continue;
         }
         if (!(lines[i + 1] ?? "").trim()) continue; // 빈 인용 찌꺼기
