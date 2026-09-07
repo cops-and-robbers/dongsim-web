@@ -1,6 +1,7 @@
 import { LEGAL_DOCS } from "@/lib/legal/documents";
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog/notion";
+import { allOpenPosts, listScopeOf, postPath } from "@/lib/community/api";
 import { LOCALES, alternateLanguages, localizedPath } from "@/lib/i18n/config";
 
 const BASE_URL = "https://copsandrobbers.app";
@@ -15,6 +16,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 언어 구분 없이 받아 각 글을 자기 언어 경로로 넣는다. 연동 미설정·오류 시 빈 배열.
   const allPosts = await getAllPosts();
   const posts = allPosts.filter((post) => post.locale === "ko");
+
+  // 모집글 상세. 글마다 지역·장소 이름이 들어가 지역 검색 유입 경로가 된다(#107).
+  // 글 하나에 주소도 하나라(postPath - 국가가 언어를 정한다) 중복 색인이 없다.
+  // 종료 글은 넣지 않는다 - 지난 모임 페이지가 대량 색인되면 철 지난 콘텐츠
+  // 판정 위험이 있고, 모임이 끝나면 다음 재생성 때 자연히 빠진다.
+  const meetupPages = (
+    await Promise.all(LOCALES.map((locale) => allOpenPosts(listScopeOf(locale))))
+  )
+    .flat()
+    .map((post) => ({
+      url: `${BASE_URL}${postPath(post)}`,
+      lastModified: new Date(post.updatedAt),
+      changeFrequency: "daily" as const,
+      priority: 0.6,
+    }));
 
   return [
     {
@@ -200,5 +216,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.3,
       })),
     ),
+    ...meetupPages,
   ];
 }
