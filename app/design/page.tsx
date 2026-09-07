@@ -9,7 +9,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import SectionHeading from "@/components/ui/SectionHeading";
 import UiSection from "@/components/ui/Section";
-import type { BlogPost } from "@/lib/blog/notion";
+import type { BlogPost } from "@/lib/blog/store";
 import {
   ChatMockup,
   CommunityChatMockup,

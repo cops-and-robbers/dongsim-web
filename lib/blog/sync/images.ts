@@ -16,9 +16,15 @@ import { exists, put } from "./r2";
 /** 긴 변 상한. 본문 폭이 34rem 정도라 이보다 클 이유가 없다(2배 해상도 감안). */
 const MAX_EDGE = 1600;
 
-/** 노션이 호스팅하는 파일인지. 외부 URL(이미 안정적인 주소)은 건드리지 않는다. */
+/**
+ * 우리 저장소로 옮겨야 하는 주소인지. 외부 URL(이미 안정적인 주소)은 건드리지 않는다.
+ *
+ * 노션 서명 URL(만료됨)과 노션 내장 아이콘, 그리고 동기화가 국기 이모지 대신
+ * 박아 넣는 트위모지 그림이 대상이다 - 트위모지는 남의 CDN 이라 우리가 못
+ * 지키는 주소이고, 옮겨 두면 걱정할 일이 없다.
+ */
 function isNotionHosted(url: string): boolean {
-  return /(amazonaws\.com|notion-static\.com|notion\.so)/.test(url);
+  return /(amazonaws\.com|notion-static\.com|notion\.so|cdn\.jsdelivr\.net)/.test(url);
 }
 
 /**
@@ -43,7 +49,8 @@ function keyOf(buf: Buffer, ext: string, w?: number, h?: number): string {
 export async function migrateImage(url: string): Promise<string> {
   if (!isNotionHosted(url)) return url;
 
-  const res = await fetch(url);
+  // UA 가 없으면 노션 CDN(내장 아이콘 경로)이 403 을 준다 (실측). 이름을 밝힌다.
+  const res = await fetch(url, { headers: { "user-agent": "dongsim blog sync" } });
   if (!res.ok) throw new Error(`이미지 내려받기 실패 (${res.status})`);
   const original = Buffer.from(await res.arrayBuffer());
 

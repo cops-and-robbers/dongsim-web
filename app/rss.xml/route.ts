@@ -1,4 +1,4 @@
-import { getPosts } from "@/lib/blog/notion";
+import { getPosts } from "@/lib/blog/store";
 import { BRAND, SITE_URL } from "@/lib/constants";
 
 // 블로그 RSS 피드 - RSS 리더 구독과 기술 블로그 수집 서비스(어썸 데브블로그 등) 등록용.
@@ -15,7 +15,8 @@ function escapeXml(text: string): string {
 }
 
 export async function GET(): Promise<Response> {
-  const posts = await getPosts();
+  // RSS 는 한국어 글만 담는다 (docs/blog-system.md)
+  const posts = await getPosts("ko");
 
   const items = posts
     .map((post) => {
