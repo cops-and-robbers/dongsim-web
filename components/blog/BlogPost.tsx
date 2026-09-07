@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
 import { notFound } from "next/navigation";
 import { preload } from "react-dom";
-import NotionBlocks from "@/components/blog/NotionBlocks";
+import { Markdown } from "@/components/blog/markdown/Markdown";
 import PostCard from "@/components/blog/PostCard";
 import ArticleJsonLd from "@/components/seo/ArticleJsonLd";
 import Container from "@/components/ui/Container";
 import { formatPostDate } from "@/lib/blog/format";
-import { getBlocks, getPosts, withImageWidth } from "@/lib/blog/notion";
+import { getPost, getPosts } from "@/lib/blog/store";
 import { getMessages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -41,28 +41,16 @@ export default async function BlogPost({
   slug: string;
   locale: Locale;
 }) {
-  const posts = await getPosts(locale);
-  const post = posts.find((p) => p.slug === slug);
+  const [post, posts] = await Promise.all([getPost(locale, slug), getPosts(locale)]);
   if (!post) notFound();
 
   const copy = getMessages(locale).blog;
-  const blocks = await getBlocks(post.id);
   // 관련 글 - 같은 언어 최신순에서 현재 글만 빼고 2개.
   const related = posts.filter((p) => p.id !== post.id).slice(0, 2);
 
-  // 커버는 이 페이지의 LCP - 프록시 이미지면 반응형 소스를 만들고 미리 불러온다.
-  const coverIsProxy = post.coverUrl?.startsWith("/api/blog/image") ?? false;
-  const coverSrcSet = coverIsProxy
-    ? `${withImageWidth(post.coverUrl!, 800)} 800w, ${withImageWidth(post.coverUrl!, 1600)} 1600w`
-    : undefined;
-  const coverSizes = coverSrcSet ? "(min-width: 768px) 720px, 100vw" : undefined;
+  // 커버는 이 페이지의 LCP - R2 영구 URL 이라 그대로 미리 불러온다.
   if (post.coverUrl) {
-    preload(withImageWidth(post.coverUrl, 1600), {
-      as: "image",
-      fetchPriority: "high",
-      imageSrcSet: coverSrcSet,
-      imageSizes: coverSizes,
-    });
+    preload(post.coverUrl, { as: "image", fetchPriority: "high" });
   }
 
   return (
@@ -86,17 +74,15 @@ export default async function BlogPost({
 
           {post.coverUrl && (
             <img
-              src={withImageWidth(post.coverUrl, 1600)}
-              srcSet={coverSrcSet}
-              sizes={coverSizes}
+              src={post.coverUrl}
               fetchPriority="high"
               alt={post.title}
               className="mt-10 aspect-3/2 w-full object-cover sm:-mx-6 sm:w-[calc(100%+3rem)] sm:max-w-none"
             />
           )}
 
-          <article className="mt-12">
-            <NotionBlocks blocks={blocks} />
+          <article className="mt-12 text-lg text-slate-600 dark:text-slate-300">
+            <Markdown>{post.body}</Markdown>
           </article>
         </div>
       </Container>

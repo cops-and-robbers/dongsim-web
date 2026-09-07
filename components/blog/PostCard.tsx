@@ -2,7 +2,7 @@
 import Link from "next/link";
 import CharacterDuo from "@/components/ui/CharacterDuo";
 import { formatPostDate } from "@/lib/blog/format";
-import { withImageWidth, type BlogPost } from "@/lib/blog/notion";
+import type { BlogPost } from "@/lib/blog/store";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 
 // 블로그 글 카드 - 목록·관련 글에서 재사용.
@@ -30,13 +30,7 @@ export default function PostCard({
       <div className="aspect-3/2 w-full overflow-hidden bg-brand-blue-bg dark:bg-app-black-800">
         {post.coverUrl ? (
           <img
-            src={withImageWidth(post.coverUrl, 800)}
-            srcSet={
-              post.coverUrl.startsWith("/api/blog/image")
-                ? `${withImageWidth(post.coverUrl, 640)} 640w, ${withImageWidth(post.coverUrl, 800)} 800w`
-                : undefined
-            }
-            sizes="(min-width: 1024px) 352px, (min-width: 640px) 50vw, 100vw"
+            src={post.coverUrl}
             alt={post.title}
             loading="lazy"
             decoding="async"

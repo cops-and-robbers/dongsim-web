@@ -2,7 +2,7 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { getPosts } from "@/lib/blog/notion";
+import { getPosts } from "@/lib/blog/store";
 import type { Locale } from "@/lib/i18n/config";
 
 // 블로그 글 공유용 동적 OG - 글 제목·작성자가 박힌 브랜드 카드.

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import BlogPost from "@/components/blog/BlogPost";
-import { getPosts } from "@/lib/blog/notion";
+import { getPosts } from "@/lib/blog/store";
 import { getMessages } from "@/lib/i18n/messages";
 import { SITE_URL } from "@/lib/constants";
 

@@ -3,7 +3,7 @@ import PostRow from "@/components/blog/PostRow";
 import BlogViewToggle from "@/components/blog/BlogViewToggle";
 import Container from "@/components/ui/Container";
 import EmptyState from "@/components/ui/EmptyState";
-import { getPosts } from "@/lib/blog/notion";
+import { getPosts } from "@/lib/blog/store";
 import { getMessages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/i18n/config";
 

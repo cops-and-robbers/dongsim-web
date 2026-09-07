@@ -2,7 +2,7 @@
 import Link from "next/link";
 import CharacterDuo from "@/components/ui/CharacterDuo";
 import { formatPostDate } from "@/lib/blog/format";
-import { withImageWidth, type BlogPost } from "@/lib/blog/notion";
+import type { BlogPost } from "@/lib/blog/store";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 
 // 목록형 한 줄 - 카드(PostCard)와 같은 재료를 가로로 눕힌 형태.
@@ -22,8 +22,7 @@ export default function PostRow({
       <div className="aspect-3/2 w-28 shrink-0 overflow-hidden bg-brand-blue-bg sm:w-44 dark:bg-app-black-800">
         {post.coverUrl ? (
           <img
-            src={withImageWidth(post.coverUrl, 400)}
-            sizes="(min-width: 640px) 176px, 112px"
+            src={post.coverUrl}
             alt={post.title}
             loading="lazy"
             decoding="async"

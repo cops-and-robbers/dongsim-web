@@ -1,6 +1,6 @@
 import { LEGAL_DOCS } from "@/lib/legal/documents";
 import type { MetadataRoute } from "next";
-import { getAllPosts } from "@/lib/blog/notion";
+import { getAllPosts } from "@/lib/blog/store";
 import { allPostsByLatest, isOpen, listScopeOf, postPath } from "@/lib/community/api";
 import { LOCALES, alternateLanguages, localizedPath } from "@/lib/i18n/config";
 
