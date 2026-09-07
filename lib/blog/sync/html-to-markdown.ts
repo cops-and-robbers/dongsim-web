@@ -301,61 +301,49 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
 
         아이콘도 같은 이유로 첫 줄 앞에 그냥 붙이면 안 된다. 내용이 헤딩이면
         헤딩 글자 안으로 넣는다 - 노션 화면에서도 아이콘은 첫 줄 왼쪽에 붙는다.
-        아이콘이 이모지가 아니라 노션 내장 경로(/icons/xx.svg)면 버린다 -
-        그대로 두면 화면에 경로가 글자로 보인다.
+
+        아이콘 표기는 세 가지다 (실물).
+          이모지            글자 그대로 둔다
+          /icons/xx.svg     노션 내장 아이콘. 절대 주소의 인라인 이미지로 만든다 -
+                            그래야 이미지 이관이 R2로 옮겨 우리 주소가 된다.
+                            alt "icon" 은 렌더가 본문 그림과 구분하는 표식이다.
+          https://…         작성자가 올린 이미지 아이콘. 그대로 인라인 이미지로 -
+                            노션 호스팅이면 이관이 알아서 옮긴다.
       */
-      const cleanIcon = icon && !/^\/icons\//.test(icon) ? icon : "";
+      const cleanIcon = !icon
+        ? ""
+        : /^\/icons\//.test(icon)
+          ? `![icon](https://www.notion.so${icon})`
+          : /^https?:\/\//.test(icon)
+            ? `![icon](${icon})`
+            : icon;
       let content = body.replace(/^\/icons\/\S+\.(?:svg|png)\s*/, "");
-
-      /*
-        콜아웃 안의 토글 헤딩부터는 상자 밖으로 뺀다 (실물 + 팀원 확인).
-
-        노션 화면에서 콜아웃은 한두 줄짜리 배너이고 토글은 접혀 있는데,
-        API 는 접힌 내용 전체(1만 자짜리 룰 설명까지)를 콜아웃 자식으로
-        내보낸다. 그대로 상자에 담으면 글 절반이 콜아웃 안에 갇힌 화면이
-        된다. 배너 줄만 상자에 남기고, 토글 헤딩부터는 일반 본문으로 잇는다 -
-        토글을 펼친 채 렌더하는 <details> 처리와 같은 판단이다.
-      */
-      const bodyLines = content.split("\n");
-      const toggleAt = bodyLines.findIndex((l) => /\{toggle="true"\}/i.test(l));
-      let popped = "";
-      if (toggleAt >= 0) {
-        popped = `\n\n${bodyLines.slice(toggleAt).join("\n")}\n\n`;
-        content = bodyLines.slice(0, toggleAt).join("\n").trim();
-        if (!content) return popped; // 배너 줄이 없으면 상자도 만들지 않는다
-      }
 
       if (cleanIcon) {
         content = /^#{1,6}\s/.test(content)
           ? content.replace(/^(#{1,6})\s+/, `$1 ${cleanIcon} `)
           : `${cleanIcon} ${content}`;
       }
-      return asBlockquote(`[!callout]\n${content}`) + popped;
+      // 콜아웃 안의 토글 헤딩({toggle="true"} 줄과 탭 자식)은 이 인용에 담긴 채
+      // 아래 구조 정리가 [!toggle] 블록으로 바꾼다 - 노션처럼 접힌 채 상자 안에 남는다
+      return asBlockquote(`[!callout]\n${content}`);
     })
 
-    // 토글 → 요약 줄을 굵게, 내용은 펼친 채로.
-    // 접는 동작은 잃지만 글이 사라지는 것보다 낫고, 검색에도 잡힌다.
+    /*
+      토글 블록 → [!toggle] 인용 (팀원 요청: 펼쳐 두지 말고 노션처럼 접기).
+
+      제목 줄과 내용을 인용 한 단으로 감싸고 마커를 단다. remark-toggle 이
+      렌더 시점에 이 인용을 <details>/<summary> 로 바꾼다 - 원시 HTML 을
+      렌더하지 않는 원칙(ADR-0012)을 지키면서 접는 동작을 살리는 길이다.
+      제목 뒤에 빈 인용 줄을 넣는 이유는 제목과 내용이 한 문단으로 붙으면
+      summary 가 내용까지 삼키기 때문이다.
+    */
     .replace(/<details[^>]*>([\s\S]*?)<\/details>/gi, (_m, inner: string) => {
       const summary = inner.match(/<summary[^>]*>([\s\S]*?)<\/summary>/i)?.[1] ?? "";
       const rest = inner.replace(/<summary[^>]*>[\s\S]*?<\/summary>/i, "").trim();
       const title = summary.replace(/<[^>]+>/g, "").trim();
-      return `\n\n${title ? `**${title}**\n\n` : ""}${rest}\n\n`;
+      return asBlockquote(`[!toggle] ${title || "토글"}\n\n${rest}`);
     })
-
-    /*
-      토글 "헤딩" — 팀 글 실물에서 확인한 다른 형태 (#109).
-
-      노션은 헤딩에 접기를 걸면 <details> 가 아니라
-      `### 제목 {toggle="true"}` + 탭 들여쓰기 내용으로 내보낸다.
-      탭 들여쓰기는 마크다운에서 코드 블록이라, 그대로 두면 본문이
-      검은 상자에 갇힌다 (실측). 마커를 떼고 들여쓰기를 벗겨
-      위 <details> 와 같은 판단(펼친 채)으로 되돌린다.
-
-      들여쓰기는 여기서 벗기지 않는다 — 어떤 탭이 중첩 목록이고 어떤 탭이
-      토글·콜아웃 내용인지는 앞뒤 줄을 봐야 알 수 있어서, 태그를 다 바꾼 뒤
-      줄 단위로 한 번에 정리한다(아래 구조 정리 단계).
-    */
-    .replace(/\s*\{toggle="true"\}/gi, "")
 
     /*
       콜아웃의 노션 내장 아이콘 — 이모지가 아니라 `/icons/hand_blue.svg` 같은
@@ -437,48 +425,105 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
     코드 블록이라 그대로 두면 본문이 검은 상자에 갇히는데, 탭의 뜻이 문맥마다
     달라 정규식 한 줄로는 못 벗긴다. 줄 단위로 앞 줄을 보며 정리한다.
 
+      토글 헤딩 줄       `### 제목 {toggle="true"}` (실물). 인용 한 단을 새로
+                         열어 `[!toggle] 제목` 마커를 두고, 탭이 더 깊은
+                         자식 줄들을 그 인용에 담는다 - remark-toggle 이
+                         <details> 로 바꿔 노션처럼 접힌다.
       헤딩 줄            탭을 전부 벗긴다. 들여쓴 헤딩은 마크다운에 없다.
       탭 + 목록 줄       바로 위가 인용이면 인용 자식이 샌 것 → "> " 를 붙여
-                         인용으로 되돌린다 (인용 블록의 목록 자식 실물).
-                         바로 위가 목록이면 중첩 목록 → 그대로 둔다.
-                         그 밖이면 부모 잃은 목록 → 탭만 벗긴다.
-      그 밖의 탭 줄      토글·콜아웃 내용의 들여쓰기 → 탭을 벗긴다.
+                         인용으로 되돌린다. 바로 위가 목록이면 중첩 목록 →
+                         그대로 둔다. 그 밖이면 부모 잃은 목록 → 탭만 벗긴다.
+      그 밖의 탭 줄      인용·문장이 앞에 있으면 그 자식, 아니면 탭만 벗긴다.
       내용 없는 ">" 줄   다음 줄이 빈 줄이면 빈 인용 찌꺼기 → 버린다.
                          (노션이 인용 블록과 그 자식을 따로 내보낼 때 생긴다)
   */
   {
     const lines = work.split("\n");
     const isList = (s: string) => /^(?:[-*+]|\d+\.)\s/.test(s);
+    const decompose = (line: string) => {
+      const m = line.match(/^((?:> ?)*)(\t*)(.*)$/);
+      if (!m) return null;
+      return { quote: m[1], q: (m[1].match(/>/g) ?? []).length, t: m[2].length, rest: m[3] };
+    };
+    /** 다음 내용 있는 줄 - 빈 줄이 토글을 닫아야 하는지 내다볼 때 쓴다 */
+    const peek = (from: number) => {
+      for (let j = from; j < lines.length; j += 1) {
+        const d = decompose(lines[j]);
+        if (d && (d.rest.trim() || d.q > 0)) return d;
+      }
+      return null;
+    };
+    const TOGGLE_HEAD = /^#{1,6}\s+(.*?)\s*\{toggle="true"\}\s*$/i;
+
     const out: string[] = [];
     let prevRest = ""; // 마지막 내용 있는 줄의, 인용 접두를 벗긴 내용
     let prevQuoted = false;
+    /** 열린 토글: 자식은 같은 인용 깊이(q)에서 더 깊은 탭(> t)으로 온다 */
+    const toggles: { q: number; t: number }[] = [];
+    const inToggle = (d: { q: number; t: number } | null) =>
+      d !== null &&
+      toggles.length > 0 &&
+      d.q === toggles[toggles.length - 1].q &&
+      d.t > toggles[toggles.length - 1].t;
+
     for (let i = 0; i < lines.length; i += 1) {
-      const m = lines[i].match(/^((?:> ?)*)(\t*)(.*)$/);
-      if (!m) {
+      const d = decompose(lines[i]);
+      if (!d) {
         out.push(lines[i]);
         continue;
       }
-      let [, quote, tabs, rest] = m;
-      if (!quote && !rest.trim()) {
-        out.push(""); // 탭·공백만 남은 줄(벗겨낸 태그 자리)은 빈 줄로
-        continue;
-      }
-      if (quote && !rest.trim()) {
+      let { quote, q, t, rest } = d;
+
+      // 빈 줄(맨 빈 줄이든 내용 없는 "> " 줄이든): 토글이 계속되는지 내다보고,
+      // 계속되면 인용 빈 줄로 잇는다 - 맨 빈 줄은 인용을 끊어 토글을 조각낸다.
+      if (!rest.trim()) {
+        const nx = peek(i + 1);
+        while (toggles.length && !inToggle(nx)) toggles.pop();
+        if (toggles.length) {
+          // 빈 줄 자신의 접두가 아니라 토글이 사는 인용 깊이 기준으로 잇는다
+          const base = toggles[toggles.length - 1].q;
+          out.push("> ".repeat(base + toggles.length).trimEnd());
+          prevRest = "";
+          prevQuoted = true;
+          continue;
+        }
+        if (!quote) {
+          out.push(""); // 탭·공백만 남은 줄(벗겨낸 태그 자리)은 빈 줄로
+          continue;
+        }
         if (!(lines[i + 1] ?? "").trim()) continue; // 빈 인용 찌꺼기
         out.push(">"); // 인용 안 문단 구분
         prevRest = "";
         prevQuoted = true;
         continue;
       }
+
+      // 이 내용 줄이 담기지 않는 토글은 닫는다
+      while (toggles.length && !inToggle(d)) toggles.pop();
+
+      const th = rest.match(TOGGLE_HEAD);
+      if (th) {
+        toggles.push({ q, t });
+        const prefix = quote + "> ".repeat(toggles.length);
+        out.push(`${prefix}[!toggle] ${th[1] || "토글"}`);
+        out.push(prefix.trimEnd()); // 제목 문단을 끊는 빈 인용 줄
+        prevRest = "";
+        prevQuoted = true;
+        continue;
+      }
+
+      // 토글 안에서 소비된 탭(토글 헤딩보다 한 단 깊음)을 뺀 나머지가 실제 들여쓰기
+      const consumed = toggles.length ? toggles[toggles.length - 1].t + 1 : 0;
+      let tabs = "\t".repeat(Math.max(0, t - consumed));
       if (/^#{1,6}\s/.test(rest)) {
         tabs = "";
+      } else if (tabs && !quote && !toggles.length && prevQuoted) {
+        // 인용 바로 아래 탭 줄은 인용의 자식이다 - 목록이든 문장이든 인용으로
+        // 되돌린다 (실물: 체크리스트, 그리고 "기회는 우연히…" 같은 여러 줄 인용)
+        quote = "> ";
+        tabs = "";
       } else if (tabs && isList(rest)) {
-        if (!quote && prevQuoted) {
-          quote = "> ";
-          tabs = "";
-        } else if (!isList(prevRest)) {
-          tabs = "";
-        }
+        if (!isList(prevRest)) tabs = "";
       } else if (tabs) {
         tabs = "";
       }
@@ -488,14 +533,56 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
         실물에서 인용(💡 한 줄)과 뒷문장은 형제 블록이다 - 빈 줄이 없으면
         뒷문장과 이미지까지 인용 안으로 끌려 들어간다 (실측).
       */
+      const prefix = quote + "> ".repeat(toggles.length);
       const last = out.length > 0 ? out[out.length - 1] : "";
-      if (last.startsWith(">") && !quote && rest.trim()) out.push("");
-      out.push(quote + tabs + rest);
+      if (last.startsWith(">") && !prefix && rest.trim()) out.push("");
+      out.push(prefix + tabs + rest);
       prevRest = rest;
-      prevQuoted = quote.length > 0;
+      prevQuoted = prefix.length > 0;
     }
     work = out.join("\n");
   }
+
+  // 헤딩이 아닌 곳에 남은 토글 마커는 화면에 글자로 남지 않게 걷어낸다
+  work = work.replace(/\s*\{toggle="true"\}/gi, "");
+
+  /*
+    이미지 한 장짜리 줄은 자기 문단으로 떼어 놓는다 (실물: "…준비되어 있습니다!"
+    바로 다음 줄에 그림). 글 줄에 붙어 한 문단이 되면 렌더가 figure 로 못 키워서
+    [작게] 같은 크기 지시어가 죽고, 그림이 원본 크기 그대로 왼쪽에 붙는다.
+
+    인용(콜아웃·토글) 안 그림도 같은 문제가 있어서 같은 처리를 하되,
+    빈 줄 대신 빈 인용 줄을 넣는다 - 맨 빈 줄은 인용을 끊어 버린다 (실측:
+    토글 속 그림이 글 줄에 붙어 원본 크기로 나왔다).
+  */
+  work = work
+    .replace(/^(!\[(?:\\.|[^\]])*\]\([^)\n]*\))[ \t]*$/gm, "\n$1\n")
+    .replace(
+      /^((?:> ?)+)(!\[(?:\\.|[^\]])*\]\([^)\n]*\))[ \t]*$/gm,
+      (_m, qp: string, img: string) => {
+        const bare = qp.trimEnd();
+        return `${bare}\n${qp}${img}\n${bare}`;
+      },
+    );
+
+  /*
+    국기 이모지 → 트위모지 그림 (실물: "🇳🇱 네덜란드 이야기…", 팀원 확인).
+
+    국기는 지역 표시 문자 두 개짜리 이모지인데, 윈도우에는 국기 글리프가
+    없어서 브라우저가 "NL" 두 글자로 그린다. 노션은 자체 이모지 그림을 쓰니
+    노션에서만 보이고 우리 화면에서는 사라진 것처럼 보인다. 그림으로 바꿔
+    어느 플랫폼에서나 보이게 한다 - 이 주소도 이미지 이관이 R2로 옮긴다.
+    다른 이모지는 손대지 않는다. 국기만 이 구멍이 있다.
+
+    이미지 마크다운을 먼저 자리표로 빼 둔다 - 캡션(alt) 안의 국기까지
+    그림으로 바꾸면 이미지 문법 안에 이미지가 중첩돼 둘 다 깨진다.
+  */
+  work = work
+    .replace(/!\[(?:\\.|[^\]])*\]\([^)\n]*\)/g, stash)
+    .replace(/[\u{1F1E6}-\u{1F1FF}]{2}/gu, (flag) => {
+      const codes = [...flag].map((ch) => ch.codePointAt(0)!.toString(16)).join("-");
+      return `![icon](https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/${codes}.svg)`;
+    });
 
   /*
     굵은 글씨 가장자리 공백 (실물: "앱은** '경도를…' **라는").
@@ -545,6 +632,10 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
   for (let i = 0; i < 5 && work.includes(MARK); i += 1) {
     work = work.replace(holder, (_m, n: string) => vault[Number(n)] ?? "");
   }
+
+  // 인용 끝에 남은 빈 인용 줄(">"만 있는 줄 + 빈 줄)은 빈 문단 찌꺼기다.
+  // 인용 그림 분리가 끝에 붙인 것까지 걷어내야 하므로 마지막에 돈다.
+  work = work.replace(/^(?:> ?)*>[ \t]*\n(?=\n|$)/gm, "");
 
   // 줄 끝 공백은 손대지 않는다 — 마크다운에서 공백 두 개는 줄바꿈이다
   const markdown = work.replace(/\n{3,}/g, "\n\n").trim();
