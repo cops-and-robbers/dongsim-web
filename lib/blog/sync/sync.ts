@@ -94,9 +94,9 @@ const CONTENT_FIELDS = [
   "status",
 ] as const;
 
-/** 본문에서 처음 나오는 그림. 마크다운 이미지 문법만 본다 */
+/** 본문에서 처음 나오는 그림. alt 의 이스케이프 대괄호([작게] 지시어)까지 본다 */
 function firstImageOf(body: string): string | undefined {
-  return body.match(/!\[[^\]]*\]\(([^)\s]+)/)?.[1];
+  return body.match(/!\[(?:\\.|[^\]])*\]\(([^)\s]+)/)?.[1];
 }
 
 /** 두 행의 내용이 같은가 - 태그는 순서까지 본다(노션이 순서를 지킨다) */

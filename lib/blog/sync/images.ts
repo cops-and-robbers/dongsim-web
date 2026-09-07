@@ -85,7 +85,10 @@ export async function migrateImage(url: string): Promise<string> {
 export async function migrateBodyImages(
   markdown: string,
 ): Promise<{ body: string; moved: number; failed: number }> {
-  const pattern = /!\[([^\]]*)\]\(([^)\s]+)(\s+"[^"]*")?\)/g;
+  // alt 는 이스케이프된 대괄호를 허용한다. 우리 블로그는 캡션에 [작게]/[중간]
+  // 크기 지시어를 쓰는데, 노션 마크다운이 이를 \[작게\] 로 내보낸다. 이걸 못
+  // 잡으면 그 이미지만 치환이 빠져 서명 URL 이 남고, 한 시간 뒤 깨진다 (실측).
+  const pattern = /!\[((?:\\.|[^\]])*)\]\(([^)\s]+)(\s+"[^"]*")?\)/g;
   const matches = [...markdown.matchAll(pattern)];
 
   let body = markdown;
