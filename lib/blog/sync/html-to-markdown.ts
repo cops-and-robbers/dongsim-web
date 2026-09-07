@@ -472,7 +472,8 @@ export function htmlToMarkdown(md: string): MarkdownConversion {
         out.push(lines[i]);
         continue;
       }
-      let { quote, q, t, rest } = d;
+      const { q, t, rest } = d;
+      let { quote } = d;
 
       // 빈 줄(맨 빈 줄이든 내용 없는 "> " 줄이든): 토글이 계속되는지 내다보고,
       // 계속되면 인용 빈 줄로 잇는다 - 맨 빈 줄은 인용을 끊어 토글을 조각낸다.
