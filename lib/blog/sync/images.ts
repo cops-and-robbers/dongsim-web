@@ -24,7 +24,11 @@ const MAX_EDGE = 1600;
  * 지키는 주소이고, 옮겨 두면 걱정할 일이 없다.
  */
 function isNotionHosted(url: string): boolean {
-  return /(amazonaws\.com|notion-static\.com|notion\.so|cdn\.jsdelivr\.net)/.test(url);
+  // app.notion.com 은 내장 갤러리 커버(page-cover)가 오는 곳이다 - 만료는 없지만
+  // 남의 서버라 우리가 지킬 수 없는 주소이고, 옮겨 두면 걱정할 일이 없다.
+  return /(amazonaws\.com|notion-static\.com|notion\.so|app\.notion\.com|cdn\.jsdelivr\.net)/.test(
+    url,
+  );
 }
 
 /**

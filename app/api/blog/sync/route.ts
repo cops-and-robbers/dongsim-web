@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { collectGarbage, type GcReport } from "@/lib/blog/sync/gc";
 import { syncFromNotion, type SyncedSlug } from "@/lib/blog/sync/sync";
 import { SITE_URL } from "@/lib/constants";
 
@@ -120,6 +121,31 @@ export async function POST(req: Request) {
     const stillPublic = await confirmClosed(closed);
 
     /*
+      고아 이미지 정리 (#109 3단계). 동기화 뒤에 돌아야 참조 목록이 최신이다.
+      ?gc=dry 는 세기만, ?gc=run 은 지우기까지. 평소 동기화에는 안 붙인다 -
+      버킷 전체 목록을 매번 도는 것은 낭비고, 지우기는 사람이 명시할 일이다.
+      정리 실패가 발행을 막으면 안 되므로 오류는 응답에 담고 넘어간다.
+    */
+    const gcMode = new URL(req.url).searchParams.get("gc");
+    let gc: (GcReport & { error?: string }) | undefined;
+    if (gcMode === "dry" || gcMode === "run") {
+      try {
+        const report = await collectGarbage(gcMode === "run");
+        // 고아가 수백 개면 응답이 비대해진다. 수는 그대로, 목록은 앞부분만.
+        gc = { ...report, orphans: report.orphans.slice(0, 50) };
+      } catch (e) {
+        gc = {
+          scanned: 0,
+          referenced: 0,
+          orphans: [],
+          tooFresh: 0,
+          deleted: 0,
+          error: e instanceof Error ? e.message : String(e),
+        };
+      }
+    }
+
+    /*
       한 글이라도 실패했으면 실패로 응답한다.
       이미지 이관 실패도 같이 본다 - 남은 노션 URL은 곧 만료돼 그림이 깨진다.
       지우기를 멈춘 것도, 아직 열려 있는 초안도 실패다.
@@ -132,7 +158,10 @@ export async function POST(req: Request) {
       result.imageFailures.length === 0 &&
       stillPublic.length === 0 &&
       !result.removalBlocked;
-    return NextResponse.json({ ...result, stillPublic }, { status: ok ? 200 : 500 });
+    return NextResponse.json(
+      { ...result, stillPublic, ...(gc ? { gc } : {}) },
+      { status: ok ? 200 : 500 },
+    );
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : String(e) },
