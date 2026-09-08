@@ -185,7 +185,8 @@ export function Markdown({ children }: { children: string }) {
 
     ul({ children }) {
       return (
-        <ul className="my-4 list-disc space-y-1.5 pl-6 marker:text-brand-blue dark:marker:text-brand-green">
+        // 할 일 항목(체크박스가 든 li)은 글머리 기호를 지운다 - 체크박스가 마커다
+        <ul className="my-4 list-disc space-y-1.5 pl-6 marker:text-brand-blue dark:marker:text-brand-green [&_li:has(input)]:list-none [&_li:has(input)]:-ml-5">
           {children}
         </ul>
       );
@@ -199,6 +200,21 @@ export function Markdown({ children }: { children: string }) {
     },
     li({ children }) {
       return <li className="leading-relaxed">{children}</li>;
+    },
+
+    // 노션 할 일 목록(- [ ] / - [x]). 체크박스에 우리 색을 입히고,
+    // 글머리 기호와 겹치지 않게 마커를 지운다.
+    input({ checked, disabled, type }) {
+      if (type !== "checkbox") return null;
+      return (
+        <input
+          type="checkbox"
+          checked={checked ?? false}
+          disabled={disabled ?? true}
+          readOnly
+          className="mr-2 size-4 translate-y-0.5 accent-brand-blue dark:accent-brand-green"
+        />
+      );
     },
 
     // 콜아웃(노션의 면 상자)과 인용은 다른 요소다 - remark-callout 이 심어 둔
