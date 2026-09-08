@@ -6,7 +6,7 @@
  */
 
 /** 코드 블록 안의 `## ` 을 제목으로 잘못 읽지 않도록 펜스 구간을 먼저 지운다 */
-function stripFences(md: string): string {
+export function stripFences(md: string): string {
   return md.replace(/^```[\s\S]*?^```/gm, "");
 }
 
