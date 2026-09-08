@@ -172,6 +172,17 @@ export function TermsIcon({ className }: IconProps) {
   );
 }
 
+export function BlogIcon({ className }: IconProps) {
+  // 문서 + 펜. 다른 기능 아이콘과 같은 듀오톤(불투명도) 방식.
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
+      <path opacity="0.32" d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" />
+      <path d="M15 2v5h5l-5-5Z" />
+      <path d="M8.2 16.9l.5-2 4.5-4.5a1.2 1.2 0 0 1 1.7 0l.3.3a1.2 1.2 0 0 1 0 1.7l-4.5 4.5-2 .5a.4.4 0 0 1-.5-.5Z" />
+    </svg>
+  );
+}
+
 export function SunIcon({ className }: IconProps) {
   return (
     <Line className={className}>

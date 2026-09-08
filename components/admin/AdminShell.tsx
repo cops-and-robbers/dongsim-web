@@ -11,6 +11,7 @@ import {
   UsersIcon,
   GamesIcon,
   NoticeIcon,
+  BlogIcon,
   ReportIcon,
   BugIcon,
   TermsIcon,
@@ -51,7 +52,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "콘텐츠",
-    items: [{ href: "/admin/notices", label: "공지", Icon: NoticeIcon }],
+    items: [
+      { href: "/admin/notices", label: "공지", Icon: NoticeIcon },
+      { href: "/admin/blog", label: "블로그", Icon: BlogIcon },
+    ],
   },
 ];
 
