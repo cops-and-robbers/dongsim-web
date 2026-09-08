@@ -10,10 +10,10 @@ export const OG_SIZE = { width: 1200, height: 600 };
 
 const FONT_DIR = "node_modules/pretendard/dist/public/static";
 
-async function dataUri(relPath: string, mime: string) {
-  const buf = await readFile(join(process.cwd(), relPath));
-  return `data:${mime};base64,${buf.toString("base64")}`;
-}
+// readFile 경로는 호출부에 글자 그대로 적는다. 변수로 넘기면 파일 트레이싱이
+// 경로를 좁히지 못해 프로젝트 전체를 함수 번들에 넣는다 (#113 실측).
+const dataUri = (buf: Buffer, mime: string) =>
+  `data:${mime};base64,${buf.toString("base64")}`;
 
 export async function renderPhotoboothOg(opts: {
   line1: string;
@@ -22,13 +22,16 @@ export async function renderPhotoboothOg(opts: {
   details?: string[];
 }) {
   const { line1, line2, details = [] } = opts;
-  const [bold, extraBold, logo, cop, thief] = await Promise.all([
+  const [bold, extraBold, logoBuf, copBuf, thiefBuf] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
-    dataUri("public/brand/header-logo.svg", "image/svg+xml"),
-    dataUri("public/photobooth/cop.svg", "image/svg+xml"),
-    dataUri("public/photobooth/thief.svg", "image/svg+xml"),
+    readFile(join(process.cwd(), "public/brand/header-logo.svg")),
+    readFile(join(process.cwd(), "public/photobooth/cop.svg")),
+    readFile(join(process.cwd(), "public/photobooth/thief.svg")),
   ]);
+  const logo = dataUri(logoBuf, "image/svg+xml");
+  const cop = dataUri(copBuf, "image/svg+xml");
+  const thief = dataUri(thiefBuf, "image/svg+xml");
 
   return new ImageResponse(
     (

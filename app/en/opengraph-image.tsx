@@ -6,9 +6,7 @@ export const contentType = "image/png";
 
 export default function Image() {
   return renderHomeOg({
-    logoPath: "public/brand/i18n/logo-en.svg",
-    logoW: 2174,
-    logoH: 560,
+    logo: "en",
     line1: "Cops and Robbers,",
     line2: "back in real life",
   });

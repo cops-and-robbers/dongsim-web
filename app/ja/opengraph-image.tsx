@@ -6,9 +6,7 @@ export const contentType = "image/png";
 
 export default function Image() {
   return renderHomeOg({
-    logoPath: "public/brand/i18n/logo-ja.svg",
-    logoW: 2791,
-    logoH: 560,
+    logo: "ja",
     line1: "ケイドロが、",
     line2: "帰ってきた。",
   });

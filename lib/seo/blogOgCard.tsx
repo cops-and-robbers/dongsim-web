@@ -40,10 +40,10 @@ export function ogAlt(locale: Locale): string {
   return COPY[locale].alt;
 }
 
-async function dataUri(relPath: string, mime: string) {
-  const buf = await readFile(join(process.cwd(), relPath));
-  return `data:${mime};base64,${buf.toString("base64")}`;
-}
+// readFile 경로는 호출부에 글자 그대로 적는다. 변수로 넘기면 파일 트레이싱이
+// 경로를 좁히지 못해 프로젝트 전체를 함수 번들에 넣는다 (#113 실측).
+const dataUri = (buf: Buffer, mime: string) =>
+  `data:${mime};base64,${buf.toString("base64")}`;
 
 function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -120,13 +120,16 @@ export async function renderBlogOg(locale: Locale, slug?: string) {
   const posts = slug ? await getPosts(locale) : [];
   const post = slug ? posts.find((p) => p.slug === slug) : undefined;
 
-  const [bold, extraBold, logo, cop, thief] = await Promise.all([
+  const [bold, extraBold, logoBuf, copBuf, thiefBuf] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
-    dataUri("public/brand/header-logo.svg", "image/svg+xml"),
-    dataUri("public/photobooth/cop.svg", "image/svg+xml"),
-    dataUri("public/photobooth/thief.svg", "image/svg+xml"),
+    readFile(join(process.cwd(), "public/brand/header-logo.svg")),
+    readFile(join(process.cwd(), "public/photobooth/cop.svg")),
+    readFile(join(process.cwd(), "public/photobooth/thief.svg")),
   ]);
+  const logo = dataUri(logoBuf, "image/svg+xml");
+  const cop = dataUri(copBuf, "image/svg+xml");
+  const thief = dataUri(thiefBuf, "image/svg+xml");
 
   const title = truncate(post?.title ?? copy.fallbackTitle, 44);
   // 일본어만 직접 줄을 나눈다(금칙처리). 한국어·영어는 satori의 단어 단위 줄바꿈이 잘 맞는다.

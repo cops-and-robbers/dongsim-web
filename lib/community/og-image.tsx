@@ -25,10 +25,10 @@ const LABELS: Record<
   ja: { open: "募集中", closed: "募集終了", seats: (n) => `残り${n}名` },
 };
 
-async function svgDataUri(relPath: string) {
-  const buf = await readFile(join(process.cwd(), relPath));
-  return `data:image/svg+xml;base64,${buf.toString("base64")}`;
-}
+// readFile 경로는 호출부에 글자 그대로 적는다. 변수로 넘기면 파일 트레이싱이
+// 경로를 좁히지 못해 프로젝트 전체를 함수 번들에 넣는다 (#113 실측).
+const svgDataUri = (buf: Buffer) =>
+  `data:image/svg+xml;base64,${buf.toString("base64")}`;
 
 /** 제목이 카드 두 줄을 넘지 않게 자른다 (satori 는 lineClamp 미지원). */
 function clampTitle(title: string, max = 32) {
@@ -36,14 +36,17 @@ function clampTitle(title: string, max = 32) {
 }
 
 export async function renderCommunityOgImage(postId: string) {
-  const [bold, extraBold, logo, robber, police, post] = await Promise.all([
+  const [bold, extraBold, logoBuf, robberBuf, policeBuf, post] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
-    svgDataUri("public/brand/header-logo.svg"),
-    svgDataUri("public/characters/robber-flee.svg"),
-    svgDataUri("public/characters/police-chase.svg"),
+    readFile(join(process.cwd(), "public/brand/header-logo.svg")),
+    readFile(join(process.cwd(), "public/characters/robber-flee.svg")),
+    readFile(join(process.cwd(), "public/characters/police-chase.svg")),
     getPost(Number(postId)).catch(() => null),
   ]);
+  const logo = svgDataUri(logoBuf);
+  const robber = svgDataUri(robberBuf);
+  const police = svgDataUri(policeBuf);
 
   const locale: Locale = post ? localeOfPost(post) : "ko";
   const t = LABELS[locale];
