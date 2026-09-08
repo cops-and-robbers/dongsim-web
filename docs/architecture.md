@@ -24,7 +24,6 @@
 
 | 경로 | 역할 |
 | --- | --- |
-| `/api/blog/image` | 노션 이미지 프록시 - 리사이즈·WebP·1년 불변 캐시 |
 | `/api/photobooth/upload` | Vercel Blob 업로드 토큰 발급 (운영 시간 게이트 포함) |
 | `/api/booth/scores` | 미니게임 리더보드 (Redis 정렬 집합, 닉네임별 최고점) |
 

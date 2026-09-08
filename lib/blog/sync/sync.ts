@@ -200,6 +200,11 @@ export async function syncFromNotion(
   options: {
     /** 노션이 빈 목록을 줘도 지우기를 진행한다. 정말로 다 비울 때만 쓴다. */
     allowEmpty?: boolean;
+    /**
+     * 빠른 건너뜀 없이 전 글을 다시 변환한다. 변환기를 고쳐 배포한 뒤
+     * 옛 글에도 새 변환을 입힐 때 쓴다 (?full=1).
+     */
+    full?: boolean;
   } = {},
 ): Promise<SyncResult> {
   const supabase = db();
@@ -215,9 +220,59 @@ export async function syncFromNotion(
 
   const pages = await listPages();
 
+  /*
+    빠른 건너뜀 (#109 3단계). 안 바뀐 글도 매번 본문을 받고 이미지 전부를
+    노션에서 내려받아 다시 인코딩하고 있었다 - 내용 해시를 만들려면 원본이
+    필요해서다. 6시간 크론이 돌면 이 낭비가 하루 네 번이 된다.
+
+    노션의 last_edited_time 이 DB에 쓴 시각(synced_at)보다 앞서면 본문 단계에
+    들어가지 않는다. 단 둘은 예외다.
+
+      2분 여유    last_edited_time 은 분 단위로 끊긴다. 동기화 직후 같은 분에
+                  고친 글이 영영 건너뛰어지지 않도록, 여유보다 오래된 것만 믿는다.
+      만료 URL    이미지 이관이 실패했던 글은 본문에 만료될 노션 서명 URL이
+                  남아 있다. 수정이 없어도 건너뛰지 않아야 다음 런이 치유한다.
+  */
+  // 판정에 본문 전체는 필요 없다 - 시각 한 줄과, 만료 URL이 남은 행의 id만
+  // 가려 받는다. 글이 수백 편으로 늘어도 이 두 쿼리는 몇 KB다.
+  const { data: prevRows } = await supabase
+    .from("posts")
+    .select("notion_page_id, synced_at");
+  const prevByPage = new Map(
+    (prevRows ?? []).map((r) => [r.notion_page_id as string, r]),
+  );
+  const { data: unhealthyRows } = await supabase
+    .from("posts")
+    .select("notion_page_id")
+    .or(
+      "content.like.%amazonaws.com%,content.like.%notion-static.com%,cover_image.like.%amazonaws.com%,cover_image.like.%notion-static.com%",
+    );
+  const unhealthy = new Set(
+    (unhealthyRows ?? []).map((r) => r.notion_page_id as string),
+  );
+  const SKIP_MARGIN_MS = 2 * 60 * 1000;
+
   for (const page of pages) {
     let slug = "(알 수 없음)";
     try {
+      if (!options.full) {
+        const prev = prevByPage.get(page.id);
+        const settled =
+          prev?.synced_at &&
+          new Date(prev.synced_at as string).getTime() -
+            new Date(page.last_edited_time).getTime() >
+            SKIP_MARGIN_MS;
+        const healthy = prev && !unhealthy.has(page.id);
+        if (settled && healthy) {
+          const light = toPost(page, "");
+          result.skipped.push({
+            slug: light.slug || light.title,
+            reason: "수정 없음",
+          });
+          continue;
+        }
+      }
+
       const raw = await fetchMarkdown(page.id);
       const converted = htmlToMarkdown(raw);
       const post = toPost(page, converted.markdown);

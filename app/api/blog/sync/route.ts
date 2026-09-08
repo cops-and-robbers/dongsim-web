@@ -1,13 +1,14 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { collectGarbage, type GcReport } from "@/lib/blog/sync/gc";
 import { syncFromNotion, type SyncedSlug } from "@/lib/blog/sync/sync";
 import { SITE_URL } from "@/lib/constants";
 
 /**
  * 노션 → DB 동기화 트리거 (#109).
  *
- * 공개된 주소라 토큰으로 막는다. 팀 노션 페이지에 이 주소를 북마크로 두면
- * 누구든 글을 쓰고 한 번 눌러 발행할 수 있다.
+ * 공개된 주소라 토큰(Authorization 헤더)으로 막는다. 부르는 곳은 둘 -
+ * 어드민의 동기화 버튼(/api/admin/blog-sync 경유)과 6시간 크론(GitHub Actions).
  *
  * 응답은 무엇이 되었고 무엇이 안 되었는지를 그대로 담는다. 부분 성공을 200으로
  * 돌리면 아무도 알아채지 못한 채 사이트가 어긋난다.
@@ -42,6 +43,7 @@ async function hit(path: string): Promise<number> {
     // 캐시를 데우는 것이 목적이므로 응답 내용은 쓰지 않는다
     headers: { "user-agent": "dongsim blog sync warmer" },
     cache: "no-store",
+    signal: AbortSignal.timeout(30_000),
   });
   return res.status;
 }
@@ -75,11 +77,10 @@ async function confirmClosed(paths: string[]): Promise<string[]> {
 function authorized(req: Request): boolean {
   const secret = process.env.SYNC_SECRET;
   if (!secret) return false;
-
-  const url = new URL(req.url);
-  const fromQuery = url.searchParams.get("token");
+  // 헤더로만 받는다. 쿼리 스트링 토큰은 접속 로그·리퍼러로 새는 통로라 지원하지
+  // 않는다 - 손으로 누를 일은 어드민의 동기화 버튼이 맡는다 (#109 3단계).
   const fromHeader = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  return fromQuery === secret || fromHeader === secret;
+  return fromHeader === secret;
 }
 
 export async function POST(req: Request) {
@@ -91,7 +92,9 @@ export async function POST(req: Request) {
     // 노션이 빈 목록을 줘도 지우려면 ?force=1 을 붙인다.
     // 북마크에는 넣지 않는다 - 늘 켜져 있으면 장치가 없는 것과 같다.
     const force = new URL(req.url).searchParams.get("force") === "1";
-    const result = await syncFromNotion({ allowEmpty: force });
+    // ?full=1 - 빠른 건너뜀 없이 전 글 재변환. 변환기 배포 뒤 한 번 돌린다.
+    const full = new URL(req.url).searchParams.get("full") === "1";
+    const result = await syncFromNotion({ allowEmpty: force, full });
 
     /*
       캐시를 버린다. 공개 화면은 ISR 캐시되므로 여기서 버려 주지 않으면 글을
@@ -120,6 +123,31 @@ export async function POST(req: Request) {
     const stillPublic = await confirmClosed(closed);
 
     /*
+      고아 이미지 정리 (#109 3단계). 동기화 뒤에 돌아야 참조 목록이 최신이다.
+      ?gc=dry 는 세기만, ?gc=run 은 지우기까지. 평소 동기화에는 안 붙인다 -
+      버킷 전체 목록을 매번 도는 것은 낭비고, 지우기는 사람이 명시할 일이다.
+      정리 실패가 발행을 막으면 안 되므로 오류는 응답에 담고 넘어간다.
+    */
+    const gcMode = new URL(req.url).searchParams.get("gc");
+    let gc: (GcReport & { error?: string }) | undefined;
+    if (gcMode === "dry" || gcMode === "run") {
+      try {
+        const report = await collectGarbage(gcMode === "run");
+        // 고아가 수백 개면 응답이 비대해진다. 수는 그대로, 목록은 앞부분만.
+        gc = { ...report, orphans: report.orphans.slice(0, 50) };
+      } catch (e) {
+        gc = {
+          scanned: 0,
+          referenced: 0,
+          orphans: [],
+          tooFresh: 0,
+          deleted: 0,
+          error: e instanceof Error ? e.message : String(e),
+        };
+      }
+    }
+
+    /*
       한 글이라도 실패했으면 실패로 응답한다.
       이미지 이관 실패도 같이 본다 - 남은 노션 URL은 곧 만료돼 그림이 깨진다.
       지우기를 멈춘 것도, 아직 열려 있는 초안도 실패다.
@@ -132,7 +160,10 @@ export async function POST(req: Request) {
       result.imageFailures.length === 0 &&
       stillPublic.length === 0 &&
       !result.removalBlocked;
-    return NextResponse.json({ ...result, stillPublic }, { status: ok ? 200 : 500 });
+    return NextResponse.json(
+      { ...result, stillPublic, ...(gc ? { gc } : {}) },
+      { status: ok ? 200 : 500 },
+    );
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : String(e) },
@@ -140,6 +171,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
-/** 노션 북마크는 GET 으로 열린다. 같은 동작을 허용한다. */
-export const GET = POST;

@@ -51,6 +51,9 @@ async function call<T>(path: string, version: string, init?: RequestInit): Promi
       ...init?.headers,
     },
     cache: "no-store",
+    // 응답이 멎으면 그 요청 하나가 동기화 전체를 붙잡는다 (실측: full 재변환이
+    // 10분 넘게 매달렸다). 마크다운 응답이 큰 글도 있어 넉넉히 60초.
+    signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -71,6 +74,8 @@ type NotionProp = {
 
 type NotionPage = {
   id: string;
+  /** 노션이 분 단위로 끊어 주는 마지막 수정 시각 - 빠른 건너뜀 판정에 쓴다 */
+  last_edited_time: string;
   properties: Record<string, NotionProp>;
   cover?:
     | { type: "external"; external: { url: string } }

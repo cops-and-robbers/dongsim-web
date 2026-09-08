@@ -1,0 +1,32 @@
+# 블로그 자동 동기화 (#109 3단계).
+#
+# 화면이 노션이 아니라 DB만 읽으므로, 동기화가 돌지 않으면 새 글이 영영 뜨지
+# 않는다. 즉시 발행은 어드민의 동기화 버튼이 맡고, 이 크론은 버튼을 깜빡한
+# 경우의 안전망이다.
+#
+# 6시간 간격인 이유: 발행이 주 단위인 블로그라 이보다 짧으면 노션 API 와
+# Actions 분만 낭비하고, 이보다 길면 "어제 쓴 글이 아직도 안 뜬다"가 생긴다.
+# Vercel 크론은 Hobby 플랜에서 하루 1회 제한이라 여기서 돌린다.
+# 시크릿(BLOG_SYNC_SECRET)은 저장소 Actions 시크릿에 있다 - Vercel 의
+# SYNC_SECRET 과 같은 값이어야 한다.
+name: blog-sync
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 동기화 호출
+        run: |
+          code=$(curl -sS -o response.json -w "%{http_code}" -X POST \
+            "https://copsandrobbers.app/api/blog/sync" \
+            -H "Authorization: Bearer ${{ secrets.BLOG_SYNC_SECRET }}")
+          cat response.json
+          echo
+          echo "HTTP $code"
+          test "$code" = "200"
