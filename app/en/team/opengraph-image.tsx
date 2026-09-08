@@ -9,8 +9,6 @@ export default function Image() {
     label: "Team",
     headline: ["Connecting people", "through play"],
     subtitle: "Team Dongsim · makers of Cops and Robbers",
-    logoPath: "public/brand/i18n/logo-en.svg",
-    logoW: 2174,
-    logoH: 560,
+    logo: "en",
   });
 }

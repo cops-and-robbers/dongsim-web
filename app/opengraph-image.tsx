@@ -6,9 +6,7 @@ export const contentType = "image/png";
 
 export default function Image() {
   return renderHomeOg({
-    logoPath: "public/brand/header-logo.svg",
-    logoW: 285,
-    logoH: 46,
+    logo: "ko",
     line1: "앱으로 더 쉽고",
     line2: "몰입감 있게",
   });

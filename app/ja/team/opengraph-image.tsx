@@ -9,8 +9,6 @@ export default function Image() {
     label: "チーム紹介",
     headline: ["遊びで人と人を", "つなぐ"],
     subtitle: "チーム・トンシム · ケイドロをつくるチーム",
-    logoPath: "public/brand/i18n/logo-ja.svg",
-    logoW: 2791,
-    logoH: 560,
+    logo: "ja",
   });
 }

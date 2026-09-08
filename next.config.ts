@@ -1,9 +1,14 @@
 import type { NextConfig } from "next";
-import path from "node:path";
 
 const nextConfig: NextConfig = {
   turbopack: {
-    root: path.join(__dirname),
+    /*
+      홈 디렉터리의 떠돌이 pnpm-workspace.yaml 때문에 루트를 명시한다.
+      path.join(__dirname) 으로 감싸지 않는다 - 파일 트레이싱이 path.join 을
+      "동적 경로"로 보고 프로젝트 전체를 모든 함수 번들에 넣었다 (#113,
+      라우트당 29MB · 배포당 2.4GB 실측).
+    */
+    root: __dirname,
   },
   // Relay: graphql`` 태그를 __generated__ 아티팩트 import로 변환(SWC).
   // 값은 relay.config.js 와 일치해야 한다.
@@ -65,6 +70,45 @@ const nextConfig: NextConfig = {
       "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
       "public/brand/header-logo.svg",
       "public/event/wanted.svg",
+    ],
+    /*
+      아래 라우트들은 지금까지 이 목록 없이도 동작했는데, 그 이유가 "프로젝트
+      전체가 모든 함수에 트레이스되는 버그" 덕분이었다 (#113). 버그를 고치면
+      우연이 사라지므로 여기서 명시한다 - 누락 시 프로덕션 500.
+    */
+    "/admin/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/characters/robber-flee.svg",
+      "public/characters/police-chase.svg",
+    ],
+    "/join/[code]/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/brand/header-logo.svg",
+      "public/characters/robber.svg",
+      "public/characters/police.svg",
+    ],
+    "/g/[postId]/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/brand/header-logo.svg",
+      "public/characters/robber-flee.svg",
+      "public/characters/police-chase.svg",
+    ],
+    "/en/g/[postId]/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/brand/header-logo.svg",
+      "public/characters/robber-flee.svg",
+      "public/characters/police-chase.svg",
+    ],
+    "/ja/g/[postId]/opengraph-image": [
+      "node_modules/pretendard/dist/public/static/Pretendard-Bold.otf",
+      "node_modules/pretendard/dist/public/static/Pretendard-ExtraBold.otf",
+      "public/brand/header-logo.svg",
+      "public/characters/robber-flee.svg",
+      "public/characters/police-chase.svg",
     ],
   },
   images: {

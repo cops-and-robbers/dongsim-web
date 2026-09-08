@@ -2,6 +2,7 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { OG_LOGOS, type OgLogoLocale } from "./ogLogo";
 
 // 팀/구성원 페이지 공유 OG 카드 - 로고 + 라벨 + 헤드라인 + 경찰·도둑 캐릭터.
 // /team, /team/members 모두 정적 페이지라 빌드 시 PNG로 생성된다.
@@ -9,35 +10,35 @@ import { join } from "node:path";
 export const OG_SIZE = { width: 1200, height: 630 };
 const FONT_DIR = "node_modules/pretendard/dist/public/static";
 
-async function dataUri(relPath: string, mime: string) {
-  const buf = await readFile(join(process.cwd(), relPath));
-  return `data:${mime};base64,${buf.toString("base64")}`;
-}
+// readFile 경로는 호출부에 글자 그대로 적는다. 변수로 넘기면 파일 트레이싱이
+// 경로를 좁히지 못해 프로젝트 전체를 함수 번들에 넣는다 (#113 실측).
+const svgDataUri = (buf: Buffer) =>
+  `data:image/svg+xml;base64,${buf.toString("base64")}`;
 
 export async function renderTeamOgCard({
   label,
   headline,
   subtitle,
-  logoPath = "public/brand/header-logo.svg",
-  logoW = 285,
-  logoH = 46,
+  logo: logoLocale = "ko",
 }: {
   label: string;
   /** 헤드라인 줄 배열(줄바꿈 단위). */
   headline: string[];
   subtitle: string;
-  /** 로케일 로고 (기본은 한국어 헤더 로고). */
-  logoPath?: string;
-  logoW?: number;
-  logoH?: number;
+  /** 로케일 로고 키 (기본은 한국어). 경로·치수는 OG_LOGOS 가 관리한다 (#113). */
+  logo?: OgLogoLocale;
 }) {
-  const [bold, extraBold, logo, cop, thief] = await Promise.all([
+  const { w: logoW, h: logoH, read } = OG_LOGOS[logoLocale];
+  const [bold, extraBold, logoBuf, copBuf, thiefBuf] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
-    dataUri(logoPath, "image/svg+xml"),
-    dataUri("public/photobooth/cop.svg", "image/svg+xml"),
-    dataUri("public/photobooth/thief.svg", "image/svg+xml"),
+    read(),
+    readFile(join(process.cwd(), "public/photobooth/cop.svg")),
+    readFile(join(process.cwd(), "public/photobooth/thief.svg")),
   ]);
+  const logo = svgDataUri(logoBuf);
+  const cop = svgDataUri(copBuf);
+  const thief = svgDataUri(thiefBuf);
 
   return new ImageResponse(
     (

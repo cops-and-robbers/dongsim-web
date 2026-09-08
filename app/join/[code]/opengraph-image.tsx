@@ -10,19 +10,22 @@ export const contentType = "image/png";
 
 const FONT_DIR = "node_modules/pretendard/dist/public/static";
 
-async function svgDataUri(relPath: string) {
-  const buf = await readFile(join(process.cwd(), relPath));
-  return `data:image/svg+xml;base64,${buf.toString("base64")}`;
-}
+// readFile 경로는 호출부에 글자 그대로 적는다. 변수로 넘기면 파일 트레이싱이
+// 경로를 좁히지 못해 프로젝트 전체를 함수 번들에 넣는다 (#113 실측).
+const svgDataUri = (buf: Buffer) =>
+  `data:image/svg+xml;base64,${buf.toString("base64")}`;
 
 export default async function Image() {
-  const [bold, extraBold, logo, robber, police] = await Promise.all([
+  const [bold, extraBold, logoBuf, robberBuf, policeBuf] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
-    svgDataUri("public/brand/header-logo.svg"),
-    svgDataUri("public/characters/robber.svg"),
-    svgDataUri("public/characters/police.svg"),
+    readFile(join(process.cwd(), "public/brand/header-logo.svg")),
+    readFile(join(process.cwd(), "public/characters/robber.svg")),
+    readFile(join(process.cwd(), "public/characters/police.svg")),
   ]);
+  const logo = svgDataUri(logoBuf);
+  const robber = svgDataUri(robberBuf);
+  const police = svgDataUri(policeBuf);
 
   return new ImageResponse(
     (

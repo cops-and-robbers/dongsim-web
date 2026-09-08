@@ -2,6 +2,7 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { OG_LOGOS, type OgLogoLocale } from "./ogLogo";
 
 // 홈 공유 OG - 로고 + 두 줄 헤드라인 + 추격 캐릭터. /·/en·/ja가 로케일별로 재사용한다.
 // 정적 페이지라 빌드 시 PNG로 생성된다.
@@ -9,33 +10,32 @@ import { join } from "node:path";
 export const HOME_OG_SIZE = { width: 1200, height: 600 };
 const FONT_DIR = "node_modules/pretendard/dist/public/static";
 
-async function svgDataUri(relPath: string) {
-  const buf = await readFile(join(process.cwd(), relPath));
-  return `data:image/svg+xml;base64,${buf.toString("base64")}`;
-}
+// readFile 경로는 호출부에 글자 그대로 적는다. 변수로 넘기면 파일 트레이싱이
+// 경로를 좁히지 못해 프로젝트 전체를 함수 번들에 넣는다 (#113 실측).
+const svgDataUri = (buf: Buffer) =>
+  `data:image/svg+xml;base64,${buf.toString("base64")}`;
 
 export async function renderHomeOg({
-  logoPath,
-  logoW,
-  logoH,
+  logo: logoLocale,
   line1,
   line2,
 }: {
-  /** public 기준 로고 경로. */
-  logoPath: string;
-  /** 로고 원본 가로·세로 (satori가 치수를 알아야 해서 비율 계산에 쓴다). */
-  logoW: number;
-  logoH: number;
+  /** 로케일 로고 키. 경로·치수는 OG_LOGOS 가 관리한다 (#113). */
+  logo: OgLogoLocale;
   line1: string;
   line2: string;
 }) {
-  const [bold, extraBold, logo, robber, police] = await Promise.all([
+  const { w: logoW, h: logoH, read } = OG_LOGOS[logoLocale];
+  const [bold, extraBold, logoBuf, robberBuf, policeBuf] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
-    svgDataUri(logoPath),
-    svgDataUri("public/characters/robber-flee.svg"),
-    svgDataUri("public/characters/police-chase.svg"),
+    read(),
+    readFile(join(process.cwd(), "public/characters/robber-flee.svg")),
+    readFile(join(process.cwd(), "public/characters/police-chase.svg")),
   ]);
+  const logo = svgDataUri(logoBuf);
+  const robber = svgDataUri(robberBuf);
+  const police = svgDataUri(policeBuf);
 
   // 로고는 높이 69로 고정하고 가로는 비율대로.
   const logoHeight = 69;
