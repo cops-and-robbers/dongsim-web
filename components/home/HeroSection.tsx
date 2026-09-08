@@ -180,7 +180,7 @@ export default function HeroSection({
                 <DownloadButtons placement="home_hero" />
               </div>
 
-              <p className="mt-6 text-sm text-slate-400 dark:text-slate-500">
+              <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
                 {copy.players}
               </p>
             </div>

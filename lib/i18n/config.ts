@@ -56,6 +56,14 @@ export const HTML_LANG: Record<Locale, string> = {
 export function logoSrc(locale: Locale, dark: boolean): string {
   return `/brand/i18n/logo-${locale}${dark ? "-dark" : ""}.svg`;
 }
+
+// 로고 SVG 의 viewBox 실측값. <img> 에 width/height 로 줘야 브라우저가
+// 로드 전에 가로 비율을 알고 자리를 잡는다 - 언어마다 글자 수가 달라 폭이 다르다.
+export const LOGO_SIZE: Record<Locale, { width: number; height: number }> = {
+  ko: { width: 3708, height: 560 },
+  en: { width: 2174, height: 560 },
+  ja: { width: 2791, height: 560 },
+};
 export function appIconSrc(locale: Locale): string {
   return `/brand/i18n/app-icon-${locale}.svg`;
 }

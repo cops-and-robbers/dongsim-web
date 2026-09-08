@@ -129,7 +129,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
               {copy.browseHeading}
             </p>
             <ul className="mt-5 flex flex-col gap-3 text-sm">
@@ -157,7 +157,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
               {copy.contactHeading}
             </p>
             <a
@@ -166,14 +166,14 @@ export default function Footer() {
             >
               {BRAND.email}
             </a>
-            <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-500">
+            <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
               {copy.contactNote}
             </p>
           </div>
         </div>
 
         <div className="mt-14 flex flex-col gap-4 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
-          <p className="text-xs text-slate-400 dark:text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             © {year} {brand}. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">

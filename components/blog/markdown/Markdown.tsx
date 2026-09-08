@@ -21,7 +21,7 @@ import { CodeBlock } from "./CodeBlock";
 */
 import { YouTube } from "./YouTube";
 import { isYouTubeShorts, youTubeId } from "@/lib/blog/sync/youtube-id";
-import { plainText, slugify } from "./headings";
+import { plainText, slugify, stripFences } from "./headings";
 
 /** hast 노드에서 사람이 읽는 글자만 모은다 - 앵커 id 와 복사 버튼에 넘길 원문 */
 type HastNode = { type?: string; value?: string; children?: HastNode[] };
@@ -47,65 +47,62 @@ export function Markdown({ children }: { children: string }) {
   // 같은 제목이 두 번 나와도 앵커 id 가 겹치지 않게 이 렌더 안에서만 센다
   const seen = new Map<string, number>();
 
+  /*
+    노션 heading 1~3 은 마크다운 #~### 으로 온다. 문서의 h1 은 글 제목이
+    이미 쓰고 있으므로 본문 제목은 h2 부터 시작해야 하는데, 글쓴이가 노션에서
+    제목2부터 쓰면 ## 이 h3 으로 렌더돼 h1 다음이 h3 으로 건너뛴다(#121,
+    접근성 감사 heading-order). 그래서 고정 매핑 대신, 이 글에 실제로 쓰인
+    깊이만 모아 h2 부터 연속으로 눌러 붙인다 - 어느 단계부터 시작했든
+    순서가 이어진다.
+  */
+  const usedDepths = [
+    ...new Set(
+      [...stripFences(normalized).matchAll(/^(#{1,6})\s/gm)].map(
+        (m) => m[1].length,
+      ),
+    ),
+  ].sort((a, b) => a - b);
+  const levelOf = new Map(
+    usedDepths.map((d, i) => [d, Math.min(i + 2, 6)] as const),
+  );
+
+  const HEADING_CLASS: Record<number, string> = {
+    2: "mt-12 mb-4 text-2xl font-extrabold tracking-tight text-brand-ink sm:text-3xl dark:text-white",
+    3: "mt-10 mb-3 text-xl font-bold tracking-tight text-brand-ink sm:text-2xl dark:text-white",
+    4: "mt-8 mb-2 text-lg font-bold text-brand-ink sm:text-xl dark:text-white",
+    5: "mt-6 mb-2 text-base font-bold text-brand-ink sm:text-lg dark:text-white",
+    6: "mt-6 mb-2 text-base font-bold text-brand-ink dark:text-white",
+  };
+
+  /*
+    앵커 id 는 원문 깊이 1~2 에만 단다 - 목차(extractHeadings)가 ## 만 모으므로
+    이 규칙이 흔들리면 목차 링크가 어긋난다. 렌더된 글자에서 만들어야
+    굵게·인라인 코드가 든 제목에서도 목차와 맞는다.
+  */
+  const heading = (depth: 1 | 2 | 3 | 4 | 5 | 6): Components["h1"] =>
+    function Heading({ children, node }) {
+      const level = levelOf.get(depth) ?? Math.min(depth + 1, 6);
+      const Tag = `h${level}` as "h2";
+      const id =
+        depth <= 2
+          ? slugify(plainText(textOf(node as HastNode)), seen)
+          : undefined;
+      return (
+        <Tag id={id} className={HEADING_CLASS[level]}>
+          {children}
+        </Tag>
+      );
+    };
+
   const components: Components = {
-    /*
-      노션 heading 1~3 은 마크다운 #~### 으로 온다. 문서의 h1 은 글 제목이
-      이미 쓰고 있으므로 본문 제목은 h2~h4 로 한 단계 내린다.
-      앵커 id 는 최상위 제목에만 단다 - 렌더된 글자에서 만들어야
-      굵게·인라인 코드가 든 제목에서도 목차와 어긋나지 않는다.
-    */
-    h1({ children, node }) {
-      const id = slugify(plainText(textOf(node as HastNode)), seen);
-      return (
-        <h2
-          id={id}
-          className="mt-12 mb-4 text-2xl font-extrabold tracking-tight text-brand-ink sm:text-3xl dark:text-white"
-        >
-          {children}
-        </h2>
-      );
-    },
-    h2({ children, node }) {
-      const id = slugify(plainText(textOf(node as HastNode)), seen);
-      return (
-        <h3
-          id={id}
-          className="mt-10 mb-3 text-xl font-bold tracking-tight text-brand-ink sm:text-2xl dark:text-white"
-        >
-          {children}
-        </h3>
-      );
-    },
-    h3({ children }) {
-      return (
-        <h4 className="mt-8 mb-2 text-lg font-bold text-brand-ink sm:text-xl dark:text-white">
-          {children}
-        </h4>
-      );
-    },
+    h1: heading(1),
+    h2: heading(2),
+    h3: heading(3),
     // 노션 헤딩은 3단계까지지만, 토글 안 헤딩이 #### 로 내려와 실물에 존재한다.
     // 컴포넌트가 없으면 맨몸 태그로 렌더돼 본문과 구분이 안 된다.
-    h4({ children }) {
-      return (
-        <h5 className="mt-6 mb-2 text-base font-bold text-brand-ink sm:text-lg dark:text-white">
-          {children}
-        </h5>
-      );
-    },
-    h5({ children }) {
-      return (
-        <h6 className="mt-6 mb-2 text-base font-bold text-brand-ink dark:text-white">
-          {children}
-        </h6>
-      );
-    },
-    h6({ children }) {
-      return (
-        <h6 className="mt-6 mb-2 text-base font-bold text-brand-ink dark:text-white">
-          {children}
-        </h6>
-      );
-    },
+    h4: heading(4),
+    h5: heading(5),
+    h6: heading(6),
 
     /*
       이미지 한 장만 든 문단은 <p> 를 걷어내고 <figure> 로 바꾼다.
@@ -146,11 +143,14 @@ export function Markdown({ children }: { children: string }) {
       // 콜아웃 아이콘(동기화가 alt "icon" 으로 표시). 글자 높이에 맞춰
       // 인라인으로 그린다 - 장식이므로 읽어 줄 대체 글자는 없다.
       if (alt === "icon") {
+        const iconSize = sizeOf(String(src ?? ""));
         return (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={String(src ?? "")}
             alt=""
+            width={iconSize?.w}
+            height={iconSize?.h}
             className="inline-block h-[1.2em] w-auto align-[-0.2em]"
             loading="lazy"
           />
@@ -389,7 +389,7 @@ function Figure({ src, rawCaption }: { src: string; rawCaption: string }) {
         loading="lazy"
       />
       {caption && (
-        <figcaption className="mt-3 text-center text-sm text-slate-400 dark:text-slate-500">
+        <figcaption className="mt-3 text-center text-sm text-slate-500 dark:text-slate-400">
           {caption}
         </figcaption>
       )}

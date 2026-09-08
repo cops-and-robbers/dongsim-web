@@ -60,6 +60,9 @@ export default function MobileMenu() {
       role="dialog"
       aria-modal="false"
       aria-hidden={!open}
+      // aria-hidden 은 보조기기에서만 숨긴다 - 닫혀 있어도 안의 링크가 Tab 에
+      // 잡혀 보이지 않는 곳으로 포커스가 들어간다. inert 가 포커스까지 막는다.
+      inert={!open}
       className={`fixed inset-x-0 top-14 z-30 bg-white shadow-lg ring-1 ring-slate-200 transition-transform duration-300 ease-out md:hidden dark:bg-app-black dark:ring-white/10 ${
         open ? "translate-y-0" : "-translate-y-[calc(100%+3.5rem)]"
       }`}
