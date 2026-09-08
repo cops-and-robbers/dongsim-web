@@ -1,18 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+/*
+  본문 폰트는 프리텐다드 다이내믹 서브셋 (#118).
+
+  next/font 로 변수 폰트 전체(2MB) 한 파일을 싣던 것이 모바일 LCP 16~19초의
+  주범이었다. 서브셋 CSS는 한글을 유니코드 구간 92조각으로 쪼개 두고
+  페이지에 실제로 쓰인 조각만 내려받는다 - 본문 한 편에 보통 수백 KB.
+  번들러 임포트라 조각 파일들은 해시·불변 캐시를 그대로 받는다.
+  폴백 메트릭 보정(next/font 가 해주던 CLS 방어)은 globals.css 의
+  "Pretendard Fallback" @font-face 가 이어받는다.
+*/
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 import "./a11y.css";
 import "./i18n.css";
-
-const pretendard = localFont({
-  src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
-  display: "swap",
-  variable: "--font-pretendard",
-  weight: "45 920",
-});
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
@@ -140,7 +143,7 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`h-full antialiased ${pretendard.variable}`}
+      className="h-full antialiased"
       suppressHydrationWarning
     >
       <head>
