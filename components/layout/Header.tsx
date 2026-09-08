@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { BRAND_NAME, localizedPath, logoSrc } from "@/lib/i18n/config";
+import { BRAND_NAME, LOGO_SIZE, localizedPath, logoSrc } from "@/lib/i18n/config";
 import { CHROME } from "@/lib/i18n/chrome";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import NavLink from "./NavLink";
@@ -27,11 +27,13 @@ export default function Header() {
           <img
             src={logoSrc(locale, false)}
             alt={brand}
+            {...LOGO_SIZE[locale]}
             className="h-5 w-auto md:h-6 dark:hidden"
           />
           <img
             src={logoSrc(locale, true)}
             alt={brand}
+            {...LOGO_SIZE[locale]}
             className="hidden h-5 w-auto md:h-6 dark:block"
           />
         </Link>
