@@ -33,7 +33,10 @@ function config() {
 export async function exists(key: string): Promise<boolean> {
   const { publicBase } = config();
   // 공개 버킷이므로 공개 URL로 확인하는 편이 서명보다 싸다
-  const res = await fetch(`${publicBase}/${key}`, { method: "HEAD" });
+  const res = await fetch(`${publicBase}/${key}`, {
+    method: "HEAD",
+    signal: AbortSignal.timeout(15_000),
+  });
   return res.ok;
 }
 
@@ -89,6 +92,7 @@ export async function put(
 
   const res = await fetch(`https://${host}${path}`, {
     method: "PUT",
+    signal: AbortSignal.timeout(60_000),
     headers: {
       ...headers,
       Authorization:
@@ -160,6 +164,7 @@ async function signedFetch(
   const qs = canonicalQuery ? `?${canonicalQuery}` : "";
   return fetch(`https://${host}${path}${qs}`, {
     method,
+    signal: AbortSignal.timeout(30_000),
     headers: {
       ...headers,
       Authorization:

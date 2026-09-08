@@ -54,7 +54,11 @@ export async function migrateImage(url: string): Promise<string> {
   if (!isNotionHosted(url)) return url;
 
   // UA 가 없으면 노션 CDN(내장 아이콘 경로)이 403 을 준다 (실측). 이름을 밝힌다.
-  const res = await fetch(url, { headers: { "user-agent": "dongsim blog sync" } });
+  // 시간 상한: 멎은 다운로드 하나가 동기화 전체를 붙잡지 않게 한다.
+  const res = await fetch(url, {
+    headers: { "user-agent": "dongsim blog sync" },
+    signal: AbortSignal.timeout(30_000),
+  });
   if (!res.ok) throw new Error(`이미지 내려받기 실패 (${res.status})`);
   const original = Buffer.from(await res.arrayBuffer());
 
