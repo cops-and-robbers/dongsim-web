@@ -154,6 +154,27 @@
     "Segoe UI", Roboto, sans-serif;
 }
 
+/*
+  폰트 스왑 순간의 레이아웃 이동 방어 (#118).
+
+  next/font 를 쓸 때는 이 보정을 자동으로 받았는데, 다이내믹 서브셋 전환으로
+  수동이 됐다. 값은 next/font 가 프리텐다드에서 계산해 배포 CSS에 넣던 것을
+  글자 그대로 이식했다 - Arial 을 프리텐다드 치수에 맞춰 늘려, 폰트가 늦게
+  와도 글줄 높이가 변하지 않는다 (전환 전 CLS 0의 비결).
+*/
+@font-face {
+  font-family: "Pretendard Fallback";
+  src: local("Arial");
+  ascent-override: 93.76%;
+  descent-override: 23.75%;
+  line-gap-override: 0%;
+  size-adjust: 101.55%;
+}
+
+:root {
+  --font-pretendard: "Pretendard Variable", "Pretendard Fallback";
+}
+
 html {
   scroll-behavior: smooth;
 }
