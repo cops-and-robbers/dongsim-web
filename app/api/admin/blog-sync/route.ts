@@ -56,10 +56,14 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "동기화 설정이 없어요." }, { status: 500 });
   }
 
-  // gc(고아 이미지 정리) 파라미터는 그대로 넘긴다 - 값 검증은 동기화 라우트가 한다
-  const gc = new URL(req.url).searchParams.get("gc");
+  // gc(고아 정리)·full(전 글 재변환) 파라미터는 그대로 넘긴다 -
+  // 값 검증은 동기화 라우트가 한다
+  const src = new URL(req.url);
   const target = new URL("/api/blog/sync", SITE_URL);
-  if (gc) target.searchParams.set("gc", gc);
+  for (const key of ["gc", "full"]) {
+    const value = src.searchParams.get(key);
+    if (value) target.searchParams.set(key, value);
+  }
 
   const res = await fetch(target, {
     method: "POST",
