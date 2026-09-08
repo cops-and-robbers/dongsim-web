@@ -144,6 +144,14 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
+      // 본문 폰트 다이내믹 서브셋 (#118). 경로에 패키지 버전이 들어가므로
+      // 내용이 바뀌면 경로도 바뀐다 - 영구 캐싱해도 안전하다.
+      {
+        source: "/fonts/pretendard/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
     ];
   },
 };

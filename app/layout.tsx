@@ -2,17 +2,6 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-/*
-  본문 폰트는 프리텐다드 다이내믹 서브셋 (#118).
-
-  next/font 로 변수 폰트 전체(2MB) 한 파일을 싣던 것이 모바일 LCP 16~19초의
-  주범이었다. 서브셋 CSS는 한글을 유니코드 구간 92조각으로 쪼개 두고
-  페이지에 실제로 쓰인 조각만 내려받는다 - 본문 한 편에 보통 수백 KB.
-  번들러 임포트라 조각 파일들은 해시·불변 캐시를 그대로 받는다.
-  폴백 메트릭 보정(next/font 가 해주던 CLS 방어)은 globals.css 의
-  "Pretendard Fallback" @font-face 가 이어받는다.
-*/
-import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
 import "./a11y.css";
 import "./i18n.css";
@@ -164,6 +153,30 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','${GTM_ID}');`}
         </Script>
+        {/*
+          본문 폰트: 프리텐다드 다이내믹 서브셋 (#118). 첫 페인트 **뒤**
+          (DOMContentLoaded + rAF 두 번)에 스타일시트를 끼운다 - 첫 화면은
+          globals.css 의 "Pretendard Fallback"(메트릭 보정된 Arial)으로 즉시
+          그려지고, 폰트 조각(화면에 쓰인 유니코드 구간만, 보통 수백 KB)이
+          도착하면 치수 변화 없이 스왑된다.
+
+          시점이 핵심이다 (실측 두 번의 교훈): 번들 임포트는 92조각을 렌더
+          크리티컬로 승격시켰고(모바일 FCP 1.0→3.3s), 파싱 중 즉시 주입도
+          요청이 첫 페인트보다 앞서 같은 경합을 만들었다. 페인트 뒤로 미뤄야
+          폰트가 FCP·LCP 의 의존 경로에서 완전히 빠진다.
+          경로는 버전 폴더라 불변 캐시가 안전하다 (next.config headers).
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var d=document;function add(){var l=d.createElement("link");l.rel="stylesheet";l.href="/fonts/pretendard/1.3.9/pretendardvariable-dynamic-subset.css";d.head.appendChild(l)}function after(){requestAnimationFrame(function(){requestAnimationFrame(add)})}if(d.readyState==="loading"){d.addEventListener("DOMContentLoaded",after)}else{after()}})();`,
+          }}
+        />
+        <noscript>
+          <link
+            rel="stylesheet"
+            href="/fonts/pretendard/1.3.9/pretendardvariable-dynamic-subset.css"
+          />
+        </noscript>
       </head>
       <body className="flex min-h-full flex-col bg-white text-slate-900 transition-colors duration-500 dark:bg-app-black dark:text-slate-100">
         <noscript>
