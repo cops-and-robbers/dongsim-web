@@ -21,7 +21,6 @@
     "@supabase/supabase-js": "^2.115.0",
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
-    "@vercel/blob": "^2.4.1",
     "@vercel/speed-insights": "^2.0.0",
     "@vis.gl/react-google-maps": "^1.9.0",
     "firebase": "^12.16.0",
