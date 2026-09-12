@@ -18,7 +18,11 @@ export default function QrScreen({
   onRestart: () => void;
 }) {
   const [qr, setQr] = useState<string | null>(null);
-  const [printUrl, setPrintUrl] = useState<string | null>(null);
+  // 인쇄는 스트립 원본 그대로 - QR은 화면에서만 보여준다(팀 결정, #123).
+  // 프레임 하단 밴드가 로고·캐릭터로 차 있어 QR을 얹으면 그림을 해쳐서다.
+  // blob은 이 화면이 떠 있는 동안 바뀌지 않으므로(phase 전환 시 리마운트)
+  // 초기화 한 번이면 된다 - effect에서 setState 하면 린트가 막는 패턴이기도 하다.
+  const [printUrl] = useState(() => URL.createObjectURL(issued.blob));
   // 손님 폰이 열 주소 - 전체 URL 대신 오브젝트 키만 담아 QR을 성기게 만든다 (#123).
   const target = `${SITE_URL}/p?k=${encodeURIComponent(issued.key)}`;
 
@@ -38,16 +42,7 @@ export default function QrScreen({
     };
   }, [target]);
 
-  // 인쇄는 스트립 원본 그대로 - QR은 화면에서만 보여준다(팀 결정, #123).
-  // 프레임 하단 밴드가 로고·캐릭터로 차 있어 QR을 얹으면 그림을 해쳐서다.
-  useEffect(() => {
-    const url = URL.createObjectURL(issued.blob);
-    setPrintUrl(url);
-    return () => {
-      URL.revokeObjectURL(url);
-      setPrintUrl(null);
-    };
-  }, [issued.blob]);
+  useEffect(() => () => URL.revokeObjectURL(printUrl), [printUrl]);
 
   // 다음 손님을 위해 일정 시간 뒤 처음 화면으로.
   const onRestartRef = useRef(onRestart);
@@ -96,8 +91,7 @@ export default function QrScreen({
         </button>
         <button
           onClick={() => window.print()}
-          disabled={!printUrl}
-          className="rounded-full bg-brand-blue px-10 py-4 text-lg font-bold text-white shadow-lg shadow-brand-blue/30 transition active:scale-95 disabled:opacity-40"
+          className="rounded-full bg-brand-blue px-10 py-4 text-lg font-bold text-white shadow-lg shadow-brand-blue/30 transition active:scale-95"
         >
           인쇄하기
         </button>
