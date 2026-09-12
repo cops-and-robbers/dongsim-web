@@ -5,7 +5,7 @@ import Backdrop from "./Backdrop";
 import CaptureScreen from "./CaptureScreen";
 import { DEFAULT_FRAME, type FrameDef } from "./frames";
 import IntroScreen from "./IntroScreen";
-import PreviewScreen from "./PreviewScreen";
+import PreviewScreen, { type IssuedStrip } from "./PreviewScreen";
 import QrScreen from "./QrScreen";
 import SelectScreen from "./SelectScreen";
 
@@ -17,12 +17,12 @@ export default function Kiosk() {
   const [phase, setPhase] = useState<Phase>("intro");
   const [shots, setShots] = useState<string[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
-  const [issuedUrl, setIssuedUrl] = useState<string | null>(null);
+  const [issued, setIssued] = useState<IssuedStrip | null>(null);
 
   const reset = () => {
     setShots([]);
     setSelected([]);
-    setIssuedUrl(null);
+    setIssued(null);
   };
 
   return (
@@ -78,16 +78,16 @@ export default function Kiosk() {
               reset();
               setPhase("capture");
             }}
-            onIssued={(imageUrl) => {
-              setIssuedUrl(imageUrl);
+            onIssued={(r) => {
+              setIssued(r);
               setPhase("qr");
             }}
           />
         )}
 
-        {phase === "qr" && issuedUrl && (
+        {phase === "qr" && issued && (
           <QrScreen
-            imageUrl={issuedUrl}
+            issued={issued}
             onRestart={() => {
               reset();
               setPhase("intro");

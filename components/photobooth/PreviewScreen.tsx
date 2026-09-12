@@ -5,7 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { composeStrip } from "./compose";
 import { type FrameDef } from "./frames";
 import { loadImage } from "./image";
-import { uploadStrip } from "./upload";
+import { uploadStrip, type UploadedStrip } from "./upload";
+
+/** 발급 결과 - QR 화면이 짧은 링크(key)와 인쇄 합성(blob)에 쓴다. */
+export type IssuedStrip = UploadedStrip & { blob: Blob };
 
 export default function PreviewScreen({
   shots,
@@ -18,7 +21,7 @@ export default function PreviewScreen({
   selected: number[];
   frame: FrameDef;
   onRetake: () => void;
-  onIssued: (imageUrl: string) => void;
+  onIssued: (issued: IssuedStrip) => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,8 +55,8 @@ export default function PreviewScreen({
     setUploading(true);
     setError(null);
     try {
-      const imageUrl = await uploadStrip(blob);
-      onIssued(imageUrl);
+      const uploaded = await uploadStrip(blob);
+      onIssued({ ...uploaded, blob });
     } catch {
       setError("발급에 실패했어요. 잠시 후 다시 시도해 주세요.");
       setUploading(false);

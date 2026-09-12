@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import PhotoResult from "@/components/photobooth/PhotoResult";
+import {
+  PHOTOBOOTH_KEY_RE,
+  PHOTOBOOTH_PUBLIC_BASE,
+} from "@/lib/photobooth/constants";
 
 export const metadata: Metadata = {
   title: "사진 받기",
@@ -7,31 +11,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// 표시를 허용할 Blob 호스트 - 임의 이미지 URL 렌더 방지(보안).
-const ALLOWED_HOST_SUFFIX = ".public.blob.vercel-storage.com";
-
+// QR은 전체 URL 대신 짧은 오브젝트 키(?k=)만 담는다 (#123) - 인쇄용 QR을
+// 작게 넣어도 읽히도록 밀도를 낮추기 위해서다. URL은 여기서 되살리고,
+// 키 형태를 검증해 임의 이미지 URL 렌더를 막는다(기존 호스트 화이트리스트와 같은 목적).
 export default async function PhotoDownloadPage({
   searchParams,
 }: {
-  searchParams: Promise<{ u?: string | string[] }>;
+  searchParams: Promise<{ k?: string | string[] }>;
 }) {
-  const { u } = await searchParams;
-  const raw = Array.isArray(u) ? u[0] : u;
+  const { k } = await searchParams;
+  const raw = Array.isArray(k) ? k[0] : k;
 
-  let imageUrl: string | null = null;
-  if (raw) {
-    try {
-      const parsed = new URL(raw);
-      if (
-        parsed.protocol === "https:" &&
-        parsed.host.endsWith(ALLOWED_HOST_SUFFIX)
-      ) {
-        imageUrl = parsed.toString();
-      }
-    } catch {
-      // 잘못된 URL → null
-    }
-  }
+  const imageUrl =
+    raw && PHOTOBOOTH_KEY_RE.test(raw)
+      ? `${PHOTOBOOTH_PUBLIC_BASE}/${raw}`
+      : null;
 
   return <PhotoResult imageUrl={imageUrl} />;
 }
