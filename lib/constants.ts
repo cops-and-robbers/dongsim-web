@@ -13,7 +13,7 @@ export const BRAND = {
   email: "copsnro66ers@gmail.com",
   game: "경찰과 도둑",
   appVersion: "v1.7.4",
-  instagram: "https://www.instagram.com/cops._.robbers",
+  instagram: "https://www.instagram.com/dongsim_protector",
   github: "https://github.com/cops-and-robbers",
   youtube: "https://www.youtube.com/channel/UCUmCD4Lg4jc95ShNBPxSdDA",
   tiktok: "https://www.tiktok.com/@cops._.robbers",
