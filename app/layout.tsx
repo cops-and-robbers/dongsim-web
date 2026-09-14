@@ -114,7 +114,7 @@ const organizationSchema = {
   logo: `${SITE_URL}/brand/app-icon.png`,
   email: "copsnro66ers@gmail.com",
   sameAs: [
-    "https://www.instagram.com/cops._.robbers",
+    "https://www.instagram.com/dongsim_protector",
     "https://github.com/cops-and-robbers",
     "https://www.youtube.com/channel/UCUmCD4Lg4jc95ShNBPxSdDA",
     "https://www.tiktok.com/@cops._.robbers",
