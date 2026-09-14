@@ -116,6 +116,19 @@ const nextConfig: NextConfig = {
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  // 행사 홍보물(QR·포스터)에 넣는 짧은 주소. 원본 폼 URL(104자)로 QR을 만들면
+  // 격자가 촘촘해져 먼 거리 인식이 나빠진다(#128). 목적지는 행사마다 바뀌므로
+  // 302(임시)로 둔다 - 308로 하면 브라우저가 캐시해 폼을 바꿔도 옛 폼으로 간다.
+  async redirects() {
+    return [
+      {
+        source: "/apply",
+        destination:
+          "https://docs.google.com/forms/d/e/1FAIpQLSdAnzhWRAS1KVptnqKE65CPmj_z5n22OZOgQ5gau4nlGAMeZw/viewform",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     const json = [{ key: "Content-Type", value: "application/json" }];
     return [
