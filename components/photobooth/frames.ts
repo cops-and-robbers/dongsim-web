@@ -1,6 +1,11 @@
 // 포토부스 프레임 레지스트리.
-// 화이트/스카이/블랙 3종 - 레이아웃(창 좌표)은 동일하고 색상만 다르다.
-// 창 좌표는 알파 채널 스캔으로 검증(창4개 전부 x=82, w=1200, h=830, y 간격 정확히 895).
+// 서대페부터 단일 디자인(연두, #130) - 팀 결정으로 색상 선택을 두지 않는다.
+// 창 좌표는 원본 SVG 경로에서 실측(4창 전부 x 105.95~1694.04, 높이 1117.05로 균일).
+// 창 위에 걸친 장식 요소는 의도된 디자인이다 - 프레임이 사진 위에 덮이며 함께 보인다.
+//
+// 프레임을 갈아 끼우거나 추가하려면: scripts/render-frame.mjs 로 SVG를 렌더·실측한 뒤
+// FRAMES 에 항목을 추가/교체하면 끝이다. 2개 이상이 되면 선택 화면이 자동으로 돌아온다
+// (HAS_FRAME_CHOICE). 크기·창 좌표는 프레임마다 따로 들고 있어 디자인이 달라도 안전하다.
 
 export type FrameSlot = { x: number; y: number; w: number; h: number };
 
@@ -19,40 +24,22 @@ export type FrameDef = {
   slots: readonly FrameSlot[];
 };
 
-// 3종 공통 창 좌표(1364×4096 캔버스, 창 1200×830 ≈ 1.446:1).
+// 1800×5400 캔버스, 창 1588×1117 ≈ 1.42:1.
 const SLOTS: readonly FrameSlot[] = [
-  { x: 82, y: 99, w: 1200, h: 830 },
-  { x: 82, y: 994, w: 1200, h: 830 },
-  { x: 82, y: 1889, w: 1200, h: 830 },
-  { x: 82, y: 2784, w: 1200, h: 830 },
+  { x: 106, y: 147, w: 1588, h: 1117 },
+  { x: 106, y: 1388, w: 1588, h: 1117 },
+  { x: 106, y: 2629, w: 1588, h: 1117 },
+  { x: 106, y: 3871, w: 1588, h: 1117 },
 ];
 
 export const FRAMES: readonly FrameDef[] = [
   {
-    id: "white",
-    label: "화이트",
-    src: "/photobooth/frame-white.png",
-    swatch: "#ffffff",
-    width: 1364,
-    height: 4096,
-    slots: SLOTS,
-  },
-  {
-    id: "sky",
-    label: "스카이",
-    src: "/photobooth/frame-sky.png",
-    swatch: "#cbeeff",
-    width: 1364,
-    height: 4096,
-    slots: SLOTS,
-  },
-  {
-    id: "black",
-    label: "블랙",
-    src: "/photobooth/frame-black.png",
-    swatch: "#000000",
-    width: 1364,
-    height: 4096,
+    id: "green",
+    label: "그린",
+    src: "/photobooth/frame-green.png",
+    swatch: "#E1ECCF",
+    width: 1800,
+    height: 5400,
     slots: SLOTS,
   },
 ] as const;
