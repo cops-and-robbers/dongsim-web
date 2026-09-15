@@ -86,11 +86,11 @@ export default function PhotoResult({ imageUrl }: { imageUrl: string | null }) {
   return (
     <section className="mx-auto flex w-full max-w-sm flex-col items-center px-5 py-6 text-center">
       <div className="flex items-center gap-2">
-        <img src="/photobooth/cop.svg" alt="" className="h-9 w-auto" />
+        <img src="/photobooth/cop-professor.svg" alt="" className="h-9 w-auto" />
         <h1 className="text-xl font-bold text-brand-ink dark:text-white">
           사진이 나왔어요
         </h1>
-        <img src="/photobooth/thief.svg" alt="" className="h-9 w-auto" />
+        <img src="/photobooth/thief-runaway.svg" alt="" className="h-9 w-auto" />
       </div>
 
       <img
