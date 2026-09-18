@@ -5,7 +5,8 @@ import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { SITE_URL } from "@/lib/constants";
-import { PRINT_LAYOUT } from "./config";
+import { PRINT_LAYOUT, PRINT_OVERSCAN_SCALE } from "./config";
+import { DEFAULT_FRAME } from "./frames";
 import type { IssuedStrip } from "./PreviewScreen";
 
 const AUTO_RESTART_MS = 60_000;
@@ -114,11 +115,22 @@ export default function QrScreen({
                   margin: 0;
                 }
                 body > *:not(#pb-print) { display: none !important; }
-                #pb-print { display: flex !important; }
+                #pb-print {
+                  display: flex !important;
+                  align-items: center;
+                  justify-content: center;
+                  width: ${PRINT_LAYOUT === "postcard-pair" ? "100mm" : "2in"};
+                  height: ${PRINT_LAYOUT === "postcard-pair" ? "148mm" : "6in"};
+                  /* SELPHY 보더리스 확대가 잡아먹을 가장자리 띠 - 흰색이면 티가 나서
+                     프레임 배경색으로 채운다. 배경 인쇄를 지우는 브라우저 기본값도 끈다. */
+                  background: ${DEFAULT_FRAME.swatch};
+                  print-color-adjust: exact;
+                  -webkit-print-color-adjust: exact;
+                }
                 #pb-print img {
                   display: block;
-                  width: ${PRINT_LAYOUT === "postcard-pair" ? "50mm" : "2in"};
-                  height: ${PRINT_LAYOUT === "postcard-pair" ? "148mm" : "6in"};
+                  width: ${PRINT_LAYOUT === "postcard-pair" ? `calc(50mm * ${PRINT_OVERSCAN_SCALE})` : "2in"};
+                  height: ${PRINT_LAYOUT === "postcard-pair" ? `calc(148mm * ${PRINT_OVERSCAN_SCALE})` : "6in"};
                   object-fit: contain;
                 }
               }
