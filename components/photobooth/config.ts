@@ -16,3 +16,12 @@ export const COUNTDOWN_SECONDS = 3;
  * → 엽서에 2장 찍어 반으로 자르는 postcard-pair.
  */
 export const PRINT_LAYOUT: "strip-2x6" | "postcard-pair" = "postcard-pair";
+
+/**
+ * 보더리스 오버스캔 역보정 배율 (postcard-pair 전용).
+ * SELPHY는 테두리 없는 인화 시 이미지를 약 4% 확대해 종이 밖으로 흘리므로,
+ * 그만큼 미리 축소해 두면 확대 후에 원래 크기로 찍힌다. 축소로 생기는 가장자리
+ * 틈은 프레임 배경색으로 채워져 있어(QrScreen 인쇄 CSS) 흰 여백이 보이지 않는다.
+ * 시험 인쇄에서 잘림이 남으면 낮추고, 연두 띠가 보이면 올린다.
+ */
+export const PRINT_OVERSCAN_SCALE = 0.96;
