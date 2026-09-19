@@ -15,6 +15,8 @@ export interface MockHistoryParticipant {
   nickname: string;
   team: Team;
   status: ParticipantStatus;
+  arrestCount: number;
+  arrestedCount: number;
 }
 
 export interface MockGameHistory {
@@ -132,23 +134,35 @@ function buildParticipants(
   seq: number,
   policeCount: number,
   robberCount: number,
-  arrestedCount: number
+  arrestedCount: number,
+  extraArrests: number
 ): MockHistoryParticipant[] {
   const out: MockHistoryParticipant[] = [];
+  // 총 체포 횟수(잡힌 도둑 + 재체포)를 경찰들에게 라운드로빈으로 나눠 준다.
+  // 첫 경찰이 최다가 되어 MVP 표시를, 나눠떨어지면 동률 MVP를 확인할 수 있다.
+  const totalArrests = arrestedCount + extraArrests;
   for (let i = 0; i < policeCount; i += 1) {
+    const share =
+      Math.floor(totalArrests / policeCount) + (i < totalArrests % policeCount ? 1 : 0);
     out.push({
       userId: String(100 + seq * 10 + i),
       nickname: NICKS[(seq + i) % NICKS.length],
       team: "POLICE",
       status: "ALIVE",
+      arrestCount: share,
+      arrestedCount: 0,
     });
   }
   for (let i = 0; i < robberCount; i += 1) {
+    const jailed = i < arrestedCount;
+    // 재체포분은 첫 도둑에게 몰아 잡힌 수가 2 이상인 케이스를 만든다.
     out.push({
       userId: String(200 + seq * 10 + i),
       nickname: NICKS[(seq + i + 3) % NICKS.length],
       team: "ROBBER",
-      status: i < arrestedCount ? "JAILED" : "ALIVE",
+      status: jailed ? "JAILED" : "ALIVE",
+      arrestCount: 0,
+      arrestedCount: (jailed ? 1 : 0) + (i === 0 && arrestedCount > 0 ? extraArrests : 0),
     });
   }
   return out;
@@ -185,7 +199,7 @@ const histories: MockGameHistory[] = REASONS.map((endReason, i) => {
     createdAt: `2026-08-${String(1 + (i % 12)).padStart(2, "0")}T${String(
       13 + (i % 8)
     ).padStart(2, "0")}:20:00+09:00`,
-    participants: buildParticipants(seq, policeCount, robberCount, arrestedCount),
+    participants: buildParticipants(seq, policeCount, robberCount, arrestedCount, i % 2),
   };
 });
 
