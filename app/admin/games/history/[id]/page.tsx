@@ -49,23 +49,33 @@ function HistoryDetail({ id }: { id: string }) {
     history.endReason === "ROBBER_FORFEITED";
 
   // 진행 중인 게임 상세와 같은 순서로 보여준다. 경찰 먼저, 그다음 도둑.
-  // 팀 안에서는 기록(경찰은 체포 수, 도둑은 잡힌 수) 내림차순 - MVP가 맨 위에 온다.
+  // 팀 안에서는 잘한 순서 - 경찰은 많이 잡을수록, 도둑은 덜 잡힐수록 위로.
   const teamOrder: Record<string, number> = { POLICE: 0, ROBBER: 1 };
   const recordOf = (p: (typeof history.participants)[number]) =>
     p.team === "POLICE" ? p.arrestCount : p.arrestedCount;
   const participants = [...history.participants].sort(
     (a, b) =>
       (teamOrder[a.team ?? ""] ?? 9) - (teamOrder[b.team ?? ""] ?? 9) ||
-      recordOf(b) - recordOf(a)
+      (a.team === "POLICE"
+        ? recordOf(b) - recordOf(a)
+        : recordOf(a) - recordOf(b))
   );
 
-  // 팀별 최고 기록. 전원이 0이면 MVP 없음, 동률이면 모두 MVP.
-  const bestOf = (team: string) =>
-    Math.max(0, ...history.participants.filter((p) => p.team === team).map(recordOf));
-  const bestRecord: Record<string, number> = {
-    POLICE: bestOf("POLICE"),
-    ROBBER: bestOf("ROBBER"),
+  // 팀별 MVP - 경찰은 체포 최다, 도둑은 잡힘 최소(끝까지 잘 도망친 사람).
+  // 팀 전원이 동률이면(전원 0회 등) 배지가 의미 없으니 달지 않는다. 동률 우승은 모두 MVP.
+  const mvpRecord = (team: "POLICE" | "ROBBER"): number | null => {
+    const records = history.participants
+      .filter((p) => p.team === team)
+      .map(recordOf);
+    if (records.length === 0 || records.every((r) => r === records[0])) return null;
+    return team === "POLICE" ? Math.max(...records) : Math.min(...records);
   };
+  const bestRecord = {
+    POLICE: mvpRecord("POLICE"),
+    ROBBER: mvpRecord("ROBBER"),
+  };
+
+  const leftCount = history.participants.filter((p) => p.leftAt != null).length;
 
   return (
     <>
@@ -89,6 +99,11 @@ function HistoryDetail({ id }: { id: string }) {
             items={[
               { term: "경찰 인원", desc: `${history.totalPoliceCount}명` },
               { term: "도둑 인원", desc: `${history.totalRobberCount}명` },
+              // 인원 집계는 종료 시점 잔존 인원이라, 중도 퇴장자가 있으면
+              // 참가자 표 수와 어긋나 보인다. 그 차이를 여기서 설명한다.
+              ...(leftCount > 0
+                ? [{ term: "중도 퇴장", desc: `${leftCount}명 (위 인원에서 제외)` }]
+                : []),
               {
                 term: "체포된 도둑",
                 desc: `${history.arrestedRobberCount}/${history.totalRobberCount}명`,
@@ -166,7 +181,10 @@ function HistoryDetail({ id }: { id: string }) {
                     <TeamBadge team={p.team} />
                   </Td>
                   <Td>
-                    <ParticipantStatusBadge status={p.status} />
+                    <span className="inline-flex items-center gap-2">
+                      <ParticipantStatusBadge status={p.status} />
+                      {p.leftAt != null && <Pill tone="amber">중도 퇴장</Pill>}
+                    </span>
                   </Td>
                   <Td>
                     <span className="inline-flex items-center gap-2">
@@ -175,8 +193,8 @@ function HistoryDetail({ id }: { id: string }) {
                           ? `체포 ${p.arrestCount}회`
                           : `잡힘 ${p.arrestedCount}회`}
                       </span>
-                      {p.team != null &&
-                        bestRecord[p.team] > 0 &&
+                      {(p.team === "POLICE" || p.team === "ROBBER") &&
+                        bestRecord[p.team] != null &&
                         recordOf(p) === bestRecord[p.team] && (
                           <Pill tone={p.team === "POLICE" ? "blue" : "green"}>
                             MVP

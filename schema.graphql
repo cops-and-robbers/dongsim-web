@@ -593,6 +593,10 @@ type AdminGameHistoryParticipant {
   team: Team!
   status: ParticipantStatus!
   """
+  게임 중에 나갔으면 그 시각, 끝까지 있었으면 null.
+  """
+  leftAt: String
+  """
   이 참가자가 도둑을 체포한 횟수. 도둑은 항상 0이다.
   """
   arrestCount: Int!
@@ -627,9 +631,13 @@ type AdminGame {
   createdAt: String!
   """WAITING 상태면 아직 시작 안 함 → null"""
   startedAt: String
+  """이 방이 지금까지 시작한 라운드 수"""
+  roundNumber: Int!
   participants: [AdminParticipant!]!
-  """게임 미종료(WAITING·IN_PROGRESS)면 null"""
+  """게임 미종료(WAITING·IN_PROGRESS)면 null. 가장 최근 라운드를 가리킨다"""
   result: GameResult
+  """이 방의 모든 라운드 결과. 오래된 순"""
+  results: [GameResult!]!
   """구역 미설정이면 null"""
   area: GameArea
 }
@@ -645,12 +653,18 @@ type AdminParticipant {
 }
 
 type GameResult {
+  """이 컬럼이 생기기 전 기록은 null"""
+  roundNumber: Int
   winnerTeam: Team!
   endReason: GameEndReason!
   totalPoliceCount: Int!
   totalRobberCount: Int!
   arrestedRobberCount: Int!
   durationSeconds: Int!
+  """이 컬럼이 생기기 전 기록은 null"""
+  startedAt: String
+  """이 컬럼이 생기기 전 기록은 null"""
+  endedAt: String
 }
 
 """

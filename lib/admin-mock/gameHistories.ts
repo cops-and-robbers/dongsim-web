@@ -15,6 +15,7 @@ export interface MockHistoryParticipant {
   nickname: string;
   team: Team;
   status: ParticipantStatus;
+  leftAt: string | null;
   arrestCount: number;
   arrestedCount: number;
 }
@@ -135,7 +136,8 @@ function buildParticipants(
   policeCount: number,
   robberCount: number,
   arrestedCount: number,
-  extraArrests: number
+  extraArrests: number,
+  leftPoliceAt: string | null
 ): MockHistoryParticipant[] {
   const out: MockHistoryParticipant[] = [];
   // 총 체포 횟수(잡힌 도둑 + 재체포)를 경찰들에게 라운드로빈으로 나눠 준다.
@@ -149,6 +151,9 @@ function buildParticipants(
       nickname: NICKS[(seq + i) % NICKS.length],
       team: "POLICE",
       status: "ALIVE",
+      // 중도 퇴장자는 마지막 경찰 한 명 - 인원 집계(잔존)와 명단 수가 어긋나는
+      // 화면을 목에서도 볼 수 있게 한다.
+      leftAt: i === policeCount - 1 ? leftPoliceAt : null,
       arrestCount: share,
       arrestedCount: 0,
     });
@@ -161,6 +166,7 @@ function buildParticipants(
       nickname: NICKS[(seq + i + 3) % NICKS.length],
       team: "ROBBER",
       status: jailed ? "JAILED" : "ALIVE",
+      leftAt: null,
       arrestCount: 0,
       arrestedCount: (jailed ? 1 : 0) + (i === 0 && arrestedCount > 0 ? extraArrests : 0),
     });
@@ -183,12 +189,19 @@ const histories: MockGameHistory[] = REASONS.map((endReason, i) => {
 
   const areaType: "CIRCLE" | "POLYGON" = i % 3 === 0 ? "POLYGON" : "CIRCLE";
 
+  // 세 번째마다 경찰 한 명이 중도 퇴장한 기록으로 둔다.
+  // 인원 집계(totalPoliceCount)는 BE 처럼 종료 시점 잔존 인원만 센다.
+  const leftPolice = policeCount > 1 && seq % 3 === 0 ? 1 : 0;
+  const leftPoliceAt = leftPolice
+    ? `2026-08-${String(1 + (i % 12)).padStart(2, "0")}T${String(13 + (i % 8)).padStart(2, "0")}:05:00+09:00`
+    : null;
+
   return {
     id: String(seq),
     gameId: String(1000 + seq),
     winnerTeam: WINNER_BY_REASON[endReason],
     endReason,
-    totalPoliceCount: policeCount,
+    totalPoliceCount: policeCount - leftPolice,
     totalRobberCount: robberCount,
     arrestedRobberCount: arrestedCount,
     totalArrestCount: arrestedCount + (i % 2),
@@ -199,7 +212,7 @@ const histories: MockGameHistory[] = REASONS.map((endReason, i) => {
     createdAt: `2026-08-${String(1 + (i % 12)).padStart(2, "0")}T${String(
       13 + (i % 8)
     ).padStart(2, "0")}:20:00+09:00`,
-    participants: buildParticipants(seq, policeCount, robberCount, arrestedCount, i % 2),
+    participants: buildParticipants(seq, policeCount, robberCount, arrestedCount, i % 2, leftPoliceAt),
   };
 });
 

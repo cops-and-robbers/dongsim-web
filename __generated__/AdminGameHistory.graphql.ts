@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<c84066b22164a4ffe70574f44cf6f209>>
+ * @generated SignedSource<<ad5e41d791ed824d415589a7d3b79537>>
  * @lightSyntaxTransform
  */
 
@@ -44,6 +44,7 @@ export type AdminGameHistory$data = {
     readonly participants: ReadonlyArray<{
       readonly arrestCount: number;
       readonly arrestedCount: number;
+      readonly leftAt: string | null | undefined;
       readonly nickname: string;
       readonly status: ParticipantStatus;
       readonly team: Team;
@@ -291,6 +292,13 @@ v3 = [
             "alias": null,
             "args": null,
             "kind": "ScalarField",
+            "name": "leftAt",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
             "name": "arrestCount",
             "storageKey": null
           },
@@ -326,16 +334,16 @@ return {
     "selections": (v3/*:: as any*/)
   },
   "params": {
-    "cacheID": "951a54fa9c37597ef99b9c61d7765e14",
+    "cacheID": "2fb115398801b37de6c281d13eb59f98",
     "id": null,
     "metadata": {},
     "name": "AdminGameHistory",
     "operationKind": "query",
-    "text": "query AdminGameHistory(\n  $id: ID!\n) {\n  adminGameHistory(id: $id) {\n    id\n    gameId\n    winnerTeam\n    endReason\n    totalPoliceCount\n    totalRobberCount\n    arrestedRobberCount\n    totalArrestCount\n    durationSeconds\n    areaType\n    createdAt\n    area {\n      areaType\n      playgroundCenterLat\n      playgroundCenterLng\n      playgroundRadiusInMeters\n      jailCenterLat\n      jailCenterLng\n      jailRadiusInMeters\n      playgroundPolygon {\n        latitude\n        longitude\n      }\n      jailPolygon {\n        latitude\n        longitude\n      }\n    }\n    participants {\n      userId\n      nickname\n      team\n      status\n      arrestCount\n      arrestedCount\n    }\n  }\n}\n"
+    "text": "query AdminGameHistory(\n  $id: ID!\n) {\n  adminGameHistory(id: $id) {\n    id\n    gameId\n    winnerTeam\n    endReason\n    totalPoliceCount\n    totalRobberCount\n    arrestedRobberCount\n    totalArrestCount\n    durationSeconds\n    areaType\n    createdAt\n    area {\n      areaType\n      playgroundCenterLat\n      playgroundCenterLng\n      playgroundRadiusInMeters\n      jailCenterLat\n      jailCenterLng\n      jailRadiusInMeters\n      playgroundPolygon {\n        latitude\n        longitude\n      }\n      jailPolygon {\n        latitude\n        longitude\n      }\n    }\n    participants {\n      userId\n      nickname\n      team\n      status\n      leftAt\n      arrestCount\n      arrestedCount\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "42fb380c263030a9e70cea166e6f0fac";
+(node as any).hash = "29d1f5897202983abf0d7758c2b9cb2b";
 
 export default node;

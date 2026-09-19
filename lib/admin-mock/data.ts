@@ -60,6 +60,9 @@ export interface MockResult {
   totalRobberCount: number;
   arrestedRobberCount: number;
   durationSeconds: number;
+  // 라운드 목록(results)에서만 쓰인다. roundNumber 컬럼 이전 기록은 null.
+  roundNumber?: number | null;
+  endedAt?: string | null;
 }
 
 export interface MockGame {
@@ -75,6 +78,7 @@ export interface MockGame {
   startedAt: string | null;
   area: MockArea | null;
   result: MockResult | null;
+  results: MockResult[];
 }
 
 export interface MockParticipant {
@@ -346,6 +350,30 @@ for (let i = 0; i < N_GAMES; i++) {
         }
       : null;
 
+  // 라운드 기록. 마지막 라운드가 곧 result 이고, 그 앞 판들을 지어 붙인다.
+  // 한 판만 한 방(길이 1)이 대부분이어야 라운드 섹션의 표시 조건도 함께 검증된다.
+  const roundCount = result ? (chance(0.35) ? range(2, 3) : 1) : 0;
+  const results: MockResult[] = [];
+  for (let r = 1; r <= roundCount; r += 1) {
+    if (r === roundCount) {
+      results.push({ ...result!, roundNumber: r, endedAt: createdAt });
+    } else {
+      results.push({
+        winnerTeam: chance(0.5) ? "POLICE" : "ROBBER",
+        endReason: pick(END_REASONS),
+        totalPoliceCount: result!.totalPoliceCount,
+        totalRobberCount: result!.totalRobberCount,
+        arrestedRobberCount: Math.min(
+          result!.totalRobberCount,
+          Math.floor(result!.totalRobberCount * rand())
+        ),
+        durationSeconds: roundDurationMinutes * 60 - range(0, 300),
+        roundNumber: r,
+        endedAt: createdAt,
+      });
+    }
+  }
+
   games.push({
     id,
     inviteCode: makeInviteCode(),
@@ -359,6 +387,7 @@ for (let i = 0; i < N_GAMES; i++) {
     startedAt: started ? createdAt : null,
     area,
     result,
+    results,
   });
 }
 
@@ -524,6 +553,7 @@ export function getGame(id: string) {
     startedAt: game.startedAt,
     participants: gameParticipants,
     result: game.result,
+    results: game.results,
     area: game.area,
   };
 }

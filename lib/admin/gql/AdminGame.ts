@@ -29,6 +29,15 @@ export const AdminGameQuery = graphql`
         arrestedRobberCount
         durationSeconds
       }
+      results {
+        roundNumber
+        winnerTeam
+        endReason
+        totalRobberCount
+        arrestedRobberCount
+        durationSeconds
+        endedAt
+      }
       area {
         areaType
         playgroundCenterLat
