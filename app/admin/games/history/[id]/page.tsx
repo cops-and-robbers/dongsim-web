@@ -62,6 +62,7 @@ function HistoryDetail({ id }: { id: string }) {
   );
 
   // 팀별 MVP - 경찰은 체포 최다, 도둑은 잡힘 최소(끝까지 잘 도망친 사람).
+  // 명단 전체가 대상이므로 중도 퇴장자도 그대로 후보에 들어간다.
   // 팀 전원이 동률이면(전원 0회 등) 배지가 의미 없으니 달지 않는다. 동률 우승은 모두 MVP.
   const mvpRecord = (team: "POLICE" | "ROBBER"): number | null => {
     const records = history.participants
@@ -75,7 +76,17 @@ function HistoryDetail({ id }: { id: string }) {
     ROBBER: mvpRecord("ROBBER"),
   };
 
-  const leftCount = history.participants.filter((p) => p.leftAt != null).length;
+  // 인원은 명단(중도 퇴장자 포함) 기준으로 센다. BE의 totalPoliceCount 등은
+  // 종료 시점 잔존 인원만이라 퇴장자가 있으면 명단과 어긋나 보여서다.
+  // 몰수패처럼 명단이 비어 있는 옛 기록만 BE 집계로 돌아간다.
+  const headcount = (team: "POLICE" | "ROBBER") => {
+    const members = history.participants.filter((p) => p.team === team);
+    const total =
+      members.length ||
+      (team === "POLICE" ? history.totalPoliceCount : history.totalRobberCount);
+    const left = members.filter((p) => p.leftAt != null).length;
+    return `${total}명${left > 0 ? ` (중도 퇴장 ${left})` : ""}`;
+  };
 
   return (
     <>
@@ -97,13 +108,8 @@ function HistoryDetail({ id }: { id: string }) {
         <SectionCard title="게임 결과">
           <DescriptionList
             items={[
-              { term: "경찰 인원", desc: `${history.totalPoliceCount}명` },
-              { term: "도둑 인원", desc: `${history.totalRobberCount}명` },
-              // 인원 집계는 종료 시점 잔존 인원이라, 중도 퇴장자가 있으면
-              // 참가자 표 수와 어긋나 보인다. 그 차이를 여기서 설명한다.
-              ...(leftCount > 0
-                ? [{ term: "중도 퇴장", desc: `${leftCount}명 (위 인원에서 제외)` }]
-                : []),
+              { term: "경찰 인원", desc: headcount("POLICE") },
+              { term: "도둑 인원", desc: headcount("ROBBER") },
               {
                 term: "체포된 도둑",
                 desc: `${history.arrestedRobberCount}/${history.totalRobberCount}명`,
