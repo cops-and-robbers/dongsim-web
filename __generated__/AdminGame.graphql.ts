@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<c6c539c1ab7e646b4eb226441d6ca3eb>>
+ * @generated SignedSource<<a2d19ff231c3d35a003391e15b95f1d5>>
  * @lightSyntaxTransform
  */
 
@@ -57,6 +57,15 @@ export type AdminGame$data = {
       readonly totalRobberCount: number;
       readonly winnerTeam: Team;
     } | null | undefined;
+    readonly results: ReadonlyArray<{
+      readonly arrestedRobberCount: number;
+      readonly durationSeconds: number;
+      readonly endReason: GameEndReason;
+      readonly endedAt: string | null | undefined;
+      readonly roundNumber: number | null | undefined;
+      readonly totalRobberCount: number;
+      readonly winnerTeam: Team;
+    }>;
     readonly roundDurationMinutes: number;
     readonly startedAt: string | null | undefined;
     readonly status: GameStatus;
@@ -82,7 +91,42 @@ v1 = {
   "name": "status",
   "storageKey": null
 },
-v2 = [
+v2 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "winnerTeam",
+  "storageKey": null
+},
+v3 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "endReason",
+  "storageKey": null
+},
+v4 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "totalRobberCount",
+  "storageKey": null
+},
+v5 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "arrestedRobberCount",
+  "storageKey": null
+},
+v6 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "durationSeconds",
+  "storageKey": null
+},
+v7 = [
   {
     "alias": null,
     "args": null,
@@ -98,7 +142,7 @@ v2 = [
     "storageKey": null
   }
 ],
-v3 = [
+v8 = [
   {
     "alias": null,
     "args": [
@@ -225,20 +269,8 @@ v3 = [
         "name": "result",
         "plural": false,
         "selections": [
-          {
-            "alias": null,
-            "args": null,
-            "kind": "ScalarField",
-            "name": "winnerTeam",
-            "storageKey": null
-          },
-          {
-            "alias": null,
-            "args": null,
-            "kind": "ScalarField",
-            "name": "endReason",
-            "storageKey": null
-          },
+          (v2/*:: as any*/),
+          (v3/*:: as any*/),
           {
             "alias": null,
             "args": null,
@@ -246,25 +278,37 @@ v3 = [
             "name": "totalPoliceCount",
             "storageKey": null
           },
+          (v4/*:: as any*/),
+          (v5/*:: as any*/),
+          (v6/*:: as any*/)
+        ],
+        "storageKey": null
+      },
+      {
+        "alias": null,
+        "args": null,
+        "concreteType": "GameResult",
+        "kind": "LinkedField",
+        "name": "results",
+        "plural": true,
+        "selections": [
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "totalRobberCount",
+            "name": "roundNumber",
             "storageKey": null
           },
+          (v2/*:: as any*/),
+          (v3/*:: as any*/),
+          (v4/*:: as any*/),
+          (v5/*:: as any*/),
+          (v6/*:: as any*/),
           {
             "alias": null,
             "args": null,
             "kind": "ScalarField",
-            "name": "arrestedRobberCount",
-            "storageKey": null
-          },
-          {
-            "alias": null,
-            "args": null,
-            "kind": "ScalarField",
-            "name": "durationSeconds",
+            "name": "endedAt",
             "storageKey": null
           }
         ],
@@ -334,7 +378,7 @@ v3 = [
             "kind": "LinkedField",
             "name": "playgroundPolygon",
             "plural": true,
-            "selections": (v2/*:: as any*/),
+            "selections": (v7/*:: as any*/),
             "storageKey": null
           },
           {
@@ -344,7 +388,7 @@ v3 = [
             "kind": "LinkedField",
             "name": "jailPolygon",
             "plural": true,
-            "selections": (v2/*:: as any*/),
+            "selections": (v7/*:: as any*/),
             "storageKey": null
           }
         ],
@@ -360,7 +404,7 @@ return {
     "kind": "Fragment",
     "metadata": null,
     "name": "AdminGame",
-    "selections": (v3/*:: as any*/),
+    "selections": (v8/*:: as any*/),
     "type": "Query",
     "abstractKey": null
   },
@@ -369,19 +413,19 @@ return {
     "argumentDefinitions": (v0/*:: as any*/),
     "kind": "Operation",
     "name": "AdminGame",
-    "selections": (v3/*:: as any*/)
+    "selections": (v8/*:: as any*/)
   },
   "params": {
-    "cacheID": "f1bcae07de3b53f38c26ddd8d028ff98",
+    "cacheID": "7717550aa87dba2106e026d2296751f7",
     "id": null,
     "metadata": {},
     "name": "AdminGame",
     "operationKind": "query",
-    "text": "query AdminGame(\n  $id: ID!\n) {\n  adminGame(id: $id) {\n    id\n    inviteCode\n    status\n    roundDurationMinutes\n    locationRevealIntervalMinutes\n    policeWaitMinutes\n    maxParticipants\n    isEventGame\n    createdAt\n    startedAt\n    participants {\n      userId\n      nickname\n      team\n      status\n      isHost\n    }\n    result {\n      winnerTeam\n      endReason\n      totalPoliceCount\n      totalRobberCount\n      arrestedRobberCount\n      durationSeconds\n    }\n    area {\n      areaType\n      playgroundCenterLat\n      playgroundCenterLng\n      playgroundRadiusInMeters\n      jailCenterLat\n      jailCenterLng\n      jailRadiusInMeters\n      playgroundPolygon {\n        latitude\n        longitude\n      }\n      jailPolygon {\n        latitude\n        longitude\n      }\n    }\n  }\n}\n"
+    "text": "query AdminGame(\n  $id: ID!\n) {\n  adminGame(id: $id) {\n    id\n    inviteCode\n    status\n    roundDurationMinutes\n    locationRevealIntervalMinutes\n    policeWaitMinutes\n    maxParticipants\n    isEventGame\n    createdAt\n    startedAt\n    participants {\n      userId\n      nickname\n      team\n      status\n      isHost\n    }\n    result {\n      winnerTeam\n      endReason\n      totalPoliceCount\n      totalRobberCount\n      arrestedRobberCount\n      durationSeconds\n    }\n    results {\n      roundNumber\n      winnerTeam\n      endReason\n      totalRobberCount\n      arrestedRobberCount\n      durationSeconds\n      endedAt\n    }\n    area {\n      areaType\n      playgroundCenterLat\n      playgroundCenterLng\n      playgroundRadiusInMeters\n      jailCenterLat\n      jailCenterLng\n      jailRadiusInMeters\n      playgroundPolygon {\n        latitude\n        longitude\n      }\n      jailPolygon {\n        latitude\n        longitude\n      }\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "5604e10e4258b2504bd8bc48c15ed71b";
+(node as any).hash = "9d7abe214736151a5ae09d7ca6491d70";
 
 export default node;

@@ -143,6 +143,53 @@ function GameDetail({ id }: { id: string }) {
         </div>
       )}
 
+      {/* 한 방에서 여러 판을 돌린 경우에만 - 한 판이면 위 게임 결과와 겹친다. */}
+      {game.results.length > 1 && (
+        <div className="mt-5">
+          <SectionCard
+            title="라운드 기록"
+            flush
+            right={
+              <span className="text-xs font-semibold text-sd-fg-subtle">
+                {game.results.length}라운드
+              </span>
+            }
+          >
+            <Table
+              head={
+                <>
+                  <Th>라운드</Th>
+                  <Th>승리</Th>
+                  <Th>종료 사유</Th>
+                  <Th>체포된 도둑</Th>
+                  <Th>진행 시간</Th>
+                  <Th>종료 시각</Th>
+                </>
+              }
+            >
+              {game.results.map((r, i) => (
+                <Tr key={r.roundNumber ?? i} index={i}>
+                  <Td>
+                    <span className="font-semibold text-sd-fg">
+                      {r.roundNumber ?? i + 1}
+                    </span>
+                  </Td>
+                  <Td>
+                    <TeamBadge team={r.winnerTeam} />
+                  </Td>
+                  <Td>{labelOf(END_REASON_LABEL, r.endReason)}</Td>
+                  <Td>
+                    {r.arrestedRobberCount}/{r.totalRobberCount}명
+                  </Td>
+                  <Td>{formatDuration(r.durationSeconds)}</Td>
+                  <Td>{r.endedAt ? formatDateTime(r.endedAt) : "-"}</Td>
+                </Tr>
+              ))}
+            </Table>
+          </SectionCard>
+        </div>
+      )}
+
       <div className="mt-5">
         <SectionCard
           title="참가자"
