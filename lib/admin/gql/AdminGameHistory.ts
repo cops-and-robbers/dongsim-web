@@ -39,6 +39,8 @@ export const AdminGameHistoryQuery = graphql`
         nickname
         team
         status
+        arrestCount
+        arrestedCount
       }
     }
   }

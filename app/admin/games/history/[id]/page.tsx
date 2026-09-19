@@ -49,10 +49,23 @@ function HistoryDetail({ id }: { id: string }) {
     history.endReason === "ROBBER_FORFEITED";
 
   // 진행 중인 게임 상세와 같은 순서로 보여준다. 경찰 먼저, 그다음 도둑.
+  // 팀 안에서는 기록(경찰은 체포 수, 도둑은 잡힌 수) 내림차순 - MVP가 맨 위에 온다.
   const teamOrder: Record<string, number> = { POLICE: 0, ROBBER: 1 };
+  const recordOf = (p: (typeof history.participants)[number]) =>
+    p.team === "POLICE" ? p.arrestCount : p.arrestedCount;
   const participants = [...history.participants].sort(
-    (a, b) => (teamOrder[a.team ?? ""] ?? 9) - (teamOrder[b.team ?? ""] ?? 9)
+    (a, b) =>
+      (teamOrder[a.team ?? ""] ?? 9) - (teamOrder[b.team ?? ""] ?? 9) ||
+      recordOf(b) - recordOf(a)
   );
+
+  // 팀별 최고 기록. 전원이 0이면 MVP 없음, 동률이면 모두 MVP.
+  const bestOf = (team: string) =>
+    Math.max(0, ...history.participants.filter((p) => p.team === team).map(recordOf));
+  const bestRecord: Record<string, number> = {
+    POLICE: bestOf("POLICE"),
+    ROBBER: bestOf("ROBBER"),
+  };
 
   return (
     <>
@@ -132,6 +145,7 @@ function HistoryDetail({ id }: { id: string }) {
                   <Th>닉네임</Th>
                   <Th>팀</Th>
                   <Th>상태</Th>
+                  <Th>기록</Th>
                 </>
               }
             >
@@ -153,6 +167,22 @@ function HistoryDetail({ id }: { id: string }) {
                   </Td>
                   <Td>
                     <ParticipantStatusBadge status={p.status} />
+                  </Td>
+                  <Td>
+                    <span className="inline-flex items-center gap-2">
+                      <span>
+                        {p.team === "POLICE"
+                          ? `체포 ${p.arrestCount}회`
+                          : `잡힘 ${p.arrestedCount}회`}
+                      </span>
+                      {p.team != null &&
+                        bestRecord[p.team] > 0 &&
+                        recordOf(p) === bestRecord[p.team] && (
+                          <Pill tone={p.team === "POLICE" ? "blue" : "green"}>
+                            MVP
+                          </Pill>
+                        )}
+                    </span>
                   </Td>
                 </Tr>
               ))}

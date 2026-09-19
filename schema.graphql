@@ -592,6 +592,14 @@ type AdminGameHistoryParticipant {
   nickname: String!
   team: Team!
   status: ParticipantStatus!
+  """
+  이 참가자가 도둑을 체포한 횟수. 도둑은 항상 0이다.
+  """
+  arrestCount: Int!
+  """
+  이 참가자가 체포당한 횟수. 경찰은 항상 0이다. 탈옥 후 재체포도 누적된다.
+  """
+  arrestedCount: Int!
 }
 
 type AdminGameSummary {
