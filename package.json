@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.mjs\"",
     "check:legal-fonts": "node scripts/check-legal-fonts.mjs",
     "check:ko-only": "node scripts/check-ko-only-paths.mjs",
     "relay": "relay-compiler",
