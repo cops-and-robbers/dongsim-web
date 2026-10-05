@@ -1,0 +1,51 @@
+# 인스타 성과 수집과 디스코드 리포트 (#140).
+#
+# 하루 한 번 수집 라우트를 부른다. 라우트가 게시물, 계정 숫자를 Supabase 에
+# 쌓고, 올린 지 3일 지난 게시물 리포트와 급상승 알림을 디스코드로 보낸다.
+# 구조는 blog-sync.yml 과 같다. Vercel 크론은 Hobby 플랜에서 하루 1회 제한이라
+# 여기서 돌린다.
+#
+# UTC 0시 = 한국 오전 9시. 출근해서 채널을 볼 때 도착하도록 맞췄다.
+# GitHub 크론은 붐비면 수십 분 늦게 돌 수 있다 - 리포트에 지장은 없다.
+#
+# 시크릿(METRICS_CRON_SECRET)은 저장소 Actions 시크릿에 있다 - Vercel 의
+# METRICS_CRON_SECRET 과 같은 값이어야 한다.
+# 손으로 돌릴 땐 Actions 탭 > instagram-report > Run workflow. dry 를 켜면
+# 디스코드로 보내지 않고 보냈을 메시지를 로그에 찍는다.
+name: instagram-report
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "미리보기 (디스코드로 보내지 않고 로그에 메시지만 찍음)"
+        type: boolean
+        default: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # 저장소가 공개라 Actions 로그는 누구나 볼 수 있다. 평소에는 요약(무엇을
+      # 보냈고 무엇이 실패했는지)만 남기고, 메시지 본문은 손으로 돌린 미리보기
+      # 때만 찍는다. 시크릿은 스크립트에 끼워 넣지 않고 환경변수로 넘긴다.
+      - name: 수집과 리포트
+        env:
+          DRY: ${{ inputs.dry && '1' || '0' }}
+          SECRET: ${{ secrets.METRICS_CRON_SECRET }}
+        run: |
+          code=$(curl -sS -o response.json -w "%{http_code}" -X POST \
+            "https://copsandrobbers.app/api/metrics/instagram?dry=$DRY" \
+            -H "Authorization: Bearer $SECRET")
+          if [ "$DRY" = "1" ]; then
+            jq -r '.notifications[]? | "===== \(.kind) \(.key) (\(.status)) =====\n\(.content)\n"' response.json || true
+          fi
+          jq '{ok, dry, capturedOn, media, snapshots, snapshotFailures, accountDays, accountError, warnings, error,
+               token: {refreshed: .token.refreshed, error: .token.error},
+               notifications: [.notifications[]? | {kind, key, status, error}]}' response.json || head -c 300 response.json
+          echo
+          echo "HTTP $code"
+          test "$code" = "200"
