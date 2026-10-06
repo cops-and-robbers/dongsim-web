@@ -18,7 +18,7 @@ import type { Dashboard, DailyPoint } from "@/lib/metrics/dashboard/data";
  * 콘솔을 옮겨 놓지 않고 질문에 답하는 순서로 놓았다.
  * 1. 이 기간 어디서 와서 어디까지 갔나 (단계를 나란히, 비율로 잇지 않음)
  * 2. 날마다 어땠나 (게시물 올린 날 표시)
- * 3. 어느 게시물, 어느 링크가 남겼나
+ * 3. 게시물별, 들어온 경로(UTM)별 숫자
  * 4. 광고
  *
  * 인과는 말하지 않는다. 같은 기간에 각 단계에서 센 숫자를 보여 줄 뿐, "덕분에"라고 쓰지 않는다.
@@ -110,7 +110,7 @@ export default function MetricsPage() {
     <ScrollPage>
       <PageHeader
         title="지표"
-        description="인스타, 웹, 스토어, 앱, 광고 숫자를 매일 아침 모아 한 화면에 보여 줘요. 어제까지의 숫자예요."
+        description="매일 아침 모은 어제까지의 숫자예요."
         actions={
           <div className="flex items-center gap-2">
             <SegmentedControl options={PERIODS} value={days} onChange={setDays} />
@@ -135,9 +135,23 @@ function Change({ now, before }: { now: number; before: number }) {
   const diff = Math.round(now - before);
   return (
     <span className="text-[12px] text-sd-fg-subtle tabular-nums">
-      전 기간 {fmt(before)}
+      앞 기간 {fmt(before)}
       {diff !== 0 && <span className="ml-1 text-sd-fg-muted">({diff > 0 ? "+" : "-"}{fmt(Math.abs(diff))})</span>}
     </span>
+  );
+}
+
+function Cell({ label, value, lines }: { label: string; value: string; lines: string[] }) {
+  return (
+    <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
+      <span className="text-[12px] font-medium text-sd-fg-muted">{label}</span>
+      <span className="text-[22px] font-bold text-sd-fg tabular-nums">{value}</span>
+      {lines.map((l) => (
+        <span key={l} className="text-[12px] text-sd-fg-subtle tabular-nums">
+          {l}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -152,6 +166,19 @@ function Step({ label, now, before, sub }: { label: string; now: number; before:
   );
 }
 
+/** 어제까지 숫자가 안 들어온 소스. 그 뒤 날짜는 차트와 합계에서 0 으로 보이니 맨 위에 알린다 */
+function lagging(d: Dashboard): string[] {
+  const names: [keyof Dashboard["freshness"], string][] = [
+    ["instagram", "인스타"],
+    ["ga4", "GA4"],
+    ["appstore", "App Store"],
+    ["admob", "AdMob"],
+  ];
+  return names.filter(([k]) => (d.freshness[k] ?? "") < d.range.end).map(([k, name]) => `${name}(${md(d.freshness[k])}까지)`);
+}
+
+const ratio = (part: number, whole: number) => (whole > 0 ? part / whole : null);
+
 function MetricsBody({ d }: { d: Dashboard }) {
   const c = d.totals.current;
   const p = d.totals.previous;
@@ -159,20 +186,39 @@ function MetricsBody({ d }: { d: Dashboard }) {
   const col = (k: keyof DailyPoint) => d.daily.map((x) => Number(x[k]));
   const markers = d.posts.map((post) => ({ day: seoulDay(post.postedAt), label: firstLine(post.caption) }));
   const firstOpen = (n: typeof c) => n.installs.firstOpenAndroid + n.installs.firstOpenIos;
-  const showRate = c.ads.matchedRequests > 0 ? Math.round((c.ads.impressions / c.ads.matchedRequests) * 100) : null;
-  const perGame = c.game.overs > 0 ? (c.ads.impressions / c.game.overs).toFixed(1) : null;
+  const showRate = (n: typeof c) => ratio(n.ads.impressions, n.ads.matchedRequests);
+  const perGame = (n: typeof c) => ratio(n.ads.impressions, n.game.overs);
+  const pctText = (r: number | null) => (r === null ? "-" : `${Math.round(r * 100)}%`);
+  const perText = (r: number | null) => (r === null ? "-" : `${r.toFixed(1)}회`);
+  const usd = (micros: number) => `$${(micros / 1e6).toFixed(2)}`;
+  const firstDiff = firstOpen(c) - firstOpen(p);
+  const late = lagging(d);
 
   return (
     <div className="flex flex-col gap-5 pb-10">
+      {late.length > 0 && (
+        <Callout variant="warning" title="아직 덜 들어온 숫자가 있어요">
+          {late.join(", ")}. 그 뒤 날짜는 0으로 보여요. 매일 아침 수집이 다시 돌면 채워져요.
+        </Callout>
+      )}
+
       <FadeIn>
-        <SectionCard title={`${md(d.range.start)}~${md(d.range.end)}, 어디서 와서 어디까지 갔나`}>
+        <SectionCard title={`인스타에서 게임까지 (${md(d.range.start)}~${md(d.range.end)})`}>
+          <p className="mb-4 text-[15px] text-sd-fg">
+            이 기간 앱 첫 실행은 <b className="tabular-nums">{fmt(firstOpen(c))}회</b>예요.{" "}
+            <span className="text-sd-fg-muted">
+              {firstDiff === 0
+                ? "앞 기간과 같아요."
+                : `앞 기간보다 ${fmt(Math.abs(firstDiff))}회 ${firstDiff > 0 ? "늘었어요" : "줄었어요"}.`}
+            </span>
+          </p>
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-sd-line bg-sd-hairline sm:grid-cols-4">
             <Step label="인스타 조회" now={c.instagram.views} before={p.instagram.views} />
-            <Step label="인스타 프로필 방문" now={c.instagram.profileViews} before={p.instagram.profileViews} />
+            <Step label="프로필 방문" now={c.instagram.profileViews} before={p.instagram.profileViews} />
             <Step label="프로필 링크 클릭" now={c.instagram.linkClicks} before={p.instagram.linkClicks} />
             <Step label="웹 방문" now={c.web.sessions} before={p.web.sessions} sub={`그중 인스타에서 ${fmt(c.web.fromInstagram)}`} />
-            <Step label="다운로드 버튼 클릭" now={c.web.downloadClicks} before={p.web.downloadClicks} />
-            <Step label="App Store 신규 다운로드" now={c.installs.appStoreNew} before={p.installs.appStoreNew} />
+            <Step label="다운로드 버튼" now={c.web.downloadClicks} before={p.web.downloadClicks} />
+            <Step label="App Store 신규" now={c.installs.appStoreNew} before={p.installs.appStoreNew} />
             <Step
               label="앱 첫 실행"
               now={firstOpen(c)}
@@ -182,24 +228,21 @@ function MetricsBody({ d }: { d: Dashboard }) {
             <Step label="게임 시작" now={c.game.starts} before={p.game.starts} />
           </div>
           <p className="mt-3 text-[12px] leading-relaxed text-sd-fg-subtle">
-            단계마다 세는 대상과 하루의 기준이 달라 비율로 잇지 않아요. 같은 기간에 각 단계에서 센 숫자를 나란히 둔 거예요.
-            전 기간은 바로 앞 같은 길이({md(d.previous.start)}~{md(d.previous.end)})예요.
+            단계마다 세는 대상이 달라 비율로 잇지 않았어요. 앞 기간은 {md(d.previous.start)}~{md(d.previous.end)}이에요.
           </p>
         </SectionCard>
       </FadeIn>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div>
+        <h2 className="text-[15px] font-bold text-sd-fg">날마다</h2>
+        <p className="mt-1 text-[12px] text-sd-fg-subtle">
+          회색 점선은 인스타 게시물을 올린 날이에요. 차트를 누르거나 마우스를 올리면 그날 숫자와 게시물이 보여요.
+        </p>
+      </div>
+      <div className="-mt-2 grid grid-cols-1 gap-5 lg:grid-cols-2">
         <FadeIn delay={0.04}>
-          <SectionCard title="앱 첫 실행">
-            <TrendChart
-              days={days}
-              series={[
-                { label: "Android", values: col("firstOpenAndroid") },
-                { label: "iOS", values: col("firstOpenIos") },
-              ]}
-              markers={markers}
-              unit="회"
-            />
+          <SectionCard title="인스타 조회">
+            <TrendChart days={days} series={[{ label: "조회", values: col("igViews") }]} markers={markers} unit="회" />
           </SectionCard>
         </FadeIn>
         <FadeIn delay={0.08}>
@@ -216,29 +259,34 @@ function MetricsBody({ d }: { d: Dashboard }) {
           </SectionCard>
         </FadeIn>
         <FadeIn delay={0.12}>
-          <SectionCard title="인스타 조회">
-            <TrendChart days={days} series={[{ label: "조회", values: col("igViews") }]} markers={markers} unit="회" />
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.16}>
-          <SectionCard title="게임 시작">
-            <TrendChart days={days} series={[{ label: "게임 시작", values: col("gameStarts") }]} markers={markers} unit="판" />
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.2}>
-          <SectionCard title="App Store 신규 다운로드">
-            <TrendChart days={days} series={[{ label: "신규 다운로드", values: col("appStoreNew") }]} markers={markers} unit="건" />
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.24}>
           <SectionCard title="다운로드 버튼 클릭">
             <TrendChart days={days} series={[{ label: "버튼 클릭", values: col("downloadClicks") }]} markers={markers} unit="회" />
           </SectionCard>
         </FadeIn>
+        <FadeIn delay={0.16}>
+          <SectionCard title="App Store 신규 다운로드">
+            <TrendChart days={days} series={[{ label: "신규 다운로드", values: col("appStoreNew") }]} markers={markers} unit="건" />
+          </SectionCard>
+        </FadeIn>
+        <FadeIn delay={0.2}>
+          <SectionCard title="앱 첫 실행">
+            <TrendChart
+              days={days}
+              series={[
+                { label: "Android", values: col("firstOpenAndroid") },
+                { label: "iOS", values: col("firstOpenIos") },
+              ]}
+              markers={markers}
+              unit="회"
+            />
+          </SectionCard>
+        </FadeIn>
+        <FadeIn delay={0.24}>
+          <SectionCard title="게임 시작">
+            <TrendChart days={days} series={[{ label: "게임 시작", values: col("gameStarts") }]} markers={markers} unit="판" />
+          </SectionCard>
+        </FadeIn>
       </div>
-      <p className="-mt-2 text-[12px] text-sd-fg-subtle">
-        회색 점선은 인스타 게시물을 올린 날이에요. 선 위에 마우스를 올리면 그날 숫자와 게시물이 보여요.
-      </p>
 
       <FadeIn>
         <SectionCard title="이 기간에 올린 게시물" flush>
@@ -263,7 +311,7 @@ function MetricsBody({ d }: { d: Dashboard }) {
                   <Td className="whitespace-nowrap tabular-nums">{md(seoulDay(post.postedAt))}</Td>
                   <Td className="max-w-[280px]">
                     <a href={post.permalink} target="_blank" rel="noreferrer" className="block truncate text-sd-fg hover:underline">
-                      <span className="mr-1.5 text-sd-fg-subtle">{post.productType === "REELS" ? "릴스" : "게시물"}</span>
+                      <span className="mr-1.5 text-sd-fg-subtle">{post.productType === "REELS" ? "릴스" : "피드"}</span>
                       {firstLine(post.caption)}
                     </a>
                   </Td>
@@ -279,7 +327,7 @@ function MetricsBody({ d }: { d: Dashboard }) {
         </SectionCard>
       </FadeIn>
       <p className="-mt-2 text-[12px] text-sd-fg-subtle">
-        게시물 숫자는 지금까지 쌓인 누적이에요. 릴스는 인스타가 프로필 방문과 링크 클릭을 주지 않아 비어 있어요.
+        숫자는 올린 날부터 지금까지 더한 값이에요. 릴스는 인스타가 프로필 방문과 링크 클릭을 주지 않아 비어 있어요.
       </p>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -295,34 +343,23 @@ function MetricsBody({ d }: { d: Dashboard }) {
           <SectionCard title="앱을 처음 연 경로" flush>
             <CampaignTable
               rows={d.appCampaigns.slice(0, 10).map((r) => ({ a: r.source, b: r.medium, c: [r.campaign, r.platform].filter((x) => x && x !== "(not set)").join(" / "), n: r.sessions }))}
-              heads={["출처", "매체", "캠페인 / 플랫폼", "명"]}
+              heads={["출처", "매체", "캠페인 / 플랫폼", "새 사용자"]}
             />
           </SectionCard>
         </FadeIn>
       </div>
-      <p className="-mt-2 text-[12px] text-sd-fg-subtle">
-        링크에 UTM 꼬리표를 붙이면 캠페인별로 갈려요. 인스타 링크트리는 instagram / bio, 행사 QR 은 행사 이름으로 붙여요.
+      <p className="-mt-2 text-[12px] leading-relaxed text-sd-fg-subtle">
+        링크에 UTM 꼬리표를 붙이면 캠페인별로 갈려요. 인스타 링크트리는 instagram / bio, 행사 QR 은 행사 이름을 영어로 붙여요.
+        앱 경로는 Play로 설치한 Android만 갈려요.
       </p>
 
       <FadeIn>
         <SectionCard title="광고">
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-sd-line bg-sd-hairline sm:grid-cols-4">
             <Step label="광고 노출" now={c.ads.impressions} before={p.ads.impressions} />
-            <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
-              <span className="text-[12px] font-medium text-sd-fg-muted">노출률</span>
-              <span className="text-[22px] font-bold text-sd-fg tabular-nums">{showRate === null ? "-" : `${showRate}%`}</span>
-              <span className="text-[12px] text-sd-fg-subtle">받은 광고 중 실제로 보인 비율</span>
-            </div>
-            <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
-              <span className="text-[12px] font-medium text-sd-fg-muted">끝난 게임 한 판당 노출</span>
-              <span className="text-[22px] font-bold text-sd-fg tabular-nums">{perGame === null ? "-" : `${perGame}회`}</span>
-              <span className="text-[12px] text-sd-fg-subtle">끝난 게임 {fmt(c.game.overs)}판 기준</span>
-            </div>
-            <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
-              <span className="text-[12px] font-medium text-sd-fg-muted">예상 수익</span>
-              <span className="text-[22px] font-bold text-sd-fg tabular-nums">${(c.ads.earningsMicros / 1e6).toFixed(2)}</span>
-              <span className="text-[12px] text-sd-fg-subtle">전 기간 ${(p.ads.earningsMicros / 1e6).toFixed(2)}</span>
-            </div>
+            <Cell label="노출률" value={pctText(showRate(c))} lines={[`앞 기간 ${pctText(showRate(p))}`, "받은 광고 중 화면에 뜬 비율"]} />
+            <Cell label="판당 노출" value={perText(perGame(c))} lines={[`앞 기간 ${perText(perGame(p))}`, `끝난 게임 ${fmt(c.game.overs)}판 기준`]} />
+            <Cell label="예상 수익" value={usd(c.ads.earningsMicros)} lines={[`앞 기간 ${usd(p.ads.earningsMicros)}`]} />
           </div>
           <div className="mt-5">
             <TrendChart days={days} series={[{ label: "광고 노출", values: col("adImpressions") }]} markers={markers} unit="회" />
@@ -332,7 +369,8 @@ function MetricsBody({ d }: { d: Dashboard }) {
 
       <Callout variant="neutral" title="숫자의 기준">
         마지막으로 들어온 날은 인스타 {md(d.freshness.instagram)}, GA4 {md(d.freshness.ga4)}, App Store {md(d.freshness.appstore)}, AdMob{" "}
-        {md(d.freshness.admob)}이에요. 인스타와 App Store 다운로드는 미국 서부 날짜, 나머지는 한국 날짜로 하루를 나눠요. App Store 와 AdMob 은 개인 보호 때문에 작은 숫자를 빼거나 어림해서, 각 콘솔 화면과 조금 다를 수 있어요.
+        {md(d.freshness.admob)}이에요. 인스타와 App Store 다운로드는 미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요. AdMob 수익은
+        추정치라 나중에 조금 바뀔 수 있어요.
       </Callout>
     </div>
   );
@@ -352,7 +390,7 @@ function CampaignTable({ rows, heads }: { rows: { a: string; b: string; c: strin
       }
     >
       {rows.map((r, i) => (
-        <Tr key={`${r.a}|${r.b}|${r.c}`} index={i}>
+        <Tr key={`${i}-${r.a}|${r.b}|${r.c}`} index={i}>
           <Td className="max-w-[140px] truncate">{r.a}</Td>
           <Td className="whitespace-nowrap text-sd-fg-muted">{r.b}</Td>
           <Td className="max-w-[160px] truncate text-sd-fg-muted">{r.c || "-"}</Td>

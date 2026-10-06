@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type MouseEvent } from "react";
+import { useId, useRef, useState, type PointerEvent } from "react";
 
 /**
  * 지표 화면의 날짜별 추이 (#145).
@@ -11,6 +11,9 @@ import { useId, useRef, useState, type MouseEvent } from "react";
  * - 게시물을 올린 날 표시. 그날 숫자가 튀었는지 눈으로 바로 잇는다
  *
  * 그라데이션 id 를 useId 로 만든다. 한 화면에 차트가 여럿이라 고정 id 면 겹친다.
+ *
+ * 마우스는 올리면, 터치는 누르면 그날 숫자가 뜬다(포인터 이벤트). 터치는 손을 떼도
+ * 툴팁을 남겨 읽을 수 있게 한다. 화면 읽기 프로그램에는 기간 합과 가장 많은 날을 읽어 준다.
  */
 
 export type Series = { label: string; values: number[] };
@@ -49,7 +52,7 @@ export function TrendChart({ days, series, markers = [], unit = "", format = (v)
   const markerByDay = new Map<string, string[]>();
   for (const m of markers) markerByDay.set(m.day, [...(markerByDay.get(m.day) ?? []), m.label]);
 
-  const onMove = (e: MouseEvent) => {
+  const onMove = (e: PointerEvent) => {
     const rect = ref.current?.getBoundingClientRect();
     if (!rect || n === 0) return;
     const rel = (e.clientX - rect.left) / rect.width;
@@ -61,6 +64,18 @@ export function TrendChart({ days, series, markers = [], unit = "", format = (v)
   const ticks = days.map((d, i) => ({ d, i })).filter(({ i }) => i % step === 0);
   const hoverDay = hover === null ? null : days[hover];
   const hoverPosts = hoverDay ? (markerByDay.get(hoverDay) ?? []) : [];
+
+  // 화면 읽기용 한 줄: "Android 기간 합 71회, 가장 많은 날 10.2 18회. iOS ..."
+  const summary =
+    n === 0
+      ? "숫자가 없어요"
+      : series
+          .map((s) => {
+            const total = s.values.reduce((a, v) => a + v, 0);
+            const top = s.values.indexOf(Math.max(...s.values));
+            return `${s.label} 기간 합 ${format(total)}${unit}, 가장 많은 날 ${fmtDay(days[top])} ${format(s.values[top])}${unit}`;
+          })
+          .join(". ");
 
   return (
     <div>
@@ -80,10 +95,11 @@ export function TrendChart({ days, series, markers = [], unit = "", format = (v)
         ref={ref}
         className="relative"
         style={{ height: H }}
-        onMouseMove={onMove}
-        onMouseLeave={() => setHover(null)}
+        onPointerMove={onMove}
+        onPointerDown={onMove}
+        onPointerLeave={(e) => e.pointerType === "mouse" && setHover(null)}
         role="img"
-        aria-label={`${series.map((s) => s.label).join(", ")} 날짜별 추이`}
+        aria-label={summary}
       >
         <svg viewBox={`0 0 ${W} ${H}`} className="h-full w-full" preserveAspectRatio="none">
           <defs>
@@ -187,8 +203,8 @@ export function TrendChart({ days, series, markers = [], unit = "", format = (v)
                 </span>
               </div>
             ))}
-            {hoverPosts.map((p) => (
-              <div key={p} className="mt-1 truncate border-t border-sd-hairline pt-1 text-sd-fg-muted">
+            {hoverPosts.map((p, i) => (
+              <div key={`${i}-${p}`} className="mt-1 truncate border-t border-sd-hairline pt-1 text-sd-fg-muted">
                 게시물: {p}
               </div>
             ))}
