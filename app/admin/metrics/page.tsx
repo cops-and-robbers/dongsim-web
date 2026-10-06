@@ -11,6 +11,9 @@ import { TrendChart, type Marker } from "@/components/admin/metrics/TrendChart";
 import { DateRangePicker, type DayRange } from "@/components/admin/metrics/DateRangePicker";
 import { EventsCalendar } from "@/components/admin/metrics/EventsCalendar";
 import { PostDrawer } from "@/components/admin/metrics/PostDrawer";
+import { FunnelCard } from "@/components/admin/metrics/FunnelCard";
+import { countryName } from "@/components/admin/metrics/countryName";
+import { TEST_DEVICE_RULE } from "@/lib/metrics/testDevices";
 import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
 import type { Dashboard, DailyPoint, PostRow } from "@/lib/metrics/dashboard/data";
@@ -103,14 +106,6 @@ const firstLine = (caption: string | null) => caption?.split(/\r?\n/).find((l) =
 const usd = (micros: number) => `$${(micros / 1e6).toFixed(2)}`;
 const rate = (r: Ratio) => (r.den > 0 ? r.num / r.den : null);
 const pct = (v: number | null, digits = 1) => (v === null ? "-" : `${(v * 100).toFixed(digits)}%`);
-const regionName = (() => {
-  try {
-    const names = new Intl.DisplayNames(["ko"], { type: "region" });
-    return (code: string) => names.of(code) ?? code;
-  } catch {
-    return (code: string) => code;
-  }
-})();
 
 async function authedFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const send = () =>
@@ -585,6 +580,7 @@ function MetricsBody({
                 <p className="mt-3 text-[13px] text-sd-fg-muted tabular-nums">
                   Android {fmt(c.installs.firstOpenAndroid)}, iOS {fmt(c.installs.firstOpenIos)}
                 </p>
+                <TestDeviceNote n={c.installs.firstOpenTest} />
               </div>
               <TrendChart
                 days={days}
@@ -618,16 +614,20 @@ function MetricsBody({
           </FadeIn>
 
           <FadeIn delay={0.08}>
+            <FunnelCard current={d.funnel.current} previous={d.funnel.previous} rangeEnd={d.range.end} />
+          </FadeIn>
+
+          <FadeIn delay={0.1}>
             <Group title="핵심 비율" note="개수보다 효율을 봐요. 비율 아래 숫자는 나눈 두 값이에요.">
               <Cells>
                 <RatioCell label="사이트 전환율" now={siteConv(c)} before={siteConv(p)} of="사이트 방문 중 버튼으로 스토어에 간 방문" noPrev={noPrev("ga4web")} />
-                <RatioCell label="활성화율" now={c.cohort.activation} before={p.cohort.activation} of="첫 실행 후 7일 안에 게임 참가" />
+                <RatioCell label="활성화율" now={c.cohort.activation} before={p.cohort.activation} of="첫 실행 후 7일 안에 게임 플레이" />
                 <RatioCell label="다음 날 다시 온 비율" now={c.cohort.d1} before={p.cohort.d1} of="처음 온 다음 날 다시 실행" />
                 <RatioCell label="Android 삭제 비율" now={removeRate(c)} before={removeRate(p)} of="Android 첫 실행 대비 삭제" good="down" noPrev={noPrev("ga4app")} />
               </Cells>
               <Note>
                 사이트 전환율은 QR 이나 링크트리 다운로드 링크로 들어와 바로 스토어로 넘어간 방문을 빼고 셌어요. 활성화율과 다시 온 비율은 이 기간에
-                처음 들어온 사람만 따로 묶어 셌고, 7일이나 하루가 아직 안 지난 날은 빼요.
+                처음 들어온 사람만 따로 묶어 셌고, 7일이나 하루가 아직 안 지난 날과 구글 플레이 자동 테스트 기기는 빼요. 활성화율은 위 퍼널의 첫 실행 대비 게임 플레이예요.
               </Note>
             </Group>
           </FadeIn>
@@ -754,7 +754,10 @@ function MetricsBody({
               />
               <CountryCell d={d} />
             </Cells>
-            <Note>앱 첫 실행은 지웠다 다시 깔아도 다시 세요. 그래서 사람 수가 아니라 횟수예요. Play 설치 수는 권한이 열리면 붙어요.</Note>
+            <Note>
+              앱 첫 실행은 지웠다 다시 깔아도 다시 세요. 그래서 사람 수가 아니라 횟수예요. 구글 플레이 자동 테스트 기기로 보이는{" "}
+              {fmt(c.installs.firstOpenTest)}회는 뺐어요. Play 설치 수는 권한이 열리면 붙어요.
+            </Note>
           </Group>
 
           <Group
@@ -807,10 +810,10 @@ function MetricsBody({
 
           <Group
             title="남는 사람"
-            note="활성화율과 다시 온 비율은 이 기간에 처음 들어온 사람만 묶어 셌어요(GA4 코호트). 7일이나 하루가 아직 안 지난 날은 빼요. 삭제와 알림 닫기는 Android 만 기록돼서 Android 로만 셌어요. 푸시 열람률은 알림을 건드리지 않고 둔 경우는 몰라서, 열거나 닫은 것 중 연 비율이에요."
+            note="활성화율과 다시 온 비율은 이 기간에 처음 들어온 사람만 묶어 셌어요(GA4 코호트). 7일이나 하루가 아직 안 지난 날과 구글 플레이 자동 테스트 기기는 빼요. 삭제와 알림 닫기는 Android 만 기록돼서 Android 로만 셌어요. 푸시 열람률은 알림을 건드리지 않고 둔 경우는 몰라서, 열거나 닫은 것 중 연 비율이에요."
           >
             <Cells cols={5}>
-              <RatioCell label="활성화율" now={c.cohort.activation} before={p.cohort.activation} of="첫 실행 후 7일 안에 게임 참가" />
+              <RatioCell label="활성화율" now={c.cohort.activation} before={p.cohort.activation} of="첫 실행 후 7일 안에 게임 플레이" />
               <RatioCell label="다음 날 다시 온 비율" now={c.cohort.d1} before={p.cohort.d1} of="처음 온 다음 날 다시 실행" />
               <RatioCell label="7일 뒤 다시 온 비율" now={c.cohort.d7} before={p.cohort.d7} of="처음 온 7일 뒤 다시 실행" />
               <RatioCell label="Android 삭제 비율" now={removeRate(c)} before={removeRate(p)} of="Android 첫 실행 대비 삭제" good="down" noPrev={noPrev("ga4app")} />
@@ -866,6 +869,19 @@ function MetricsBody({
   );
 }
 
+/** 앱 첫 실행에서 뺀 테스트 기기 횟수. 어떻게 가렸는지는 툴팁으로 (#157) */
+function TestDeviceNote({ n }: { n: number }) {
+  if (n <= 0) return null;
+  return (
+    <Tooltip
+      content={TEST_DEVICE_RULE}
+      className="mt-1 text-left text-[12px] text-sd-fg-subtle underline decoration-sd-line decoration-dotted underline-offset-4 tabular-nums"
+    >
+      테스트 기기로 보이는 {fmt(n)}회는 뺐어요
+    </Tooltip>
+  );
+}
+
 function FollowerCell({ d }: { d: Dashboard }) {
   const f = d.followers;
   if (!f) return <Cell label="팔로워" value="-" lines={["아직 기록이 없어요. 매일 아침 수집 때부터 쌓여요"]} />;
@@ -896,7 +912,7 @@ function CountryCell({ d }: { d: Dashboard }) {
         <ul className="flex flex-col gap-1">
           {d.countries.slice(0, 5).map((x) => (
             <li key={x.country} className="flex items-center justify-between gap-3 text-[13px]">
-              <span className="truncate text-sd-fg">{regionName(x.country)}</span>
+              <span className="truncate text-sd-fg">{countryName(x.country)}</span>
               <span className="shrink-0 tabular-nums text-sd-fg-muted">
                 {fmt(x.units)} <span className="text-sd-fg-subtle">({Math.round((x.units / total) * 100)}%)</span>
               </span>
