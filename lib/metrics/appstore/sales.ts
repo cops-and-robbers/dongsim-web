@@ -58,7 +58,14 @@ export async function fetchSalesDay(token: string, vendor: string, day: string, 
     headers: { Authorization: `Bearer ${token}`, Accept: "application/a-gzip" },
     signal: AbortSignal.timeout(30_000),
   });
-  if (res.status === 404) return [];
+  if (res.status === 404) {
+    // 404 는 두 가지다. "그날 판매가 없다"면 0건이지만, 리포트가 아직 안 나온 날을 0건으로
+    // 저장하면 그날이 비어 버린다. 문구로 갈라, 아직 안 나온 날은 실패로 남겨 다음 실행이 다시 받게 한다
+    const body = (await res.json().catch(() => ({}))) as { errors?: { detail?: string }[] };
+    const detail = body.errors?.[0]?.detail ?? "";
+    if (/no sales/i.test(detail)) return [];
+    throw new AscError(`판매 리포트가 아직 없어요 (${day}): ${detail || "404"}`, 404);
+  }
   if (!res.ok) throw new AscError(`판매 리포트 HTTP ${res.status} (${day})`, res.status);
   const text = gunzipSync(Buffer.from(await res.arrayBuffer())).toString("utf8");
   return parseSalesTsv(text, appId);
