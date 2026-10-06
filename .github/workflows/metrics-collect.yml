@@ -1,0 +1,49 @@
+# App Store, GA4, AdMob 수집 (#142, #143).
+#
+# 하루 한 번 소스마다 수집 라우트를 부른다. 소스마다 따로 부르는 이유는 둘이다 -
+# 한 소스가 실패해도 다른 소스는 저장되고, 각 호출이 Vercel 300초 한도 안에 든다.
+# 구조와 시크릿(METRICS_CRON_SECRET)은 instagram-report.yml 과 같다.
+#
+# UTC 20:43 = 한국 오전 5시 43분. 월요일 오전 9시 주간 리포트 전에 끝나 있게 했고,
+# 정각을 피했다 - GitHub 은 정각에 몰리는 예약을 늦추거나 건너뛴다.
+# 애플 판매 리포트(미국 서부 오전 8시 공개)는 이 시각이면 전날 치가 나와 있다.
+#
+# 저장소가 공개라 로그에는 요약만 찍는다. 수익 숫자는 찍지 않는다.
+name: metrics-collect
+
+on:
+  schedule:
+    - cron: "43 20 * * *"
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "이 날부터 다시 채우기 (YYYY-MM-DD, 비우면 최근 7일)"
+        type: string
+        default: ""
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      # 한 소스가 실패해도 나머지는 돈다
+      fail-fast: false
+      matrix:
+        source: [appstore, ga4, admob]
+    steps:
+      - name: ${{ matrix.source }} 수집
+        env:
+          SOURCE: ${{ matrix.source }}
+          FROM: ${{ inputs.from }}
+          SECRET: ${{ secrets.METRICS_CRON_SECRET }}
+        run: |
+          query=""
+          if [ -n "$FROM" ]; then query="?from=$FROM"; fi
+          code=$(curl -sS -o response.json -w "%{http_code}" -X POST \
+            "https://copsandrobbers.app/api/metrics/$SOURCE$query" \
+            -H "Authorization: Bearer $SECRET")
+          # 공개 저장소 로그라 수익(earningsUsd)과 판매 개수(sales.units)는 빼고, 됐는지와 몇 줄인지만 남긴다
+          jq 'del(.earningsUsd, .sales.units)' response.json || head -c 300 response.json
+          echo
+          echo "HTTP $code"
+          test "$code" = "200"
