@@ -1,7 +1,7 @@
 /**
  * App Store 수집 한 번 (#142). 라우트(/api/metrics/appstore)와 수동 실행 스크립트가 같이 쓴다.
  *
- * 1. 판매 리포트 - 최근 7일(미국 서부 날짜)을 다시 받아 그 기간을 바꾼다.
+ * 1. 판매 리포트 - 최근 7일(한국 날짜와 맞는다, #154)을 다시 받아 그 기간을 바꾼다.
  *    처음 채울 땐 from 을 넘긴다(2026-04-01, 첫 판매)
  * 2. 분석 리포트 - 아직 처리하지 않은 인스턴스만 받는다. 같은 날짜는 더 최근에
  *    처리된 인스턴스로만 바꾼다
@@ -10,7 +10,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ascToken } from "./auth.ts";
+import { AscError, ascToken } from "./auth.ts";
 import { fetchInstanceRows, listInstances, shouldReplace, dimsKey, type Instance } from "./analytics.ts";
 import { fetchSalesDay, type SalesRow } from "./sales.ts";
 import { recordReleases } from "./releases.ts";
@@ -21,7 +21,8 @@ import { check, db, insertChunks, replaceRange, selectAll } from "../db.ts";
 export type AppStoreResult = {
   ok: boolean;
   dry: boolean;
-  sales: { from: string; to: string; days: number; rows: number; units: number; failedDays: string[] };
+  /** pendingDays: 아직 리포트가 안 나온 최근 날. 실패가 아니라 다음 실행이 다시 받는다 */
+  sales: { from: string; to: string; days: number; rows: number; units: number; failedDays: string[]; pendingDays: string[] };
   analytics: { instances: number; processed: number; skippedOlder: number; rows: number; error: string | null };
   warnings: string[];
 };
@@ -56,10 +57,18 @@ async function collectSales(client: SupabaseClient | null, token: string, from: 
   const settled = await mapLimit(days, 4, (d) => fetchSalesDay(token, APPSTORE_VENDOR_NUMBER, d, APPSTORE_APP_ID));
   const rows: SalesRow[] = [];
   const failedDays: string[] = [];
-  settled.forEach((r, i) => (r.status === "fulfilled" ? rows.push(...r.value) : failedDays.push(days[i])));
-  // 실패한 날이 섞인 채로 기간을 통째로 바꾸면 그날이 비어 버린다. 성공한 날만 바꾼다
+  const pendingDays: string[] = [];
+  // 한국 어제까지 묻는데, 리포트가 언제 나오는지 정해진 시각이 없다. 최근 이틀이 "아직 없음"(404)이면
+  // 실패로 치지 않고 기다린다. 다시 받는 창(7일)이 하루씩 밀리며 다음 실행이 채운다
+  const recent = new Set(days.slice(-2));
+  settled.forEach((r, i) => {
+    if (r.status === "fulfilled") rows.push(...r.value);
+    else if (r.reason instanceof AscError && r.reason.status === 404 && recent.has(days[i])) pendingDays.push(days[i]);
+    else failedDays.push(days[i]);
+  });
+  // 실패한 날이 섞인 채로 기간을 통째로 바꾸면 그날이 비어 버린다. 받은 날만 바꾼다
   if (client) {
-    for (const day of days.filter((d) => !failedDays.includes(d))) {
+    for (const day of days.filter((d) => !failedDays.includes(d) && !pendingDays.includes(d))) {
       await replaceRange(
         client,
         "appstore_sales_daily",
@@ -77,7 +86,7 @@ async function collectSales(client: SupabaseClient | null, token: string, from: 
   }
   // 새 버전이 처음 내려받아진 날을 일정에 "iOS x.y.z 출시"로 넣는다(releases.ts)
   const releases = client ? await recordReleases(client, rows, from).catch(() => 0) : 0;
-  return { from, to, days: days.length, rows: rows.length, units: rows.reduce((a, r) => a + r.units, 0), failedDays, releases };
+  return { from, to, days: days.length, rows: rows.length, units: rows.reduce((a, r) => a + r.units, 0), failedDays, pendingDays, releases };
 }
 
 async function storedProcessingDates(client: SupabaseClient, report: string, days: string[]): Promise<Map<string, string>> {
@@ -154,17 +163,21 @@ async function collectAnalytics(client: SupabaseClient | null, token: string) {
   return { instances: instances.length, processed, skippedOlder, rows: rowCount };
 }
 
-export async function runAppStore(opts: { dry: boolean; now?: Date; from?: string }): Promise<AppStoreResult> {
+/** salesOnly: 판매 리포트만 받는다(주간 리포트가 보내기 직전에 일요일 치를 채울 때) */
+export async function runAppStore(opts: { dry: boolean; now?: Date; from?: string; salesOnly?: boolean }): Promise<AppStoreResult> {
   const now = opts.now ?? new Date();
   const token = ascToken(now);
   const client = opts.dry ? null : db();
   const warnings: string[] = [];
-  // 판매 리포트는 미국 서부 날짜로 다음 날 아침에 나온다. 어제(서부)까지만 묻는다
-  const to = addDays(todayIn("America/Los_Angeles", now), -1);
+  // 판매 리포트 날짜는 한국 날짜와 맞는다(#154). 한국 어제까지 묻고, 아직 안 나온 날은 기다린다
+  const to = addDays(todayIn("Asia/Seoul", now), -1);
   const from = opts.from ?? addDays(to, -(REFETCH_DAYS - 1));
   const sales = await collectSales(client, token, from, to);
   if (sales.failedDays.length) warnings.push(`판매 리포트를 못 받은 날: ${sales.failedDays.join(", ")}`);
 
+  if (opts.salesOnly) {
+    return { ok: sales.failedDays.length === 0, dry: opts.dry, sales, analytics: { instances: 0, processed: 0, skippedOlder: 0, rows: 0, error: null }, warnings };
+  }
   let analytics: AppStoreResult["analytics"];
   try {
     analytics = { ...(await collectAnalytics(client, token)), error: null };

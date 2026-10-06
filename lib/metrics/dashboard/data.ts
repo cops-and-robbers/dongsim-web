@@ -104,7 +104,7 @@ export type Dashboard = {
   /** 차트에 겹쳐 그릴 일정(행사, 업데이트). 0004 마이그레이션 전이면 null */
   events: { id: number; day: string; label: string }[] | null;
   games: GamesBlock | null;
-  /** 마지막으로 숫자가 들어온 날(한국 날짜, PT 소스는 shiftPt 로 옮긴 값). 화면에 "언제 기준인지" 적는다 */
+  /** 마지막으로 숫자가 들어온 날(한국 날짜, 인스타는 shiftPt 로 옮긴 값). 화면에 "언제 기준인지" 적는다 */
   freshness: Record<Source, string | null>;
   /**
    * 소스마다 숫자가 있는 첫날(같은 기준). 이 앞과 freshness 뒤는 0 이 아니라 "숫자 없음"이다.
@@ -121,7 +121,7 @@ export function previousRange(r: Week): Week {
 
 /**
  * 날마다 한 줄. 데이터가 없는 날도 0 으로 채워 차트가 끊기지 않게 한다.
- * PT 날짜 소스(인스타 계정, App Store 판매)는 하루 뒤 한국 날짜에 놓는다(numbers.ts shiftPt).
+ * 인스타 계정 지표는 PT 날짜라 하루 뒤 한국 날짜에 놓는다(numbers.ts shiftPt). App Store 판매는 한국 날짜 그대로다(#154).
  * 합계(weeklyNumbers)와 같은 날에 놓아야 차트를 더한 값과 위 숫자가 맞는다
  */
 export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
@@ -174,7 +174,7 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
     }
   }
   for (const s of input.appstoreSales) {
-    const p = at(shiftPt(s.day));
+    const p = at(s.day);
     if (p && ["1", "1F", "1T"].includes(s.productType)) p.appStoreNew += s.units;
   }
   for (const a of input.admob) {
@@ -236,7 +236,7 @@ export function channelTable(rows: WeeklyInput["ga4"], r: Week): ChannelRow[] {
 export async function loadDashboard(client: SupabaseClient, range: Week, previous: Week = previousRange(range)): Promise<Dashboard> {
   const from = previous.start;
   const to = range.end;
-  // PT 날짜 소스는 하루 뒤로 옮겨 쓰므로 하루 앞부터 읽는다
+  // 인스타(PT 날짜)는 하루 뒤로 옮겨 쓰므로 하루 앞부터 읽는다
   const ptFrom = addDays(from, -1);
   // 긴 기간을 고르면 어느 표든 1,000줄을 넘을 수 있어 전부 쪽을 넘겨 읽는다 (db.ts selectAll)
   // 0004 마이그레이션 전이면 테이블이 없다. 그 칸만 비우고 화면은 그대로 그린다
@@ -256,7 +256,7 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
           .order("day").order("property").order("breakdown").order("key").order("metric").range(a, b),
       "GA4 읽기",
     ),
-    selectAll((a, b) => client.from("appstore_sales_daily").select("day, product_type, units, country, device").gte("day", ptFrom).lte("day", to).order("day").order("country").order("product_type").order("device").range(a, b), "App Store 판매 읽기"),
+    selectAll((a, b) => client.from("appstore_sales_daily").select("day, product_type, units, country, device").gte("day", from).lte("day", to).order("day").order("country").order("product_type").order("device").range(a, b), "App Store 판매 읽기"),
     selectAll((a, b) => client.from("admob_daily").select("day, earnings_micros, matched_requests, impressions, platform, format, country").gte("day", from).lte("day", to).order("day").order("platform").order("format").order("country").range(a, b), "AdMob 읽기"),
     // 소스마다 마지막 날과 첫날. GA4 는 사이트와 앱을 따로(시작일이 다르다)
     Promise.all(
@@ -358,7 +358,7 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
     }
   }
   const [fIg, sIg, fWeb, sWeb, fApp, sApp, fAs, sAs, fAd, sAd] = fresh.map((r) => (r.data as { day: string } | null)?.day ?? null);
-  // 차트와 같은 날짜로 보이게 PT 소스도 한국 날짜로 옮겨 적는다
+  // 차트와 같은 날짜로 보이게 인스타(PT 날짜)도 한국 날짜로 옮겨 적는다
   const kst = (day: string | null) => (day ? shiftPt(day) : null);
 
   return {
@@ -396,17 +396,16 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
     followers: followerSummary(followerRows, range),
     events: eventRows,
     games: null,
-    freshness: { instagram: kst(fIg), ga4web: fWeb, ga4app: fApp, appstore: kst(fAs), admob: fAd },
-    since: { instagram: kst(sIg), ga4web: sWeb, ga4app: sApp, appstore: kst(sAs), admob: sAd },
+    freshness: { instagram: kst(fIg), ga4web: fWeb, ga4app: fApp, appstore: fAs, admob: fAd },
+    since: { instagram: kst(sIg), ga4web: sWeb, ga4app: sApp, appstore: sAs, admob: sAd },
   };
 }
 
-/** App Store 최초 다운로드를 나라별로 (판매 날짜는 PT 라 하루 뒤로 옮겨 기간에 넣는다) */
+/** App Store 최초 다운로드를 나라별로 (판매 날짜는 한국 날짜와 맞는다, #154) */
 export function countryTable(rows: { day: string; product_type: string; units: number; country: string }[], r: Week): { country: string; units: number }[] {
   const by = new Map<string, number>();
   for (const s of rows) {
-    const day = shiftPt(s.day);
-    if (day < r.start || day > r.end || !["1", "1F", "1T"].includes(s.product_type)) continue;
+    if (s.day < r.start || s.day > r.end || !["1", "1F", "1T"].includes(s.product_type)) continue;
     by.set(s.country, (by.get(s.country) ?? 0) + s.units);
   }
   return [...by.entries()].map(([country, units]) => ({ country, units })).sort((a, b) => b.units - a.units);

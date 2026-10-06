@@ -12,6 +12,7 @@ import { claimNotification, releaseNotification } from "../instagram/store.ts";
 import { buildWeeklyReport } from "./messages.ts";
 import { lastTwoWeeks, weeklyNumbers, type WeeklyInput } from "./numbers.ts";
 import { runGa4 } from "../ga4/run.ts";
+import { runAppStore } from "../appstore/run.ts";
 
 export type WeeklyResult = {
   ok: boolean;
@@ -28,14 +29,16 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
   const { current, previous } = lastTwoWeeks(todayIn("Asia/Seoul", now));
   const from = previous.start;
   const to = current.end;
-  // PT 날짜 소스(인스타 계정, App Store 판매)는 하루 뒤로 옮겨 한국 주에 맞춘다(numbers.ts shiftPt).
+  // 인스타 계정 지표(PT 날짜)는 하루 뒤로 옮겨 한국 주에 맞춘다(numbers.ts shiftPt).
   // 그래서 하루 앞부터 읽는다
   const ptFrom = addDays(from, -1);
 
   // 월요일 아침 수집(5시 43분)은 일요일 GA4 숫자가 덜 들어온 채다. 보내기 직전에 최근 8일을 한 번 더 받아
   // 그 사이 들어온 몫을 채운다. 실패해도 리포트는 보내고, 이미 쌓인 숫자로 계산한다
+  // App Store 판매도 한국 날짜라(#154) 일요일 치가 새벽 수집 때는 아직 없을 수 있어 한 번 더 받는다
   if (!opts.skipRefresh) {
     await runGa4({ dry: false, now, from: addDays(current.end, -7) }).catch(() => null);
+    await runAppStore({ dry: false, now, from: addDays(current.end, -7), salesOnly: true }).catch(() => null);
   }
 
   // 전부 끝까지 쪽을 넘겨 읽는다(db.ts selectAll). Supabase 는 한 번에 1,000줄까지만 주고,
@@ -80,7 +83,7 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
         client
           .from("appstore_sales_daily")
           .select("day, product_type, units")
-          .gte("day", ptFrom)
+          .gte("day", from)
           .lte("day", to)
           .order("day")
           .order("country")
@@ -126,7 +129,17 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
       impressions: Number(r.impressions),
     })),
   };
-  const content = buildWeeklyReport(current, weeklyNumbers(input, current), weeklyNumbers(input, previous));
+  const thisWeek = weeklyNumbers(input, current);
+  const lastWeek = weeklyNumbers(input, previous);
+  // 받은 날에는 판매가 없어도 표시 줄이 남는다(appstore/run.ts withMarker). 일요일 줄이 없으면 리포트가 아직
+  // 안 나온 것이라, 6일과 7일을 견주지 않게 두 주 모두 월~토로 센다
+  const appStoreUntilSaturday = !sales.some((r) => r.day === current.end);
+  if (appStoreUntilSaturday) {
+    const toSaturday = (w: typeof current) => ({ start: w.start, end: addDays(w.end, -1) });
+    thisWeek.installs.appStoreNew = weeklyNumbers(input, toSaturday(current)).installs.appStoreNew;
+    lastWeek.installs.appStoreNew = weeklyNumbers(input, toSaturday(previous)).installs.appStoreNew;
+  }
+  const content = buildWeeklyReport(current, thisWeek, lastWeek, { appStoreUntilSaturday });
   const base = { dry: opts.dry, week: current, content };
 
   if (opts.dry) return { ok: true, status: "preview", ...base };

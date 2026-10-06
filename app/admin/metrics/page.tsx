@@ -859,7 +859,7 @@ function MetricsBody({
 
       <Callout variant="neutral" title="숫자의 기준">
         마지막으로 들어온 날은 인스타그램 {md(d.freshness.instagram)}, GA4 사이트 {md(d.freshness.ga4web)}, GA4 앱 {md(d.freshness.ga4app)}, App Store {md(d.freshness.appstore)}, AdMob{" "}
-        {md(d.freshness.admob)}이에요. 인스타그램과 App Store 다운로드는 미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요. 차트 위쪽 동그라미는 인스타
+        {md(d.freshness.admob)}이에요. 인스타그램은 미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요. 차트 위쪽 동그라미는 인스타
         게시물, 마름모는 일정이고{compare ? `, 회색 선은 ${cw}이에요` : "요"}. 차트를 누르거나 마우스를 올리면 그날 숫자가 보여요.
       </Callout>
     </div>
