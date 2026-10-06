@@ -15,7 +15,7 @@ import { fetchInstanceRows, listInstances, shouldReplace, dimsKey, type Instance
 import { fetchSalesDay, type SalesRow } from "./sales.ts";
 import { APPSTORE_APP_ID, APPSTORE_VENDOR_NUMBER, REFETCH_DAYS } from "../config.ts";
 import { addDays, todayIn, ymdRange } from "../dates.ts";
-import { check, db, insertChunks, replaceRange } from "../db.ts";
+import { check, db, insertChunks, replaceRange, selectAll } from "../db.ts";
 
 export type AppStoreResult = {
   ok: boolean;
@@ -69,10 +69,20 @@ async function collectSales(client: SupabaseClient | null, token: string, from: 
 async function storedProcessingDates(client: SupabaseClient, report: string, days: string[]): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   if (days.length === 0) return map;
-  const rows = check(
-    await client.from("appstore_analytics_daily").select("day, processing_date").eq("report", report).in("day", days),
+  // 날짜마다 칸이 많아 1,000줄을 쉽게 넘는다. 잘리면 빠진 날을 "저장 안 됨"으로 보고
+  // 더 오래된 처리일 파일로 덮어쓸 수 있어 끝까지 읽는다
+  const rows = await selectAll<{ day: string; processing_date: string }>(
+    (a, b) =>
+      client
+        .from("appstore_analytics_daily")
+        .select("day, processing_date")
+        .eq("report", report)
+        .in("day", days)
+        .order("day")
+        .order("dims_key")
+        .range(a, b),
     "분석 리포트 처리일 읽기",
-  ) as { day: string; processing_date: string }[];
+  );
   for (const r of rows) if (!map.has(r.day) || r.processing_date > (map.get(r.day) as string)) map.set(r.day, r.processing_date);
   return map;
 }
