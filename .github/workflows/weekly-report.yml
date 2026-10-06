@@ -5,7 +5,7 @@
 # 수집은 하지 않고 쌓인 테이블에서 지난주를 더해 디스코드로 보낸다.
 # 같은 주는 한 번만 보낸다(다시 돌려도 이미 보냄으로 끝난다).
 #
-# 저장소가 공개라 로그에는 보냈는지만 찍는다. 미리보기(dry)일 때만 문구를 찍는다.
+# 저장소가 공개라 로그에는 보냈는지만 찍는다. 미리보기(dry)일 때만 문구를 찍고, 그때도 광고 수익 줄은 뺀다.
 name: weekly-report
 
 on:
@@ -31,7 +31,8 @@ jobs:
           code=$(curl -sS -o response.json -w "%{http_code}" -X POST \
             "https://copsandrobbers.app/api/metrics/weekly?dry=$DRY" \
             -H "Authorization: Bearer $SECRET")
-          if [ "$DRY" = "1" ]; then jq -r '.content // empty' response.json || true; fi
+          # 미리보기여도 공개 로그라 광고 수익 줄은 빼고 찍는다
+          if [ "$DRY" = "1" ]; then jq -r '.content // empty' response.json | grep -v '광고 수익' || true; fi
           jq '{ok, dry, week, status, error}' response.json || head -c 300 response.json
           echo
           echo "HTTP $code"
