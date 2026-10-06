@@ -37,7 +37,7 @@ function change(now: number, before: number, unit: string): string {
 export function buildWeeklyReport(week: Week, now: WeeklyNumbers, before: WeeklyNumbers): string {
   const firstNow = now.installs.firstOpenAndroid + now.installs.firstOpenIos;
   const firstBefore = before.installs.firstOpenAndroid + before.installs.firstOpenIos;
-  const perGame = now.game.overs > 0 ? (now.ads.impressions / now.game.overs).toFixed(1) : null;
+  const perGame = now.game.playerFinishes > 0 ? (now.ads.impressions / now.game.playerFinishes).toFixed(1) : null;
   const showRate = pct(now.ads.impressions, now.ads.matchedRequests);
 
   const blocks: (string | null)[][] = [
@@ -57,8 +57,8 @@ export function buildWeeklyReport(week: Week, now: WeeklyNumbers, before: Weekly
       "**사이트**",
       line("방문", now.web.sessions, before.web.sessions, "회"),
       line("그중 인스타에서 온 방문", now.web.fromInstagram, before.web.fromInstagram, "회"),
-      line("다운로드 버튼 클릭", now.web.downloadClicks, before.web.downloadClicks, "회"),
-      line("그중 인스타에서 온 클릭", now.web.downloadClicksFromInstagram, before.web.downloadClicksFromInstagram, "회"),
+      line("스토어로 이동", now.web.downloadClicks, before.web.downloadClicks, "회"),
+      line("그중 인스타에서 온 이동", now.web.downloadClicksFromInstagram, before.web.downloadClicksFromInstagram, "회"),
     ],
     [
       "**설치**",
@@ -68,16 +68,20 @@ export function buildWeeklyReport(week: Week, now: WeeklyNumbers, before: Weekly
     ],
     [
       "**게임과 광고**",
-      line("시작한 게임", now.game.starts, before.game.starts, "판"),
+      // 앱 이벤트는 참가자마다 찍혀 판 수가 아니다. 실제 판 수는 백엔드에만 있어 여기선 사람 기준 횟수로 쓴다
+      line("게임 참가", now.game.playerStarts, before.game.playerStarts, "회"),
       line("광고 노출", now.ads.impressions, before.ads.impressions, "회"),
       showRate ? `- 광고 게재율 ${showRate}` : null,
-      perGame ? `- 끝난 게임 ${formatCount(now.game.overs)}판, 한 판당 광고 노출 ${perGame}회` : null,
+      perGame ? `- 게임을 끝낸 ${formatCount(now.game.playerFinishes)}회, 1회당 광고 노출 ${perGame}회` : null,
       `- 예상 광고 수익 ${usd(now.ads.earningsMicros)} (전주 ${usd(before.ads.earningsMicros)})`,
     ],
     [
       "-# 앱 첫 실행은 Android와 iOS를 더한 횟수예요.",
+      "-# 게임 참가는 사람마다 센 횟수예요. 5명이 한 판 하면 5회예요.",
+      "-# 스토어로 이동은 사이트 다운로드 버튼과 QR, 링크트리의 다운로드 링크를 더한 횟수예요.",
       showRate ? "-# 게재율은 받은 광고 중 화면에 뜬 비율이에요(AdMob 표기)." : null,
       "-# 인스타와 App Store 다운로드는 미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요.",
+      "-# 일요일 숫자는 아직 조금 더 들어올 수 있어요. 대시보드는 매일 다시 받아 고쳐요.",
     ],
   ];
   return blocks
