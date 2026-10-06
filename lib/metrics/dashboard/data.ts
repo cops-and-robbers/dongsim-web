@@ -16,6 +16,7 @@ import type { Source } from "./sources.ts";
 import { CHANNELS, channelOf, isInternal, type Channel } from "../channels.ts";
 import { addDays, ymdRange } from "../dates.ts";
 import { splitKey } from "../ga4/run.ts";
+import { funnelData, type FunnelData } from "../funnel.ts";
 import { fromInstagram, shiftPt, weeklyNumbers, type Week, type WeeklyInput, type WeeklyNumbers } from "../weekly/numbers.ts";
 
 export type DailyPoint = {
@@ -104,6 +105,8 @@ export type Dashboard = {
   /** 차트에 겹쳐 그릴 일정(행사, 업데이트). 0004 마이그레이션 전이면 null */
   events: { id: number; day: string; label: string }[] | null;
   games: GamesBlock | null;
+  /** 신규 사용자 퍼널(funnel.ts). 화면이 플랫폼과 나라를 골라 pickFunnel 로 본다 */
+  funnel: { current: FunnelData; previous: FunnelData };
   /** 마지막으로 숫자가 들어온 날(한국 날짜, 인스타는 shiftPt 로 옮긴 값). 화면에 "언제 기준인지" 적는다 */
   freshness: Record<Source, string | null>;
   /**
@@ -158,18 +161,21 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
   for (const g of input.ga4) {
     const p = at(g.day);
     if (!p) continue;
-    const [first, second] = splitKey(g.key);
+    const [first] = splitKey(g.key);
     if (g.property === "web" && g.breakdown === "total" && g.metric === "sessions") p.webSessions += g.value;
     // 우리 팀 개발 방문은 방문과 버튼 클릭에서 뺀다(weeklyNumbers 와 같은 규칙)
     if (g.property === "web" && g.breakdown === "session_campaign" && g.metric === "sessions" && isInternal(first)) p.webSessions -= g.value;
     if (g.property === "web" && g.breakdown === "download_source" && g.metric === "eventCount" && isInternal(first)) p.downloadClicks -= g.value;
     if (g.property === "app" && g.breakdown === "platform" && g.metric === "activeUsers") p.dau += g.value;
+    // 첫 실행은 테스트 기기를 뺀 줄로(weeklyNumbers 와 같은 규칙, #157)
+    if (g.property === "app" && g.breakdown === "first_open_country" && g.metric === "eventCount") {
+      if (first === "Android") p.firstOpenAndroid += g.value;
+      if (first === "iOS") p.firstOpenIos += g.value;
+    }
     if (g.property === "web" && g.breakdown === "session_campaign" && g.metric === "sessions" && fromInstagram(first)) p.webFromInstagram += g.value;
     if (g.property === "web" && g.breakdown === "download_source" && g.metric === "eventCount" && fromInstagram(first)) p.downloadClicksFromInstagram += g.value;
     if (g.property === "web" && g.breakdown === "event" && g.key === "app_download_click" && g.metric === "eventCount") p.downloadClicks += g.value;
     if (g.property === "app" && g.breakdown === "event" && g.metric === "eventCount") {
-      if (first === "first_open" && second === "Android") p.firstOpenAndroid += g.value;
-      if (first === "first_open" && second === "iOS") p.firstOpenIos += g.value;
       if (first === "game_start") p.playerStarts += g.value;
     }
   }
@@ -396,6 +402,7 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
     followers: followerSummary(followerRows, range),
     events: eventRows,
     games: null,
+    funnel: { current: funnelData(input.ga4, range, fApp), previous: funnelData(input.ga4, previous, fApp) },
     freshness: { instagram: kst(fIg), ga4web: fWeb, ga4app: fApp, appstore: fAs, admob: fAd },
     since: { instagram: kst(sIg), ga4web: sWeb, ga4app: sApp, appstore: sAs, admob: sAd },
   };

@@ -77,7 +77,10 @@ export function buildWeeklyReport(week: Week, now: WeeklyNumbers, before: Weekly
       `- 예상 광고 수익 ${usd(now.ads.earningsMicros)} (전주 ${usd(before.ads.earningsMicros)})`,
     ],
     [
-      "-# 앱 첫 실행은 Android와 iOS를 더한 횟수예요.",
+      // 테스트 기기는 뺀다(#157). 뺀 몫을 밝혀 GA4 콘솔 숫자와 다른 이유를 알 수 있게 한다
+      now.installs.firstOpenTest > 0
+        ? `-# 앱 첫 실행은 Android와 iOS를 더한 횟수예요. 구글 플레이 자동 테스트 기기로 보이는 ${formatCount(now.installs.firstOpenTest)}회는 뺐어요.`
+        : "-# 앱 첫 실행은 Android와 iOS를 더한 횟수예요.",
       "-# 게임 참가는 사람마다 센 횟수예요. 5명이 한 판 하면 5회예요.",
       "-# 스토어로 이동은 사이트 다운로드 버튼과 QR, 링크트리의 다운로드 링크를 더한 횟수예요.",
       showRate ? "-# 게재율은 받은 광고 중 화면에 뜬 비율이에요(AdMob 표기)." : null,

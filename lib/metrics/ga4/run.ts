@@ -13,7 +13,8 @@ import { serviceAccountFromEnv, serviceAccountToken } from "../google.ts";
 import { BACKFILL_FROM, GA4_PROPERTIES, REFETCH_DAYS } from "../config.ts";
 import { addDays, compactToYmd, todayIn } from "../dates.ts";
 import { db, replaceRange } from "../db.ts";
-import { ACTIVATION_DAYS, fetchActivation, fetchRetention } from "./cohorts.ts";
+import { fetchFunnel, fetchRetention } from "./cohorts.ts";
+import { NOT_TEST_DEVICE, TEST_DEVICE } from "../testDevices.ts";
 
 type Property = keyof typeof GA4_PROPERTIES;
 
@@ -24,6 +25,8 @@ export type Ga4Query = {
   metrics: string[];
   /** 이 이벤트만 센다(GA4 dimensionFilter eventName) */
   eventName?: string;
+  /** 더 거를 조건(GA4 FilterExpression). eventName 과 같이 쓰면 둘 다 맞는 줄만 */
+  filter?: object;
 };
 
 /** 무엇을 왜 받는지. 화면과 주간 리포트가 이 이름(breakdown)으로 읽는다 */
@@ -62,6 +65,10 @@ export const QUERIES: Record<Property, Ga4Query[]> = {
     { breakdown: "platform", dimensions: ["platform"], metrics: ["activeUsers", "newUsers", "sessions"] },
     // first_open, login, game_start, game_over, app_remove 등
     { breakdown: "event", dimensions: ["eventName", "platform"], metrics: ["eventCount", "totalUsers"] },
+    // 앱 첫 실행(#157). 화면과 주간 리포트의 첫 실행은 구글 플레이 자동 테스트 기기를 뺀 이 줄로 센다(testDevices.ts).
+    // 뺀 몫은 first_open_test 로 따로 남겨 화면이 "테스트 기기로 보여 뺀 n회"를 밝힌다
+    { breakdown: "first_open_country", dimensions: ["platform", "countryId"], metrics: ["eventCount"], eventName: "first_open", filter: NOT_TEST_DEVICE },
+    { breakdown: "first_open_test", dimensions: ["platform"], metrics: ["eventCount"], eventName: "first_open", filter: TEST_DEVICE },
     // /download 가 Play 로 넘긴 referrer(#144)가 첫 실행의 캠페인으로 잡힌다
     {
       breakdown: "first_user_campaign",
@@ -114,8 +121,15 @@ async function runReport(token: string, propertyId: string, q: Ga4Query, from: s
       dateRanges: [{ startDate: from, endDate: to }],
       dimensions: [{ name: "date" }, ...q.dimensions.map((name) => ({ name }))],
       metrics: q.metrics.map((name) => ({ name })),
-      ...(q.eventName && {
-        dimensionFilter: { filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: q.eventName } } },
+      ...((q.eventName || q.filter) && {
+        dimensionFilter: {
+          andGroup: {
+            expressions: [
+              ...(q.eventName ? [{ filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: q.eventName } } }] : []),
+              ...(q.filter ? [q.filter] : []),
+            ],
+          },
+        },
       }),
       limit: LIMIT,
       keepEmptyRows: false,
@@ -162,19 +176,19 @@ export async function runGa4(opts: { dry: boolean; now?: Date; from?: string | "
           );
         }
       }
-      // 앱은 리텐션과 활성화율을 코호트로 따로 묻는다(cohorts.ts). 7일 리텐션과 7일 활성화가 익으려면
-      // 일주일이 걸리고 늦게 들어오는 이벤트도 있어, 평소에는 최근 2주(활성화는 창이 닫힌 날부터 8일)를 다시 받는다
+      // 앱은 리텐션과 신규 사용자 퍼널을 코호트로 따로 묻는다(cohorts.ts). 7일 리텐션과 7일 퍼널이 익으려면
+      // 일주일이 걸리고 늦게 들어오는 이벤트도 있어, 평소에는 최근 2주를 다시 받는다. 퍼널은 둘째 주(8~14일째)까지
+      // 보므로 창이 닫힌 날부터 2주 남짓(처음 연 날 기준 최근 21일)을 다시 받는다
       if (property === "app") {
         const id = GA4_PROPERTIES.app;
         const retFrom = opts.from === "all" ? BACKFILL_FROM.ga4.app : (opts.from ?? addDays(to, -14));
         const ret = await fetchRetention(token, id, retFrom, to);
-        const actFrom = opts.from === "all" ? BACKFILL_FROM.ga4.app : (opts.from ?? addDays(to, -(ACTIVATION_DAYS - 1) - 7));
-        const act = await fetchActivation(token, id, actFrom, to);
-        count += ret.length + act.rows.length;
+        const fun = await fetchFunnel(token, id, opts.from === "all" ? BACKFILL_FROM.ga4.app : (opts.from ?? addDays(to, -20)), to);
+        count += ret.length + fun.rows.length;
         if (client) {
           const strip = (rows: Ga4Row[]) => rows.map((r) => ({ property: r.property, day: r.day, breakdown: r.breakdown, key: r.key, metric: r.metric, value: r.value }));
           await replaceRange(client, "ga4_daily", { property, breakdown: "retention" }, retFrom, to, strip(ret));
-          if (actFrom <= act.to) await replaceRange(client, "ga4_daily", { property, breakdown: "activation" }, actFrom, act.to, strip(act.rows));
+          if (fun.from <= fun.to) await replaceRange(client, "ga4_daily", { property, breakdown: "funnel" }, fun.from, fun.to, strip(fun.rows));
         }
       }
       properties.push({ property, from, to, rows: count, error: null });
