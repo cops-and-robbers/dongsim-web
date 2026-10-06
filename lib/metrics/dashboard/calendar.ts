@@ -68,3 +68,49 @@ export function presets(min: string, max: string): { label: string; range: DayRa
     { label: "모은 날 전체", range: lengthOf({ from: min, to: max }) <= MAX_RANGE_DAYS ? fit(min, max) : back(MAX_RANGE_DAYS) },
   ];
 }
+
+/**
+ * 비교 기간 (#152). 지표 화면이 지금 기간을 무엇과 비교하나.
+ * - prev: 바로 앞 같은 길이(기본)
+ * - dow: 요일을 맞춘 이전 기간. 7일 단위가 아닌 기간이면 7의 배수만큼 앞으로 옮겨 같은 요일부터 시작한다
+ *   (GA4 의 "이전 기간(요일 일치)"과 같다). 7일 단위면 prev 와 같다
+ * - custom: 시작일만 고르고 길이는 지금 기간과 같다. 길이가 다르면 합계 비교가 불공평하고 차트를 날짜별로 겹칠 수 없다
+ * - off: 비교하지 않는다(서버는 prev 로 계산하고 화면이 숨긴다)
+ * 작년 같은 기간은 데이터가 2026-04 부터라 넣지 않았다
+ */
+export type CompareMode = { kind: "prev" } | { kind: "dow" } | { kind: "custom"; from: string } | { kind: "off" };
+
+const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** 주소의 cmp 값 → 비교 방식. 모르는 값은 기본(prev) */
+export function parseCompare(v: string | null): CompareMode {
+  if (v === "dow") return { kind: "dow" };
+  if (v === "off") return { kind: "off" };
+  if (v && YMD_RE.test(v)) return { kind: "custom", from: v };
+  return { kind: "prev" };
+}
+
+/** 비교 방식 → 주소의 cmp 값(기본이면 null 로 빼서 주소를 짧게) */
+export function compareParam(m: CompareMode): string | null {
+  return m.kind === "prev" ? null : m.kind === "custom" ? m.from : m.kind;
+}
+
+/** 비교할 기간. off 는 화면이 숨길 뿐 숫자는 prev 로 계산한다 */
+export function compareRange(r: DayRange, m: CompareMode): DayRange {
+  const len = lengthOf(r);
+  if (m.kind === "custom") return { from: m.from, to: addDays(m.from, len - 1) };
+  const shift = m.kind === "dow" ? Math.ceil(len / 7) * 7 : len;
+  return { from: addDays(r.from, -shift), to: addDays(r.from, -shift + len - 1) };
+}
+
+/** 직접 고른 비교 기간이 쓸 수 있는지. 지금 기간보다 앞서 끝나야 하고(겹치면 같은 날을 두 번 센다), 수집 시작 뒤여야 한다 */
+export function compareError(r: DayRange, m: CompareMode, min: string): string | null {
+  if (m.kind !== "custom") return null;
+  const c = compareRange(r, m);
+  if (c.to >= r.from) return "비교 기간은 지금 기간보다 앞이어야 해요.";
+  if (c.from < min) return "비교 기간이 수집을 시작한 날보다 앞이에요.";
+  return null;
+}
+
+/** 직접 고를 때 시작일로 고를 수 있는 마지막 날(이날 시작하면 지금 기간 바로 전날에 끝난다) */
+export const lastCompareStart = (r: DayRange) => addDays(r.from, -lengthOf(r));

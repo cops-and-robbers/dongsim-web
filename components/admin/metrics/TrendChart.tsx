@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useCompare } from "@/components/admin/metrics/compareContext";
 
 /**
  * 지표 화면의 날짜별 추이 (#145).
@@ -78,6 +79,8 @@ function pathOf(values: (number | null)[], x: (i: number) => number, y: (v: numb
 }
 
 export function TrendChart({ days, series, previous, markers = [], unit = "" }: Props) {
+  // 비교 문구와 비교 날짜는 화면 전체가 같아 컨텍스트로 받는다(#152)
+  const cmp = useCompare();
   const gid = useId().replace(/:/g, "");
   const ref = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -140,7 +143,8 @@ export function TrendChart({ days, series, previous, markers = [], unit = "" }: 
           ))}
           {previous && (
             <span className="flex items-center gap-1.5">
-              <span className="h-0.5 w-3.5 rounded-full bg-chart-prev" />이전 기간
+              <span className="h-0.5 w-3.5 rounded-full bg-chart-prev" />
+              {cmp.word}
             </span>
           )}
           {hasPosts && (
@@ -300,7 +304,14 @@ export function TrendChart({ days, series, previous, markers = [], unit = "" }: 
                 {series.map((s, i) => (
                   <Row key={s.label} keyClass={KEY[i]} label={s.label} value={s.values[hover]} unit={unit} />
                 ))}
-                {previous && <Row keyClass="bg-chart-prev" label="이전 기간 같은 날" value={previous[hover] ?? null} unit={unit} />}
+                {previous && (
+                  <Row
+                    keyClass="bg-chart-prev"
+                    label={cmp.days[hover] ? `${cmp.word} ${fmtDay(cmp.days[hover])}` : `${cmp.word} 같은 날`}
+                    value={previous[hover] ?? null}
+                    unit={unit}
+                  />
+                )}
                 {hoverPosts.map((m, i) => (
                   <div key={`${i}-${m.label}`} className="mt-1.5 truncate border-t border-sd-hairline pt-1.5 text-sd-fg-muted">
                     {m.kind === "event" ? "일정" : "게시물"}: {m.label}

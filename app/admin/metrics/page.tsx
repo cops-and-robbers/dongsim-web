@@ -19,8 +19,10 @@ import { MIN_REACH, engagementOf, smallReach } from "@/lib/metrics/dashboard/eng
 import { ChevronRightIcon } from "@/components/admin/icons";
 import { Tooltip } from "@/components/admin/Tooltip";
 import { SmallReachNote } from "@/components/admin/metrics/PostDrawer";
-import { rangeLabel } from "@/lib/metrics/dashboard/calendar";
-import { addDays, todayIn } from "@/lib/metrics/dates";
+import { compareParam, parseCompare, rangeLabel } from "@/lib/metrics/dashboard/calendar";
+import { CompareMenu } from "@/components/admin/metrics/CompareMenu";
+import { CompareContext, useCompare } from "@/components/admin/metrics/compareContext";
+import { addDays, todayIn, ymdRange } from "@/lib/metrics/dates";
 import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
 
 /**
@@ -164,7 +166,11 @@ function downloadCsv(d: Dashboard) {
 
 export default function MetricsPage() {
   const [params, setParams] = useSearch();
-  const [compare, setCompare] = useState(true);
+  // 비교 방식(#152)도 주소에 남긴다. 직접 고른 비교와 요일 맞춤은 서버가 다른 기간을 읽어야 해서 query 에 넣고,
+  // 끄기는 화면만 숨기면 돼서 다시 불러오지 않는다
+  const cmpMode = parseCompare(params.get("cmp"));
+  const compare = cmpMode.kind !== "off";
+  const cmpQuery = cmpMode.kind === "dow" || cmpMode.kind === "custom" ? compareParam(cmpMode) : null;
   const tabParam = params.get("tab");
   const tab: Tab = TABS.some((x) => x.value === tabParam) ? (tabParam as Tab) : "summary";
   const from = params.get("from");
@@ -173,7 +179,7 @@ export default function MetricsPage() {
   const daysParam = params.get("days");
   const days: Days = PERIODS.some((x) => x.value === daysParam) ? (daysParam as Days) : "28";
   // 서버에 물을 기간. 결과에 이 값을 같이 둬서 어느 기간 결과인지 가른다
-  const query = custom ? `from=${custom.from}&to=${custom.to}` : `days=${days}`;
+  const query = (custom ? `from=${custom.from}&to=${custom.to}` : `days=${days}`) + (cmpQuery ? `&cmp=${cmpQuery}` : "");
   // 기간을 바꾸면 새 결과가 올 때까지 이전 화면을 흐리게 둔다(뼈대로 바꾸면 깜빡이고 스크롤이 튄다)
   const [result, setResult] = useState<{ query: string; attempt: number; data?: Dashboard; error?: string } | null>(null);
   const [shown, setShown] = useState<Dashboard | null>(null);
@@ -198,6 +204,8 @@ export default function MetricsPage() {
   const yesterday = addDays(todayIn("Asia/Seoul"), -1);
   const showing: DayRange = shown ? { from: shown.range.start, to: shown.range.end } : { from: addDays(yesterday, -27), to: yesterday };
   const loading = !current;
+  // 직접 고른 비교는 "비교 기간", 나머지는 "이전 기간"
+  const cmpWord = cmpMode.kind === "custom" ? "비교 기간" : "이전 기간";
   const reload = () => setAttempt((n) => n + 1);
 
   return (
@@ -212,27 +220,17 @@ export default function MetricsPage() {
               <SegmentedControl
                 options={PERIODS}
                 value={(custom ? "" : days) as Days}
-                onChange={(d) => setParams({ days: d === "28" ? null : d, from: null, to: null })}
+                onChange={(d) => setParams({ days: d === "28" ? null : d, from: null, to: null, ...(cmpMode.kind === "custom" && { cmp: null }) })}
               />
               <DateRangePicker
                 value={custom}
                 current={showing}
                 min={MIN_DAY}
                 max={yesterday}
-                onApply={(r) => setParams({ from: r.from, to: r.to, days: null })}
+                onApply={(r) => setParams({ from: r.from, to: r.to, days: null, ...(cmpMode.kind === "custom" && { cmp: null }) })}
               />
             </div>
-            <button
-              type="button"
-              aria-pressed={compare}
-              onClick={() => setCompare((v) => !v)}
-              className={`flex h-9 items-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold transition-colors ${
-                compare ? "bg-sd-gray-200 text-sd-fg" : "text-sd-fg-subtle hover:text-sd-fg-muted"
-              }`}
-            >
-              <span className={`h-0.5 w-3.5 rounded-full ${compare ? "bg-chart-prev" : "bg-sd-gray-400"}`} />
-              이전 기간 겹치기
-            </button>
+            <CompareMenu range={showing} mode={cmpMode} min={MIN_DAY} onChange={(m) => setParams({ cmp: compareParam(m) })} />
             <Button variant="neutral" size="sm" disabled={!current?.data} onClick={() => current?.data && downloadCsv(current.data)}>
               CSV
             </Button>
@@ -277,9 +275,26 @@ export default function MetricsPage() {
               </Callout>
             </div>
           )}
-          <div role="tabpanel" className={`transition-opacity duration-200 ${loading ? "pointer-events-none opacity-50" : ""}`} aria-busy={loading}>
-            <MetricsBody d={shown} compare={compare} tab={tab} yesterday={yesterday} onChanged={reload} />
-          </div>
+          <p className="-mt-2 mb-4 text-[12px] text-sd-fg-subtle tabular-nums">
+            지금 {rangeLabel({ from: shown.range.start, to: shown.range.end }, shown.range.end)}
+            {compare && `, ${cmpWord} ${rangeLabel({ from: shown.previous.start, to: shown.previous.end }, shown.range.end)}`}
+          </p>
+          <CompareContext.Provider value={{ on: compare, word: cmpWord, days: ymdRange(shown.previous.start, shown.previous.end) }}>
+            <div role="tabpanel" className={`transition-opacity duration-200 ${loading ? "pointer-events-none opacity-50" : ""}`} aria-busy={loading}>
+              <MetricsBody
+                d={shown}
+                compare={compare}
+                tab={tab}
+                yesterday={yesterday}
+                onChanged={reload}
+                onCompareEvent={(day) => {
+                  // 행사 효과: 그날부터 7일(어제까지)을 바로 앞 같은 길이와 비교한다
+                  const to = addDays(day, 6) > yesterday ? yesterday : addDays(day, 6);
+                  setParams({ from: day, to, days: null, cmp: null, tab: null });
+                }}
+              />
+            </div>
+          </CompareContext.Provider>
         </>
       )}
     </ScrollPage>
@@ -305,9 +320,10 @@ function Delta({
   /** 비율끼리의 차이(%p)로 적는다. now, before 는 0~1 */
   points?: boolean;
 }) {
+  const cmp = useCompare();
   const diff = points ? (now - before) * 100 : Math.round(now - before);
   const text = size === "md" ? "text-[14px]" : "text-[12px]";
-  if (points ? Math.abs(diff) < 0.05 : diff === 0) return <span className={`${text} font-semibold text-sd-fg-subtle`}>이전 기간과 같아요</span>;
+  if (points ? Math.abs(diff) < 0.05 : diff === 0) return <span className={`${text} font-semibold text-sd-fg-subtle`}>{cmp.word}과 같아요</span>;
   const up = diff > 0;
   const better = good === "up" ? up : !up;
   const amount = points ? `${Math.abs(diff).toFixed(1)}%p` : fmt(Math.abs(diff));
@@ -347,6 +363,7 @@ function Step({
   /** 이 기간 전체가 그 소스를 모으기 전이면 0 이 아니라 "-" 로 보인다 */
   none?: boolean;
 }) {
+  const cmp = useCompare();
   if (none) return <Cell label={label} value="-" lines={["이 기간엔 숫자가 없어요"]} />;
   return (
     <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
@@ -356,13 +373,18 @@ function Step({
         {fmt(now)}
         {unit && <span className="ml-0.5 text-[15px] font-semibold text-sd-fg-muted">{unit}</span>}
       </span>
-      {noPrev ? (
-        <span className="text-[12px] text-sd-fg-subtle">이전 기간 숫자 없음{sub ? `, ${sub}` : ""}</span>
+      {/* 비교를 껐으면 증감과 비교 줄을 숨기고 덧붙이는 설명(sub)만 남긴다 */}
+      {!cmp.on ? (
+        sub && <span className="text-[12px] text-sd-fg-subtle">{sub}</span>
+      ) : noPrev ? (
+        <span className="text-[12px] text-sd-fg-subtle">
+          {cmp.word} 숫자 없음{sub ? `, ${sub}` : ""}
+        </span>
       ) : (
         <>
           <Delta now={now} before={before} />
           <span className="text-[12px] text-sd-fg-subtle tabular-nums">
-            이전 기간 {fmt(before)}
+            {cmp.word} {fmt(before)}
             {unit}
             {sub ? `, ${sub}` : ""}
           </span>
@@ -394,7 +416,8 @@ function RatioCell({
   const v = rate(now);
   const small = now.den < MIN_SAMPLE;
   const b = before ? rate(before) : null;
-  const comparable = !noPrev && !small && !!before && before.den >= MIN_SAMPLE && b !== null && v !== null;
+  const cmp = useCompare();
+  const comparable = cmp.on && !noPrev && !small && !!before && before.den >= MIN_SAMPLE && b !== null && v !== null;
   return (
     <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
       <span className="text-[13px] font-medium text-sd-fg-muted">{label}</span>
@@ -404,7 +427,11 @@ function RatioCell({
         {fmt(now.num)} / {fmt(now.den)}, {of}
       </span>
       {small && now.den > 0 && <span className="text-[12px] text-sd-fg-subtle">숫자가 적어 참고만 해요</span>}
-      {comparable && <span className="text-[12px] text-sd-fg-subtle tabular-nums">이전 기간 {pct(b)}</span>}
+      {comparable && (
+        <span className="text-[12px] text-sd-fg-subtle tabular-nums">
+          {cmp.word} {pct(b)}
+        </span>
+      )}
     </div>
   );
 }
@@ -460,7 +487,22 @@ function lagging(d: Dashboard): string[] {
 
 type Col = Exclude<keyof DailyPoint, "day">;
 
-function MetricsBody({ d, compare, tab, yesterday, onChanged }: { d: Dashboard; compare: boolean; tab: Tab; yesterday: string; onChanged: () => void }) {
+function MetricsBody({
+  d,
+  compare,
+  tab,
+  yesterday,
+  onChanged,
+  onCompareEvent,
+}: {
+  d: Dashboard;
+  compare: boolean;
+  tab: Tab;
+  yesterday: string;
+  onChanged: () => void;
+  onCompareEvent: (day: string) => void;
+}) {
+  const cw = useCompare().word;
   const c = d.totals.current;
   const p = d.totals.previous;
   const days = d.daily.map((x) => x.day);
@@ -529,12 +571,14 @@ function MetricsBody({ d, compare, tab, yesterday, onChanged }: { d: Dashboard; 
                   <span className="ml-1 text-[20px] font-semibold text-sd-fg-muted">회</span>
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  {noPrev("ga4app") ? (
-                    <span className="text-[13px] text-sd-fg-subtle">이전 기간 숫자 없음</span>
+                  {!compare ? null : noPrev("ga4app") ? (
+                    <span className="text-[13px] text-sd-fg-subtle">{cw} 숫자 없음</span>
                   ) : (
                     <>
                       <Delta now={firstOpen(c)} before={firstOpen(p)} size="md" />
-                      <span className="text-[13px] text-sd-fg-subtle tabular-nums">이전 기간 {fmt(firstOpen(p))}회</span>
+                      <span className="text-[13px] text-sd-fg-subtle tabular-nums">
+                        {cw} {fmt(firstOpen(p))}회
+                      </span>
                     </>
                   )}
                 </div>
@@ -557,7 +601,7 @@ function MetricsBody({ d, compare, tab, yesterday, onChanged }: { d: Dashboard; 
           <FadeIn delay={0.04}>
             <Group
               title="모든 경로를 합친 흐름"
-              note={`인스타그램, 검색, 행사 QR, 직접 입력까지 더한 숫자예요. 우리 팀이 개발하며 들어온 방문은 뺐어요. 스토어로 이동은 사이트 다운로드 버튼과 QR, 링크트리의 다운로드 링크를 더한 횟수예요. 단계마다 세는 대상이 달라 비율로 잇지 않았어요. 이전 기간은 ${rangeLabel({ from: d.previous.start, to: d.previous.end }, d.range.end)}이에요.`}
+              note={`인스타그램, 검색, 행사 QR, 직접 입력까지 더한 숫자예요. 우리 팀이 개발하며 들어온 방문은 뺐어요. 스토어로 이동은 사이트 다운로드 버튼과 QR, 링크트리의 다운로드 링크를 더한 횟수예요. 단계마다 세는 대상이 달라 비율로 잇지 않았어요.`}
             >
               <Cells cols={5}>
                 <Step label="사이트 방문" now={c.web.sessions} before={p.web.sessions} noPrev={noPrev("ga4web")} none={none("ga4web")} />
@@ -604,7 +648,7 @@ function MetricsBody({ d, compare, tab, yesterday, onChanged }: { d: Dashboard; 
           </FadeIn>
 
           <FadeIn delay={0.16}>
-            <EventsCalendar initialMonth={d.range.end} today={addDays(yesterday, 1)} onChanged={onChanged} />
+            <EventsCalendar initialMonth={d.range.end} today={addDays(yesterday, 1)} onChanged={onChanged} onCompare={onCompareEvent} />
           </FadeIn>
         </>
       )}
@@ -721,7 +765,7 @@ function MetricsBody({ d, compare, tab, yesterday, onChanged }: { d: Dashboard; 
               <Cell
                 label="하루 활성 사용자"
                 value={c.app.dauAvg === null ? "-" : `${c.app.dauAvg.toFixed(1)}명`}
-                lines={[noPrev("ga4app") || p.app.dauAvg === null ? "기간 평균" : `기간 평균, 이전 기간 ${p.app.dauAvg.toFixed(1)}명`]}
+                lines={[!compare || noPrev("ga4app") || p.app.dauAvg === null ? "기간 평균" : `기간 평균, ${cw} ${p.app.dauAvg.toFixed(1)}명`]}
               />
               {gamesOk ? (
                 <Step label="진행된 게임" now={games.current.games} before={games.previous.games} unit="판" />
@@ -731,7 +775,7 @@ function MetricsBody({ d, compare, tab, yesterday, onChanged }: { d: Dashboard; 
               <Cell
                 label="판당 평균 인원"
                 value={gamesOk && games.current.games > 0 ? `${(games.current.players / games.current.games).toFixed(1)}명` : "-"}
-                lines={[gamesOk && games.previous.games > 0 ? `이전 기간 ${(games.previous.players / games.previous.games).toFixed(1)}명` : "백엔드 게임 기록 기준"]}
+                lines={[compare && gamesOk && games.previous.games > 0 ? `${cw} ${(games.previous.players / games.previous.games).toFixed(1)}명` : "백엔드 게임 기록 기준"]}
               />
               <Step label="게임 참가(사람 기준)" now={c.game.playerStarts} before={p.game.playerStarts} noPrev={noPrev("ga4app")} none={none("ga4app")} />
             </Cells>
@@ -796,7 +840,7 @@ function MetricsBody({ d, compare, tab, yesterday, onChanged }: { d: Dashboard; 
                 value={c.game.playerFinishes > 0 ? `${(c.ads.impressions / c.game.playerFinishes).toFixed(1)}회` : "-"}
                 lines={[`게임을 끝낸 ${fmt(c.game.playerFinishes)}회 기준(사람 기준)`]}
               />
-              <Cell label="예상 광고 수익" value={usd(c.ads.earningsMicros)} lines={[noPrev("admob") ? "이전 기간 숫자 없음" : `이전 기간 ${usd(p.ads.earningsMicros)}`]} />
+              <Cell label="예상 광고 수익" value={usd(c.ads.earningsMicros)} lines={!compare ? [] : [noPrev("admob") ? `${cw} 숫자 없음` : `${cw} ${usd(p.ads.earningsMicros)}`]} />
               <Cell
                 label="eCPM"
                 value={c.ads.impressions > 0 ? `$${((c.ads.earningsMicros / 1e6 / c.ads.impressions) * 1000).toFixed(2)}` : "-"}
@@ -816,7 +860,7 @@ function MetricsBody({ d, compare, tab, yesterday, onChanged }: { d: Dashboard; 
       <Callout variant="neutral" title="숫자의 기준">
         마지막으로 들어온 날은 인스타그램 {md(d.freshness.instagram)}, GA4 사이트 {md(d.freshness.ga4web)}, GA4 앱 {md(d.freshness.ga4app)}, App Store {md(d.freshness.appstore)}, AdMob{" "}
         {md(d.freshness.admob)}이에요. 인스타그램과 App Store 다운로드는 미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요. 차트 위쪽 동그라미는 인스타
-        게시물, 마름모는 일정이고{compare ? ", 회색 선은 이전 기간이에요" : "요"}. 차트를 누르거나 마우스를 올리면 그날 숫자가 보여요.
+        게시물, 마름모는 일정이고{compare ? `, 회색 선은 ${cw}이에요` : "요"}. 차트를 누르거나 마우스를 올리면 그날 숫자가 보여요.
       </Callout>
     </div>
   );
@@ -866,6 +910,7 @@ function CountryCell({ d }: { d: Dashboard }) {
 
 /** 채널별 방문과 전환율. 마케터가 먼저 보는 표라 소스별 표보다 위에 둔다 */
 function ChannelTable({ d }: { d: Dashboard }) {
+  const cmp = useCompare();
   const prev = new Map(d.channels.previous.map((r) => [r.channel, r]));
   const total = d.channels.current.reduce((a, r) => a + r.sessions, 0);
   return (
@@ -882,7 +927,7 @@ function ChannelTable({ d }: { d: Dashboard }) {
               <Th className="whitespace-nowrap text-right">다운로드 링크로 이동</Th>
               <Th className="whitespace-nowrap text-right">사이트 버튼으로 이동</Th>
               <Th className="whitespace-nowrap text-right">사이트 전환율</Th>
-              <Th className="whitespace-nowrap text-right">이전 기간 방문</Th>
+              {cmp.on && <Th className="whitespace-nowrap text-right">{cmp.word} 방문</Th>}
             </>
           }
         >
@@ -898,7 +943,7 @@ function ChannelTable({ d }: { d: Dashboard }) {
                 <Td className="text-right tabular-nums">{fmt(r.linkSessions)}</Td>
                 <Td className="text-right tabular-nums">{fmt(button)}</Td>
                 <Td className="text-right tabular-nums">{conv ?? <span className="text-sd-fg-subtle">숫자 적음</span>}</Td>
-                <Td className="text-right tabular-nums text-sd-fg-subtle">{fmt(prev.get(r.channel)?.sessions ?? 0)}</Td>
+                {cmp.on && <Td className="text-right tabular-nums text-sd-fg-subtle">{fmt(prev.get(r.channel)?.sessions ?? 0)}</Td>}
               </Tr>
             );
           })}
