@@ -6,7 +6,7 @@
  */
 
 import { sendDiscord } from "../discord.ts";
-import { check, db } from "../db.ts";
+import { check, db, selectAll } from "../db.ts";
 import { addDays, todayIn } from "../dates.ts";
 import { claimNotification, releaseNotification } from "../instagram/store.ts";
 import { buildWeeklyReport } from "./messages.ts";
@@ -32,7 +32,23 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
     client.from("instagram_account_daily").select("day, views, profile_views, website_clicks").gte("day", from).lte("day", to),
     // 게시물은 한국 날짜로 나눈다. 앞뒤 하루씩 넉넉히 읽고 numbers 가 거른다
     client.from("instagram_media").select("posted_at").gte("posted_at", `${addDays(from, -1)}T00:00:00Z`).lte("posted_at", `${addDays(to, 1)}T23:59:59Z`),
-    client.from("ga4_daily").select("property, day, breakdown, key, metric, value").gte("day", from).lte("day", to).in("breakdown", ["total", "session_campaign", "event"]).limit(20000),
+    // 2주만 읽어도 1,000줄을 넘는다. 끝까지 쪽을 넘겨 읽는다 (db.ts selectAll)
+    selectAll(
+      (a, b) =>
+        client
+          .from("ga4_daily")
+          .select("property, day, breakdown, key, metric, value")
+          .gte("day", from)
+          .lte("day", to)
+          .in("breakdown", ["total", "session_campaign", "event"])
+          .order("day")
+          .order("property")
+          .order("breakdown")
+          .order("key")
+          .order("metric")
+          .range(a, b),
+      "GA4 읽기",
+    ),
     client.from("appstore_sales_daily").select("day, product_type, units").gte("day", from).lte("day", to),
     client.from("admob_daily").select("day, earnings_micros, matched_requests, impressions").gte("day", from).lte("day", to),
   ]);
@@ -45,7 +61,7 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
       websiteClicks: r.website_clicks,
     })),
     instagramPosts: (check(igPosts, "인스타 게시물 읽기") as { posted_at: string }[]).map((r) => ({ postedAt: r.posted_at })),
-    ga4: check(ga4, "GA4 읽기") as WeeklyInput["ga4"],
+    ga4: ga4 as WeeklyInput["ga4"],
     appstoreSales: (check(sales, "App Store 판매 읽기") as { day: string; product_type: string; units: number }[]).map((r) => ({
       day: r.day,
       productType: r.product_type,
