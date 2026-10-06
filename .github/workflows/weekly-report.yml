@@ -1,0 +1,38 @@
+# 주간 리포트 (#146).
+#
+# 매주 월요일 UTC 0시 37분 = 한국 오전 9시 37분. 매일 수집(metrics-collect.yml,
+# 한국 오전 5시 43분)과 인스타 리포트(오전 9시 17분)가 끝난 뒤에 돈다.
+# 수집은 하지 않고 쌓인 테이블에서 지난주를 더해 디스코드로 보낸다.
+# 같은 주는 한 번만 보낸다(다시 돌려도 이미 보냄으로 끝난다).
+#
+# 저장소가 공개라 로그에는 보냈는지만 찍는다. 미리보기(dry)일 때만 문구를 찍는다.
+name: weekly-report
+
+on:
+  schedule:
+    - cron: "37 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "미리보기 (디스코드로 보내지 않고 로그에 문구만 찍음)"
+        type: boolean
+        default: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 주간 리포트
+        env:
+          DRY: ${{ inputs.dry && '1' || '0' }}
+          SECRET: ${{ secrets.METRICS_CRON_SECRET }}
+        run: |
+          code=$(curl -sS -o response.json -w "%{http_code}" -X POST \
+            "https://copsandrobbers.app/api/metrics/weekly?dry=$DRY" \
+            -H "Authorization: Bearer $SECRET")
+          if [ "$DRY" = "1" ]; then jq -r '.content // empty' response.json || true; fi
+          jq '{ok, dry, week, status, error}' response.json || head -c 300 response.json
+          echo
+          echo "HTTP $code"
+          test "$code" = "200"
