@@ -42,8 +42,8 @@ jobs:
           code=$(curl -sS -o response.json -w "%{http_code}" -X POST \
             "https://copsandrobbers.app/api/metrics/$SOURCE$query" \
             -H "Authorization: Bearer $SECRET")
-          # 수익 숫자(earningsUsd)는 빼고, 됐는지와 몇 줄인지만 남긴다
-          jq 'del(.earningsUsd)' response.json || head -c 300 response.json
+          # 공개 저장소 로그라 수익(earningsUsd)과 판매 개수(sales.units)는 빼고, 됐는지와 몇 줄인지만 남긴다
+          jq 'del(.earningsUsd, .sales.units)' response.json || head -c 300 response.json
           echo
           echo "HTTP $code"
           test "$code" = "200"
