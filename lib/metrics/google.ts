@@ -14,7 +14,13 @@ type ServiceAccount = { client_email: string; private_key: string; token_uri: st
 export function serviceAccountFromEnv(): ServiceAccount {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!raw) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON 환경변수가 없어요");
-  const sa = JSON.parse(raw) as ServiceAccount;
+  let sa: ServiceAccount;
+  try {
+    sa = JSON.parse(raw) as ServiceAccount;
+  } catch {
+    // JSON 파싱 오류 메시지에는 입력 조각(개인 키 일부)이 실린다. 그대로 던지면 응답과 로그로 샌다
+    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON 을 JSON 으로 읽지 못했어요");
+  }
   if (!sa.client_email || !sa.private_key) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON 형식이 달라요");
   return { ...sa, token_uri: sa.token_uri || "https://oauth2.googleapis.com/token" };
 }
