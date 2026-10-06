@@ -3,9 +3,10 @@
 import Image from "next/image";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import DownloadButtons from "@/components/ui/DownloadButtons";
-import { APP_LINKS } from "@/lib/constants";
+import { APP_LINKS, APP_STORE_PROVIDER_TOKEN } from "@/lib/constants";
 import { BRAND_NAME, appIconSrc, type Locale } from "@/lib/i18n/config";
 import { trackEvent } from "@/lib/analytics";
+import { storeLinksWithUtm } from "@/lib/download/campaign";
 
 // 이 페이지는 로케일 접두어 없는 /download 하나뿐이라(부스 QR용, noindex),
 // 브라우저 언어로 문구를 고른다. 한국어 서비스라 미지정 언어는 영어로.
@@ -44,21 +45,28 @@ function useBrowserLocale(): Locale {
  * - iOS → App Store, Android → Google Play 로 리다이렉트
  * - 그 외(PC 등) → 두 스토어 버튼을 보여주는 폴백
  * 부스 QR(`/download`)이 이 페이지를 가리켜, 어떤 폰으로 찍어도 알맞은 스토어로 간다.
+ * - `/download?utm_...` 로 오면 그 꼬리표를 스토어 주소로 이어 넘긴다 (#144).
+ *   Play 는 referrer, App Store 는 캠페인 토큰. 어느 캠페인으로 와서 실제로
+ *   설치했는지를 세려는 것이다
  */
 export default function DownloadRedirect() {
-  const [fallback, setFallback] = useState(false);
+  const [fallback, setFallback] = useState<{ appStore: string; googlePlay: string } | null>(null);
   const locale = useBrowserLocale();
   const text = DOWNLOAD_TEXT[locale];
 
   useEffect(() => {
+    const links = storeLinksWithUtm(APP_LINKS, window.location.search, APP_STORE_PROVIDER_TOKEN);
+    // campaign 이 없으면(일반 QR) 이벤트에 빈 칸을 보내지 않는다
+    const campaign = links.campaign ?? undefined;
     const ua = navigator.userAgent || "";
     if (/iPad|iPhone|iPod/.test(ua)) {
       trackEvent("app_download_click", {
         store: "appstore",
         placement: "download_qr",
         locale,
+        campaign,
       });
-      window.location.replace(APP_LINKS.appStore);
+      window.location.replace(links.appStore);
       return;
     }
     if (/Android/i.test(ua)) {
@@ -66,11 +74,12 @@ export default function DownloadRedirect() {
         store: "googleplay",
         placement: "download_qr",
         locale,
+        campaign,
       });
-      window.location.replace(APP_LINKS.googlePlay);
+      window.location.replace(links.googlePlay);
       return;
     }
-    const t = window.setTimeout(() => setFallback(true), 0);
+    const t = window.setTimeout(() => setFallback(links), 0);
     return () => window.clearTimeout(t);
   }, [locale]);
 
@@ -92,7 +101,7 @@ export default function DownloadRedirect() {
           {fallback ? text.fallback : text.redirecting}
         </p>
       </div>
-      {fallback && <DownloadButtons placement="download_page" />}
+      {fallback && <DownloadButtons placement="download_page" links={fallback} />}
     </main>
   );
 }
