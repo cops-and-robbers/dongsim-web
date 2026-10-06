@@ -1,36 +1,94 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/admin/Button";
 import { Callout } from "@/components/admin/Callout";
-import { ErrorBlock, PageHeader, ScrollPage, SectionCard, EmptyBlock } from "@/components/admin/Parts";
+import { ErrorBlock, PageHeader, ScrollPage, SectionCard, EmptyBlock, SURFACE } from "@/components/admin/Parts";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { Table, Td, Th, Tr } from "@/components/admin/Table";
 import { FadeIn } from "@/components/admin/motion";
-import { TrendChart } from "@/components/admin/metrics/TrendChart";
+import { TrendChart, type Marker } from "@/components/admin/metrics/TrendChart";
+import { DateRangePicker, type DayRange } from "@/components/admin/metrics/DateRangePicker";
+import { EventsCalendar } from "@/components/admin/metrics/EventsCalendar";
+import { PostDrawer } from "@/components/admin/metrics/PostDrawer";
 import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
-import type { Dashboard, DailyPoint } from "@/lib/metrics/dashboard/data";
+import type { Dashboard, DailyPoint, PostRow } from "@/lib/metrics/dashboard/data";
+import { SOURCE_OF } from "@/lib/metrics/dashboard/sources";
+import { MIN_REACH, engagementOf, smallReach } from "@/lib/metrics/dashboard/engagement";
+import { ChevronRightIcon } from "@/components/admin/icons";
+import { Tooltip } from "@/components/admin/Tooltip";
+import { SmallReachNote } from "@/components/admin/metrics/PostDrawer";
+import { rangeLabel } from "@/lib/metrics/dashboard/calendar";
+import { addDays, todayIn } from "@/lib/metrics/dates";
+import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
 
 /**
- * 지표 (#145). 매일 아침 모으는 인스타, 웹, 스토어, 앱, 광고 숫자를 한 화면에서 본다.
+ * 지표 (#145). 매일 아침 모으는 인스타, 사이트, 스토어, 앱, 광고 숫자를 본다.
  *
- * 콘솔을 옮겨 놓지 않고 질문에 답하는 순서로 놓았다.
- * 1. 이 기간 어디서 와서 어디까지 갔나 (단계를 나란히, 비율로 잇지 않음)
- * 2. 날마다 어땠나 (게시물 올린 날 표시)
- * 3. 게시물별, 들어온 경로(UTM)별 숫자
- * 4. 광고
+ * 탭 넷으로 나눈다. 매일 여는 사람은 요약만 보고, 맡은 일이 있는 사람은 그 탭으로 간다.
+ * - 요약: 앱 첫 실행 큰 숫자, 모든 경로를 합친 흐름, 핵심 비율, 인스타그램에서 온 것, 일정
+ * - 인스타그램: 계정 지표와 비율, 팔로워, 게시물별 숫자(정렬)
+ * - 유입 경로: 채널별 방문과 전환율, 소스별 표
+ * - 앱과 광고: 설치(나라별), 사용(활성 사용자, 실제 판 수), 남는 사람(활성화, 리텐션, 삭제), 광고
+ * 기간과 이전 기간 겹치기는 탭 위에 한 번만 두고 모든 탭이 같이 따른다.
  *
- * 인과는 말하지 않는다. 같은 기간에 각 단계에서 센 숫자를 보여 줄 뿐, "덕분에"라고 쓰지 않는다.
- * 숫자를 합치는 규칙과 출처는 docs/metrics-collection.md.
+ * 개수보다 비율을 함께 본다. 비율은 분자와 분모를 같이 적고, 분모가 MIN_SAMPLE 보다 작으면
+ * "숫자가 적어 참고만 해요"를 붙인다. 작은 숫자의 비율은 크게 흔들린다.
+ *
+ * 인과는 말하지 않는다. "~에서 온" 것만 세고, "덕분에"라고 쓰지 않는다.
+ * 용어는 각 콘솔의 한국어 표기를 따른다(조회수, 최초 다운로드, 게재율, 신규 사용자, 이전 기간).
+ * 근거는 docs/admin-ui.md "지표 화면", 숫자 규칙은 docs/metrics-collection.md.
  */
 
-type Days = "7" | "28" | "90";
+// 4주, 13주는 기간마다 요일 수가 같아 주말에 몰리는 숫자도 이전 기간과 공평하게 비교한다
+type Days = "7" | "28" | "91";
 const PERIODS: { label: string; value: Days }[] = [
   { label: "7일", value: "7" },
-  { label: "28일", value: "28" },
-  { label: "90일", value: "90" },
+  { label: "4주", value: "28" },
+  { label: "13주", value: "91" },
 ];
+
+const TABS = [
+  { value: "summary", label: "요약" },
+  { value: "instagram", label: "인스타그램" },
+  { value: "traffic", label: "유입 경로" },
+  { value: "app", label: "앱과 광고" },
+] as const;
+type Tab = (typeof TABS)[number]["value"];
+
+/** 비율의 분모가 이보다 작으면 참고용이라고 적는다 */
+const MIN_SAMPLE = 30;
+
+// 보고 있는 탭과 기간을 주소(?tab=, ?days= 또는 ?from=&to=)에 남겨, 링크를 보내면 같은 화면이 열린다.
+// 주소는 바깥 값이라 useSyncExternalStore 로 읽고, 바꿀 때 직접 알린다
+const URL_EVENT = "admin-metrics-url";
+const readSearch = () => window.location.search;
+const subscribeSearch = (cb: () => void) => {
+  window.addEventListener("popstate", cb);
+  window.addEventListener(URL_EVENT, cb);
+  return () => {
+    window.removeEventListener("popstate", cb);
+    window.removeEventListener(URL_EVENT, cb);
+  };
+};
+function useSearch(): [URLSearchParams, (patch: Record<string, string | null>) => void] {
+  const search = useSyncExternalStore(subscribeSearch, readSearch, () => "");
+  const update = (patch: Record<string, string | null>) => {
+    const url = new URL(window.location.href);
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null) url.searchParams.delete(k);
+      else url.searchParams.set(k, v);
+    }
+    window.history.replaceState(null, "", url);
+    window.dispatchEvent(new Event(URL_EVENT));
+  };
+  return [new URLSearchParams(search), update];
+}
+
+const YMD = /^\d{4}-\d{2}-\d{2}$/;
+// 고를 수 있는 가장 이른 날. 수집을 시작한 날(App Store 판매, GA4 웹 2026-04-01)
+const MIN_DAY = "2026-04-01";
 
 const fmt = (n: number) => Math.round(n).toLocaleString("ko-KR");
 const md = (ymd: string | null) => {
@@ -40,15 +98,28 @@ const md = (ymd: string | null) => {
 };
 const seoulDay = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(iso));
 const firstLine = (caption: string | null) => caption?.split(/\r?\n/).find((l) => l.trim())?.trim() ?? "(캡션 없음)";
+const usd = (micros: number) => `$${(micros / 1e6).toFixed(2)}`;
+const rate = (r: Ratio) => (r.den > 0 ? r.num / r.den : null);
+const pct = (v: number | null, digits = 1) => (v === null ? "-" : `${(v * 100).toFixed(digits)}%`);
+const regionName = (() => {
+  try {
+    const names = new Intl.DisplayNames(["ko"], { type: "region" });
+    return (code: string) => names.of(code) ?? code;
+  } catch {
+    return (code: string) => code;
+  }
+})();
 
-async function fetchDashboard(days: Days): Promise<Dashboard> {
+async function authedFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const send = () =>
-    fetch(`/api/admin/metrics?days=${days}`, {
-      headers: { Authorization: `Bearer ${getAccessToken() ?? ""}` },
-      cache: "no-store",
-    });
+    fetch(url, { ...init, headers: { ...(init.headers ?? {}), Authorization: `Bearer ${getAccessToken() ?? ""}` }, cache: "no-store" });
   let res = await send();
   if (res.status === 401 && (await reissue())) res = await send();
+  return res;
+}
+
+async function fetchDashboard(query: string): Promise<Dashboard> {
+  const res = await authedFetch(`/api/admin/metrics?${query}`);
   const body = (await res.json().catch(() => ({}))) as Dashboard & { error?: string };
   if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
   return body;
@@ -58,23 +129,31 @@ async function fetchDashboard(days: Days): Promise<Dashboard> {
 function downloadCsv(d: Dashboard) {
   const cols: [keyof DailyPoint, string][] = [
     ["day", "날짜"],
-    ["igViews", "인스타 조회"],
+    ["igViews", "인스타 조회수"],
     ["igProfileViews", "인스타 프로필 방문"],
     ["igLinkClicks", "인스타 프로필 링크 클릭"],
-    ["webSessions", "웹 방문"],
-    ["webFromInstagram", "인스타에서 온 웹 방문"],
-    ["downloadClicks", "다운로드 버튼 클릭"],
-    ["appStoreNew", "App Store 신규 다운로드"],
+    ["webSessions", "사이트 방문(팀 방문 제외)"],
+    ["webFromInstagram", "인스타에서 온 사이트 방문"],
+    ["downloadClicks", "스토어로 이동(팀 방문 제외)"],
+    ["downloadClicksFromInstagram", "인스타에서 온 스토어로 이동"],
+    ["appStoreNew", "App Store 최초 다운로드"],
     ["firstOpenAndroid", "앱 첫 실행 Android"],
     ["firstOpenIos", "앱 첫 실행 iOS"],
-    ["gameStarts", "게임 시작"],
+    ["dau", "하루 활성 사용자"],
+    ["playerStarts", "게임 참가(사람 기준)"],
     ["adImpressions", "광고 노출"],
     ["adEarningsMicros", "예상 광고 수익(USD)"],
   ];
-  const rows = d.daily.map((p) =>
-    cols.map(([k]) => (k === "adEarningsMicros" ? (p.adEarningsMicros / 1e6).toFixed(4) : String(p[k]))).join(","),
-  );
-  const csv = `﻿${cols.map(([, h]) => h).join(",")}\n${rows.join("\n")}\n`;
+  const games = d.games?.error ? null : d.games?.daily;
+  // 그 소스를 모으기 전이거나 아직 안 들어온 날은 0 이 아니라 빈칸(차트에서 선을 끊는 것과 같은 규칙)
+  const has = (day: string, k: Exclude<keyof DailyPoint, "day">) => {
+    const s = SOURCE_OF[k];
+    return !!d.since[s] && !!d.freshness[s] && day >= (d.since[s] as string) && day <= (d.freshness[s] as string);
+  };
+  const cell = (p: DailyPoint, k: keyof DailyPoint) =>
+    k === "day" ? p.day : !has(p.day, k) ? "" : k === "adEarningsMicros" ? (p.adEarningsMicros / 1e6).toFixed(4) : String(p[k]);
+  const rows = d.daily.map((p, i) => [...cols.map(([k]) => cell(p, k)), games ? String(games[i] ?? 0) : ""].join(","));
+  const csv = `﻿${[...cols.map(([, h]) => h), "진행된 게임(판)"].join(",")}\n${rows.join("\n")}\n`;
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url;
@@ -84,27 +163,42 @@ function downloadCsv(d: Dashboard) {
 }
 
 export default function MetricsPage() {
-  const [days, setDays] = useState<Days>("28");
-  // 결과에 어느 기간 것인지 같이 둔다. 기간을 바꾸면 그 기간 결과가 올 때까지 불러오는 중으로 본다
-  const [result, setResult] = useState<{ days: Days; data?: Dashboard; error?: string } | null>(null);
+  const [params, setParams] = useSearch();
+  const [compare, setCompare] = useState(true);
+  const tabParam = params.get("tab");
+  const tab: Tab = TABS.some((x) => x.value === tabParam) ? (tabParam as Tab) : "summary";
+  const from = params.get("from");
+  const to = params.get("to");
+  const custom: DayRange | null = from && to && YMD.test(from) && YMD.test(to) ? { from, to } : null;
+  const daysParam = params.get("days");
+  const days: Days = PERIODS.some((x) => x.value === daysParam) ? (daysParam as Days) : "28";
+  // 서버에 물을 기간. 결과에 이 값을 같이 둬서 어느 기간 결과인지 가른다
+  const query = custom ? `from=${custom.from}&to=${custom.to}` : `days=${days}`;
+  // 기간을 바꾸면 새 결과가 올 때까지 이전 화면을 흐리게 둔다(뼈대로 바꾸면 깜빡이고 스크롤이 튄다)
+  const [result, setResult] = useState<{ query: string; attempt: number; data?: Dashboard; error?: string } | null>(null);
+  const [shown, setShown] = useState<Dashboard | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let alive = true;
-    fetchDashboard(days)
-      .then((data) => alive && setResult({ days, data }))
-      .catch((e: unknown) => alive && setResult({ days, error: e instanceof Error ? e.message : String(e) }));
+    fetchDashboard(query)
+      .then((data) => {
+        if (!alive) return;
+        setResult({ query, attempt, data });
+        setShown(data);
+      })
+      .catch((e: unknown) => alive && setResult({ query, attempt, error: e instanceof Error ? e.message : String(e) }));
     return () => {
       alive = false;
     };
-  }, [days, attempt]);
+  }, [query, attempt]);
 
-  const current = result?.days === days ? result : null;
-  const data = current?.data ?? null;
-  const retry = () => {
-    setResult(null);
-    setAttempt((n) => n + 1);
-  };
+  const current = result?.query === query && result.attempt === attempt ? result : null;
+  // 달력에서 고를 수 있는 마지막 날. 오늘은 숫자가 아직 다 안 들어왔다
+  const yesterday = addDays(todayIn("Asia/Seoul"), -1);
+  const showing: DayRange = shown ? { from: shown.range.start, to: shown.range.end } : { from: addDays(yesterday, -27), to: yesterday };
+  const loading = !current;
+  const reload = () => setAttempt((n) => n + 1);
 
   return (
     <ScrollPage>
@@ -112,40 +206,214 @@ export default function MetricsPage() {
         title="지표"
         description="매일 아침 모은 어제까지의 숫자예요."
         actions={
-          <div className="flex items-center gap-2">
-            <SegmentedControl options={PERIODS} value={days} onChange={setDays} />
-            <Button variant="neutral" size="sm" disabled={!data} onClick={() => data && downloadCsv(data)}>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              {/* 직접 고른 기간이 적용 중이면 기간 버튼은 아무것도 고르지 않은 모양이 된다 */}
+              <SegmentedControl
+                options={PERIODS}
+                value={(custom ? "" : days) as Days}
+                onChange={(d) => setParams({ days: d === "28" ? null : d, from: null, to: null })}
+              />
+              <DateRangePicker
+                value={custom}
+                current={showing}
+                min={MIN_DAY}
+                max={yesterday}
+                onApply={(r) => setParams({ from: r.from, to: r.to, days: null })}
+              />
+            </div>
+            <button
+              type="button"
+              aria-pressed={compare}
+              onClick={() => setCompare((v) => !v)}
+              className={`flex h-9 items-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold transition-colors ${
+                compare ? "bg-sd-gray-200 text-sd-fg" : "text-sd-fg-subtle hover:text-sd-fg-muted"
+              }`}
+            >
+              <span className={`h-0.5 w-3.5 rounded-full ${compare ? "bg-chart-prev" : "bg-sd-gray-400"}`} />
+              이전 기간 겹치기
+            </button>
+            <Button variant="neutral" size="sm" disabled={!current?.data} onClick={() => current?.data && downloadCsv(current.data)}>
               CSV
             </Button>
           </div>
         }
       />
-      {current?.error ? (
-        <ErrorBlock message={current.error} onRetry={retry} />
-      ) : !data ? (
+      {/* 회색 밑줄은 border 대신 안쪽 그림자로 그린다. 탭 밑줄을 border 에 겹치려고 -mb-px 로 1px 내리면
+          그만큼 넘쳐서, 좁은 화면용 가로 스크롤(overflow-x-auto)이 세로 스크롤바까지 띄운다 */}
+      <div
+        role="tablist"
+        aria-label="지표 묶음"
+        className="mb-5 flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--sd-line)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {TABS.map((t) => {
+          const active = t.value === tab;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setParams({ tab: t.value === "summary" ? null : t.value })}
+              className={`shrink-0 border-b-2 px-3 pb-2.5 pt-1 text-[14px] font-semibold transition-colors ${
+                active ? "border-accent text-sd-fg" : "border-transparent text-sd-fg-subtle hover:text-sd-fg-muted"
+              }`}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+      {current?.error && !shown ? (
+        <ErrorBlock message={current.error} onRetry={reload} />
+      ) : !shown ? (
         <MetricsSkeleton />
       ) : (
-        <MetricsBody d={data} />
+        <>
+          {current?.error && (
+            <div className="mb-4">
+              <Callout variant="danger" title="새 숫자를 못 불러왔어요">
+                {current.error} 아래는 바로 전에 불러온 숫자예요.
+              </Callout>
+            </div>
+          )}
+          <div role="tabpanel" className={`transition-opacity duration-200 ${loading ? "pointer-events-none opacity-50" : ""}`} aria-busy={loading}>
+            <MetricsBody d={shown} compare={compare} tab={tab} yesterday={yesterday} onChanged={reload} />
+          </div>
+        </>
       )}
     </ScrollPage>
   );
 }
 
-function Change({ now, before }: { now: number; before: number }) {
-  const diff = Math.round(now - before);
+/**
+ * 이전 기간과의 차이. 화살표와 색을 같이 쓴다(색만으로 뜻을 전하지 않는다).
+ * 좋아진 쪽은 초록, 나빠진 쪽은 빨강 대신 회색(Polaris). good 이 "down" 이면(삭제 비율처럼) 줄어든 게 좋은 것이다.
+ * 개수는 이전 기간이 20 이상일 때만 비율을 붙인다. 작은 숫자에서 3 → 6 이 "+100%"로 부풀려 보이기 때문이다.
+ */
+function Delta({
+  now,
+  before,
+  size = "sm",
+  good = "up",
+  points = false,
+}: {
+  now: number;
+  before: number;
+  size?: "sm" | "md";
+  good?: "up" | "down";
+  /** 비율끼리의 차이(%p)로 적는다. now, before 는 0~1 */
+  points?: boolean;
+}) {
+  const diff = points ? (now - before) * 100 : Math.round(now - before);
+  const text = size === "md" ? "text-[14px]" : "text-[12px]";
+  if (points ? Math.abs(diff) < 0.05 : diff === 0) return <span className={`${text} font-semibold text-sd-fg-subtle`}>이전 기간과 같아요</span>;
+  const up = diff > 0;
+  const better = good === "up" ? up : !up;
+  const amount = points ? `${Math.abs(diff).toFixed(1)}%p` : fmt(Math.abs(diff));
+  const pctPart = !points && before >= 20 ? ` (${up ? "+" : "-"}${Math.round((Math.abs(diff) / before) * 100)}%)` : "";
   return (
-    <span className="text-[12px] text-sd-fg-subtle tabular-nums">
-      앞 기간 {fmt(before)}
-      {diff !== 0 && <span className="ml-1 text-sd-fg-muted">({diff > 0 ? "+" : "-"}{fmt(Math.abs(diff))})</span>}
+    <span className={`inline-flex items-center gap-0.5 ${text} font-bold tabular-nums ${better ? "text-chart-up" : "text-sd-fg-muted"}`}>
+      <svg viewBox="0 0 24 24" className={`h-3.5 w-3.5 ${up ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 19V6M6 12l6-6 6 6" />
+      </svg>
+      <span className="sr-only">{up ? "늘어남" : "줄어듦"}</span>
+      {amount}
+      {pctPart}
     </span>
+  );
+}
+
+/**
+ * 개수 칸. 이전 기간 중에 그 소스를 아직 모으기 전인 날이 있으면(noPrev) 이전 기간 합이 작게 나와
+ * 크게 늘어난 것처럼 보인다. 그때는 증감을 숨기고 "이전 기간 숫자 없음"이라고 적는다
+ */
+function Step({
+  label,
+  now,
+  before,
+  sub,
+  unit = "",
+  noPrev = false,
+  none = false,
+}: {
+  label: string;
+  now: number;
+  before: number;
+  sub?: string;
+  /** 숫자 뒤에 붙는 단위(판 등). 없으면 숫자만 */
+  unit?: string;
+  noPrev?: boolean;
+  /** 이 기간 전체가 그 소스를 모으기 전이면 0 이 아니라 "-" 로 보인다 */
+  none?: boolean;
+}) {
+  if (none) return <Cell label={label} value="-" lines={["이 기간엔 숫자가 없어요"]} />;
+  return (
+    <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
+      <span className="text-[13px] font-medium text-sd-fg-muted">{label}</span>
+      {/* 큰 숫자는 비례 숫자로 둔다. 고정폭(tabular)은 121 처럼 듬성해 보인다 */}
+      <span className="text-[24px] font-bold leading-tight text-sd-fg">
+        {fmt(now)}
+        {unit && <span className="ml-0.5 text-[15px] font-semibold text-sd-fg-muted">{unit}</span>}
+      </span>
+      {noPrev ? (
+        <span className="text-[12px] text-sd-fg-subtle">이전 기간 숫자 없음{sub ? `, ${sub}` : ""}</span>
+      ) : (
+        <>
+          <Delta now={now} before={before} />
+          <span className="text-[12px] text-sd-fg-subtle tabular-nums">
+            이전 기간 {fmt(before)}
+            {unit}
+            {sub ? `, ${sub}` : ""}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 비율 칸. 분자와 분모를 같이 적어 무엇을 나눴는지 보인다. 분모가 적으면 참고용이라고 적고 증감을 숨긴다
+ */
+function RatioCell({
+  label,
+  now,
+  before,
+  of,
+  good = "up",
+  noPrev = false,
+}: {
+  label: string;
+  now: Ratio;
+  before?: Ratio;
+  /** "99 / 459" 옆에 붙는 설명. 예: "방문 중 버튼 클릭" */
+  of: string;
+  good?: "up" | "down";
+  noPrev?: boolean;
+}) {
+  const v = rate(now);
+  const small = now.den < MIN_SAMPLE;
+  const b = before ? rate(before) : null;
+  const comparable = !noPrev && !small && !!before && before.den >= MIN_SAMPLE && b !== null && v !== null;
+  return (
+    <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
+      <span className="text-[13px] font-medium text-sd-fg-muted">{label}</span>
+      <span className={`text-[24px] font-bold leading-tight ${small ? "text-sd-fg-muted" : "text-sd-fg"}`}>{pct(v)}</span>
+      {comparable && <Delta now={v as number} before={b as number} points good={good} />}
+      <span className="text-[12px] text-sd-fg-subtle tabular-nums">
+        {fmt(now.num)} / {fmt(now.den)}, {of}
+      </span>
+      {small && now.den > 0 && <span className="text-[12px] text-sd-fg-subtle">숫자가 적어 참고만 해요</span>}
+      {comparable && <span className="text-[12px] text-sd-fg-subtle tabular-nums">이전 기간 {pct(b)}</span>}
+    </div>
   );
 }
 
 function Cell({ label, value, lines }: { label: string; value: string; lines: string[] }) {
   return (
     <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
-      <span className="text-[12px] font-medium text-sd-fg-muted">{label}</span>
-      <span className="text-[22px] font-bold text-sd-fg tabular-nums">{value}</span>
+      <span className="text-[13px] font-medium text-sd-fg-muted">{label}</span>
+      <span className="text-[24px] font-bold leading-tight text-sd-fg">{value}</span>
       {lines.map((l) => (
         <span key={l} className="text-[12px] text-sd-fg-subtle tabular-nums">
           {l}
@@ -155,224 +423,606 @@ function Cell({ label, value, lines }: { label: string; value: string; lines: st
   );
 }
 
-function Step({ label, now, before, sub }: { label: string; now: number; before: number; sub?: string }) {
+/** 칸 묶음. 칸 수에 맞춰 줄을 나눈다(5칸이면 넓은 화면에서 한 줄) */
+function Cells({ children, cols = 4 }: { children: ReactNode; cols?: 3 | 4 | 5 }) {
+  const wide = cols === 5 ? "sm:grid-cols-3 lg:grid-cols-5" : cols === 3 ? "sm:grid-cols-3" : "sm:grid-cols-4";
+  return <div className={`grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-sd-line bg-sd-hairline ${wide}`}>{children}</div>;
+}
+
+/** 탭 안의 묶음 제목. 무엇을 묻는 묶음인지 한 줄로 */
+function Group({ title, note, children }: { title: string; note?: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
-      <span className="text-[12px] font-medium text-sd-fg-muted">{label}</span>
-      <span className="text-[22px] font-bold text-sd-fg tabular-nums">{fmt(now)}</span>
-      <Change now={now} before={before} />
-      {sub && <span className="text-[12px] text-sd-fg-muted">{sub}</span>}
-    </div>
+    <section className="flex flex-col gap-3">
+      <div>
+        <h2 className="text-[16px] font-bold text-sd-fg">{title}</h2>
+        {note && <p className="mt-1 text-[12px] leading-relaxed text-sd-fg-subtle">{note}</p>}
+      </div>
+      {children}
+    </section>
   );
 }
 
-/** 어제까지 숫자가 안 들어온 소스. 그 뒤 날짜는 차트와 합계에서 0 으로 보이니 맨 위에 알린다 */
+const Note = ({ children, className = "" }: { children: ReactNode; className?: string }) => (
+  <p className={`text-[12px] leading-relaxed text-sd-fg-subtle ${className}`}>{children}</p>
+);
+
+/** 어제까지 숫자가 안 들어온 소스. 그 뒤 날짜는 차트에서 비어 보이니 맨 위에 알린다 */
 function lagging(d: Dashboard): string[] {
   const names: [keyof Dashboard["freshness"], string][] = [
-    ["instagram", "인스타"],
-    ["ga4", "GA4"],
+    ["instagram", "인스타그램"],
+    ["ga4web", "GA4 사이트"],
+    ["ga4app", "GA4 앱"],
     ["appstore", "App Store"],
     ["admob", "AdMob"],
   ];
   return names.filter(([k]) => (d.freshness[k] ?? "") < d.range.end).map(([k, name]) => `${name}(${md(d.freshness[k])}까지)`);
 }
 
-const ratio = (part: number, whole: number) => (whole > 0 ? part / whole : null);
+type Col = Exclude<keyof DailyPoint, "day">;
 
-function MetricsBody({ d }: { d: Dashboard }) {
+function MetricsBody({ d, compare, tab, yesterday, onChanged }: { d: Dashboard; compare: boolean; tab: Tab; yesterday: string; onChanged: () => void }) {
   const c = d.totals.current;
   const p = d.totals.previous;
   const days = d.daily.map((x) => x.day);
-  const col = (k: keyof DailyPoint) => d.daily.map((x) => Number(x[k]));
-  const markers = d.posts.map((post) => ({ day: seoulDay(post.postedAt), label: firstLine(post.caption) }));
-  const firstOpen = (n: typeof c) => n.installs.firstOpenAndroid + n.installs.firstOpenIos;
-  const showRate = (n: typeof c) => ratio(n.ads.impressions, n.ads.matchedRequests);
-  const perGame = (n: typeof c) => ratio(n.ads.impressions, n.game.overs);
-  const pctText = (r: number | null) => (r === null ? "-" : `${Math.round(r * 100)}%`);
-  const perText = (r: number | null) => (r === null ? "-" : `${r.toFixed(1)}회`);
-  const usd = (micros: number) => `$${(micros / 1e6).toFixed(2)}`;
-  const firstDiff = firstOpen(c) - firstOpen(p);
+  // 소스에 숫자가 없는 날(수집 전, 아직 안 들어옴)은 0 이 아니라 null 로 둬 선을 끊는다
+  const has = (day: string, k: Col) => {
+    const s = SOURCE_OF[k];
+    const from = d.since[s];
+    const to = d.freshness[s];
+    return !!from && !!to && day >= from && day <= to;
+  };
+  const col = (k: Col) => d.daily.map((x) => (has(x.day, k) ? Number(x[k]) : null));
+  const prev = (k: Col) => (compare ? d.previousDaily.map((x) => (has(x.day, k) ? Number(x[k]) : null)) : undefined);
+  const sumOf = (a: (number | null)[], b: (number | null)[]) => a.map((v, i) => (v === null && b[i] === null ? null : (v ?? 0) + (b[i] ?? 0)));
+  const markers: Marker[] = [
+    ...d.posts.map((post) => ({ day: seoulDay(post.postedAt), label: firstLine(post.caption), kind: "post" as const })),
+    ...(d.events ?? []).map((e) => ({ day: e.day, label: e.label, kind: "event" as const })),
+  ];
+  const firstOpen = (n: WeeklyNumbers) => n.installs.firstOpenAndroid + n.installs.firstOpenIos;
   const late = lagging(d);
+  // 이전 기간 첫날부터 숫자가 있어야 이전 기간 합을 믿을 수 있다
+  const noPrev = (s: keyof Dashboard["since"]) => !d.since[s] || d.since[s] > d.previous.start;
+  // 이 기간 전체가 소스를 모으기 전이거나 마지막으로 받은 날보다 뒤면 0 이 아니라 "-"
+  const none = (s: keyof Dashboard["since"]) => !d.since[s] || d.since[s] > d.range.end || (d.freshness[s] ?? "") < d.range.start;
+  // 이 기간 중간부터 모은 소스(인스타그램은 9월 8일부터)는 합이 기간 전체가 아니라고 밝힌다
+  const partial = (s: keyof Dashboard["since"]) => !!d.since[s] && d.since[s] > d.range.start;
+  const chart = (title: string, k: Col, unit: string, label: string) => (
+    <SectionCard title={title}>
+      <TrendChart days={days} series={[{ label, values: col(k) }]} previous={prev(k)} markers={markers} unit={unit} />
+    </SectionCard>
+  );
+  // 사이트 전환율: 사이트에 들어와 다운로드 버튼으로 스토어에 간 방문의 비율.
+  // - 한 방문에서 여러 번 눌러도 한 번으로 센다(storeSessions). 클릭 수로 나누면 100% 를 넘을 수 있다
+  // - /download(QR, 링크트리 다운로드 링크)로 들어온 방문은 들어오는 순간 넘어가 "전환"이 정해져 있다.
+  //   분자와 분모에서 모두 뺀다(linkSessions). 안 빼면 4주 기준 5% 남짓이 20% 가까이로 부풀었다
+  const siteConv = (n: WeeklyNumbers): Ratio => ({
+    num: Math.max(0, n.web.storeSessions - n.web.linkSessions),
+    den: Math.max(0, n.web.sessions - n.web.linkSessions),
+  });
+  const igConv = (n: WeeklyNumbers): Ratio => ({
+    num: Math.max(0, n.web.storeSessionsFromInstagram - n.web.linkSessionsFromInstagram),
+    den: Math.max(0, n.web.fromInstagram - n.web.linkSessionsFromInstagram),
+  });
+  const linkSplit = (n: WeeklyNumbers) => `다운로드 링크 ${fmt(n.web.downloadLinkClicks)}, 사이트 버튼 ${fmt(Math.max(0, n.web.downloadClicks - n.web.downloadLinkClicks))}`;
+  const removeRate = (n: WeeklyNumbers): Ratio => ({ num: n.app.androidRemoves, den: n.installs.firstOpenAndroid });
+  const games = d.games;
+  const gamesOk = !!games && !games.error;
+  const rangeText = rangeLabel({ from: d.range.start, to: d.range.end }, d.range.end);
 
   return (
-    <div className="flex flex-col gap-5 pb-10">
+    <div className="flex flex-col gap-6 pb-10">
       {late.length > 0 && (
         <Callout variant="warning" title="아직 덜 들어온 숫자가 있어요">
-          {late.join(", ")}. 그 뒤 날짜는 0으로 보여요. 매일 아침 수집이 다시 돌면 채워져요.
+          {late.join(", ")}. 그 뒤 날짜는 차트에서 비어 보여요. 매일 아침 수집이 다시 돌면 채워져요.
         </Callout>
       )}
 
-      <FadeIn>
-        <SectionCard title={`인스타에서 게임까지 (${md(d.range.start)}~${md(d.range.end)})`}>
-          <p className="mb-4 text-[15px] text-sd-fg">
-            이 기간 앱 첫 실행은 <b className="tabular-nums">{fmt(firstOpen(c))}회</b>예요.{" "}
-            <span className="text-sd-fg-muted">
-              {firstDiff === 0
-                ? "앞 기간과 같아요."
-                : `앞 기간보다 ${fmt(Math.abs(firstDiff))}회 ${firstDiff > 0 ? "늘었어요" : "줄었어요"}.`}
-            </span>
-          </p>
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-sd-line bg-sd-hairline sm:grid-cols-4">
-            <Step label="인스타 조회" now={c.instagram.views} before={p.instagram.views} />
-            <Step label="프로필 방문" now={c.instagram.profileViews} before={p.instagram.profileViews} />
-            <Step label="프로필 링크 클릭" now={c.instagram.linkClicks} before={p.instagram.linkClicks} />
-            <Step label="웹 방문" now={c.web.sessions} before={p.web.sessions} sub={`그중 인스타에서 ${fmt(c.web.fromInstagram)}`} />
-            <Step label="다운로드 버튼" now={c.web.downloadClicks} before={p.web.downloadClicks} />
-            <Step label="App Store 신규" now={c.installs.appStoreNew} before={p.installs.appStoreNew} />
-            <Step
-              label="앱 첫 실행"
-              now={firstOpen(c)}
-              before={firstOpen(p)}
-              sub={`Android ${fmt(c.installs.firstOpenAndroid)}, iOS ${fmt(c.installs.firstOpenIos)}`}
-            />
-            <Step label="게임 시작" now={c.game.starts} before={p.game.starts} />
-          </div>
-          <p className="mt-3 text-[12px] leading-relaxed text-sd-fg-subtle">
-            단계마다 세는 대상이 달라 비율로 잇지 않았어요. 앞 기간은 {md(d.previous.start)}~{md(d.previous.end)}이에요.
-          </p>
-        </SectionCard>
-      </FadeIn>
+      {tab === "summary" && (
+        <>
+          {/* 맨 위 숫자 하나. 이 화면이 먼저 답하는 질문이다 */}
+          <FadeIn>
+            <div className={`${SURFACE} grid grid-cols-1 gap-5 p-5 md:grid-cols-[minmax(0,260px)_1fr] md:items-center`}>
+              <div>
+                <p className="text-[13px] font-medium text-sd-fg-muted">앱 첫 실행, {rangeText}</p>
+                <p className="mt-2 text-[48px] font-bold leading-none tracking-tight text-sd-fg">
+                  {fmt(firstOpen(c))}
+                  <span className="ml-1 text-[20px] font-semibold text-sd-fg-muted">회</span>
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {noPrev("ga4app") ? (
+                    <span className="text-[13px] text-sd-fg-subtle">이전 기간 숫자 없음</span>
+                  ) : (
+                    <>
+                      <Delta now={firstOpen(c)} before={firstOpen(p)} size="md" />
+                      <span className="text-[13px] text-sd-fg-subtle tabular-nums">이전 기간 {fmt(firstOpen(p))}회</span>
+                    </>
+                  )}
+                </div>
+                <p className="mt-3 text-[13px] text-sd-fg-muted tabular-nums">
+                  Android {fmt(c.installs.firstOpenAndroid)}, iOS {fmt(c.installs.firstOpenIos)}
+                </p>
+              </div>
+              <TrendChart
+                days={days}
+                series={[
+                  { label: "Android", values: col("firstOpenAndroid") },
+                  { label: "iOS", values: col("firstOpenIos") },
+                ]}
+                markers={markers}
+                unit="회"
+              />
+            </div>
+          </FadeIn>
 
-      <div>
-        <h2 className="text-[15px] font-bold text-sd-fg">날마다</h2>
-        <p className="mt-1 text-[12px] text-sd-fg-subtle">
-          회색 점선은 인스타 게시물을 올린 날이에요. 차트를 누르거나 마우스를 올리면 그날 숫자와 게시물이 보여요.
-        </p>
-      </div>
-      <div className="-mt-2 grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <FadeIn delay={0.04}>
-          <SectionCard title="인스타 조회">
-            <TrendChart days={days} series={[{ label: "조회", values: col("igViews") }]} markers={markers} unit="회" />
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.08}>
-          <SectionCard title="웹 방문">
-            <TrendChart
-              days={days}
-              series={[
-                { label: "전체", values: col("webSessions") },
-                { label: "인스타에서", values: col("webFromInstagram") },
-              ]}
-              markers={markers}
-              unit="회"
-            />
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.12}>
-          <SectionCard title="다운로드 버튼 클릭">
-            <TrendChart days={days} series={[{ label: "버튼 클릭", values: col("downloadClicks") }]} markers={markers} unit="회" />
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.16}>
-          <SectionCard title="App Store 신규 다운로드">
-            <TrendChart days={days} series={[{ label: "신규 다운로드", values: col("appStoreNew") }]} markers={markers} unit="건" />
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.2}>
-          <SectionCard title="앱 첫 실행">
-            <TrendChart
-              days={days}
-              series={[
-                { label: "Android", values: col("firstOpenAndroid") },
-                { label: "iOS", values: col("firstOpenIos") },
-              ]}
-              markers={markers}
-              unit="회"
-            />
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.24}>
-          <SectionCard title="게임 시작">
-            <TrendChart days={days} series={[{ label: "게임 시작", values: col("gameStarts") }]} markers={markers} unit="판" />
-          </SectionCard>
-        </FadeIn>
-      </div>
-
-      <FadeIn>
-        <SectionCard title="이 기간에 올린 게시물" flush>
-          {d.posts.length === 0 ? (
-            <EmptyBlock title="이 기간에 올린 게시물이 없어요" />
-          ) : (
-            <Table
-              head={
-                <tr>
-                  <Th>올린 날</Th>
-                  <Th>게시물</Th>
-                  <Th className="text-right">조회</Th>
-                  <Th className="text-right">도달</Th>
-                  <Th className="text-right">공유</Th>
-                  <Th className="text-right">프로필 방문</Th>
-                  <Th className="text-right">링크 클릭</Th>
-                </tr>
-              }
+          <FadeIn delay={0.04}>
+            <Group
+              title="모든 경로를 합친 흐름"
+              note={`인스타그램, 검색, 행사 QR, 직접 입력까지 더한 숫자예요. 우리 팀이 개발하며 들어온 방문은 뺐어요. 스토어로 이동은 사이트 다운로드 버튼과 QR, 링크트리의 다운로드 링크를 더한 횟수예요. 단계마다 세는 대상이 달라 비율로 잇지 않았어요. 이전 기간은 ${rangeLabel({ from: d.previous.start, to: d.previous.end }, d.range.end)}이에요.`}
             >
-              {d.posts.map((post, i) => (
-                <Tr key={post.id} index={i}>
-                  <Td className="whitespace-nowrap tabular-nums">{md(seoulDay(post.postedAt))}</Td>
-                  <Td className="max-w-[280px]">
-                    <a href={post.permalink} target="_blank" rel="noreferrer" className="block truncate text-sd-fg hover:underline">
-                      <span className="mr-1.5 text-sd-fg-subtle">{post.productType === "REELS" ? "릴스" : "피드"}</span>
-                      {firstLine(post.caption)}
-                    </a>
-                  </Td>
-                  {[post.views, post.reach, post.shares, post.profileVisits, post.bioLinkClicks].map((v, k) => (
-                    <Td key={k} className="text-right tabular-nums">
-                      {v === null ? "-" : fmt(v)}
-                    </Td>
-                  ))}
-                </Tr>
-              ))}
-            </Table>
-          )}
-        </SectionCard>
-      </FadeIn>
-      <p className="-mt-2 text-[12px] text-sd-fg-subtle">
-        숫자는 올린 날부터 지금까지 더한 값이에요. 릴스는 인스타가 프로필 방문과 링크 클릭을 주지 않아 비어 있어요.
-      </p>
+              <Cells cols={5}>
+                <Step label="사이트 방문" now={c.web.sessions} before={p.web.sessions} noPrev={noPrev("ga4web")} none={none("ga4web")} />
+                <Step label="스토어로 이동" now={c.web.downloadClicks} before={p.web.downloadClicks} noPrev={noPrev("ga4web")} none={none("ga4web")} />
+                <Step label="App Store 최초 다운로드" now={c.installs.appStoreNew} before={p.installs.appStoreNew} noPrev={noPrev("appstore")} none={none("appstore")} />
+                <Step label="앱 첫 실행" now={firstOpen(c)} before={firstOpen(p)} noPrev={noPrev("ga4app")} none={none("ga4app")} />
+                {gamesOk ? (
+                  <Step label="진행된 게임" now={games.current.games} before={games.previous.games} unit="판" />
+                ) : (
+                  <Step label="게임 참가(사람 기준)" now={c.game.playerStarts} before={p.game.playerStarts} noPrev={noPrev("ga4app")} none={none("ga4app")} />
+                )}
+              </Cells>
+            </Group>
+          </FadeIn>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <FadeIn>
-          <SectionCard title="웹으로 들어온 경로" flush>
-            <CampaignTable
-              rows={d.webCampaigns.slice(0, 10).map((r) => ({ a: r.source, b: r.medium, c: [r.campaign, r.content].filter((x) => x && x !== "(not set)").join(" / "), n: r.sessions }))}
-              heads={["출처", "매체", "캠페인 / 버튼", "방문"]}
-            />
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.04}>
-          <SectionCard title="앱을 처음 연 경로" flush>
-            <CampaignTable
-              rows={d.appCampaigns.slice(0, 10).map((r) => ({ a: r.source, b: r.medium, c: [r.campaign, r.platform].filter((x) => x && x !== "(not set)").join(" / "), n: r.sessions }))}
-              heads={["출처", "매체", "캠페인 / 플랫폼", "새 사용자"]}
-            />
-          </SectionCard>
-        </FadeIn>
-      </div>
-      <p className="-mt-2 text-[12px] leading-relaxed text-sd-fg-subtle">
-        링크에 UTM 꼬리표를 붙이면 캠페인별로 갈려요. 인스타 링크트리는 instagram / bio, 행사 QR 은 행사 이름을 영어로 붙여요.
-        앱 경로는 Play로 설치한 Android만 갈려요.
-      </p>
+          <FadeIn delay={0.08}>
+            <Group title="핵심 비율" note="개수보다 효율을 봐요. 비율 아래 숫자는 나눈 두 값이에요.">
+              <Cells>
+                <RatioCell label="사이트 전환율" now={siteConv(c)} before={siteConv(p)} of="사이트 방문 중 버튼으로 스토어에 간 방문" noPrev={noPrev("ga4web")} />
+                <RatioCell label="활성화율" now={c.cohort.activation} before={p.cohort.activation} of="첫 실행 후 7일 안에 게임 참가" />
+                <RatioCell label="다음 날 다시 온 비율" now={c.cohort.d1} before={p.cohort.d1} of="처음 온 다음 날 다시 실행" />
+                <RatioCell label="Android 삭제 비율" now={removeRate(c)} before={removeRate(p)} of="Android 첫 실행 대비 삭제" good="down" noPrev={noPrev("ga4app")} />
+              </Cells>
+              <Note>
+                사이트 전환율은 QR 이나 링크트리 다운로드 링크로 들어와 바로 스토어로 넘어간 방문을 빼고 셌어요. 활성화율과 다시 온 비율은 이 기간에
+                처음 들어온 사람만 따로 묶어 셌고, 7일이나 하루가 아직 안 지난 날은 빼요.
+              </Note>
+            </Group>
+          </FadeIn>
 
-      <FadeIn>
-        <SectionCard title="광고">
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-sd-line bg-sd-hairline sm:grid-cols-4">
-            <Step label="광고 노출" now={c.ads.impressions} before={p.ads.impressions} />
-            <Cell label="노출률" value={pctText(showRate(c))} lines={[`앞 기간 ${pctText(showRate(p))}`, "받은 광고 중 화면에 뜬 비율"]} />
-            <Cell label="판당 노출" value={perText(perGame(c))} lines={[`앞 기간 ${perText(perGame(p))}`, `끝난 게임 ${fmt(c.game.overs)}판 기준`]} />
-            <Cell label="예상 수익" value={usd(c.ads.earningsMicros)} lines={[`앞 기간 ${usd(p.ads.earningsMicros)}`]} />
+          <FadeIn delay={0.12}>
+            <Group
+              title="인스타그램에서 온 것"
+              note={`${partial("instagram") ? `인스타그램 계정 숫자는 ${md(d.since.instagram)}부터 있어요. ` : ""}사이트 방문은 프로필 링크, 링크트리, 인스타 앱 안 브라우저로 들어온 것만 셌어요. 그 뒤 설치는 아직 경로별로 못 나눠요. Android 는 다운로드 링크 꼬리표가 배포되면(#144), iOS 는 App Store 캠페인 리포트가 들어오면 보여요.`}
+            >
+              <Cells cols={5}>
+                <Step label="조회수" now={c.instagram.views} before={p.instagram.views} noPrev={noPrev("instagram")} none={none("instagram")} />
+                <Step label="프로필 방문" now={c.instagram.profileViews} before={p.instagram.profileViews} noPrev={noPrev("instagram")} none={none("instagram")} />
+                <Step label="프로필 링크 클릭" now={c.instagram.linkClicks} before={p.instagram.linkClicks} noPrev={noPrev("instagram")} none={none("instagram")} />
+                <Step label="인스타에서 온 사이트 방문" now={c.web.fromInstagram} before={p.web.fromInstagram} noPrev={noPrev("ga4web")} none={none("ga4web")} />
+                <Step label="그중 스토어로 이동" now={c.web.downloadClicksFromInstagram} before={p.web.downloadClicksFromInstagram} noPrev={noPrev("ga4web")} none={none("ga4web")} />
+              </Cells>
+            </Group>
+          </FadeIn>
+
+          <FadeIn delay={0.16}>
+            <EventsCalendar initialMonth={d.range.end} today={addDays(yesterday, 1)} onChanged={onChanged} />
+          </FadeIn>
+        </>
+      )}
+
+      {tab === "instagram" && (
+        <>
+          <Group title="계정" note={partial("instagram") ? `인스타그램 계정 숫자는 ${md(d.since.instagram)}부터 있어요. 그 앞은 차트에서 비어 있어요.` : undefined}>
+            <Cells>
+              <Step label="조회수" now={c.instagram.views} before={p.instagram.views} noPrev={noPrev("instagram")} none={none("instagram")} />
+              <Step label="프로필 방문" now={c.instagram.profileViews} before={p.instagram.profileViews} noPrev={noPrev("instagram")} none={none("instagram")} />
+              <Step label="프로필 링크 클릭" now={c.instagram.linkClicks} before={p.instagram.linkClicks} noPrev={noPrev("instagram")} none={none("instagram")} />
+              <FollowerCell d={d} />
+            </Cells>
+            <Cells cols={3}>
+              <RatioCell
+                label="프로필 방문률"
+                now={{ num: c.instagram.profileViews, den: c.instagram.views }}
+                before={{ num: p.instagram.profileViews, den: p.instagram.views }}
+                of="조회수 중 프로필 방문"
+                noPrev={noPrev("instagram")}
+              />
+              <RatioCell
+                label="링크 클릭률"
+                now={{ num: c.instagram.linkClicks, den: c.instagram.profileViews }}
+                before={{ num: p.instagram.linkClicks, den: p.instagram.profileViews }}
+                of="프로필 방문 중 링크 클릭"
+                noPrev={noPrev("instagram")}
+              />
+              <Step label="새 게시물" now={c.instagram.posts} before={p.instagram.posts} />
+            </Cells>
+          </Group>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <FadeIn delay={0.04}>{chart("조회수", "igViews", "회", "조회수")}</FadeIn>
+            <FadeIn delay={0.08}>{chart("프로필 방문", "igProfileViews", "회", "프로필 방문")}</FadeIn>
+            <FadeIn delay={0.12}>{chart("프로필 링크 클릭", "igLinkClicks", "회", "링크 클릭")}</FadeIn>
+            <FadeIn delay={0.16}>{chart("인스타에서 온 사이트 방문", "webFromInstagram", "회", "사이트 방문")}</FadeIn>
           </div>
-          <div className="mt-5">
-            <TrendChart days={days} series={[{ label: "광고 노출", values: col("adImpressions") }]} markers={markers} unit="회" />
+          <FadeIn>
+            <PostsTable posts={d.posts} />
+          </FadeIn>
+        </>
+      )}
+
+      {tab === "traffic" && (
+        <>
+          <Group title="사이트" note={`사이트 방문은 GA4 의 세션이에요. 한 사람이 두 번 들어오면 두 번 세요. QR 이나 링크트리 다운로드 링크로 들어와 바로 스토어로 넘어간 방문도 들어가요. 우리 팀이 개발하며 들어온 방문 ${fmt(c.web.internalSessions)}회는 뺐어요.`}>
+            <Cells>
+              <Step label="사이트 방문" now={c.web.sessions} before={p.web.sessions} noPrev={noPrev("ga4web")} none={none("ga4web")} />
+              <Step label="스토어로 이동" now={c.web.downloadClicks} before={p.web.downloadClicks} sub={linkSplit(c)} noPrev={noPrev("ga4web")} none={none("ga4web")} />
+              <RatioCell label="사이트 전환율" now={siteConv(c)} before={siteConv(p)} of="사이트 방문 중 버튼으로 스토어에 간 방문" noPrev={noPrev("ga4web")} />
+              <RatioCell
+                label="인스타 방문의 전환율"
+                now={igConv(c)}
+                before={igConv(p)}
+                of="인스타에서 온 사이트 방문 중 버튼으로 간 방문"
+                noPrev={noPrev("ga4web")}
+              />
+            </Cells>
+          </Group>
+          <FadeIn>
+            <ChannelTable d={d} />
+          </FadeIn>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <FadeIn delay={0.04}>{chart("사이트 방문", "webSessions", "회", "사이트 방문")}</FadeIn>
+            <FadeIn delay={0.08}>{chart("스토어로 이동", "downloadClicks", "회", "스토어로 이동")}</FadeIn>
           </div>
-        </SectionCard>
-      </FadeIn>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <FadeIn>
+              <SectionCard title="소스별 사이트 방문" flush>
+                <CampaignTable
+                  rows={d.webCampaigns.slice(0, 10).map((r) => ({ a: r.source, b: r.medium, c: [r.campaign, r.content].filter((x) => x && x !== "(not set)").join(" / "), n: r.sessions }))}
+                  heads={["소스", "매체", "캠페인 / 버튼", "방문"]}
+                />
+              </SectionCard>
+            </FadeIn>
+            <FadeIn delay={0.04}>
+              <SectionCard title="앱 신규 사용자 경로" flush>
+                <CampaignTable
+                  rows={d.appCampaigns.slice(0, 10).map((r) => ({ a: r.source, b: r.medium, c: [r.campaign, r.platform].filter((x) => x && x !== "(not set)").join(" / "), n: r.sessions }))}
+                  heads={["소스", "매체", "캠페인 / 플랫폼", "신규 사용자"]}
+                />
+              </SectionCard>
+            </FadeIn>
+          </div>
+          <Note className="-mt-3">
+            소스 ig 는 인스타그램이 프로필 링크에 스스로 붙이는 꼬리표예요. (direct)는 주소를 직접 치거나 행사 QR 을 찍어 들어온 방문이에요.
+            링크에 UTM 꼬리표를 붙이면 캠페인별로 갈려요. 행사 QR 은 행사 이름을 영어로 붙여요. 앱 경로는 Play 로 설치한 Android 만 갈려요.
+          </Note>
+        </>
+      )}
+
+      {tab === "app" && (
+        <>
+          <Group title="설치">
+            <Cells cols={3}>
+              <Step label="App Store 최초 다운로드" now={c.installs.appStoreNew} before={p.installs.appStoreNew} noPrev={noPrev("appstore")} none={none("appstore")} />
+              <Step
+                label="앱 첫 실행"
+                now={firstOpen(c)}
+                before={firstOpen(p)}
+                sub={`Android ${fmt(c.installs.firstOpenAndroid)}, iOS ${fmt(c.installs.firstOpenIos)}`}
+                noPrev={noPrev("ga4app")}
+              />
+              <CountryCell d={d} />
+            </Cells>
+            <Note>앱 첫 실행은 지웠다 다시 깔아도 다시 세요. 그래서 사람 수가 아니라 횟수예요. Play 설치 수는 권한이 열리면 붙어요.</Note>
+          </Group>
+
+          <Group
+            title="사용"
+            note="진행된 게임은 백엔드 게임 기록으로 센 실제 판 수예요. 게임 참가는 앱이 참가자 폰마다 남기는 기록이라 5명이 한 판 하면 5회예요."
+          >
+            <Cells>
+              <Cell
+                label="하루 활성 사용자"
+                value={c.app.dauAvg === null ? "-" : `${c.app.dauAvg.toFixed(1)}명`}
+                lines={[noPrev("ga4app") || p.app.dauAvg === null ? "기간 평균" : `기간 평균, 이전 기간 ${p.app.dauAvg.toFixed(1)}명`]}
+              />
+              {gamesOk ? (
+                <Step label="진행된 게임" now={games.current.games} before={games.previous.games} unit="판" />
+              ) : (
+                <Cell label="진행된 게임" value="-" lines={[games?.error ?? "백엔드 주소가 없어 못 읽었어요"]} />
+              )}
+              <Cell
+                label="판당 평균 인원"
+                value={gamesOk && games.current.games > 0 ? `${(games.current.players / games.current.games).toFixed(1)}명` : "-"}
+                lines={[gamesOk && games.previous.games > 0 ? `이전 기간 ${(games.previous.players / games.previous.games).toFixed(1)}명` : "백엔드 게임 기록 기준"]}
+              />
+              <Step label="게임 참가(사람 기준)" now={c.game.playerStarts} before={p.game.playerStarts} noPrev={noPrev("ga4app")} none={none("ga4app")} />
+            </Cells>
+          </Group>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <FadeIn delay={0.04}>{chart("하루 활성 사용자", "dau", "명", "활성 사용자")}</FadeIn>
+            <FadeIn delay={0.08}>
+              <SectionCard title="진행된 게임">
+                {gamesOk ? (
+                  <TrendChart days={days} series={[{ label: "게임", values: games.daily }]} previous={compare ? games.previousDaily : undefined} markers={markers} unit="판" />
+                ) : (
+                  <EmptyBlock title="게임 기록을 못 읽었어요" />
+                )}
+              </SectionCard>
+            </FadeIn>
+            <FadeIn delay={0.12}>
+              <SectionCard title="앱 첫 실행 (두 플랫폼 합)">
+                <TrendChart
+                  days={days}
+                  series={[{ label: "첫 실행", values: sumOf(col("firstOpenAndroid"), col("firstOpenIos")) }]}
+                  previous={compare ? sumOf(prev("firstOpenAndroid") ?? [], prev("firstOpenIos") ?? []) : undefined}
+                  markers={markers}
+                  unit="회"
+                />
+              </SectionCard>
+            </FadeIn>
+            <FadeIn delay={0.16}>{chart("App Store 최초 다운로드", "appStoreNew", "건", "최초 다운로드")}</FadeIn>
+          </div>
+
+          <Group
+            title="남는 사람"
+            note="활성화율과 다시 온 비율은 이 기간에 처음 들어온 사람만 묶어 셌어요(GA4 코호트). 7일이나 하루가 아직 안 지난 날은 빼요. 삭제와 알림 닫기는 Android 만 기록돼서 Android 로만 셌어요. 푸시 열람률은 알림을 건드리지 않고 둔 경우는 몰라서, 열거나 닫은 것 중 연 비율이에요."
+          >
+            <Cells cols={5}>
+              <RatioCell label="활성화율" now={c.cohort.activation} before={p.cohort.activation} of="첫 실행 후 7일 안에 게임 참가" />
+              <RatioCell label="다음 날 다시 온 비율" now={c.cohort.d1} before={p.cohort.d1} of="처음 온 다음 날 다시 실행" />
+              <RatioCell label="7일 뒤 다시 온 비율" now={c.cohort.d7} before={p.cohort.d7} of="처음 온 7일 뒤 다시 실행" />
+              <RatioCell label="Android 삭제 비율" now={removeRate(c)} before={removeRate(p)} of="Android 첫 실행 대비 삭제" good="down" noPrev={noPrev("ga4app")} />
+              <RatioCell
+                label="푸시 열람률"
+                now={{ num: c.app.androidPushOpens, den: c.app.androidPushOpens + c.app.androidPushDismisses }}
+                before={{ num: p.app.androidPushOpens, den: p.app.androidPushOpens + p.app.androidPushDismisses }}
+                of="열거나 닫은 알림 중 연 것"
+                noPrev={noPrev("ga4app")}
+              />
+            </Cells>
+            <Note>삭제 비율은 같은 기간의 삭제를 첫 실행으로 나눈 값이라, 이전에 깐 사람이 지운 것도 들어가요.</Note>
+          </Group>
+
+          <Group title="광고" note="게재율은 AdMob 표기예요. AdMob 수익은 추정치라 나중에 조금 바뀔 수 있어요.">
+            <Cells cols={3}>
+              <Step label="광고 노출" now={c.ads.impressions} before={p.ads.impressions} noPrev={noPrev("admob")} none={none("admob")} />
+              <RatioCell
+                label="게재율"
+                now={{ num: c.ads.impressions, den: c.ads.matchedRequests }}
+                before={{ num: p.ads.impressions, den: p.ads.matchedRequests }}
+                of="받은 광고 중 화면에 뜬 것"
+                noPrev={noPrev("admob")}
+              />
+              <Cell
+                label="게임 1회당 광고 노출"
+                value={c.game.playerFinishes > 0 ? `${(c.ads.impressions / c.game.playerFinishes).toFixed(1)}회` : "-"}
+                lines={[`게임을 끝낸 ${fmt(c.game.playerFinishes)}회 기준(사람 기준)`]}
+              />
+              <Cell label="예상 광고 수익" value={usd(c.ads.earningsMicros)} lines={[noPrev("admob") ? "이전 기간 숫자 없음" : `이전 기간 ${usd(p.ads.earningsMicros)}`]} />
+              <Cell
+                label="eCPM"
+                value={c.ads.impressions > 0 ? `$${((c.ads.earningsMicros / 1e6 / c.ads.impressions) * 1000).toFixed(2)}` : "-"}
+                lines={["광고 1,000회 노출당 수익"]}
+              />
+              <Cell
+                label="ARPDAU"
+                value={c.app.dauSum > 0 ? `$${(c.ads.earningsMicros / 1e6 / c.app.dauSum).toFixed(4)}` : "-"}
+                lines={["활성 사용자 한 명이 하루에 번 광고 수익"]}
+              />
+            </Cells>
+          </Group>
+          <FadeIn>{chart("광고 노출", "adImpressions", "회", "광고 노출")}</FadeIn>
+        </>
+      )}
 
       <Callout variant="neutral" title="숫자의 기준">
-        마지막으로 들어온 날은 인스타 {md(d.freshness.instagram)}, GA4 {md(d.freshness.ga4)}, App Store {md(d.freshness.appstore)}, AdMob{" "}
-        {md(d.freshness.admob)}이에요. 인스타와 App Store 다운로드는 미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요. AdMob 수익은
-        추정치라 나중에 조금 바뀔 수 있어요.
+        마지막으로 들어온 날은 인스타그램 {md(d.freshness.instagram)}, GA4 사이트 {md(d.freshness.ga4web)}, GA4 앱 {md(d.freshness.ga4app)}, App Store {md(d.freshness.appstore)}, AdMob{" "}
+        {md(d.freshness.admob)}이에요. 인스타그램과 App Store 다운로드는 미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요. 차트 위쪽 동그라미는 인스타
+        게시물, 마름모는 일정이고{compare ? ", 회색 선은 이전 기간이에요" : "요"}. 차트를 누르거나 마우스를 올리면 그날 숫자가 보여요.
       </Callout>
     </div>
+  );
+}
+
+function FollowerCell({ d }: { d: Dashboard }) {
+  const f = d.followers;
+  if (!f) return <Cell label="팔로워" value="-" lines={["아직 기록이 없어요. 매일 아침 수집 때부터 쌓여요"]} />;
+  return (
+    <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
+      <span className="text-[13px] font-medium text-sd-fg-muted">팔로워</span>
+      <span className="text-[24px] font-bold leading-tight text-sd-fg">{fmt(f.now)}</span>
+      {f.change !== null && f.changeFrom ? (
+        <>
+          {f.change === 0 ? <span className="text-[12px] font-semibold text-sd-fg-subtle">변화 없음</span> : <Delta now={f.change} before={0} />}
+          <span className="text-[12px] text-sd-fg-subtle">{md(f.changeFrom)} 아침 기록보다</span>
+        </>
+      ) : (
+        <span className="text-[12px] text-sd-fg-subtle">{md(f.nowDay)}부터 기록하고 있어요</span>
+      )}
+    </div>
+  );
+}
+
+function CountryCell({ d }: { d: Dashboard }) {
+  const total = d.countries.reduce((a, x) => a + x.units, 0);
+  return (
+    <div className="flex flex-col gap-1.5 bg-sd-surface px-4 py-4">
+      <span className="text-[13px] font-medium text-sd-fg-muted">App Store 나라별</span>
+      {d.countries.length === 0 ? (
+        <span className="text-[13px] text-sd-fg-subtle">이 기간 다운로드가 없어요</span>
+      ) : (
+        <ul className="flex flex-col gap-1">
+          {d.countries.slice(0, 5).map((x) => (
+            <li key={x.country} className="flex items-center justify-between gap-3 text-[13px]">
+              <span className="truncate text-sd-fg">{regionName(x.country)}</span>
+              <span className="shrink-0 tabular-nums text-sd-fg-muted">
+                {fmt(x.units)} <span className="text-sd-fg-subtle">({Math.round((x.units / total) * 100)}%)</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** 채널별 방문과 전환율. 마케터가 먼저 보는 표라 소스별 표보다 위에 둔다 */
+function ChannelTable({ d }: { d: Dashboard }) {
+  const prev = new Map(d.channels.previous.map((r) => [r.channel, r]));
+  const total = d.channels.current.reduce((a, r) => a + r.sessions, 0);
+  return (
+    <SectionCard title="채널별" flush>
+      {d.channels.current.length === 0 ? (
+        <EmptyBlock title="이 기간에 들어온 기록이 없어요" />
+      ) : (
+        <Table
+          head={
+            <>
+              <Th className="whitespace-nowrap">채널</Th>
+              <Th className="whitespace-nowrap text-right">방문</Th>
+              <Th className="whitespace-nowrap text-right">비중</Th>
+              <Th className="whitespace-nowrap text-right">다운로드 링크로 이동</Th>
+              <Th className="whitespace-nowrap text-right">사이트 버튼으로 이동</Th>
+              <Th className="whitespace-nowrap text-right">사이트 전환율</Th>
+              <Th className="whitespace-nowrap text-right">이전 기간 방문</Th>
+            </>
+          }
+        >
+          {d.channels.current.map((r, i) => {
+            const siteVisits = r.sessions - r.linkSessions;
+            const button = Math.max(0, r.storeSessions - r.linkSessions);
+            const conv = siteVisits >= MIN_SAMPLE ? pct(button / siteVisits) : null;
+            return (
+              <Tr key={r.channel} index={i}>
+                <Td className="whitespace-nowrap font-medium text-sd-fg">{r.channel}</Td>
+                <Td className="text-right tabular-nums">{fmt(r.sessions)}</Td>
+                <Td className="text-right tabular-nums">{total > 0 ? `${Math.round((r.sessions / total) * 100)}%` : "-"}</Td>
+                <Td className="text-right tabular-nums">{fmt(r.linkSessions)}</Td>
+                <Td className="text-right tabular-nums">{fmt(button)}</Td>
+                <Td className="text-right tabular-nums">{conv ?? <span className="text-sd-fg-subtle">숫자 적음</span>}</Td>
+                <Td className="text-right tabular-nums text-sd-fg-subtle">{fmt(prev.get(r.channel)?.sessions ?? 0)}</Td>
+              </Tr>
+            );
+          })}
+        </Table>
+      )}
+      <Note className="px-5 py-3">
+        다운로드 링크로 이동은 QR 이나 링크트리 다운로드 링크로 들어와 바로 스토어로 간 방문이에요. 사이트 전환율은 그 방문을 빼고, 사이트에 들어온
+        방문 중 버튼으로 스토어에 간 방문의 비율이에요(한 방문에서 여러 번 눌러도 한 번). 사이트 방문이 {MIN_SAMPLE}회보다 적은 채널은 숫자가 흔들려서 비율을 적지 않았어요.
+      </Note>
+    </SectionCard>
+  );
+}
+
+type SortKey = "postedAt" | "views" | "reach" | "engagement" | "shares";
+
+/**
+ * 게시물 표. 머리 칸을 누르면 그 숫자로 정렬해 "어느 콘텐츠가 반응을 얻었나"를 바로 본다.
+ * 줄(또는 캡션)을 누르면 그 게시물의 날짜별 추세가 옆에서 열린다(PostDrawer)
+ */
+function PostsTable({ posts }: { posts: PostRow[] }) {
+  const [sort, setSort] = useState<SortKey>("postedAt");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = posts.find((p) => p.id === openId) ?? null;
+  const close = () => {
+    const id = openId;
+    setOpenId(null);
+    // 닫으면 눌렀던 게시물로 초점을 돌려 키보드로 이어서 볼 수 있게
+    requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-post="${id}"]`)?.focus());
+  };
+  const value = (p: PostRow): number =>
+    sort === "postedAt" ? new Date(p.postedAt).getTime() : sort === "engagement" ? (engagementOf(p) ?? -1) : (p[sort] ?? -1);
+  const rows = [...posts].sort((a, b) => value(b) - value(a));
+  const head = (key: SortKey, label: string, right = true) => (
+    <Th className={`whitespace-nowrap ${right ? "text-right" : ""}`} aria-sort={sort === key ? "descending" : "none"}>
+      <button
+        type="button"
+        onClick={() => setSort(key)}
+        className={`inline-flex items-center gap-1 rounded transition-colors hover:text-sd-fg ${sort === key ? "font-bold text-sd-fg" : ""}`}
+      >
+        {label}
+        <span aria-hidden className={sort === key ? "" : "opacity-0"}>
+          ↓
+        </span>
+      </button>
+    </Th>
+  );
+  return (
+    <SectionCard title="이 기간에 올린 게시물" flush>
+      {posts.length === 0 ? (
+        <EmptyBlock title="이 기간에 올린 게시물이 없어요" />
+      ) : (
+        <Table
+          head={
+            <>
+              {head("postedAt", "올린 날", false)}
+              <Th className="whitespace-nowrap">게시물</Th>
+              {head("views", "조회수")}
+              {head("reach", "본 사람")}
+              {head("engagement", "반응률")}
+              {head("shares", "공유")}
+              <Th className="whitespace-nowrap text-right">저장</Th>
+              <Th className="whitespace-nowrap text-right">프로필 방문</Th>
+              <Th className="whitespace-nowrap text-right">링크 클릭</Th>
+              <Th className="w-8">
+                <span className="sr-only">상세</span>
+              </Th>
+            </>
+          }
+        >
+          {rows.map((post, i) => {
+            const er = engagementOf(post);
+            return (
+              <Tr key={post.id} index={i} onActivate={() => setOpenId(post.id)}>
+                <Td className="whitespace-nowrap tabular-nums">{md(seoulDay(post.postedAt))}</Td>
+                <Td className="max-w-[260px]">
+                  <button
+                    type="button"
+                    data-post={post.id}
+                    onClick={() => setOpenId(post.id)}
+                    className="block w-full truncate rounded text-left text-sd-fg outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    aria-label={`${firstLine(post.caption)} 상세 보기`}
+                  >
+                    <span className="mr-1.5 text-sd-fg-subtle">{post.productType === "REELS" ? "릴스" : "피드"}</span>
+                    {firstLine(post.caption)}
+                  </button>
+                </Td>
+                {[post.views, post.reach].map((v, k) => (
+                  <Td key={k} className="text-right tabular-nums">
+                    {v === null ? "-" : fmt(v)}
+                  </Td>
+                ))}
+                <Td className="text-right tabular-nums">
+                  {er === null ? (
+                    "-"
+                  ) : smallReach(post) ? (
+                    // 글자를 덧붙이지 않고 흐린 색으로만 구분한다. 이유는 마우스를 올리면 보이고, 화면 읽기 프로그램에는 글로 읽어 준다
+                    <Tooltip content={<SmallReachNote reach={post.reach ?? 0} />} className="text-sd-fg-subtle tabular-nums">
+                      {pct(er)}
+                    </Tooltip>
+                  ) : (
+                    pct(er)
+                  )}
+                </Td>
+                {[post.shares, post.saved, post.profileVisits, post.bioLinkClicks].map((v, k) => (
+                  <Td key={`b${k}`} className="text-right tabular-nums">
+                    {v === null ? "-" : fmt(v)}
+                  </Td>
+                ))}
+                {/* 줄을 누르면 상세가 열린다는 표시 */}
+                <Td className="w-8 pl-0 text-sd-fg-subtle">
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Td>
+              </Tr>
+            );
+          })}
+        </Table>
+      )}
+      <Note className="px-5 py-3">
+        게시물을 누르면 날짜별 추세가 열려요. 숫자는 올린 날부터 지금까지 더한 값이에요. 본 사람은 게시물을 한 번이라도 본 계정 수예요(인스타그램의
+        도달). 반응률은 본 사람 중 좋아요, 댓글, 저장, 공유를 한 비율이라 적게 퍼진 게시물일수록 높게 나와요. 본 사람이 {MIN_REACH}명보다 적은 게시물은 몇 명만
+        반응해도 크게 뛰어서 흐리게 보여요. 흐린 숫자에 마우스를 올리거나 누르면 이유가 나와요. 릴스는 인스타그램이 프로필 방문과 링크 클릭을 주지 않아 비어 있어요.
+      </Note>
+      {open && <PostDrawer post={open} onClose={close} />}
+    </SectionCard>
   );
 }
 
@@ -381,12 +1031,12 @@ function CampaignTable({ rows, heads }: { rows: { a: string; b: string; c: strin
   return (
     <Table
       head={
-        <tr>
-          <Th>{heads[0]}</Th>
-          <Th>{heads[1]}</Th>
-          <Th>{heads[2]}</Th>
-          <Th className="text-right">{heads[3]}</Th>
-        </tr>
+        <>
+          <Th className="whitespace-nowrap">{heads[0]}</Th>
+          <Th className="whitespace-nowrap">{heads[1]}</Th>
+          <Th className="whitespace-nowrap">{heads[2]}</Th>
+          <Th className="whitespace-nowrap text-right">{heads[3]}</Th>
+        </>
       }
     >
       {rows.map((r, i) => (
@@ -401,15 +1051,13 @@ function CampaignTable({ rows, heads }: { rows: { a: string; b: string; c: strin
   );
 }
 
+/** 처음 불러올 때만. 실제 화면과 같은 높이로 둬 다 불러와도 자리가 튀지 않게 한다 */
 function MetricsSkeleton() {
   return (
     <div className="flex flex-col gap-5">
-      <div className="h-56 animate-pulse rounded-2xl bg-sd-gray-200" />
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-60 animate-pulse rounded-2xl bg-sd-gray-200" />
-        ))}
-      </div>
+      <div className="h-[268px] animate-pulse rounded-2xl bg-sd-gray-200" />
+      <div className="h-[200px] animate-pulse rounded-2xl bg-sd-gray-200" />
+      <div className="h-[200px] animate-pulse rounded-2xl bg-sd-gray-200" />
     </div>
   );
 }

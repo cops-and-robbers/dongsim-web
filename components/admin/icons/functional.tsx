@@ -193,6 +193,18 @@ export function MetricsIcon({ className }: IconProps) {
   );
 }
 
+export function CalendarIcon({ className }: IconProps) {
+  // Lucide 'calendar'. 지표 화면(#145) 기간 직접 고르기. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M3 10h18" />
+    </Line>
+  );
+}
+
 export function SunIcon({ className }: IconProps) {
   return (
     <Line className={className}>
