@@ -4,16 +4,17 @@
  * 화면은 콘솔을 옮겨 놓지 않고 질문 몇 개에 답한다.
  * 1. 이 기간 어디서 와서 어디까지 갔나 - 인스타 → 웹 → 다운로드 버튼 → 설치 → 첫 실행 → 게임
  * 2. 날마다 어땠나 - 소스별 추이, 게시물을 올린 날 표시
- * 3. 어느 게시물, 어느 링크가 남겼나 - 게시물 표, 캠페인(UTM) 표
+ * 3. 게시물별, 들어온 경로별 숫자 - 게시물 표, 캠페인(UTM) 표
  * 4. 광고 - 노출, 노출률, 한 판당 노출, 수익
  *
  * 숫자를 합치는 규칙은 주간 리포트와 같다(weekly/numbers.ts) - 더해도 되는 숫자만 더한다.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { check, selectAll } from "../db.ts";
+import { selectAll } from "../db.ts";
 import { addDays, ymdRange } from "../dates.ts";
-import { weeklyNumbers, type Week, type WeeklyInput, type WeeklyNumbers } from "../weekly/numbers.ts";
+import { splitKey } from "../ga4/run.ts";
+import { FROM_INSTAGRAM, shiftPt, weeklyNumbers, type Week, type WeeklyInput, type WeeklyNumbers } from "../weekly/numbers.ts";
 
 export type DailyPoint = {
   day: string;
@@ -54,7 +55,7 @@ export type Dashboard = {
   posts: PostRow[];
   webCampaigns: CampaignRow[];
   appCampaigns: (CampaignRow & { platform: string })[];
-  /** 마지막으로 숫자가 들어온 날. 화면에 "언제 기준인지" 적는다 */
+  /** 마지막으로 숫자가 들어온 날(한국 날짜, PT 소스는 shiftPt 로 옮긴 값). 화면에 "언제 기준인지" 적는다 */
   freshness: { instagram: string | null; ga4: string | null; appstore: string | null; admob: string | null };
 };
 
@@ -64,9 +65,11 @@ export function previousRange(r: Week): Week {
   return { start: addDays(r.start, -days), end: addDays(r.start, -1) };
 }
 
-const isInstagram = (source: string) => /instagram/i.test(source);
-
-/** 날마다 한 줄. 데이터가 없는 날도 0 으로 채워 차트가 끊기지 않게 한다 */
+/**
+ * 날마다 한 줄. 데이터가 없는 날도 0 으로 채워 차트가 끊기지 않게 한다.
+ * PT 날짜 소스(인스타 계정, App Store 판매)는 하루 뒤 한국 날짜에 놓는다(numbers.ts shiftPt).
+ * 합계(weeklyNumbers)와 같은 날에 놓아야 차트를 더한 값과 위 숫자가 맞는다
+ */
 export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
   const byDay = new Map<string, DailyPoint>(
     ymdRange(r.start, r.end).map((day) => [
@@ -90,7 +93,7 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
   );
   const at = (day: string) => byDay.get(day);
   for (const d of input.instagramDays) {
-    const p = at(d.day);
+    const p = at(shiftPt(d.day));
     if (!p) continue;
     p.igViews += d.views ?? 0;
     p.igProfileViews += d.profileViews ?? 0;
@@ -99,9 +102,9 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
   for (const g of input.ga4) {
     const p = at(g.day);
     if (!p) continue;
-    const [first, second] = g.key.split("/");
+    const [first, second] = splitKey(g.key);
     if (g.property === "web" && g.breakdown === "total" && g.metric === "sessions") p.webSessions += g.value;
-    if (g.property === "web" && g.breakdown === "session_campaign" && g.metric === "sessions" && isInstagram(first)) p.webFromInstagram += g.value;
+    if (g.property === "web" && g.breakdown === "session_campaign" && g.metric === "sessions" && FROM_INSTAGRAM.test(first)) p.webFromInstagram += g.value;
     if (g.property === "web" && g.breakdown === "event" && g.key === "app_download_click" && g.metric === "eventCount") p.downloadClicks += g.value;
     if (g.property === "app" && g.breakdown === "event" && g.metric === "eventCount") {
       if (first === "first_open" && second === "Android") p.firstOpenAndroid += g.value;
@@ -110,7 +113,7 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
     }
   }
   for (const s of input.appstoreSales) {
-    const p = at(s.day);
+    const p = at(shiftPt(s.day));
     if (p && ["1", "1F", "1T"].includes(s.productType)) p.appStoreNew += s.units;
   }
   for (const a of input.admob) {
@@ -122,7 +125,7 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
   return [...byDay.values()];
 }
 
-/** UTM 캠페인 표. 출처/매체/캠페인/버튼(/플랫폼) 키를 풀어 기간 합으로 */
+/** UTM 캠페인 표. 출처|매체|캠페인|버튼(|플랫폼) 키를 풀어 기간 합으로 */
 export function campaigns(
   rows: WeeklyInput["ga4"],
   r: Week,
@@ -137,7 +140,7 @@ export function campaigns(
   }
   return [...sum.entries()]
     .map(([key, sessions]) => {
-      const [source = "", medium = "", campaign = "", content = ""] = key.split("/");
+      const [source = "", medium = "", campaign = "", content = ""] = splitKey(key);
       // 앱 첫 실행은 버튼 대신 플랫폼이 네 번째 칸이다
       return property === "web"
         ? { source, medium, campaign, content, platform: "", sessions }
@@ -151,9 +154,11 @@ export async function loadDashboard(client: SupabaseClient, range: Week): Promis
   const previous = previousRange(range);
   const from = previous.start;
   const to = range.end;
+  // PT 날짜 소스는 하루 뒤로 옮겨 쓰므로 하루 앞부터 읽는다
+  const ptFrom = addDays(from, -1);
   // 긴 기간을 고르면 어느 표든 1,000줄을 넘을 수 있어 전부 쪽을 넘겨 읽는다 (db.ts selectAll)
   const [igDays, igMedia, ga4, sales, admob, fresh] = await Promise.all([
-    selectAll((a, b) => client.from("instagram_account_daily").select("day, views, profile_views, website_clicks").gte("day", from).lte("day", to).order("day").range(a, b), "인스타 하루 지표 읽기"),
+    selectAll((a, b) => client.from("instagram_account_daily").select("day, views, profile_views, website_clicks").gte("day", ptFrom).lte("day", to).order("day").range(a, b), "인스타 하루 지표 읽기"),
     selectAll((a, b) => client.from("instagram_media").select("id, posted_at, product_type, caption, permalink").gte("posted_at", `${addDays(from, -1)}T00:00:00Z`).lte("posted_at", `${addDays(to, 1)}T23:59:59Z`).order("posted_at").order("id").range(a, b), "게시물 읽기"),
     selectAll(
       (a, b) =>
@@ -161,7 +166,7 @@ export async function loadDashboard(client: SupabaseClient, range: Week): Promis
           .order("day").order("property").order("breakdown").order("key").order("metric").range(a, b),
       "GA4 읽기",
     ),
-    selectAll((a, b) => client.from("appstore_sales_daily").select("day, product_type, units, country, device").gte("day", from).lte("day", to).order("day").order("country").order("product_type").order("device").range(a, b), "App Store 판매 읽기"),
+    selectAll((a, b) => client.from("appstore_sales_daily").select("day, product_type, units, country, device").gte("day", ptFrom).lte("day", to).order("day").order("country").order("product_type").order("device").range(a, b), "App Store 판매 읽기"),
     selectAll((a, b) => client.from("admob_daily").select("day, earnings_micros, matched_requests, impressions, platform, format, country").gte("day", from).lte("day", to).order("day").order("platform").order("format").order("country").range(a, b), "AdMob 읽기"),
     Promise.all([
       client.from("instagram_account_daily").select("day").order("day", { ascending: false }).limit(1).maybeSingle(),
@@ -198,17 +203,23 @@ export async function loadDashboard(client: SupabaseClient, range: Week): Promis
   type Snap = { media_id: string; views: number | null; reach: number | null; shares: number | null; profile_visits: number | null; bio_link_clicks: number | null };
   const latest = new Map<string, Snap>();
   if (inRange.length) {
-    const snaps = check(
-      await client
-        .from("instagram_media_daily")
-        .select("media_id, captured_on, views, reach, shares, profile_visits, bio_link_clicks")
-        .in("media_id", inRange.map((m) => m.id))
-        .order("captured_on", { ascending: false }),
+    // 게시물 하나가 날마다 한 줄씩 쌓여 90일이면 1,000줄을 넘는다. 끝까지 읽는다
+    const snaps = await selectAll<Snap>(
+      (a, b) =>
+        client
+          .from("instagram_media_daily")
+          .select("media_id, captured_on, views, reach, shares, profile_visits, bio_link_clicks")
+          .in("media_id", inRange.map((m) => m.id))
+          .order("captured_on", { ascending: false })
+          .order("media_id")
+          .range(a, b),
       "게시물 숫자 읽기",
-    ) as Snap[];
+    );
     for (const s of snaps) if (!latest.has(s.media_id)) latest.set(s.media_id, s);
   }
   const [fIg, fGa, fAs, fAd] = fresh.map((r) => (r.data as { day: string } | null)?.day ?? null);
+  // 차트와 같은 날짜로 보이게 PT 소스도 한국 날짜로 옮겨 적는다
+  const kst = (day: string | null) => (day ? shiftPt(day) : null);
 
   return {
     range,
@@ -232,6 +243,6 @@ export async function loadDashboard(client: SupabaseClient, range: Week): Promis
     }),
     webCampaigns: campaigns(input.ga4, range, "web").map(({ source, medium, campaign, content, sessions }) => ({ source, medium, campaign, content, sessions })),
     appCampaigns: campaigns(input.ga4, range, "app"),
-    freshness: { instagram: fIg, ga4: fGa, appstore: fAs, admob: fAd },
+    freshness: { instagram: kst(fIg), ga4: fGa, appstore: kst(fAs), admob: fAd },
   };
 }

@@ -110,17 +110,19 @@ PT 일요일 숫자가 아직 없어 한 주가 6일로 잘리고, 7일인 전�
 
 ## 어드민 지표 화면 (#145)
 
-`/admin/metrics`. 데이터는 `/api/admin/metrics?days=7|28|90` 이 어드민 토큰을 백엔드에 확인한 뒤(`lib/admin/server/isAdmin.ts`)
+`/admin/metrics`. 데이터는 `/api/admin/metrics?days=7|28|90` 이 어드민 토큰을 백엔드에 확인한 뒤(`lib/admin/server/checkAdmin.ts`, 만료면 401, 어드민이 아니면 403)
 Supabase 에서 읽어 내려준다. 지표 테이블은 service role 로만 읽혀서 브라우저가 직접 읽지 않는다.
 
 - 기간은 어제(한국 날짜)까지 7, 28, 90일. 바로 앞 같은 길이와 견준다
 - 합치는 규칙은 주간 리포트와 같다(`weekly/numbers.ts`). 날짜별 추이는 `dashboard/data.ts` 의 `dailySeries`
+- PT 날짜 소스(인스타 계정, App Store 판매)는 주간 리포트처럼 하루 뒤 한국 날짜로 옮겨 그린다(`shiftPt`)
 - 단계(인스타 → 웹 → 다운로드 버튼 → 설치 → 첫 실행 → 게임)는 나란히 둘 뿐 비율로 잇지 않는다. 세는 대상과 하루의 기준이 달라서다
 - 게시물을 올린 날을 모든 추이 차트에 점선으로 겹친다
 - CSV 는 날짜별 숫자를 브라우저에서 바로 만든다(엑셀용 BOM 포함)
 
 **Supabase 는 한 번에 1,000줄까지만 준다.** `.limit()` 를 크게 줘도 1,000줄에서 조용히 잘린다.
-지표를 읽는 곳은 모두 `db.ts` 의 `selectAll` 로 쪽을 넘겨 읽는다. GA4 는 2주만 읽어도 1,000줄 가까이 된다.
+지표를 읽는 곳은 모두 `db.ts` 의 `selectAll` 로 쪽을 넘겨 읽는다(게시물 날짜별 숫자 포함). GA4 는 2주만 읽어도 1,000줄 가까이 된다.
+`selectAll` 은 실패하면 0.8초 뒤 한 번 더 묻는다. Supabase 가 서버 사이 시계 차이로 "JWT issued at future" 를 가끔 한 번 낸다.
 
 ## 아직 남은 것
 
