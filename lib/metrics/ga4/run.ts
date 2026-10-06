@@ -18,9 +18,11 @@ type Property = keyof typeof GA4_PROPERTIES;
 
 export type Ga4Query = {
   breakdown: string;
-  /** date 를 뺀 나눠 보기 축. 여럿이면 "/" 로 이어 key 가 된다 */
+  /** date 를 뺀 나눠 보기 축. 여럿이면 KEY_SEP("|")로 이어 key 가 된다 */
   dimensions: string[];
   metrics: string[];
+  /** 이 이벤트만 센다(GA4 dimensionFilter eventName) */
+  eventName?: string;
 };
 
 /** 무엇을 왜 받는지. 화면과 주간 리포트가 이 이름(breakdown)으로 읽는다 */
@@ -35,6 +37,14 @@ export const QUERIES: Record<Property, Ga4Query[]> = {
     },
     // app_download_click 등 웹 이벤트
     { breakdown: "event", dimensions: ["eventName"], metrics: ["eventCount", "totalUsers"] },
+    // 다운로드 버튼 클릭이 어디서 온 방문에서 나왔나. 위 event 는 이벤트 이름으로만 나눠서
+    // "인스타에서 온 사람이 다운로드 버튼까지 눌렀나"를 못 센다. /download 리다이렉트도 이 이벤트를 남긴다
+    {
+      breakdown: "download_source",
+      dimensions: ["sessionSource", "sessionMedium", "sessionCampaignName"],
+      metrics: ["eventCount"],
+      eventName: "app_download_click",
+    },
   ],
   app: [
     { breakdown: "platform", dimensions: ["platform"], metrics: ["activeUsers", "newUsers", "sessions"] },
@@ -92,6 +102,9 @@ async function runReport(token: string, propertyId: string, q: Ga4Query, from: s
       dateRanges: [{ startDate: from, endDate: to }],
       dimensions: [{ name: "date" }, ...q.dimensions.map((name) => ({ name }))],
       metrics: q.metrics.map((name) => ({ name })),
+      ...(q.eventName && {
+        dimensionFilter: { filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: q.eventName } } },
+      }),
       limit: LIMIT,
       keepEmptyRows: false,
     }),

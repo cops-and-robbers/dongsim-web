@@ -48,6 +48,7 @@ GitHub Actions
 | web | `total` | (빈 값) | 활성 사용자, 신규, 세션 |
 | web | `session_campaign` | `출처\|매체\|캠페인\|버튼` | 링크트리, 행사 QR 의 UTM |
 | web | `event` | 이벤트 이름 | `app_download_click` 등 |
+| web | `download_source` | `출처\|매체\|캠페인` | `app_download_click` 만, 그 클릭이 나온 방문의 경로. "인스타에서 온 사람이 버튼까지 눌렀나"를 센다 |
 | app | `platform` | Android, iOS | 활성 사용자, 신규, 세션 |
 | app | `event` | `이벤트\|플랫폼` | `first_open`, `login`, `game_start`, `game_over`, `app_remove` 등 |
 | app | `first_user_campaign` | `출처\|매체\|캠페인\|플랫폼` | `/download` 가 Play 로 넘긴 referrer(#144)로 들어온 첫 실행 |
