@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { checkAdmin } from "@/lib/admin/server/checkAdmin";
-import { loadDashboard, previousRange } from "@/lib/metrics/dashboard/data";
+import { loadDashboard } from "@/lib/metrics/dashboard/data";
+import { compareError, compareRange, parseCompare } from "@/lib/metrics/dashboard/calendar";
 import { loadGames } from "@/lib/metrics/dashboard/games";
 import { addDays, todayIn, ymdRange } from "@/lib/metrics/dates";
 import { db } from "@/lib/metrics/db";
@@ -15,6 +16,7 @@ import { db } from "@/lib/metrics/db";
  * ?days=7|28|91 - 어제(한국 날짜)까지 그만큼. 그 앞 같은 길이와 비교한다.
  * 28, 91 은 4주, 13주라 기간마다 요일 수가 같다. 주말에 몰리는 숫자를 이전 기간과 공평하게 비교한다.
  * ?from=YYYY-MM-DD&to=YYYY-MM-DD - 직접 고른 기간(화면의 달력). 어제까지, 최대 366일.
+ * &cmp=dow|off|YYYY-MM-DD - 비교 기간(#152). 없으면 바로 앞 같은 길이, dow 는 요일 맞춤, 날짜는 그날부터 같은 길이
  */
 
 const DAYS = new Set([7, 28, 91]);
@@ -47,12 +49,17 @@ export async function GET(req: Request): Promise<NextResponse> {
     if (!DAYS.has(days)) return NextResponse.json({ error: "기간은 7일, 4주, 13주 중에 골라요." }, { status: 400 });
     range = { start: addDays(yesterday, -(days - 1)), end: yesterday };
   }
+  const cmp = parseCompare(q.get("cmp"));
+  const cmpError = compareError({ from: range.start, to: range.end }, cmp, "2026-04-01");
+  if (cmpError) return NextResponse.json({ error: cmpError }, { status: 400 });
+  const c = compareRange({ from: range.start, to: range.end }, cmp);
+  const previous = { start: c.from, end: c.to };
   try {
     // 실제 판 수는 백엔드 게임 기록에만 있고 어드민 토큰으로만 읽힌다(games.ts). 지표와 동시에 읽는다
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
     const [data, games] = await Promise.all([
-      loadDashboard(db(), range),
-      apiBase ? loadGames(apiBase, token, range, previousRange(range)) : Promise.resolve(null),
+      loadDashboard(db(), range, previous),
+      apiBase ? loadGames(apiBase, token, range, previous) : Promise.resolve(null),
     ]);
     return NextResponse.json({ ...data, games }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {

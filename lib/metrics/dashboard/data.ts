@@ -229,8 +229,11 @@ export function channelTable(rows: WeeklyInput["ga4"], r: Week): ChannelRow[] {
 }
 
 /** 기간에 맞는 줄을 모두 읽는다. 앞 기간까지 한 번에 읽어 비교에 쓴다 */
-export async function loadDashboard(client: SupabaseClient, range: Week): Promise<Dashboard> {
-  const previous = previousRange(range);
+/**
+ * previous 는 비교 기간(#152). 안 주면 바로 앞 같은 길이. 비교 기간은 늘 지금 기간보다 앞이라
+ * (calendar.ts compareError) 비교 기간 첫날부터 지금 기간 끝까지 한 번에 읽는다
+ */
+export async function loadDashboard(client: SupabaseClient, range: Week, previous: Week = previousRange(range)): Promise<Dashboard> {
   const from = previous.start;
   const to = range.end;
   // PT 날짜 소스는 하루 뒤로 옮겨 쓰므로 하루 앞부터 읽는다
