@@ -14,8 +14,11 @@
 
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
 
-/** App Store 캠페인 토큰 최대 길이 (애플 규칙) */
-export const APPSTORE_CT_MAX = 40;
+/**
+ * App Store 캠페인 토큰 최대 길이. 애플 문서는 40자라고 하지만 App Store Connect 의
+ * 캠페인 링크 만들기 화면은 30자까지만 받는다(2026-10-06 화면). 짧은 쪽에 맞춘다.
+ */
+export const APPSTORE_CT_MAX = 30;
 
 /**
  * 꼬리표 값으로 받을 글자. 주소에 그대로 이어 붙이는 값이라, 아무 값이나 받으면
@@ -47,7 +50,7 @@ export function playUrlWithUtm(base: string, utm: Utm): string {
 }
 
 /**
- * 캠페인 토큰. 출처, 캠페인, 버튼을 이어서 40자 안으로 만든다.
+ * 캠페인 토큰. 출처, 캠페인, 버튼을 이어서 30자 안으로 만든다.
  * 예: instagram-always-download
  * 캠페인만 쓰면 "always" 가 인스타 프로필에서 왔는지 행사 QR 에서 왔는지 갈리지 않는다.
  */
