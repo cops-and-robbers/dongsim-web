@@ -160,6 +160,16 @@ export async function recentSnapshots(client: SupabaseClient, sinceDate: string)
   return rows.map(toSnapshot);
 }
 
+/** 오늘(한국 날짜) 팔로워 수. 같은 날 다시 돌면 덮어쓴다 */
+export async function upsertFollowers(client: SupabaseClient, capturedOn: string, f: { followers: number; follows: number | null }): Promise<void> {
+  check(
+    await client
+      .from("instagram_followers")
+      .upsert({ captured_on: capturedOn, followers: f.followers, follows: f.follows, captured_at: new Date().toISOString() }, { onConflict: "captured_on" }),
+    "팔로워 수 저장",
+  );
+}
+
 export async function upsertAccountDays(client: SupabaseClient, days: AccountDay[]): Promise<void> {
   if (days.length === 0) return;
   check(

@@ -17,6 +17,7 @@ import { sendDiscord } from "../discord.ts";
 import {
   fetchAccountDays,
   fetchAllMedia,
+  fetchFollowers,
   fetchMediaMetrics,
   refreshToken,
 } from "./api.ts";
@@ -32,6 +33,7 @@ import {
   releaseNotification,
   sentKeys,
   upsertAccountDays,
+  upsertFollowers,
   upsertMedia,
   upsertSnapshots,
   writeToken,
@@ -199,11 +201,12 @@ export async function runInstagramReport(opts: { dry: boolean; now?: Date; webho
   });
   await upsertSnapshots(client, snapshots);
 
-  // 3. 계정 하루 지표. 최근 사흘은 인스타가 값을 늦게 고치므로 매번 다시 받는다
+  // 3. 계정 하루 지표. 인스타는 지난 며칠 값을 늦게 고친다(2026-10-06 대조: 4주 조회수가 9회 늘어 있었다).
+  //    그래서 최근 7일을 매번 다시 받는다
   const lastDay = await latestAccountDay(client);
   // 인스타는 30일 범위까지만 준다. api.ts 가 경계용으로 하루를 더 앞에서 받으므로 28일로 둔다
   const floor = now.getTime() - 28 * DAY;
-  const since = new Date(Math.max(floor, lastDay ? new Date(`${lastDay}T00:00:00Z`).getTime() - 3 * DAY : floor));
+  const since = new Date(Math.max(floor, lastDay ? new Date(`${lastDay}T00:00:00Z`).getTime() - 7 * DAY : floor));
   // 실패해도 게시물 리포트는 보낸다. 리포트는 3~7일 창 안에서만 나가서 며칠 막히면 영영 놓친다
   let accountDays: AccountDay[] = [];
   let accountError: string | null = null;
@@ -212,6 +215,13 @@ export async function runInstagramReport(opts: { dry: boolean; now?: Date; webho
     await upsertAccountDays(client, accountDays);
   } catch (e) {
     accountError = e instanceof Error ? e.message : String(e);
+  }
+  // 팔로워 수. 지표 화면이 날마다의 차이로 증감을 센다. 실패해도 리포트는 막지 않고 경고로만 남긴다
+  // (테이블은 0004 마이그레이션. 아직 안 만들었으면 여기서 실패한다)
+  try {
+    await upsertFollowers(client, capturedOn, await fetchFollowers(token.token));
+  } catch (e) {
+    warnings.push(`팔로워 수 저장 실패: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   // 4. 무엇을 보낼지

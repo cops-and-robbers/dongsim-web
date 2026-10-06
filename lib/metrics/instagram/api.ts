@@ -251,6 +251,15 @@ export async function fetchAccountDays(token: string, since: Date, until: Date):
  * 토큰 연장. 만든 지 24시간이 지났고 아직 만료 전인 토큰만 연장된다.
  * 연장하면 다시 60일짜리가 된다.
  */
+/** 지금 팔로워 수. 하루 증감 지표(follower_count)는 팔로워 100명 미만이면 비어 와서 수를 직접 찍는다 */
+export async function fetchFollowers(token: string): Promise<{ followers: number; follows: number | null }> {
+  const body = await getJson(graphUrl("me", token, { fields: "followers_count,follows_count" }));
+  const followers = Number(body.followers_count);
+  if (!Number.isFinite(followers)) throw new InstagramApiError("팔로워 수가 응답에 없어요", null);
+  const follows = Number(body.follows_count);
+  return { followers, follows: Number.isFinite(follows) ? follows : null };
+}
+
 export async function refreshToken(token: string): Promise<{ token: string; expiresAt: string }> {
   const q = new URLSearchParams({ grant_type: "ig_refresh_token", access_token: token });
   const body = await getJson(`${BASE}/refresh_access_token?${q}`);

@@ -13,6 +13,7 @@ import { serviceAccountFromEnv, serviceAccountToken } from "../google.ts";
 import { BACKFILL_FROM, GA4_PROPERTIES, REFETCH_DAYS } from "../config.ts";
 import { addDays, compactToYmd, todayIn } from "../dates.ts";
 import { db, replaceRange } from "../db.ts";
+import { ACTIVATION_DAYS, fetchActivation, fetchRetention } from "./cohorts.ts";
 
 type Property = keyof typeof GA4_PROPERTIES;
 
@@ -37,12 +38,23 @@ export const QUERIES: Record<Property, Ga4Query[]> = {
     },
     // app_download_click 등 웹 이벤트
     { breakdown: "event", dimensions: ["eventName"], metrics: ["eventCount", "totalUsers"] },
-    // 다운로드 버튼 클릭이 어디서 온 방문에서 나왔나. 위 event 는 이벤트 이름으로만 나눠서
-    // "인스타에서 온 사람이 다운로드 버튼까지 눌렀나"를 못 센다. /download 리다이렉트도 이 이벤트를 남긴다
+    // 스토어로 넘긴 기록(app_download_click)이 어디서 온 방문에서 나왔나. 위 event 는 이벤트 이름으로만 나눠서
+    // "인스타에서 온 사람이 스토어까지 갔나"를 못 센다. sessions 는 그 이벤트가 있었던 방문 수라,
+    // 한 방문에서 여러 번 눌러도 한 번이다(전환율의 분자)
     {
       breakdown: "download_source",
       dimensions: ["sessionSource", "sessionMedium", "sessionCampaignName"],
-      metrics: ["eventCount"],
+      metrics: ["eventCount", "sessions"],
+      eventName: "app_download_click",
+    },
+    // 같은 이벤트를 출처와 페이지로. /download 는 QR, 링크트리 다운로드 링크가 가리키는 페이지라
+    // 열리자마자 스토어로 넘기며 이 이벤트를 남긴다(2026-10-06 4주 99회 중 79회). 그런 방문은 들어오는 순간
+    // "전환"이 되므로, 사이트 전환율은 /download 방문을 분자와 분모에서 모두 빼고 낸다. 출처가 있어야
+    // 우리 팀 방문을 빼고 채널별, 인스타별로도 같은 계산을 한다
+    {
+      breakdown: "download_page",
+      dimensions: ["sessionSource", "sessionMedium", "pagePath"],
+      metrics: ["eventCount", "sessions"],
       eventName: "app_download_click",
     },
   ],
@@ -148,6 +160,21 @@ export async function runGa4(opts: { dry: boolean; now?: Date; from?: string | "
             to,
             rows.map((r) => ({ property: r.property, day: r.day, breakdown: r.breakdown, key: r.key, metric: r.metric, value: r.value })),
           );
+        }
+      }
+      // 앱은 리텐션과 활성화율을 코호트로 따로 묻는다(cohorts.ts). 7일 리텐션과 7일 활성화가 익으려면
+      // 일주일이 걸리고 늦게 들어오는 이벤트도 있어, 평소에는 최근 2주(활성화는 창이 닫힌 날부터 8일)를 다시 받는다
+      if (property === "app") {
+        const id = GA4_PROPERTIES.app;
+        const retFrom = opts.from === "all" ? BACKFILL_FROM.ga4.app : (opts.from ?? addDays(to, -14));
+        const ret = await fetchRetention(token, id, retFrom, to);
+        const actFrom = opts.from === "all" ? BACKFILL_FROM.ga4.app : (opts.from ?? addDays(to, -(ACTIVATION_DAYS - 1) - 7));
+        const act = await fetchActivation(token, id, actFrom, to);
+        count += ret.length + act.rows.length;
+        if (client) {
+          const strip = (rows: Ga4Row[]) => rows.map((r) => ({ property: r.property, day: r.day, breakdown: r.breakdown, key: r.key, metric: r.metric, value: r.value }));
+          await replaceRange(client, "ga4_daily", { property, breakdown: "retention" }, retFrom, to, strip(ret));
+          if (actFrom <= act.to) await replaceRange(client, "ga4_daily", { property, breakdown: "activation" }, actFrom, act.to, strip(act.rows));
         }
       }
       properties.push({ property, from, to, rows: count, error: null });
