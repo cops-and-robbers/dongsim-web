@@ -288,7 +288,7 @@ function Panel({
   );
 }
 
-function NavButton({ label, disabled, onClick, className, children }: { label: string; disabled: boolean; onClick: () => void; className: string; children: ReactNode }) {
+export function NavButton({ label, disabled, onClick, className, children }: { label: string; disabled: boolean; onClick: () => void; className: string; children: ReactNode }) {
   return (
     <button
       type="button"
@@ -302,7 +302,7 @@ function NavButton({ label, disabled, onClick, className, children }: { label: s
   );
 }
 
-function Month({
+export function Month({
   first,
   className,
   prev,

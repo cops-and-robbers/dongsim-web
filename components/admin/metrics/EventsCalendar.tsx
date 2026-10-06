@@ -20,6 +20,8 @@ import { addDays, ymdRange } from "@/lib/metrics/dates";
  *   (처음엔 달력 아래에 열었는데, 달력을 보던 위치에서는 화면 밖이라 눌러도 반응이 없는 것처럼 보였다)
  * - 앞으로 있을 행사도 미리 넣을 수 있다(1년 뒤까지)
  * - 폰에서는 칸이 좁아 이름 대신 점만 찍고, 내용은 날짜를 눌러 아래에서 본다
+ * - 일정이 있는 지난 날을 누르면 "이날부터 7일을 그 전 7일과 비교"로 바로 넘어간다(#152). 행사를 적어 두는 이유가
+ *   "그 뒤 숫자가 어땠나"를 보려는 것이라, 기간과 비교를 따로 맞추지 않아도 되게 했다
  * - 키보드: 화살표 하루, 위아래 한 주, PageUp/PageDown 한 달, Enter 로 그날 열기, Esc 로 닫기
  *
  * 일정은 전부 한 번에 읽는다(GET /api/admin/metrics/events). 넣거나 지우면 다시 읽고,
@@ -39,7 +41,18 @@ async function call(url: string, init: RequestInit = {}): Promise<Response> {
   return res;
 }
 
-export function EventsCalendar({ initialMonth, today, onChanged }: { initialMonth: string; today: string; onChanged: () => void }) {
+export function EventsCalendar({
+  initialMonth,
+  today,
+  onChanged,
+  onCompare,
+}: {
+  initialMonth: string;
+  today: string;
+  onChanged: () => void;
+  /** 그날부터 7일을 그 전 7일과 비교하는 화면으로 바꾼다(#152). 행사 효과를 한 번에 보려고 */
+  onCompare?: (day: string) => void;
+}) {
   const [events, setEvents] = useState<Event[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [view, setView] = useState(monthStart(initialMonth));
@@ -186,6 +199,19 @@ export function EventsCalendar({ initialMonth, today, onChanged }: { initialMont
         </Button>
       </form>
       {error && <p className="text-[13px] text-sd-critical">{error}</p>}
+      {onCompare && dayEvents.length > 0 && selected < today && (
+        <button
+          type="button"
+          onClick={() => onCompare(selected)}
+          className="flex items-center justify-between gap-2 rounded-xl bg-accent-weak px-3 py-2.5 text-left text-[13px] font-semibold text-sd-fg transition-colors hover:brightness-95"
+        >
+          <span>
+            이날부터 7일을 그 전 7일과 비교
+            <span className="mt-0.5 block text-[12px] font-normal text-sd-fg-muted">행사나 업데이트 뒤 숫자가 어떻게 바뀌었는지 봐요</span>
+          </span>
+          <ChevronRightIcon className="h-4 w-4 shrink-0 text-sd-fg-subtle" />
+        </button>
+      )}
       {dayEvents.length === 0 ? (
         <p className="text-[13px] text-sd-fg-subtle">이날 적어 둔 일정이 없어요.</p>
       ) : (
