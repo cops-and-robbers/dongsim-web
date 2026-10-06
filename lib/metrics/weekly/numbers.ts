@@ -18,6 +18,7 @@
 import { addDays, ymdRange } from "../dates.ts";
 import { splitKey } from "../ga4/run.ts";
 import { fromInstagram, isInternal } from "../channels.ts";
+import { MARK, splitFunnelKey } from "../funnel.ts";
 
 export type Week = { start: string; end: string }; // YYYY-MM-DD, 월요일과 일요일
 
@@ -54,7 +55,10 @@ export type WeeklyNumbers = {
     linkSessionsFromInstagram: number;
     internalSessions: number;
   };
-  installs: { appStoreNew: number; firstOpenAndroid: number; firstOpenIos: number };
+  /**
+   * 앱 첫 실행은 구글 플레이 자동 테스트 기기를 뺀 횟수다(testDevices.ts, #157). firstOpenTest 는 테스트 기기로 보여 뺀 횟수
+   */
+  installs: { appStoreNew: number; firstOpenAndroid: number; firstOpenIos: number; firstOpenTest: number };
   /**
    * 앱 이벤트는 참가자 폰마다 한 번씩 찍힌다(5명이 한 판 하면 5). 그래서 판 수가 아니라 사람 기준 횟수다.
    * 실제 판 수는 백엔드 게임 기록에만 있다(dashboard/games.ts)
@@ -71,7 +75,10 @@ export type WeeklyNumbers = {
     androidPushOpens: number;
     androidPushDismisses: number;
   };
-  /** 처음 들어온 날이 이 기간인 사람들(코호트). 분모는 그 칸이 익은 코호트만 */
+  /**
+   * 처음 들어온 날이 이 기간인 사람들(코호트, 테스트 기기 뺌). 분모는 그 칸이 익은 코호트만.
+   * activation 은 신규 사용자 퍼널(모든 나라)의 첫 실행 대비 게임 플레이(7일 안, funnel.ts)다
+   */
   cohort: { d1: Ratio; d7: Ratio; activation: Ratio };
   ads: { impressions: number; matchedRequests: number; earningsMicros: number };
 };
@@ -82,6 +89,9 @@ const inWeek = (day: string, w: Week) => day >= w.start && day <= w.end;
 /** 인스타의 PT 날짜를 그 하루와 가장 많이 겹치는 한국 날짜로 (위 설명) */
 export const shiftPt = (day: string) => addDays(day, 1);
 const sum = <T>(rows: T[], pick: (r: T) => number | null) => rows.reduce((a, r) => a + (pick(r) ?? 0), 0);
+
+/** 날짜가 "처음 들어온 날"인 코호트 줄. 하루 활성 사용자 날 수를 셀 때 빼야 한다 */
+const COHORT_BREAKDOWNS = new Set(["retention", "activation", "funnel"]);
 
 /** App Store 신규 다운로드 상품 유형 (재다운로드 3, 업데이트 7 은 뺀다) */
 const NEW_DOWNLOAD = new Set(["1", "1F", "1T"]);
@@ -109,6 +119,12 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
       ),
       (r) => r.value,
     );
+  // 첫 실행은 테스트 기기를 뺀 줄(first_open_country, 플랫폼|나라), 뺀 몫은 first_open_test(플랫폼)
+  const firstOpen = (breakdown: "first_open_country" | "first_open_test", platform?: string) =>
+    sum(
+      ga.filter((r) => r.property === "app" && r.breakdown === breakdown && r.metric === "eventCount" && (!platform || splitKey(r.key)[0] === platform)),
+      (r) => r.value,
+    );
   const ads = input.admob.filter((r) => inWeek(r.day, w));
   // /download 에서 남은 스토어 이동(출처|매체|페이지). 우리 팀 방문은 뺀다
   const linkRows = (metric: string) =>
@@ -127,7 +143,7 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
   // 하루 활성 사용자: 플랫폼별 activeUsers 를 날마다 더하고(한 사람이 두 플랫폼을 쓰는 일은 드물다) 날 수로 나눈다
   const dauByDay = new Map<string, number>();
   for (const r of ga) if (r.property === "app" && r.breakdown === "platform" && r.metric === "activeUsers") dauByDay.set(r.day, (dauByDay.get(r.day) ?? 0) + r.value);
-  const appDays = [...new Set(ga.filter((r) => r.property === "app" && r.breakdown !== "retention" && r.breakdown !== "activation").map((r) => r.day))].sort();
+  const appDays = [...new Set(ga.filter((r) => r.property === "app" && !COHORT_BREAKDOWNS.has(r.breakdown)).map((r) => r.day))].sort();
   // 하루 활성 사용자가 0 인 날은 GA4 가 줄을 주지 않아 평균에서 빠진다. 앱 숫자가 있는 첫날부터 마지막 날까지를
   // 날 수로 보고, 그 사이 빈 날은 0 으로 센다
   const dauDays =
@@ -142,7 +158,17 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
     return { num: sum(sized, (r) => r.value), den: sum(sized, (r) => cohortSize.get(r.day) ?? 0) };
   };
   const retention = (n: string) => ratioOver(ga.filter((r) => r.property === "app" && r.breakdown === "retention" && r.key === n));
-  const activationRatio = ratioOver(ga.filter((r) => r.property === "app" && r.breakdown === "activation"));
+  // 퍼널 줄은 7일이 다 지난 날만 있다. 모든 나라(테스트 기기는 수집 때 뺐다)의 첫 실행 대비 게임 플레이
+  const funnelSum = (step: string) =>
+    sum(
+      ga.filter((r) => {
+        if (r.property !== "app" || r.breakdown !== "funnel") return false;
+        const k = splitFunnelKey(r.key);
+        return k.step === step && k.country !== MARK;
+      }),
+      (r) => r.value,
+    );
+  const activationRatio: Ratio = { num: funnelSum("play"), den: funnelSum("open") };
   return {
     instagram: {
       posts: input.instagramPosts.filter((p) => inWeek(seoulDay(p.postedAt), w)).length,
@@ -193,8 +219,9 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
     },
     installs: {
       appStoreNew: sum(input.appstoreSales.filter((r) => inWeek(r.day, w) && NEW_DOWNLOAD.has(r.productType)), (r) => r.units),
-      firstOpenAndroid: appEvent("first_open", "Android"),
-      firstOpenIos: appEvent("first_open", "iOS"),
+      firstOpenAndroid: firstOpen("first_open_country", "Android"),
+      firstOpenIos: firstOpen("first_open_country", "iOS"),
+      firstOpenTest: firstOpen("first_open_test"),
     },
     game: { playerStarts: appEvent("game_start"), playerFinishes: appEvent("game_over") },
     app: {
