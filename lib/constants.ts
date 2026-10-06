@@ -7,6 +7,12 @@ export const APP_LINKS = {
   appStore: "https://apps.apple.com/app/id6756843948",
 };
 
+/**
+ * App Store 캠페인 링크의 공급자 토큰(pt). 팀 계정 번호라 비밀이 아니다 - 캠페인 링크마다
+ * 그대로 드러난다. App Store Connect > 앱 > 분석 > 캠페인 > 캠페인 링크 생성에서 확인 (#144).
+ */
+export const APP_STORE_PROVIDER_TOKEN = "128766908";
+
 export const BRAND = {
   fullName: "동심지키미",
   tagline: "추억의 게임에서 가치를 찾습니다",

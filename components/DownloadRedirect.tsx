@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import DownloadButtons from "@/components/ui/DownloadButtons";
-import { APP_LINKS } from "@/lib/constants";
+import { APP_LINKS, APP_STORE_PROVIDER_TOKEN } from "@/lib/constants";
 import { BRAND_NAME, appIconSrc, type Locale } from "@/lib/i18n/config";
 import { trackEvent } from "@/lib/analytics";
 import { storeLinksWithUtm } from "@/lib/download/campaign";
@@ -55,11 +55,7 @@ export default function DownloadRedirect() {
   const text = DOWNLOAD_TEXT[locale];
 
   useEffect(() => {
-    const links = storeLinksWithUtm(
-      APP_LINKS,
-      window.location.search,
-      process.env.NEXT_PUBLIC_APPSTORE_PROVIDER_TOKEN,
-    );
+    const links = storeLinksWithUtm(APP_LINKS, window.location.search, APP_STORE_PROVIDER_TOKEN);
     // campaign 이 없으면(일반 QR) 이벤트에 빈 칸을 보내지 않는다
     const campaign = links.campaign ?? undefined;
     const ua = navigator.userAgent || "";

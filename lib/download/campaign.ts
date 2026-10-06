@@ -7,7 +7,10 @@
  * - Google Play: referrer 에 UTM 을 담는다. 앱의 Firebase(GA4)가 설치 리퍼러를
  *   읽어 첫 실행(first_open)을 캠페인별로 센다
  * - App Store: 캠페인 토큰 ct 와 공급자 토큰 pt 를 붙인다. App Store Connect
- *   분석에 캠페인별 다운로드로 잡힌다. pt 가 없으면 ct 도 의미가 없어 붙이지 않는다
+ *   분석에 캠페인별 다운로드로 잡힌다. pt 가 없으면 ct 도 의미가 없어 붙이지 않는다.
+ *   애플이 만들어 주는 캠페인 링크와 같은 모양이다:
+ *   https://apps.apple.com/app/apple-store/id6756843948?pt=128766908&ct=instagram-always-download&mt=8
+ *   (경로의 apple-store 는 있어도 없어도 같은 앱 페이지로 간다)
  *
  * 이 파일은 node --test 로 바로 돌리므로 다른 모듈을 부르지 않는다.
  */
