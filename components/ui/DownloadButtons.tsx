@@ -12,6 +12,8 @@ type Props = {
   className?: string;
   // GA4 app_download_click 이벤트에 어느 위치의 버튼인지 기록(예: home_hero)
   placement?: string;
+  // 스토어 주소. /download 가 UTM 을 이어 붙인 주소를 넘길 때 쓴다 (#144)
+  links?: { appStore: string; googlePlay: string };
 };
 
 function DownloadIcon({ className }: { className?: string }) {
@@ -40,6 +42,7 @@ export default function DownloadButtons({
   variant = "primary",
   className = "",
   placement = "unknown",
+  links = APP_LINKS,
 }: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -75,20 +78,20 @@ export default function DownloadButtons({
     const isIOS = /iPad|iPhone|iPod/.test(ua);
     const isAndroid = /Android/i.test(ua);
 
-    if (isIOS && APP_LINKS.appStore) {
+    if (isIOS && links.appStore) {
       trackDownload("appstore");
-      window.location.href = APP_LINKS.appStore;
+      window.location.href = links.appStore;
       return;
     }
-    if (isAndroid && APP_LINKS.googlePlay) {
+    if (isAndroid && links.googlePlay) {
       trackDownload("googleplay");
-      window.location.href = APP_LINKS.googlePlay;
+      window.location.href = links.googlePlay;
       return;
     }
     setOpen((v) => !v);
   };
 
-  const appStoreAvailable = APP_LINKS.appStore.trim().length > 0;
+  const appStoreAvailable = links.appStore.trim().length > 0;
 
   const mobilePrimaryStyle =
     variant === "onDark"
@@ -126,7 +129,7 @@ export default function DownloadButtons({
           >
             {appStoreAvailable && (
               <a
-                href={APP_LINKS.appStore}
+                href={links.appStore}
                 target="_blank"
                 rel="noreferrer"
                 role="menuitem"
@@ -141,7 +144,7 @@ export default function DownloadButtons({
               </a>
             )}
             <a
-              href={APP_LINKS.googlePlay}
+              href={links.googlePlay}
               target="_blank"
               rel="noreferrer"
               role="menuitem"
@@ -161,7 +164,7 @@ export default function DownloadButtons({
       <div className="hidden items-center gap-3 sm:flex">
         {appStoreAvailable ? (
           <a
-            href={APP_LINKS.appStore}
+            href={links.appStore}
             target="_blank"
             rel="noreferrer"
             onClick={() => trackDownload("appstore")}
@@ -185,7 +188,7 @@ export default function DownloadButtons({
         )}
 
         <a
-          href={APP_LINKS.googlePlay}
+          href={links.googlePlay}
           target="_blank"
           rel="noreferrer"
           onClick={() => trackDownload("googleplay")}
