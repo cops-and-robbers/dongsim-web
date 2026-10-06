@@ -11,6 +11,7 @@ import { addDays, todayIn } from "../dates.ts";
 import { claimNotification, releaseNotification } from "../instagram/store.ts";
 import { buildWeeklyReport } from "./messages.ts";
 import { lastTwoWeeks, weeklyNumbers, type WeeklyInput } from "./numbers.ts";
+import { runGa4 } from "../ga4/run.ts";
 
 export type WeeklyResult = {
   ok: boolean;
@@ -21,7 +22,7 @@ export type WeeklyResult = {
   error?: string;
 };
 
-export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: string }): Promise<WeeklyResult> {
+export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: string; skipRefresh?: boolean }): Promise<WeeklyResult> {
   const now = opts.now ?? new Date();
   const client = db();
   const { current, previous } = lastTwoWeeks(todayIn("Asia/Seoul", now));
@@ -30,6 +31,12 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
   // PT 날짜 소스(인스타 계정, App Store 판매)는 하루 뒤로 옮겨 한국 주에 맞춘다(numbers.ts shiftPt).
   // 그래서 하루 앞부터 읽는다
   const ptFrom = addDays(from, -1);
+
+  // 월요일 아침 수집(5시 43분)은 일요일 GA4 숫자가 덜 들어온 채다. 보내기 직전에 최근 8일을 한 번 더 받아
+  // 그 사이 들어온 몫을 채운다. 실패해도 리포트는 보내고, 이미 쌓인 숫자로 계산한다
+  if (!opts.skipRefresh) {
+    await runGa4({ dry: false, now, from: addDays(current.end, -7) }).catch(() => null);
+  }
 
   // 전부 끝까지 쪽을 넘겨 읽는다(db.ts selectAll). Supabase 는 한 번에 1,000줄까지만 주고,
   // 잘려도 오류가 없어 합계가 조용히 틀린다. GA4 는 2주만 읽어도 1,000줄 가까이 된다
@@ -59,7 +66,7 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
           .select("property, day, breakdown, key, metric, value")
           .gte("day", from)
           .lte("day", to)
-          .in("breakdown", ["total", "session_campaign", "event", "download_source"])
+          .in("breakdown", ["total", "session_campaign", "event", "download_source", "download_page", "platform", "retention", "activation"])
           .order("day")
           .order("property")
           .order("breakdown")

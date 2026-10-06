@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ascToken } from "./auth.ts";
 import { fetchInstanceRows, listInstances, shouldReplace, dimsKey, type Instance } from "./analytics.ts";
 import { fetchSalesDay, type SalesRow } from "./sales.ts";
+import { recordReleases } from "./releases.ts";
 import { APPSTORE_APP_ID, APPSTORE_VENDOR_NUMBER, REFETCH_DAYS } from "../config.ts";
 import { addDays, todayIn, ymdRange } from "../dates.ts";
 import { check, db, insertChunks, replaceRange, selectAll } from "../db.ts";
@@ -42,6 +43,14 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
   return results;
 }
 
+/**
+ * 판매가 하나도 없는 날은 줄이 안 생겨서, 화면이 "그날은 아직 안 받았다"와 "0건"을 못 가른다.
+ * 그런 날엔 상품 유형이 빈 0 줄 하나를 남긴다. 합계는 상품 유형(1, 1F, 1T 등)으로 거르므로 숫자에 안 섞인다
+ */
+export function withMarker(day: string, rows: { day: string; country: string; product_type: string; device: string; units: number }[]) {
+  return rows.length ? rows : [{ day, country: "", product_type: "", device: "", units: 0 }];
+}
+
 async function collectSales(client: SupabaseClient | null, token: string, from: string, to: string) {
   const days = ymdRange(from, to);
   const settled = await mapLimit(days, 4, (d) => fetchSalesDay(token, APPSTORE_VENDOR_NUMBER, d, APPSTORE_APP_ID));
@@ -57,13 +66,18 @@ async function collectSales(client: SupabaseClient | null, token: string, from: 
         {},
         day,
         day,
-        rows
-          .filter((r) => r.day === day)
-          .map((r) => ({ day: r.day, country: r.country, product_type: r.productType, device: r.device, units: r.units })),
+        withMarker(
+          day,
+          rows
+            .filter((r) => r.day === day)
+            .map((r) => ({ day: r.day, country: r.country, product_type: r.productType, device: r.device, units: r.units })),
+        ),
       );
     }
   }
-  return { from, to, days: days.length, rows: rows.length, units: rows.reduce((a, r) => a + r.units, 0), failedDays };
+  // 새 버전이 처음 내려받아진 날을 일정에 "iOS x.y.z 출시"로 넣는다(releases.ts)
+  const releases = client ? await recordReleases(client, rows, from).catch(() => 0) : 0;
+  return { from, to, days: days.length, rows: rows.length, units: rows.reduce((a, r) => a + r.units, 0), failedDays, releases };
 }
 
 async function storedProcessingDates(client: SupabaseClient, report: string, days: string[]): Promise<Map<string, string>> {

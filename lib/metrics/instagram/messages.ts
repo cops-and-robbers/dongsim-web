@@ -115,7 +115,7 @@ function rankSentence(s: Standing, self: string): string | null {
   return `${prefix} ${s.rank}번째로 많이 봤어요.`;
 }
 
-/** 보통 게시물과 견준 한 문장. 비교 대상이 모자라면 null */
+/** 보통 게시물과 비교한 한 문장. 비교 대상이 모자라면 null */
 function compareSentence(reach: number, othersMedian: number | null): string | null {
   if (othersMedian === null || othersMedian <= 0) return null;
   const typical = `보통 게시물(${formatCount(othersMedian)}명)`;

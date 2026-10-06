@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SITE_URL } from "@/lib/constants";
+import { checkAdmin } from "@/lib/admin/server/checkAdmin";
 
 /**
  * 어드민 블로그 동기화 트리거 (#109 3단계).
@@ -17,37 +18,16 @@ import { SITE_URL } from "@/lib/constants";
 
 export const maxDuration = 300; // 동기화(이미지 이관 포함)를 기다려야 한다
 
-async function isAdmin(token: string): Promise<boolean> {
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!apiBase) return false;
-
-  try {
-    const res = await fetch(`${apiBase}/graphql`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        query: "query AdminPing { adminDashboard { totalUserCount } }",
-        operationName: "AdminPing",
-      }),
-      cache: "no-store",
-    });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { errors?: unknown[] };
-    return !data.errors;
-  } catch {
-    return false;
-  }
-}
-
 export async function POST(req: Request): Promise<NextResponse> {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
-  if (!(await isAdmin(token))) {
+  const admin = await checkAdmin(token);
+  if (admin === "expired") {
+    return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  }
+  if (admin === "denied") {
     return NextResponse.json({ error: "어드민만 실행할 수 있어요." }, { status: 403 });
   }
 

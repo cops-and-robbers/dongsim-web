@@ -183,6 +183,28 @@ export function BlogIcon({ className }: IconProps) {
   );
 }
 
+export function MetricsIcon({ className }: IconProps) {
+  // Lucide 'trending-up'. 지표 화면(#145) - 날짜별 추이를 본다는 뜻. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M16 7h6v6" />
+      <path d="m22 7-8.5 8.5-5-5L2 17" />
+    </Line>
+  );
+}
+
+export function CalendarIcon({ className }: IconProps) {
+  // Lucide 'calendar'. 지표 화면(#145) 기간 직접 고르기. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M3 10h18" />
+    </Line>
+  );
+}
+
 export function SunIcon({ className }: IconProps) {
   return (
     <Line className={className}>

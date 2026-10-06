@@ -53,6 +53,7 @@
 - `lib/relay/environment.ts` - 네트워크 계층, 목/실서버 라우팅
 - `lib/admin/auth/` - 로그인·토큰·세션
 - `lib/admin/notices/api.ts` - 공지 REST 클라이언트
+- `lib/admin/server/` - 서버 라우트 전용. `checkAdmin` 이 토큰을 백엔드에 물어 어드민인지 확인해요(블로그 동기화, 지표 화면). 만료면 401, 어드민이 아니면 403 을 돌려줘서 화면이 401 일 때만 재발급해요
 - `lib/admin-mock/` - MSW 핸들러 + 목 데이터셋 (백엔드 다 붙으면 삭제)
 - `__generated__/` - `relay-compiler` 생성물 (직접 수정하지 않아요)
 - `schema.graphql` - 로컬 스키마(계약). 백엔드 스키마와 맞춰요.

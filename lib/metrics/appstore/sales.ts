@@ -10,7 +10,11 @@ import { gunzipSync } from "node:zlib";
 import { ASC_API, AscError } from "./auth.ts";
 import { usToYmd } from "../dates.ts";
 
-export type SalesRow = { day: string; country: string; productType: string; device: string; units: number };
+/**
+ * versions 는 그 줄의 수량을 앱 버전별로 나눈 것(예: { "3.1.20": 38 }). 저장 칸에는 없고,
+ * 새 버전이 처음 내려받아진 날(= App Store 출시일)을 찾는 데만 쓴다(appstore/releases.ts)
+ */
+export type SalesRow = { day: string; country: string; productType: string; device: string; units: number; versions: Record<string, number> };
 
 /**
  * 파일 한 장을 우리 앱의 (날짜, 국가, 상품 유형, 기기)별 수량으로 줄인다.
@@ -31,6 +35,7 @@ export function parseSalesTsv(text: string, appId: string): SalesRow[] {
   const iBegin = col("Begin Date");
   const iCountry = col("Country Code");
   const iDevice = col("Device");
+  const iVersion = head.indexOf("Version");
   const sum = new Map<string, SalesRow>();
   for (const line of lines.slice(1)) {
     const c = line.split("\t");
@@ -38,9 +43,11 @@ export function parseSalesTsv(text: string, appId: string): SalesRow[] {
     const row = { day: usToYmd(c[iBegin]), country: c[iCountry], productType: c[iType], device: c[iDevice] || "unknown" };
     const key = `${row.day}|${row.country}|${row.productType}|${row.device}`;
     const units = Number(c[iUnits]) || 0;
-    const prev = sum.get(key);
-    if (prev) prev.units += units;
-    else sum.set(key, { ...row, units });
+    const version = iVersion >= 0 ? c[iVersion] : "";
+    const prev = sum.get(key) ?? { ...row, units: 0, versions: {} };
+    prev.units += units;
+    if (version) prev.versions[version] = (prev.versions[version] ?? 0) + units;
+    sum.set(key, prev);
   }
   return [...sum.values()];
 }

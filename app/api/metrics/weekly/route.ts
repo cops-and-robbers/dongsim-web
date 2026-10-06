@@ -7,7 +7,8 @@ import { runWeekly } from "@/lib/metrics/weekly/run";
  * 구조와 시크릿은 /api/metrics/instagram 과 같다. ?dry=1 이면 보내지 않고 문구만 돌려준다.
  */
 
-export const maxDuration = 60;
+// 보내기 전에 GA4 최근 8일을 한 번 더 받는다(10~20초). 넉넉히 둔다
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   if (!authorizedCron(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });

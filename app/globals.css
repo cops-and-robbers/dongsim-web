@@ -48,6 +48,14 @@
   --sd-inverted-fg: #ffffff;
   --sd-pressed: rgba(0, 0, 0, 0.04);
   --sd-selected: rgba(0, 0, 0, 0.06);
+
+  /* 어드민 차트 선 색 (라이트). 상태색(warning 등)과 따로 둔다 - 상태색은 좋다, 나쁘다를 뜻할 때만 쓴다.
+     색약 시뮬레이션과 대비를 dataviz 검사기로 확인한 값이다(docs/admin-ui.md "차트 색") */
+  --chart-1: #3f63d9;
+  --chart-2: #eb6834;
+  --chart-prev: #b0b3ba;
+  /* 늘었다는 글자색. --sd-positive(#079171)는 흰 바탕에서 3.96:1 이라 작은 글자 기준 4.5:1 에 못 미친다 */
+  --chart-up: #0a7d63;
 }
 
 .dark {
@@ -88,6 +96,13 @@
   --sd-inverted-fg: #1a1c20;
   --sd-pressed: rgba(255, 255, 255, 0.05);
   --sd-selected: rgba(255, 255, 255, 0.08);
+
+  /* 어드민 차트 선 색 (다크). 액센트 네온 초록(#38f55b)은 선으로 쓰기엔 너무 밝아 눈이 부시고,
+     노랑과 나란히 두면 적록색약에게 같은 색으로 보인다. 밝기를 낮춘 초록과 보라로 짝을 맞췄다 */
+  --chart-1: #22b047;
+  --chart-2: #9085e9;
+  --chart-prev: #5b5f66;
+  --chart-up: #26c199;
 }
 
 @theme inline {
@@ -148,6 +163,10 @@
   --color-sd-inverted-fg: var(--sd-inverted-fg);
   --color-sd-pressed: var(--sd-pressed);
   --color-sd-selected: var(--sd-selected);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-prev: var(--chart-prev);
+  --color-chart-up: var(--chart-up);
 
   --font-sans:
     var(--font-pretendard), -apple-system, BlinkMacSystemFont, system-ui,
