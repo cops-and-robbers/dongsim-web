@@ -27,6 +27,8 @@ export const APPSTORE_CT_MAX = 30;
  * 꼬리표 값으로 받을 글자. 주소에 그대로 이어 붙이는 값이라, 아무 값이나 받으면
  * 남의 캠페인 이름을 흉내 내거나 스토어 주소를 깨뜨리는 값이 들어올 수 있다.
  * 우리가 쓰는 값(instagram, bio, always, download)은 이 안에 다 들어간다.
+ * 한글이나 공백이 든 값은 조용히 버려진다. 행사 QR 꼬리표는 영어와 숫자, - _ . 로만 짓는다
+ * (예: utm_campaign=sejong-festival-2026).
  */
 const SAFE = /^[A-Za-z0-9_.-]{1,64}$/;
 
