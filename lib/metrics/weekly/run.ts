@@ -59,7 +59,7 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
           .select("property, day, breakdown, key, metric, value")
           .gte("day", from)
           .lte("day", to)
-          .in("breakdown", ["total", "session_campaign", "event"])
+          .in("breakdown", ["total", "session_campaign", "event", "download_source"])
           .order("day")
           .order("property")
           .order("breakdown")

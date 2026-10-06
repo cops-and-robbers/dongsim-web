@@ -27,7 +27,7 @@ export type WeeklyInput = {
 
 export type WeeklyNumbers = {
   instagram: { posts: number; views: number; profileViews: number; linkClicks: number };
-  web: { sessions: number; fromInstagram: number; downloadClicks: number };
+  web: { sessions: number; fromInstagram: number; downloadClicks: number; downloadClicksFromInstagram: number };
   installs: { appStoreNew: number; firstOpenAndroid: number; firstOpenIos: number };
   game: { starts: number; overs: number };
   ads: { impressions: number; matchedRequests: number; earningsMicros: number };
@@ -43,8 +43,19 @@ const sum = <T>(rows: T[], pick: (r: T) => number | null) => rows.reduce((a, r) 
 /** App Store 신규 다운로드 상품 유형 (재다운로드 3, 업데이트 7 은 뺀다) */
 const NEW_DOWNLOAD = new Set(["1", "1F", "1T"]);
 
-/** 인스타에서 온 웹 방문의 출처 (session_campaign 의 첫 칸) */
-export const FROM_INSTAGRAM = /instagram|linktr\.ee/i;
+/**
+ * 인스타에서 온 방문인가 (GA4 세션 소스, session_campaign 의 첫 칸).
+ * - ig: 인스타가 프로필 링크에 스스로 붙이는 UTM(utm_source=ig, utm_medium=social, link_in_bio).
+ *   링크트리로 바꾸기 전 프로필 링크가 사이트를 바로 가리킬 때 이렇게 들어왔다
+ * - instagram: 링크트리에 우리가 붙인 UTM(instagram|bio|...)
+ * - l.instagram.com, instagram.com: 인스타 앱 안 브라우저가 남기는 출처
+ * - linktr.ee: UTM 없이 링크트리를 거친 방문. 링크트리는 인스타 프로필에만 걸려 있다
+ * facebook.com 은 넣지 않는다. 인스타 앱 안 브라우저일 수도 있지만 페이스북 글일 수도 있어 가를 수 없다
+ */
+export function fromInstagram(source: string): boolean {
+  const s = source.toLowerCase();
+  return s === "ig" || s.includes("instagram") || s === "linktr.ee";
+}
 
 /** 게시물 올린 시각을 한국 날짜로 */
 function seoulDay(iso: string): string {
@@ -84,12 +95,17 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
             r.metric === "sessions" &&
             // 링크트리 UTM(instagram|bio|...), 인스타 앱이 남긴 출처(l.instagram.com 등),
             // UTM 없이 링크트리를 거친 방문(linktr.ee)을 같이 센다. 링크트리는 인스타 프로필에만 걸려 있다
-            FROM_INSTAGRAM.test(splitKey(r.key)[0]),
+            fromInstagram(splitKey(r.key)[0]),
         ),
         (r) => r.value,
       ),
       downloadClicks: sum(
         ga.filter((r) => r.property === "web" && r.breakdown === "event" && r.key === "app_download_click" && r.metric === "eventCount"),
+        (r) => r.value,
+      ),
+      // 다운로드 버튼 클릭 중 인스타에서 온 방문에서 나온 것 (ga4 download_source)
+      downloadClicksFromInstagram: sum(
+        ga.filter((r) => r.property === "web" && r.breakdown === "download_source" && r.metric === "eventCount" && fromInstagram(splitKey(r.key)[0])),
         (r) => r.value,
       ),
     },
