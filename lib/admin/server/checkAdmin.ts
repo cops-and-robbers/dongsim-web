@@ -6,11 +6,17 @@
  * GraphQL(adminDashboard)을 그 토큰으로 호출해 보면, 토큰이 유효한지와 어드민인지가
  * 한 번에 검증된다. 일반 유저 토큰이면 백엔드가 거부한다.
  *
+ * 결과는 셋이다. 토큰이 만료됐을 때(백엔드 401)를 "어드민 아님"과 섞으면, 화면은 403 을 받고
+ * 재발급을 시도하지 않아 다시 로그인할 때까지 막힌다. 만료는 "expired" 로 돌려 라우트가 401 을 주게 한다.
+ * 화면은 401 이면 한 번 재발급하고 다시 묻는다(lib/relay/environment.ts 와 같은 방식).
+ *
  * 서버 전용이다. 브라우저 코드에서 부르지 않는다.
  */
-export async function isAdmin(token: string): Promise<boolean> {
+export type AdminCheck = "ok" | "expired" | "denied";
+
+export async function checkAdmin(token: string): Promise<AdminCheck> {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!apiBase) return false;
+  if (!apiBase) return "denied";
 
   try {
     const res = await fetch(`${apiBase}/graphql`, {
@@ -25,10 +31,11 @@ export async function isAdmin(token: string): Promise<boolean> {
       }),
       cache: "no-store",
     });
-    if (!res.ok) return false;
+    if (res.status === 401) return "expired";
+    if (!res.ok) return "denied";
     const data = (await res.json()) as { errors?: unknown[] };
-    return !data.errors;
+    return data.errors ? "denied" : "ok";
   } catch {
-    return false;
+    return "denied";
   }
 }

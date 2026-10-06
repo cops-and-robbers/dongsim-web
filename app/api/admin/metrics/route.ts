@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/admin/server/isAdmin";
+import { checkAdmin } from "@/lib/admin/server/checkAdmin";
 import { loadDashboard } from "@/lib/metrics/dashboard/data";
 import { addDays, todayIn } from "@/lib/metrics/dates";
 import { db } from "@/lib/metrics/db";
@@ -19,7 +19,10 @@ const DAYS = new Set([7, 28, 90]);
 export async function GET(req: Request): Promise<NextResponse> {
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
-  if (!(await isAdmin(token))) return NextResponse.json({ error: "어드민만 볼 수 있어요." }, { status: 403 });
+  const admin = await checkAdmin(token);
+  // 만료는 401 로 돌려줘야 화면이 재발급하고 다시 묻는다
+  if (admin === "expired") return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  if (admin === "denied") return NextResponse.json({ error: "어드민만 볼 수 있어요." }, { status: 403 });
 
   const days = Number(new URL(req.url).searchParams.get("days") ?? 28);
   if (!DAYS.has(days)) return NextResponse.json({ error: "기간은 7, 28, 90일 중에 골라요." }, { status: 400 });

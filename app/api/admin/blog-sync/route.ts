@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { SITE_URL } from "@/lib/constants";
-import { isAdmin } from "@/lib/admin/server/isAdmin";
+import { checkAdmin } from "@/lib/admin/server/checkAdmin";
 
 /**
  * 어드민 블로그 동기화 트리거 (#109 3단계).
@@ -23,7 +23,11 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (!token) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
-  if (!(await isAdmin(token))) {
+  const admin = await checkAdmin(token);
+  if (admin === "expired") {
+    return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  }
+  if (admin === "denied") {
     return NextResponse.json({ error: "어드민만 실행할 수 있어요." }, { status: 403 });
   }
 
