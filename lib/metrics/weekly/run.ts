@@ -6,7 +6,7 @@
  */
 
 import { sendDiscord } from "../discord.ts";
-import { check, db, selectAll } from "../db.ts";
+import { db, selectAll } from "../db.ts";
 import { addDays, todayIn } from "../dates.ts";
 import { claimNotification, releaseNotification } from "../instagram/store.ts";
 import { buildWeeklyReport } from "./messages.ts";
@@ -27,13 +27,32 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
   const { current, previous } = lastTwoWeeks(todayIn("Asia/Seoul", now));
   const from = previous.start;
   const to = current.end;
+  // PT 날짜 소스(인스타 계정, App Store 판매)는 하루 뒤로 옮겨 한국 주에 맞춘다(numbers.ts shiftPt).
+  // 그래서 하루 앞부터 읽는다
+  const ptFrom = addDays(from, -1);
 
+  // 전부 끝까지 쪽을 넘겨 읽는다(db.ts selectAll). Supabase 는 한 번에 1,000줄까지만 주고,
+  // 잘려도 오류가 없어 합계가 조용히 틀린다. GA4 는 2주만 읽어도 1,000줄 가까이 된다
   const [igDays, igPosts, ga4, sales, admob] = await Promise.all([
-    client.from("instagram_account_daily").select("day, views, profile_views, website_clicks").gte("day", from).lte("day", to),
+    selectAll<{ day: string; views: number | null; profile_views: number | null; website_clicks: number | null }>(
+      (a, b) =>
+        client.from("instagram_account_daily").select("day, views, profile_views, website_clicks").gte("day", ptFrom).lte("day", to).order("day").range(a, b),
+      "인스타 하루 지표 읽기",
+    ),
     // 게시물은 한국 날짜로 나눈다. 앞뒤 하루씩 넉넉히 읽고 numbers 가 거른다
-    client.from("instagram_media").select("posted_at").gte("posted_at", `${addDays(from, -1)}T00:00:00Z`).lte("posted_at", `${addDays(to, 1)}T23:59:59Z`),
-    // 2주만 읽어도 1,000줄을 넘는다. 끝까지 쪽을 넘겨 읽는다 (db.ts selectAll)
-    selectAll(
+    selectAll<{ posted_at: string }>(
+      (a, b) =>
+        client
+          .from("instagram_media")
+          .select("posted_at")
+          .gte("posted_at", `${addDays(from, -1)}T00:00:00Z`)
+          .lte("posted_at", `${addDays(to, 1)}T23:59:59Z`)
+          .order("posted_at")
+          .order("id")
+          .range(a, b),
+      "인스타 게시물 읽기",
+    ),
+    selectAll<WeeklyInput["ga4"][number]>(
       (a, b) =>
         client
           .from("ga4_daily")
@@ -49,25 +68,51 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
           .range(a, b),
       "GA4 읽기",
     ),
-    client.from("appstore_sales_daily").select("day, product_type, units").gte("day", from).lte("day", to),
-    client.from("admob_daily").select("day, earnings_micros, matched_requests, impressions").gte("day", from).lte("day", to),
+    selectAll<{ day: string; product_type: string; units: number }>(
+      (a, b) =>
+        client
+          .from("appstore_sales_daily")
+          .select("day, product_type, units")
+          .gte("day", ptFrom)
+          .lte("day", to)
+          .order("day")
+          .order("country")
+          .order("product_type")
+          .order("device")
+          .range(a, b),
+      "App Store 판매 읽기",
+    ),
+    selectAll<{ day: string; earnings_micros: number; matched_requests: number; impressions: number }>(
+      (a, b) =>
+        client
+          .from("admob_daily")
+          .select("day, earnings_micros, matched_requests, impressions")
+          .gte("day", from)
+          .lte("day", to)
+          .order("day")
+          .order("platform")
+          .order("format")
+          .order("country")
+          .range(a, b),
+      "AdMob 읽기",
+    ),
   ]);
 
   const input: WeeklyInput = {
-    instagramDays: (check(igDays, "인스타 하루 지표 읽기") as { day: string; views: number | null; profile_views: number | null; website_clicks: number | null }[]).map((r) => ({
+    instagramDays: igDays.map((r) => ({
       day: r.day,
       views: r.views,
       profileViews: r.profile_views,
       websiteClicks: r.website_clicks,
     })),
-    instagramPosts: (check(igPosts, "인스타 게시물 읽기") as { posted_at: string }[]).map((r) => ({ postedAt: r.posted_at })),
-    ga4: ga4 as WeeklyInput["ga4"],
-    appstoreSales: (check(sales, "App Store 판매 읽기") as { day: string; product_type: string; units: number }[]).map((r) => ({
+    instagramPosts: igPosts.map((r) => ({ postedAt: r.posted_at })),
+    ga4,
+    appstoreSales: sales.map((r) => ({
       day: r.day,
       productType: r.product_type,
       units: r.units,
     })),
-    admob: (check(admob, "AdMob 읽기") as { day: string; earnings_micros: number; matched_requests: number; impressions: number }[]).map((r) => ({
+    admob: admob.map((r) => ({
       day: r.day,
       earningsMicros: Number(r.earnings_micros),
       matchedRequests: Number(r.matched_requests),

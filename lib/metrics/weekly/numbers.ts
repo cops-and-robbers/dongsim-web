@@ -5,7 +5,15 @@
  * 더해도 되는 숫자만 쓴다. 하루 도달(reach), 하루 사용자(activeUsers, totalUsers)는
  * 같은 사람을 여러 날 세서 일주일로 더하면 부풀려진다. 그래서 인스타는 조회,
  * 프로필 방문, 링크 클릭을, 앱은 이벤트 횟수를 더한다.
+ *
+ * 날짜 기준이 소스마다 다르다. 인스타 계정 지표와 App Store 판매는 미국 서부(PT) 날짜로,
+ * GA4 와 AdMob 은 한국 날짜로 온다. PT 하루(D)는 한국 D일 오후 4~5시부터 D+1일 같은 시각까지라
+ * 대부분 한국 D+1일과 겹친다. 그래서 PT 날짜는 하루 뒤로 옮겨 한국 주에 맞춘다(shiftPt).
+ * 옮기지 않으면 월요일 아침에는 PT 일요일 숫자가 아직 없어서 한 주가 6일로 잘린다.
  */
+
+import { addDays } from "../dates.ts";
+import { splitKey } from "../ga4/run.ts";
 
 export type Week = { start: string; end: string }; // YYYY-MM-DD, 월요일과 일요일
 
@@ -27,10 +35,16 @@ export type WeeklyNumbers = {
 
 /** 그 주(월~일)에 들어가나 */
 const inWeek = (day: string, w: Week) => day >= w.start && day <= w.end;
+
+/** PT 날짜를 그 하루와 가장 많이 겹치는 한국 날짜로 (위 설명) */
+export const shiftPt = (day: string) => addDays(day, 1);
 const sum = <T>(rows: T[], pick: (r: T) => number | null) => rows.reduce((a, r) => a + (pick(r) ?? 0), 0);
 
 /** App Store 신규 다운로드 상품 유형 (재다운로드 3, 업데이트 7 은 뺀다) */
 const NEW_DOWNLOAD = new Set(["1", "1F", "1T"]);
+
+/** 인스타에서 온 웹 방문의 출처 (session_campaign 의 첫 칸) */
+export const FROM_INSTAGRAM = /instagram|linktr\.ee/i;
 
 /** 게시물 올린 시각을 한국 날짜로 */
 function seoulDay(iso: string): string {
@@ -38,7 +52,7 @@ function seoulDay(iso: string): string {
 }
 
 export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
-  const ig = input.instagramDays.filter((d) => inWeek(d.day, w));
+  const ig = input.instagramDays.filter((d) => inWeek(shiftPt(d.day), w));
   const ga = input.ga4.filter((r) => inWeek(r.day, w));
   const appEvent = (name: string, platform?: string) =>
     sum(
@@ -47,8 +61,8 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
           r.property === "app" &&
           r.breakdown === "event" &&
           r.metric === "eventCount" &&
-          r.key.split("/")[0] === name &&
-          (!platform || r.key.split("/")[1] === platform),
+          splitKey(r.key)[0] === name &&
+          (!platform || splitKey(r.key)[1] === platform),
       ),
       (r) => r.value,
     );
@@ -68,8 +82,9 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
             r.property === "web" &&
             r.breakdown === "session_campaign" &&
             r.metric === "sessions" &&
-            // 링크트리 UTM(instagram/bio/...)과 인스타 앱이 남긴 출처(l.instagram.com 등)를 같이 센다
-            /instagram/i.test(r.key.split("/")[0]),
+            // 링크트리 UTM(instagram|bio|...), 인스타 앱이 남긴 출처(l.instagram.com 등),
+            // UTM 없이 링크트리를 거친 방문(linktr.ee)을 같이 센다. 링크트리는 인스타 프로필에만 걸려 있다
+            FROM_INSTAGRAM.test(splitKey(r.key)[0]),
         ),
         (r) => r.value,
       ),
@@ -79,7 +94,7 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
       ),
     },
     installs: {
-      appStoreNew: sum(input.appstoreSales.filter((r) => inWeek(r.day, w) && NEW_DOWNLOAD.has(r.productType)), (r) => r.units),
+      appStoreNew: sum(input.appstoreSales.filter((r) => inWeek(shiftPt(r.day), w) && NEW_DOWNLOAD.has(r.productType)), (r) => r.units),
       firstOpenAndroid: appEvent("first_open", "Android"),
       firstOpenIos: appEvent("first_open", "iOS"),
     },
