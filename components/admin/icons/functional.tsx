@@ -183,6 +183,16 @@ export function BlogIcon({ className }: IconProps) {
   );
 }
 
+export function MetricsIcon({ className }: IconProps) {
+  // Lucide 'trending-up'. 지표 화면(#145) - 날짜별 추이를 본다는 뜻. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M16 7h6v6" />
+      <path d="m22 7-8.5 8.5-5-5L2 17" />
+    </Line>
+  );
+}
+
 export function SunIcon({ className }: IconProps) {
   return (
     <Line className={className}>
