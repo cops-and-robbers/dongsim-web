@@ -41,14 +41,16 @@ GitHub Actions
 
 **GA4 에서 받는 것**(`ga4/run.ts` 의 `QUERIES`)
 
+축이 여럿이면 값을 `|` 로 이어 key 한 칸에 담는다(`KEY_SEP`). 캠페인 이름이나 소스에 `/` 가 들어갈 수 있어서 `/` 는 쓰지 않는다. 나눌 때는 `splitKey()` 를 쓴다.
+
 | 속성 | breakdown | key | 무엇에 쓰나 |
 | --- | --- | --- | --- |
 | web | `total` | (빈 값) | 활성 사용자, 신규, 세션 |
-| web | `session_campaign` | 출처/매체/캠페인/버튼 | 링크트리, 행사 QR 의 UTM |
+| web | `session_campaign` | `출처\|매체\|캠페인\|버튼` | 링크트리, 행사 QR 의 UTM |
 | web | `event` | 이벤트 이름 | `app_download_click` 등 |
 | app | `platform` | Android, iOS | 활성 사용자, 신규, 세션 |
-| app | `event` | 이벤트/플랫폼 | `first_open`, `login`, `game_start`, `game_over`, `app_remove` 등 |
-| app | `first_user_campaign` | 출처/매체/캠페인/플랫폼 | `/download` 가 Play 로 넘긴 referrer(#144)로 들어온 첫 실행 |
+| app | `event` | `이벤트\|플랫폼` | `first_open`, `login`, `game_start`, `game_over`, `app_remove` 등 |
+| app | `first_user_campaign` | `출처\|매체\|캠페인\|플랫폼` | `/download` 가 Play 로 넘긴 referrer(#144)로 들어온 첫 실행 |
 
 ## 환경변수
 

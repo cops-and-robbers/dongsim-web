@@ -56,12 +56,24 @@ type ReportResponse = {
   rowCount?: number;
 };
 
+/**
+ * 여러 축 값을 key 한 칸에 이어 붙일 때 쓰는 구분자.
+ * "/" 는 캠페인 이름이나 소스 값(예: 경로가 붙은 referral)에 실제로 들어갈 수 있어
+ * 나눌 때 칸이 밀린다. GA4 값에 거의 안 쓰이는 "|" 를 쓴다
+ */
+export const KEY_SEP = "|";
+
+/** key 를 축 값으로 다시 나눈다 */
+export function splitKey(key: string): string[] {
+  return key.split(KEY_SEP);
+}
+
 /** runReport 응답을 세로로 편다. 첫 축은 늘 date 다 */
 export function toRows(property: Property, q: Ga4Query, res: ReportResponse): Ga4Row[] {
   const out: Ga4Row[] = [];
   for (const r of res.rows ?? []) {
     const [date, ...rest] = r.dimensionValues.map((d) => d.value);
-    const key = rest.join("/");
+    const key = rest.join(KEY_SEP);
     q.metrics.forEach((metric, i) => {
       const value = Number(r.metricValues[i]?.value ?? 0);
       if (value !== 0) out.push({ property, day: compactToYmd(date), breakdown: q.breakdown, key, metric, value });
