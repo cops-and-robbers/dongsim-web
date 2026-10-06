@@ -6,10 +6,13 @@
  * 같은 사람을 여러 날 세서 일주일로 더하면 부풀려진다. 그래서 인스타는 조회,
  * 프로필 방문, 링크 클릭을, 앱은 이벤트 횟수를 더한다.
  *
- * 날짜 기준이 소스마다 다르다. 인스타 계정 지표와 App Store 판매는 미국 서부(PT) 날짜로,
- * GA4 와 AdMob 은 한국 날짜로 온다. PT 하루(D)는 한국 D일 오후 4~5시부터 D+1일 같은 시각까지라
- * 대부분 한국 D+1일과 겹친다. 그래서 PT 날짜는 하루 뒤로 옮겨 한국 주에 맞춘다(shiftPt).
+ * 날짜 기준이 소스마다 다르다. 인스타 계정 지표만 미국 서부(PT) 날짜로 오고, GA4, AdMob,
+ * App Store 판매는 한국 날짜와 맞는다. PT 하루(D)는 한국 D일 오후 4~5시부터 D+1일 같은 시각까지라
+ * 대부분 한국 D+1일과 겹친다. 그래서 인스타 날짜는 하루 뒤로 옮겨 한국 주에 맞춘다(shiftPt).
  * 옮기지 않으면 월요일 아침에는 PT 일요일 숫자가 아직 없어서 한 주가 6일로 잘린다.
+ *
+ * App Store 판매도 처음엔 PT 로 보고 옮겼는데, 실제로는 한국 날짜와 맞았다(#154). 리포트 날짜 그대로가
+ * GA4 iOS 첫 실행과 상관 0.92, 하루 뒤로 옮기면 0.14 였고, 9/19 행사 날 다운로드가 9/20 에 찍혔다.
  */
 
 import { addDays, ymdRange } from "../dates.ts";
@@ -76,7 +79,7 @@ export type WeeklyNumbers = {
 /** 그 주(월~일)에 들어가나 */
 const inWeek = (day: string, w: Week) => day >= w.start && day <= w.end;
 
-/** PT 날짜를 그 하루와 가장 많이 겹치는 한국 날짜로 (위 설명) */
+/** 인스타의 PT 날짜를 그 하루와 가장 많이 겹치는 한국 날짜로 (위 설명) */
 export const shiftPt = (day: string) => addDays(day, 1);
 const sum = <T>(rows: T[], pick: (r: T) => number | null) => rows.reduce((a, r) => a + (pick(r) ?? 0), 0);
 
@@ -189,7 +192,7 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
       ),
     },
     installs: {
-      appStoreNew: sum(input.appstoreSales.filter((r) => inWeek(shiftPt(r.day), w) && NEW_DOWNLOAD.has(r.productType)), (r) => r.units),
+      appStoreNew: sum(input.appstoreSales.filter((r) => inWeek(r.day, w) && NEW_DOWNLOAD.has(r.productType)), (r) => r.units),
       firstOpenAndroid: appEvent("first_open", "Android"),
       firstOpenIos: appEvent("first_open", "iOS"),
     },

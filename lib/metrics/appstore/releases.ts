@@ -6,7 +6,7 @@
  * 판매 리포트는 App Store 에서 실제로 받은 기록만 담아 TestFlight 시험 빌드가 섞이지 않는다.
  * (GA4 의 앱 버전은 TestFlight 빌드 3.1.22, 3.1.23 처럼 출시 안 된 버전까지 섞여 쓰지 않았다)
  *
- * 날짜는 판매 리포트(미국 서부)를 하루 뒤로 옮긴 한국 날짜다. 다른 App Store 숫자와 같은 규칙이다.
+ * 날짜는 판매 리포트 날짜 그대로다. 한국 날짜와 맞는다(#154). 다른 App Store 숫자와 같은 규칙이다.
  * 다운로드가 적은 때는 출시 후 한참 뒤에야 처음 내려받아진다(2026-04 에 1.3.30 이 1.8.2 보다 늦게 잡혔다).
  * 그래서 더 높은 버전보다 늦게 잡힌 버전은 출시일을 믿을 수 없어 넣지 않는다.
  * 이미 넣은 버전(같은 이름의 일정)은 다시 넣지 않는다. 사람이 지운 출시 일정은, 그 버전이 아직
@@ -14,13 +14,12 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { addDays } from "../dates.ts";
 import type { SalesRow } from "./sales.ts";
 
 export const releaseLabel = (version: string) => `iOS ${version} 출시`;
 
 /**
- * 받은 기간 안에서 버전마다 처음 내려받아진 날(PT). 받은 기간의 첫날에 처음 보인 버전은 뺀다.
+ * 받은 기간 안에서 버전마다 처음 내려받아진 날(판매 리포트 날짜, 한국 날짜와 맞는다). 받은 기간의 첫날에 처음 보인 버전은 뺀다.
  * 그보다 앞서 나왔을 수 있어 "처음"인지 알 수 없다(매일 수집은 창이 하루씩 밀려서, 진짜 새 버전은
  * 창의 첫날이 아닌 날에 한 번은 잡힌다)
  */
@@ -64,12 +63,12 @@ export async function recordReleases(client: SupabaseClient, rows: SalesRow[], w
   if (error) return 0;
   const rows2 = (data ?? []) as { day: string; label: string }[];
   const have = new Set(rows2.map((r) => r.label));
-  // 이미 넣은 출시(한국 날짜)를 판매 리포트 날짜(PT)로 되돌려 같은 기준으로 견준다
-  const known = rows2.map((r) => ({ version: r.label.replace(/^iOS /, "").replace(/ 출시$/, ""), day: addDays(r.day, -1) }));
+  // 판매 리포트 날짜가 한국 날짜와 맞아 옮기지 않고 그대로 견주고 넣는다(#154)
+  const known = rows2.map((r) => ({ version: r.label.replace(/^iOS /, "").replace(/ 출시$/, ""), day: r.day }));
   const add = plausible(
     found.filter((f) => !have.has(releaseLabel(f.version))),
     known,
-  ).map((f) => ({ day: addDays(f.day, 1), label: releaseLabel(f.version) }));
+  ).map((f) => ({ day: f.day, label: releaseLabel(f.version) }));
   if (add.length === 0) return 0;
   const res = await client.from("metrics_events").insert(add);
   return res.error ? 0 : add.length;
