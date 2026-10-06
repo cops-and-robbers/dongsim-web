@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "@/components/admin/Button";
 import { SectionCard } from "@/components/admin/Parts";
+import { useKeyboardInset } from "@/components/admin/useKeyboardInset";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/admin/icons";
 import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
@@ -66,6 +67,8 @@ export function EventsCalendar({
   const gridRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const keyboard = useRef(false);
+  // 폰 시트가 열려 있을 때 키보드가 가린 높이 (#155)
+  const kb = useKeyboardInset(selected !== null);
   const max = addDays(today, 365);
 
   useEffect(() => {
@@ -406,11 +409,15 @@ export function EventsCalendar({
           {selected && (
             <div className="lg:hidden">
               <div className="fixed inset-0 z-40 bg-black/30" aria-hidden onClick={() => setSelected(null)} />
+              {/* 키보드가 뜨면 시트를 키보드 바로 위로 올리고 보이는 영역 안으로 줄인다(useKeyboardInset, #155) */}
               <div
                 role="dialog"
                 aria-modal="true"
                 aria-label={`${dayLabel(selected)} 일정`}
-                className="fixed inset-x-0 bottom-0 z-50 max-h-[80dvh] overflow-y-auto rounded-t-2xl border border-sd-line bg-sd-surface p-5 pb-8 shadow-xl"
+                style={kb.height ? { bottom: kb.inset, maxHeight: Math.round(kb.height * 0.85) } : undefined}
+                className={`fixed inset-x-0 bottom-0 z-50 max-h-[80dvh] overflow-y-auto rounded-t-2xl border border-sd-line bg-sd-surface p-5 shadow-xl ${
+                  kb.inset > 0 ? "pb-5" : "pb-8"
+                }`}
               >
                 <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-sd-gray-400" aria-hidden />
                 {panel}
