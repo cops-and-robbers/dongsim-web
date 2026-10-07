@@ -35,7 +35,7 @@ import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
  * - 요약: 앱 첫 실행 큰 숫자, 모든 경로를 합친 흐름, 핵심 비율, 인스타그램에서 온 것, 일정
  * - 인스타그램: 계정 지표와 비율, 팔로워, 게시물별 숫자(정렬)
  * - 유입 경로: 채널별 방문과 전환율, 소스별 표
- * - 스토어: 두 스토어 / App Store / Google Play 를 골라 본다(#147). 스토어 화면에서 설치까지, 나라별,
+ * - 스토어: 전체 / App Store / Google Play 를 골라 본다(#147). 스토어 화면에서 설치까지, 나라별,
  *   Google Play 는 남아 있는 설치와 안정성까지. 스토어 화면을 고치는 사람이 자기 스토어만 콘솔 순서대로 본다
  * - 앱과 광고: 첫 실행, 사용(활성 사용자, 실제 판 수), 남는 사람(활성화, 리텐션, 삭제), 광고
  * 기간과 이전 기간 겹치기는 탭 위에 한 번만 두고 모든 탭이 같이 따른다.
@@ -68,7 +68,8 @@ type Tab = (typeof TABS)[number]["value"];
 // 스토어 탭 안에서 고르는 스토어. 두 스토어는 세는 대상이 달라(App Store 노출은 이미 깐 사람도, Play 방문자는 앱이 없는 사람만)
 // 합칠 수 있는 최초 설치만 더하고 나머지는 나란히 둔다
 const STORES = [
-  { value: "both", label: "두 스토어" },
+  // 퍼널 카드의 "전체 / iOS / Android" 와 같은 말로 맞춘다
+  { value: "all", label: "전체" },
   { value: "appstore", label: "App Store" },
   { value: "play", label: "Google Play" },
 ] as const;
@@ -187,7 +188,7 @@ export default function MetricsPage() {
   const tabParam = params.get("tab");
   const tab: Tab = TABS.some((x) => x.value === tabParam) ? (tabParam as Tab) : "summary";
   const storeParam = params.get("store");
-  const store: Store = STORES.some((x) => x.value === storeParam) ? (storeParam as Store) : "both";
+  const store: Store = STORES.some((x) => x.value === storeParam) ? (storeParam as Store) : "all";
   const from = params.get("from");
   const to = params.get("to");
   const custom: DayRange | null = from && to && YMD.test(from) && YMD.test(to) ? { from, to } : null;
@@ -301,7 +302,7 @@ export default function MetricsPage() {
                 compare={compare}
                 tab={tab}
                 store={store}
-                onStore={(v) => setParams({ store: v === "both" ? null : v })}
+                onStore={(v) => setParams({ store: v === "all" ? null : v })}
                 yesterday={yesterday}
                 onChanged={reload}
                 onCompareEvent={(day) => {
@@ -796,7 +797,7 @@ function MetricsBody({
             )}
           </div>
 
-          {store === "both" && (
+          {store === "all" && (
             <>
               <Group title="최초 설치" note="두 스토어에서 처음 받은 사람이에요. 다시 설치와 업데이트는 빠져요.">
                 <Cells>
@@ -1106,7 +1107,7 @@ function FollowerCell({ d }: { d: Dashboard }) {
 }
 
 /** 나라별 최초 설치. 두 스토어 합이면 어느 스토어 몫인지는 툴팁으로 */
-function CountryCell({ d, source = "both" }: { d: Dashboard; source?: "both" | "play" }) {
+function CountryCell({ d, source = "all" }: { d: Dashboard; source?: "all" | "play" }) {
   const n = (x: Dashboard["countries"][number]) => (source === "play" ? x.play : x.appStore + x.play);
   const list = d.countries.filter((x) => n(x) > 0).sort((a, b) => n(b) - n(a));
   const total = list.reduce((a, x) => a + n(x), 0);
@@ -1143,7 +1144,7 @@ function CountryCell({ d, source = "both" }: { d: Dashboard; source?: "both" | "
 }
 
 /**
- * 한 스토어의 단계(스토어 화면 → 설치)를 위에서 아래로. 두 스토어 보기에서 나란히 둔다.
+ * 한 스토어의 단계(스토어 화면 → 설치)를 위에서 아래로. 전체 보기에서 두 스토어를 나란히 둔다.
  * of 가 있으면 앞 단계(base 를 주면 그 단계) 대비 비율을 붙인다. 분모가 적으면 비율 대신 "숫자 적음"
  */
 function StoreSteps({
