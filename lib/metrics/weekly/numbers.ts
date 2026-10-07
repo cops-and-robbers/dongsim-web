@@ -13,6 +13,11 @@
  *
  * App Store 판매도 처음엔 PT 로 보고 옮겼는데, 실제로는 한국 날짜와 맞았다(#154). 리포트 날짜 그대로가
  * GA4 iOS 첫 실행과 상관 0.92, 하루 뒤로 옮기면 0.14 였고, 9/19 행사 날 다운로드가 9/20 에 찍혔다.
+ *
+ * Google Play 는 PT 날짜다(#147). 하루 뒤로 옮기면 GA4 Android 첫 실행과 상관 0.90, 그대로 두면 0.34 였고,
+ * 7/4 서울게임타운 설치 52건 중 43건이 Play 7/3 에 찍혔다(한국 낮은 PT 전날 밤이다). 그래서 인스타처럼 옮긴다.
+ * App Store 분석 리포트(노출, 제품 페이지 조회)는 UTC 날짜라 한국 날짜와 9시간 어긋나지만 옮기지 않는다.
+ * 하루 경계가 한국 오전 9시라 대부분 같은 날이다.
  */
 
 import { addDays, ymdRange } from "../dates.ts";
@@ -28,6 +33,10 @@ export type WeeklyInput = {
   ga4: { property: string; day: string; breakdown: string; key: string; metric: string; value: number }[];
   appstoreSales: { day: string; productType: string; units: number }[];
   admob: { day: string; earningsMicros: number; matchedRequests: number; impressions: number }[];
+  /** Google Play 리포트(play_daily). day 는 PT 날짜 그대로 - 여기서 shiftPt 로 옮긴다. 없으면 0 으로 센다 */
+  play?: { day: string; report: string; dim: string; key: string; metric: string; value: number }[];
+  /** App Store 분석 리포트의 노출, 제품 페이지 조회(engagement). day 는 UTC 날짜 */
+  appstoreEngagement?: { day: string; event: string; counts: number; uniqueCounts: number }[];
 };
 
 /** 비율의 분자와 분모. 화면이 표본이 적은지 보고 비율을 띄울지 정한다 */
@@ -81,6 +90,29 @@ export type WeeklyNumbers = {
    */
   cohort: { d1: Ratio; d7: Ratio; activation: Ratio };
   ads: { impressions: number; matchedRequests: number; earningsMicros: number };
+  /**
+   * Google Play (#147). 3~7일 늦게 들어와서 화면과 주간 리포트는 들어온 날까지만 잘라 같은 날 수로 비교한다(playWindow).
+   * - installs: 그날 처음 설치한 사람(Daily User Installs). 다시 설치, 구글 출시 전 테스트 기기는 들어가지 않는다
+   * - uninstalls: 그날 지운 사람(Daily User Uninstalls)
+   * - activeDevicesStart/End: 앱이 깔려 있고 최근 30일 안에 켜진 기기. 기간 첫날 전날과 마지막 날의 값(더하지 않는다)
+   * - storeVisitors, storeAcquisitions: 앱이 없는 사람 중 스토어 등록정보를 본 사람, 그중 설치한 사람
+   * - crashes, anrs: Android vitals 의 비정상 종료와 응답 없음(진단 정보 공유를 켠 기기만)
+   * - ratingTotal: 기간 마지막 날의 누적 평균 평점
+   */
+  play: {
+    installs: number;
+    installEvents: number;
+    uninstalls: number;
+    activeDevicesStart: number | null;
+    activeDevicesEnd: number | null;
+    storeVisitors: number;
+    storeAcquisitions: number;
+    crashes: number;
+    anrs: number;
+    ratingTotal: number | null;
+  };
+  /** App Store 노출과 제품 페이지 조회(분석 리포트 engagement). 고유 기기는 하루마다 센 값을 더했다 */
+  appStorePage: { impressions: number; impressionsUnique: number; pageViews: number; pageViewsUnique: number };
 };
 
 /** 그 주(월~일)에 들어가나 */
@@ -102,6 +134,33 @@ export { fromInstagram } from "../channels.ts";
 /** 게시물 올린 시각을 한국 날짜로 */
 function seoulDay(iso: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(iso));
+}
+
+/** Play 숫자를 한 기간으로. day 는 PT 라 하루 뒤로 옮겨 그 기간에 드는지 본다 */
+function playNumbers(rows: NonNullable<WeeklyInput["play"]>, w: Week): WeeklyNumbers["play"] {
+  const total = (report: string, dim: string, metric: string) =>
+    sum(rows.filter((r) => r.report === report && r.dim === dim && r.metric === metric && inWeek(shiftPt(r.day), w)), (r) => r.value);
+  // 누적값(활성 기기, 누적 평점)은 날짜별 하나뿐인 overview 줄에서 그날 값을 읽는다
+  const level = (report: string, metric: string, upto: string, from?: string) => {
+    const hit = rows
+      .filter((r) => r.report === report && r.dim === "overview" && r.metric === metric && shiftPt(r.day) <= upto && (!from || shiftPt(r.day) >= from))
+      .sort((a, b) => a.day.localeCompare(b.day))
+      .at(-1);
+    return hit ? hit.value : null;
+  };
+  return {
+    installs: total("installs", "overview", "user_installs"),
+    installEvents: total("installs", "overview", "install_events"),
+    uninstalls: total("installs", "overview", "user_uninstalls"),
+    activeDevicesStart: level("installs", "active_devices", addDays(w.start, -1)),
+    activeDevicesEnd: level("installs", "active_devices", w.end, w.start),
+    // 스토어 등록정보는 overview 파일이 없어 나라 축(합이 전체)을 더한다. 유입 경로 축까지 더하면 두 번 센다
+    storeVisitors: total("store", "country", "visitors"),
+    storeAcquisitions: total("store", "country", "acquisitions"),
+    crashes: total("crashes", "overview", "crashes"),
+    anrs: total("crashes", "overview", "anrs"),
+    ratingTotal: level("ratings", "rating_total", w.end),
+  };
 }
 
 export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
@@ -237,7 +296,30 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
       matchedRequests: sum(ads, (r) => r.matchedRequests),
       earningsMicros: sum(ads, (r) => r.earningsMicros),
     },
+    play: playNumbers(input.play ?? [], w),
+    appStorePage: (() => {
+      const eng = (input.appstoreEngagement ?? []).filter((r) => inWeek(r.day, w));
+      const of = (event: string, pick: (r: (typeof eng)[number]) => number) => sum(eng.filter((r) => r.event === event), pick);
+      return {
+        impressions: of("Impression", (r) => r.counts),
+        impressionsUnique: of("Impression", (r) => r.uniqueCounts),
+        pageViews: of("Page view", (r) => r.counts),
+        pageViewsUnique: of("Page view", (r) => r.uniqueCounts),
+      };
+    })(),
   };
+}
+
+/**
+ * Play 는 3~7일 늦게 들어온다. 기간 끝까지 안 들어왔으면 들어온 날(until, 한국 날짜)까지로 자르고,
+ * 비교 기간도 첫날부터 같은 날 수로 자른다. 그래야 "덜 들어와 줄어든 것"을 "줄었다"로 읽지 않는다.
+ * until 이 기간 첫날보다 앞이면 이 기간 Play 숫자는 없다(null)
+ */
+export function playWindow(range: Week, previous: Week, until: string | null): { current: Week; previous: Week; cut: boolean } | null {
+  if (!until || until < range.start) return null;
+  if (until >= range.end) return { current: range, previous, cut: false };
+  const days = ymdRange(range.start, until).length;
+  return { current: { start: range.start, end: until }, previous: { start: previous.start, end: addDays(previous.start, days - 1) }, cut: true };
 }
 
 /** now 기준으로 바로 지난주(한국 날짜 월~일)와 그 전주 */

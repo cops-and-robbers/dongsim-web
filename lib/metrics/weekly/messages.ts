@@ -34,8 +34,20 @@ function change(now: number, before: number, unit: string): string {
   return `그 전주보다 ${formatCount(Math.abs(d))}${unit} ${d > 0 ? "늘었어요" : "줄었어요"}.`;
 }
 
-/** appStoreUntilSaturday: 일요일 App Store 판매 리포트가 아직 안 나와 두 주 모두 월~토로 센 경우(run.ts) */
-export function buildWeeklyReport(week: Week, now: WeeklyNumbers, before: WeeklyNumbers, opts: { appStoreUntilSaturday?: boolean } = {}): string {
+const DOW = ["월", "화", "수", "목", "금", "토", "일"];
+
+/**
+ * appStoreUntilSaturday: 일요일 App Store 판매 리포트가 아직 안 나와 두 주 모두 월~토로 센 경우(run.ts)
+ * playInstalls: Google Play 최초 설치. 3~7일 늦게 들어와 두 주 모두 월요일부터 days 일만 센 값. null 이면 지난주 숫자가 아직 없다
+ */
+export function buildWeeklyReport(
+  week: Week,
+  now: WeeklyNumbers,
+  before: WeeklyNumbers,
+  opts: { appStoreUntilSaturday?: boolean; playInstalls?: { now: number; before: number; days: number } | null } = {},
+): string {
+  const play = opts.playInstalls;
+  const playLabel = play && play.days < 7 ? `Google Play 최초 설치(월~${DOW[play.days - 1]})` : "Google Play 최초 설치";
   const firstNow = now.installs.firstOpenAndroid + now.installs.firstOpenIos;
   const firstBefore = before.installs.firstOpenAndroid + before.installs.firstOpenIos;
   const perGame = now.game.playerFinishes > 0 ? (now.ads.impressions / now.game.playerFinishes).toFixed(1) : null;
@@ -64,6 +76,7 @@ export function buildWeeklyReport(week: Week, now: WeeklyNumbers, before: Weekly
     [
       "**설치**",
       line(opts.appStoreUntilSaturday ? "App Store 최초 다운로드(월~토)" : "App Store 최초 다운로드", now.installs.appStoreNew, before.installs.appStoreNew, "건"),
+      play ? line(playLabel, play.now, play.before, "건") : null,
       line("Android 첫 실행", now.installs.firstOpenAndroid, before.installs.firstOpenAndroid, "회"),
       line("iOS 첫 실행", now.installs.firstOpenIos, before.installs.firstOpenIos, "회"),
     ],
@@ -86,6 +99,14 @@ export function buildWeeklyReport(week: Week, now: WeeklyNumbers, before: Weekly
       showRate ? "-# 게재율은 받은 광고 중 화면에 뜬 비율이에요(AdMob 표기)." : null,
       "-# 인스타는 미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요.",
       opts.appStoreUntilSaturday ? "-# App Store 다운로드는 일요일 숫자가 아직 안 나와서 두 주 모두 월~토요일로 비교했어요." : null,
+      // Play 는 구글이 3~7일 늦게 채운다. 덜 들어온 날까지 견주면 줄어든 것처럼 보여서 들어온 날까지만 두 주를 견준다
+      play === undefined
+        ? null
+        : play === null
+          ? "-# Google Play 설치는 3~7일 늦게 나와서 지난주 숫자가 아직 없어요. 대시보드에서 며칠 뒤 볼 수 있어요."
+          : play.days < 7
+            ? `-# Google Play 설치는 3~7일 늦게 나와서 두 주 모두 월~${DOW[play.days - 1]}요일로 비교했어요.`
+            : null,
       "-# 일요일 숫자는 아직 조금 더 들어올 수 있어요. 대시보드는 매일 다시 받아 고쳐요.",
     ],
   ];
