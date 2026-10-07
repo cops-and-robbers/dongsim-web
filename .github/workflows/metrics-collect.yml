@@ -1,4 +1,4 @@
-# App Store, GA4, AdMob 수집 (#142, #143).
+# App Store, GA4, AdMob, Google Play 수집 (#142, #143, #147).
 #
 # 하루 한 번 소스마다 수집 라우트를 부른다. 소스마다 따로 부르는 이유는 둘이다 -
 # 한 소스가 실패해도 다른 소스는 저장되고, 각 호출이 Vercel 300초 한도 안에 든다.
@@ -29,7 +29,7 @@ jobs:
       # 한 소스가 실패해도 나머지는 돈다
       fail-fast: false
       matrix:
-        source: [appstore, ga4, admob]
+        source: [appstore, ga4, admob, play]
     steps:
       - name: ${{ matrix.source }} 수집
         env:
