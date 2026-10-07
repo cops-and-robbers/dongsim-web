@@ -34,8 +34,9 @@ import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
  * 탭 넷으로 나눈다. 매일 여는 사람은 요약만 보고, 맡은 일이 있는 사람은 그 탭으로 간다.
  * - 요약: 앱 첫 실행 큰 숫자, 모든 경로를 합친 흐름, 핵심 비율, 인스타그램에서 온 것, 일정
  * - 인스타그램: 계정 지표와 비율, 팔로워, 게시물별 숫자(정렬)
- * - 유입 경로: 채널별 방문과 전환율, 소스별 표
- * - 앱과 광고: 설치(나라별), 사용(활성 사용자, 실제 판 수), 남는 사람(활성화, 리텐션, 삭제), 광고
+ * - 유입 경로: 채널별 방문과 전환율, 스토어 페이지(App Store 노출과 조회, Play 스토어 방문자), 소스별 표
+ * - 앱과 광고: 설치(두 스토어, 나라별), 사용(활성 사용자, 실제 판 수), 남는 사람(활성화, 리텐션, 삭제),
+ *   남아 있는 설치(Android 설치 기기), 안정성, 광고
  * 기간과 이전 기간 겹치기는 탭 위에 한 번만 두고 모든 탭이 같이 따른다.
  *
  * 개수보다 비율을 함께 본다. 비율은 분자와 분모를 같이 적고, 분모가 MIN_SAMPLE 보다 작으면
@@ -140,6 +141,12 @@ function downloadCsv(d: Dashboard) {
     ["playerStarts", "게임 참가(사람 기준)"],
     ["adImpressions", "광고 노출"],
     ["adEarningsMicros", "예상 광고 수익(USD)"],
+    ["playInstalls", "Google Play 최초 설치"],
+    ["playUninstalls", "Google Play 삭제"],
+    ["playActiveDevices", "설치된 Android 기기"],
+    ["playStoreVisitors", "Google Play 스토어 방문자"],
+    ["appStoreImpressions", "App Store 노출"],
+    ["appStorePageViews", "App Store 제품 페이지 조회"],
   ];
   const games = d.games?.error ? null : d.games?.daily;
   // 그 소스를 모으기 전이거나 아직 안 들어온 날은 0 이 아니라 빈칸(차트에서 선을 끊는 것과 같은 규칙)
@@ -347,6 +354,7 @@ function Step({
   unit = "",
   noPrev = false,
   none = false,
+  good = "up",
 }: {
   label: string;
   now: number;
@@ -357,6 +365,8 @@ function Step({
   noPrev?: boolean;
   /** 이 기간 전체가 그 소스를 모으기 전이면 0 이 아니라 "-" 로 보인다 */
   none?: boolean;
+  /** 삭제처럼 줄어야 좋은 숫자면 "down" */
+  good?: "up" | "down";
 }) {
   const cmp = useCompare();
   if (none) return <Cell label={label} value="-" lines={["이 기간엔 숫자가 없어요"]} />;
@@ -377,7 +387,7 @@ function Step({
         </span>
       ) : (
         <>
-          <Delta now={now} before={before} />
+          <Delta now={now} before={before} good={good} />
           <span className="text-[12px] text-sd-fg-subtle tabular-nums">
             {cmp.word} {fmt(before)}
             {unit}
@@ -446,8 +456,8 @@ function Cell({ label, value, lines }: { label: string; value: string; lines: st
 }
 
 /** 칸 묶음. 칸 수에 맞춰 줄을 나눈다(5칸이면 넓은 화면에서 한 줄) */
-function Cells({ children, cols = 4 }: { children: ReactNode; cols?: 3 | 4 | 5 }) {
-  const wide = cols === 5 ? "sm:grid-cols-3 lg:grid-cols-5" : cols === 3 ? "sm:grid-cols-3" : "sm:grid-cols-4";
+function Cells({ children, cols = 4 }: { children: ReactNode; cols?: 2 | 3 | 4 | 5 }) {
+  const wide = cols === 5 ? "sm:grid-cols-3 lg:grid-cols-5" : cols === 3 ? "sm:grid-cols-3" : cols === 2 ? "sm:grid-cols-2" : "sm:grid-cols-4";
   return <div className={`grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-sd-line bg-sd-hairline ${wide}`}>{children}</div>;
 }
 
@@ -542,6 +552,17 @@ function MetricsBody({
   });
   const linkSplit = (n: WeeklyNumbers) => `다운로드 링크 ${fmt(n.web.downloadLinkClicks)}, 사이트 버튼 ${fmt(Math.max(0, n.web.downloadClicks - n.web.downloadLinkClicks))}`;
   const removeRate = (n: WeeklyNumbers): Ratio => ({ num: n.app.androidRemoves, den: n.installs.firstOpenAndroid });
+  // Google Play 는 3~7일 늦게 들어와 들어온 날까지 잘라 비교 기간도 같은 날 수로 셌다(data.ts play)
+  const pl = d.play;
+  const playCut = !!pl.window?.cut;
+  const playDays = pl.window ? ymdRange(pl.window.current.start, pl.window.current.end).length : 0;
+  const playNoPrev = !pl.window || !d.since.play || d.since.play > pl.window.previous.start;
+  const playNote = playCut && pl.until ? `${md(pl.until)}까지${compare ? `, ${cw}도 같은 ${playDays}일` : ""}` : undefined;
+  // 두 스토어 최초 설치. App Store 는 기간 전체, Play 는 들어온 날까지(비교도 같은 규칙)
+  const storeNew = { now: c.installs.appStoreNew + pl.current.installs, before: p.installs.appStoreNew + pl.previous.installs };
+  const storeSplit = `App Store ${fmt(c.installs.appStoreNew)}, Google Play ${pl.window ? `${fmt(pl.current.installs)}${playCut && pl.until ? `(${md(pl.until)}까지)` : ""}` : "아직 없음"}`;
+  // App Store 노출 대비 최초 다운로드: 분석 리포트가 있는 날의 다운로드만(territoryTable 과 같은 날)
+  const pageDownloads = d.appStoreTerritories.reduce((a, t) => a + t.downloads, 0);
   const games = d.games;
   const gamesOk = !!games && !games.error;
   const rangeText = rangeLabel({ from: d.range.start, to: d.range.end }, d.range.end);
@@ -597,12 +618,12 @@ function MetricsBody({
           <FadeIn delay={0.04}>
             <Group
               title="모든 경로를 합친 흐름"
-              note={`인스타그램, 검색, 행사 QR, 직접 입력까지 더한 숫자예요. 우리 팀이 개발하며 들어온 방문은 뺐어요. 스토어로 이동은 사이트 다운로드 버튼과 QR, 링크트리의 다운로드 링크를 더한 횟수예요. 단계마다 세는 대상이 달라 비율로 잇지 않았어요.`}
+              note={`인스타그램, 검색, 행사 QR, 직접 입력까지 더한 숫자예요. 우리 팀이 개발하며 들어온 방문은 뺐어요. 스토어로 이동은 사이트 다운로드 버튼과 QR, 링크트리의 다운로드 링크를 더한 횟수예요. 스토어 최초 설치는 두 스토어에서 처음 받은 사람을 더한 수예요. Google Play 는 3~7일 늦게 들어와서 들어온 날까지만 더했어요. 단계마다 세는 대상이 달라 비율로 잇지 않았어요.`}
             >
               <Cells cols={5}>
                 <Step label="사이트 방문" now={c.web.sessions} before={p.web.sessions} noPrev={noPrev("ga4web")} none={none("ga4web")} />
                 <Step label="스토어로 이동" now={c.web.downloadClicks} before={p.web.downloadClicks} noPrev={noPrev("ga4web")} none={none("ga4web")} />
-                <Step label="App Store 최초 다운로드" now={c.installs.appStoreNew} before={p.installs.appStoreNew} noPrev={noPrev("appstore")} none={none("appstore")} />
+                <Step label="스토어 최초 설치" now={storeNew.now} before={storeNew.before} sub={storeSplit} noPrev={noPrev("appstore") || playNoPrev} none={none("appstore")} />
                 <Step label="앱 첫 실행" now={firstOpen(c)} before={firstOpen(p)} noPrev={noPrev("ga4app")} none={none("ga4app")} />
                 {gamesOk ? (
                   <Step label="진행된 게임" now={games.current.games} before={games.previous.games} unit="판" />
@@ -715,6 +736,56 @@ function MetricsBody({
             <FadeIn delay={0.04}>{chart("사이트 방문", "webSessions", "회", "사이트 방문")}</FadeIn>
             <FadeIn delay={0.08}>{chart("스토어로 이동", "downloadClicks", "회", "스토어로 이동")}</FadeIn>
           </div>
+
+          <Group
+            title="스토어 페이지"
+            note={`스토어에서 우리 앱을 본 사람이 설치까지 갔는지 봐요.${partial("appstorePage") ? ` App Store 노출과 조회는 ${md(d.since.appstorePage)}부터 있어요.` : ""}`}
+          >
+            <Cells>
+              <Step label="App Store 노출" now={c.appStorePage.impressions} before={p.appStorePage.impressions} noPrev={noPrev("appstorePage")} none={none("appstorePage")} />
+              <Step label="App Store 제품 페이지 조회" now={c.appStorePage.pageViews} before={p.appStorePage.pageViews} noPrev={noPrev("appstorePage")} none={none("appstorePage")} />
+              <RatioCell
+                label="제품 페이지 조회율"
+                now={{ num: c.appStorePage.pageViewsUnique, den: c.appStorePage.impressionsUnique }}
+                before={{ num: p.appStorePage.pageViewsUnique, den: p.appStorePage.impressionsUnique }}
+                of="노출된 기기 중 제품 페이지를 연 기기"
+                noPrev={noPrev("appstorePage")}
+              />
+              <RatioCell
+                label="App Store 전환율"
+                now={{ num: pageDownloads, den: c.appStorePage.impressionsUnique }}
+                of="노출된 기기 대비 최초 다운로드"
+                noPrev
+              />
+            </Cells>
+            {pl.window ? (
+              <Cells cols={3}>
+                <Step label="Google Play 스토어 방문자" now={pl.current.storeVisitors} before={pl.previous.storeVisitors} sub={playNote} noPrev={playNoPrev} />
+                <Step label="Google Play 스토어 획득" now={pl.current.storeAcquisitions} before={pl.previous.storeAcquisitions} sub={playNote} noPrev={playNoPrev} />
+                <RatioCell
+                  label="Google Play 전환율"
+                  now={{ num: pl.current.storeAcquisitions, den: pl.current.storeVisitors }}
+                  before={{ num: pl.previous.storeAcquisitions, den: pl.previous.storeVisitors }}
+                  of="스토어 방문자 중 설치"
+                  noPrev={playNoPrev}
+                />
+              </Cells>
+            ) : (
+              <EmptyBlock title="이 기간 Google Play 숫자는 아직 없어요" />
+            )}
+            <Note>
+              노출은 검색 결과나 추천 화면에 앱이 1초 넘게 보인 횟수, 제품 페이지 조회는 앱 상세 화면을 연 횟수예요. 비율은 날마다 센 기기 수로 나눠서 App Store Connect
+              숫자와 조금 달라요. 애플은 5명이 안 되는 칸을 빼요. Google Play 방문자는 앱이 없는 사람 중 스토어 화면을 본 사람이고, 획득은 그중 설치한 사람이에요.
+              방문자가 적은 나라는 구글이 기타로 묶어요.
+            </Note>
+          </Group>
+          <FadeIn>
+            <TerritoryTable d={d} />
+          </FadeIn>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <FadeIn delay={0.04}>{chart("App Store 노출", "appStoreImpressions", "회", "노출")}</FadeIn>
+            <FadeIn delay={0.08}>{chart("Google Play 스토어 방문자", "playStoreVisitors", "명", "방문자")}</FadeIn>
+          </div>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <FadeIn>
               <SectionCard title="소스별 사이트 방문" flush>
@@ -743,8 +814,13 @@ function MetricsBody({
       {tab === "app" && (
         <>
           <Group title="설치">
-            <Cells cols={3}>
+            <Cells>
               <Step label="App Store 최초 다운로드" now={c.installs.appStoreNew} before={p.installs.appStoreNew} noPrev={noPrev("appstore")} none={none("appstore")} />
+              {pl.window ? (
+                <Step label="Google Play 최초 설치" now={pl.current.installs} before={pl.previous.installs} sub={playNote} noPrev={playNoPrev} />
+              ) : (
+                <Cell label="Google Play 최초 설치" value="-" lines={["3~7일 늦게 들어와 아직 없어요"]} />
+              )}
               <Step
                 label="앱 첫 실행"
                 now={firstOpen(c)}
@@ -755,8 +831,8 @@ function MetricsBody({
               <CountryCell d={d} />
             </Cells>
             <Note>
-              앱 첫 실행은 지웠다 다시 깔아도 다시 세요. 그래서 사람 수가 아니라 횟수예요. 구글 플레이 자동 테스트 기기로 보이는{" "}
-              {fmt(c.installs.firstOpenTest)}회는 뺐어요. Play 설치 수는 권한이 열리면 붙어요.
+              최초 설치는 그 스토어에서 처음 받은 사람 수라 다시 설치와 업데이트는 빠져요. 앱 첫 실행은 다시 깔아도 또 세서 횟수로 적었어요.
+              구글 플레이 자동 테스트 기기로 보이는 {fmt(c.installs.firstOpenTest)}회는 뺐어요. Google Play 설치에는 테스트 기기가 처음부터 안 들어가요.
             </Note>
           </Group>
 
@@ -805,7 +881,19 @@ function MetricsBody({
                 />
               </SectionCard>
             </FadeIn>
-            <FadeIn delay={0.16}>{chart("App Store 최초 다운로드", "appStoreNew", "건", "최초 다운로드")}</FadeIn>
+            <FadeIn delay={0.16}>
+              <SectionCard title="스토어 최초 설치">
+                <TrendChart
+                  days={days}
+                  series={[
+                    { label: "App Store", values: col("appStoreNew") },
+                    { label: "Google Play", values: col("playInstalls") },
+                  ]}
+                  markers={markers}
+                  unit="건"
+                />
+              </SectionCard>
+            </FadeIn>
           </div>
 
           <Group
@@ -826,6 +914,46 @@ function MetricsBody({
               />
             </Cells>
             <Note>삭제 비율은 같은 기간의 삭제를 첫 실행으로 나눈 값이라, 이전에 깐 사람이 지운 것도 들어가요.</Note>
+          </Group>
+
+          <Group title="남아 있는 설치 (Android)" note="행사 때 깐 사람이 아직 폰에 두고 있는지 봐요. 다음 판 알림이 닿을 수 있는 폰이에요.">
+            {pl.window ? (
+              <Cells cols={2}>
+                <ActiveDevicesCell start={pl.current.activeDevicesStart} end={pl.current.activeDevicesEnd} startDay={addDays(d.range.start, -1)} endDay={pl.window.current.end} />
+                <Step label="Google Play 삭제" now={pl.current.uninstalls} before={pl.previous.uninstalls} sub={playNote} noPrev={playNoPrev} good="down" />
+              </Cells>
+            ) : (
+              <EmptyBlock title="이 기간 Google Play 숫자는 아직 없어요" />
+            )}
+            <Note>설치된 기기는 앱이 깔려 있고 최근 30일 안에 켜진 Android 기기예요. 삭제에는 이 기간 전에 깐 사람이 지운 것도 들어가요.</Note>
+          </Group>
+          <FadeIn>
+            <SectionCard title="설치된 Android 기기">
+              <TrendChart days={days} series={[{ label: "설치된 기기", values: col("playActiveDevices") }]} previous={prev("playActiveDevices")} markers={markers} unit="대" />
+            </SectionCard>
+          </FadeIn>
+
+          <Group
+            title="안정성 (Android)"
+            note="새 버전을 낸 날이나 행사 날에 늘었는지 봐요."
+          >
+            {pl.window ? (
+              <Cells cols={3}>
+                <Step label="비정상 종료" now={pl.current.crashes} before={pl.previous.crashes} unit="회" good="down" />
+                <Step label="응답 없음(ANR)" now={pl.current.anrs} before={pl.previous.anrs} unit="회" good="down" />
+                <Cell
+                  label="Google Play 평점"
+                  value={pl.current.ratingTotal === null ? "-" : pl.current.ratingTotal.toFixed(1)}
+                  lines={["지금까지 받은 별점 평균"]}
+                />
+              </Cells>
+            ) : (
+              <EmptyBlock title="이 기간 Google Play 숫자는 아직 없어요" />
+            )}
+            <Note>
+              {pl.crashVersions.length > 0 ? `${pl.crashVersions.slice(0, 3).map((v) => `빌드 ${v.code}에서 ${fmt(v.crashes)}회`).join(", ")} 났어요. ` : ""}
+              진단 정보 보내기를 켠 기기만 세서 실제보다 적어요.
+            </Note>
           </Group>
 
           <Group title="광고" note="게재율은 AdMob 표기예요. AdMob 수익은 추정치라 나중에 조금 바뀔 수 있어요.">
@@ -862,8 +990,9 @@ function MetricsBody({
 
       <Callout variant="neutral" title="숫자의 기준">
         마지막으로 들어온 날은 인스타그램 {md(d.freshness.instagram)}, GA4 사이트 {md(d.freshness.ga4web)}, GA4 앱 {md(d.freshness.ga4app)}, App Store {md(d.freshness.appstore)}, AdMob{" "}
-        {md(d.freshness.admob)}이에요. 인스타그램은 미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요. 차트 위쪽 동그라미는 인스타
-        게시물, 마름모는 일정이고{compare ? `, 회색 선은 ${cw}이에요` : "요"}. 차트를 누르거나 마우스를 올리면 그날 숫자가 보여요.
+        {md(d.freshness.admob)}, Google Play {md(d.freshness.play)}이에요. Google Play 는 구글이 3~7일 늦게 채워서 늘 며칠 앞까지만 있어요. 인스타그램과 Google Play 는
+        미국 서부 날짜를 하루 뒤로 옮겨 한국 날짜에 맞췄어요. 차트 위쪽 동그라미는 인스타 게시물, 마름모는 일정이고{compare ? `, 회색 선은 ${cw}이에요` : "요"}. 차트를
+        누르거나 마우스를 올리면 그날 숫자가 보여요.
       </Callout>
     </div>
   );
@@ -901,26 +1030,91 @@ function FollowerCell({ d }: { d: Dashboard }) {
   );
 }
 
+/** 나라별 최초 설치(두 스토어 합). 어느 스토어 몫인지는 툴팁으로 */
 function CountryCell({ d }: { d: Dashboard }) {
-  const total = d.countries.reduce((a, x) => a + x.units, 0);
+  const total = d.countries.reduce((a, x) => a + x.appStore + x.play, 0);
   return (
     <div className="flex flex-col gap-1.5 bg-sd-surface px-4 py-4">
-      <span className="text-[13px] font-medium text-sd-fg-muted">App Store 나라별</span>
+      <span className="text-[13px] font-medium text-sd-fg-muted">나라별 최초 설치</span>
       {d.countries.length === 0 ? (
-        <span className="text-[13px] text-sd-fg-subtle">이 기간 다운로드가 없어요</span>
+        <span className="text-[13px] text-sd-fg-subtle">이 기간 설치가 없어요</span>
       ) : (
         <ul className="flex flex-col gap-1">
           {d.countries.slice(0, 5).map((x) => (
             <li key={x.country} className="flex items-center justify-between gap-3 text-[13px]">
-              <span className="truncate text-sd-fg">{countryName(x.country)}</span>
-              <span className="shrink-0 tabular-nums text-sd-fg-muted">
-                {fmt(x.units)} <span className="text-sd-fg-subtle">({Math.round((x.units / total) * 100)}%)</span>
-              </span>
+              <span className="truncate text-sd-fg">{x.country ? countryName(x.country) : "나라 미상"}</span>
+              <Tooltip content={`App Store ${fmt(x.appStore)}, Google Play ${fmt(x.play)}`} className="shrink-0 tabular-nums text-sd-fg-muted">
+                {fmt(x.appStore + x.play)} <span className="text-sd-fg-subtle">({Math.round(((x.appStore + x.play) / total) * 100)}%)</span>
+              </Tooltip>
             </li>
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+/** 설치된 Android 기기(누적값). 기간 첫날 전날과 마지막 날을 견준다 */
+function ActiveDevicesCell({ start, end, startDay, endDay }: { start: number | null; end: number | null; startDay: string; endDay: string }) {
+  if (end === null) return <Cell label="설치된 Android 기기" value="-" lines={["아직 기록이 없어요"]} />;
+  const change = start === null ? null : end - start;
+  return (
+    <div className="flex flex-col gap-1 bg-sd-surface px-4 py-4">
+      <span className="text-[13px] font-medium text-sd-fg-muted">설치된 Android 기기</span>
+      <span className="text-[24px] font-bold leading-tight text-sd-fg">
+        {fmt(end)}
+        <span className="ml-0.5 text-[15px] font-semibold text-sd-fg-muted">대</span>
+      </span>
+      {change === null ? (
+        <span className="text-[12px] text-sd-fg-subtle">{md(endDay)} 기준</span>
+      ) : (
+        <>
+          {change === 0 ? <span className="text-[12px] font-semibold text-sd-fg-subtle">변화 없음</span> : <Delta now={change} before={0} />}
+          <span className="text-[12px] text-sd-fg-subtle tabular-nums">
+            {md(startDay)}엔 {fmt(start as number)}대였어요
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** App Store 나라별 노출, 조회, 최초 다운로드. 일본처럼 노출은 많은데 설치가 적은 나라를 찾는 표 */
+function TerritoryTable({ d }: { d: Dashboard }) {
+  const rows = d.appStoreTerritories.filter((t) => t.impressions > 0 || t.downloads > 0).slice(0, 10);
+  return (
+    <SectionCard title="App Store 나라별" flush>
+      {rows.length === 0 ? (
+        <EmptyBlock title="이 기간 App Store 노출 기록이 없어요" />
+      ) : (
+        <Table
+          head={
+            <>
+              <Th className="whitespace-nowrap">나라</Th>
+              <Th className="whitespace-nowrap text-right">노출</Th>
+              <Th className="whitespace-nowrap text-right">제품 페이지 조회</Th>
+              <Th className="whitespace-nowrap text-right">최초 다운로드</Th>
+              <Th className="whitespace-nowrap text-right">노출 1,000회당 다운로드</Th>
+            </>
+          }
+        >
+          {rows.map((t, i) => (
+            <Tr key={t.country || "unknown"} index={i}>
+              <Td className="whitespace-nowrap font-medium text-sd-fg">{t.country ? countryName(t.country) : "나라 미상"}</Td>
+              <Td className="text-right tabular-nums">{fmt(t.impressions)}</Td>
+              <Td className="text-right tabular-nums">{fmt(t.pageViews)}</Td>
+              <Td className="text-right tabular-nums">{fmt(t.downloads)}</Td>
+              <Td className="text-right tabular-nums">
+                {t.impressions >= 300 ? ((t.downloads / t.impressions) * 1000).toFixed(1) : <span className="text-sd-fg-subtle">숫자 적음</span>}
+              </Td>
+            </Tr>
+          ))}
+        </Table>
+      )}
+      <Note className="px-5 py-3">
+        노출과 조회는 분석 리포트, 다운로드는 판매 리포트에서 왔어요. 분석 리포트가 있는 날만 셌어요. 노출이 300회보다 적은 나라는 숫자가 흔들려서 비율을 적지 않았어요.
+      </Note>
+    </SectionCard>
   );
 }
 
