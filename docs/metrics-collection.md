@@ -230,7 +230,7 @@ Supabase 에서 읽어 내려준다. 지표 테이블은 service role 로만 읽
 | App Store 나라별 최초 다운로드 | `appstore_sales_daily` country | |
 | 인스타 팔로워 수 | `instagram_followers` (0004) | 하루 증감 지표는 팔로워 100명 미만이면 인스타가 안 줘서, 수집 때마다 지금 수를 찍고 차이로 증감을 센다 |
 | 일정(행사, 업데이트) | `metrics_events` (0004) | 어드민 화면에서 넣고 지운다(`/api/admin/metrics/events`). 모든 차트에 마름모로 겹친다 |
-| iOS 출시 일정 | App Store 판매 리포트 Version 칸 | 수집 때 새 버전이 처음 내려받아진 날을 "iOS x.y.z 출시"로 자동으로 넣는다(`appstore/releases.ts`). 더 높은 버전보다 늦게 잡힌 버전은 뺀다 |
+| 앱 출시 일정 | App Store Connect 버전 목록, Play Reporting API 프로덕션 트랙 | 매일 지금 배포 중인 버전을 보고 일정에 없으면 "iOS x.y.z 출시", "Android x.y.z 출시"로 처음 본 날의 전날에 넣는다(`appstore/releases.ts`, `play/releases.ts`). 예전엔 판매 리포트의 Version 칸으로 처음 내려받아진 날을 썼는데, 콘솔의 "배포 준비됨" 날짜와 30개 중 6개가 하루 어긋나고 4월 앞쪽은 못 잡아서 바꿨다(2026-10-08). 2026-10-08 전 출시는 두 콘솔의 출시 기록을 옮겨 넣었다 |
 | 실제 판 수, 판당 인원 | 백엔드 `adminGameHistories` | 화면을 여는 어드민의 토큰으로 최신순 100개씩 읽다가 이전 기간 첫날보다 앞서면 멈춘다(최대 4,000판) |
 
 0004 마이그레이션(`supabase/migrations/0004_followers_and_events.sql`)을 실행하기 전에는 팔로워와 일정 칸만 비어 있고 나머지는 그대로 보인다.

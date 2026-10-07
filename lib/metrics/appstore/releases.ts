@@ -1,42 +1,22 @@
 /**
- * App Store 출시를 지표 차트의 일정(metrics_events)에 자동으로 넣는다 (#145).
+ * App Store 출시를 지표 차트의 일정(metrics_events)에 자동으로 넣는다 (#145, #147). Android 는 play/releases.ts.
  *
- * App Store Connect API 의 버전 목록(appStoreVersions)에는 출시한 날이 없다(만든 날만 있다).
- * 대신 판매 리포트의 Version 칸으로, 그 버전이 처음 내려받아진 날(업데이트 7, 신규 1 등)을 출시일로 본다.
- * 판매 리포트는 App Store 에서 실제로 받은 기록만 담아 TestFlight 시험 빌드가 섞이지 않는다.
- * (GA4 의 앱 버전은 TestFlight 빌드 3.1.22, 3.1.23 처럼 출시 안 된 버전까지 섞여 쓰지 않았다)
+ * 매일 아침 App Store Connect API 의 버전 목록(appStoreVersions)에서 지금 배포 중인 버전을 보고,
+ * 일정에 없는 버전이면 "iOS x.y.z 출시"를 처음 본 날의 전날로 넣는다. 한국 낮에 출시하면 다음 날 아침에 보이기 때문이다.
+ * Android 와 같은 방식이다.
  *
- * 날짜는 판매 리포트 날짜 그대로다. 한국 날짜와 맞는다(#154). 다른 App Store 숫자와 같은 규칙이다.
- * 다운로드가 적은 때는 출시 후 한참 뒤에야 처음 내려받아진다(2026-04 에 1.3.30 이 1.8.2 보다 늦게 잡혔다).
- * 그래서 더 높은 버전보다 늦게 잡힌 버전은 출시일을 믿을 수 없어 넣지 않는다.
- * 이미 넣은 버전(같은 이름의 일정)은 다시 넣지 않는다. 사람이 지운 출시 일정은, 그 버전이 아직
- * 최근 7일 창 안에 있으면 다음 수집 때 다시 생긴다.
+ * 예전에는 판매 리포트의 Version 칸으로 "처음 받아진 날"을 출시일로 봤다. App Store Connect 버전 기록의
+ * "배포 준비됨" 날짜와 견주니(2026-10-08) 30개 중 6개가 하루 어긋났다(3.1.5 는 출시 9/18 인데 9/17 에 잡혔다).
+ * 다운로드가 적은 때는 아예 못 잡았다(4월 앞쪽 출시). 그래서 지금 배포 중인 버전을 직접 묻는 쪽으로 바꿨다.
+ * 버전 목록에는 출시한 날이 없어서(만든 날만 있다) 날짜는 처음 본 날로 정한다.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { SalesRow } from "./sales.ts";
+import { ASC_API, ascJson } from "./auth.ts";
+import { APPSTORE_APP_ID } from "../config.ts";
+import { addDays, todayIn } from "../dates.ts";
 
 export const releaseLabel = (version: string) => `iOS ${version} 출시`;
-
-/**
- * 받은 기간 안에서 버전마다 처음 내려받아진 날(판매 리포트 날짜, 한국 날짜와 맞는다). 받은 기간의 첫날에 처음 보인 버전은 뺀다.
- * 그보다 앞서 나왔을 수 있어 "처음"인지 알 수 없다(매일 수집은 창이 하루씩 밀려서, 진짜 새 버전은
- * 창의 첫날이 아닌 날에 한 번은 잡힌다)
- */
-export function firstSeen(rows: SalesRow[], windowStart: string): { version: string; day: string }[] {
-  const first = new Map<string, string>();
-  for (const r of rows) {
-    for (const [version, units] of Object.entries(r.versions)) {
-      if (units <= 0) continue;
-      const cur = first.get(version);
-      if (!cur || r.day < cur) first.set(version, r.day);
-    }
-  }
-  return [...first.entries()]
-    .filter(([, day]) => day > windowStart)
-    .map(([version, day]) => ({ version, day }))
-    .sort((a, b) => a.day.localeCompare(b.day));
-}
 
 /** "3.1.20" 끼리 크기 비교 */
 export function compareVersion(a: string, b: string): number {
@@ -49,27 +29,30 @@ export function compareVersion(a: string, b: string): number {
   return 0;
 }
 
-/** 더 높은 버전이 같은 날이나 그 전에 이미 나왔으면 그 버전의 출시일은 믿을 수 없다 */
-export function plausible(found: { version: string; day: string }[], known: { version: string; day: string }[]): { version: string; day: string }[] {
-  const all = [...known, ...found];
-  return found.filter((f) => !all.some((o) => compareVersion(o.version, f.version) > 0 && o.day <= f.day));
+type VersionAttrs = { versionString?: string; appVersionState?: string; appStoreState?: string };
+
+/** 지금 App Store 에 나가 있는 버전 중 가장 높은 것. 심사 중이거나 준비 중인 버전은 뺀다 */
+export function liveVersion(versions: VersionAttrs[]): string | null {
+  const live = versions
+    .filter((v) => v.versionString && (v.appVersionState === "READY_FOR_DISTRIBUTION" || v.appStoreState === "READY_FOR_SALE"))
+    .map((v) => v.versionString as string)
+    .sort((a, b) => compareVersion(b, a));
+  return live[0] ?? null;
 }
 
-/** 새로 찾은 출시를 일정에 넣는다. 일정 테이블(0004)이 없으면 아무것도 하지 않는다 */
-export async function recordReleases(client: SupabaseClient, rows: SalesRow[], windowStart: string): Promise<number> {
-  const found = firstSeen(rows, windowStart);
-  if (found.length === 0) return 0;
-  const { data, error } = await client.from("metrics_events").select("day, label").like("label", "iOS % 출시");
+/** 일정에 없는 배포 버전이면 전날 날짜로 넣을 일정 하나 */
+export function iosReleaseToAdd(labels: string[], live: string | null, todaySeoul: string): { day: string; label: string } | null {
+  if (!live || labels.includes(releaseLabel(live))) return null;
+  return { day: addDays(todaySeoul, -1), label: releaseLabel(live) };
+}
+
+/** 매일 수집 때 부른다. 넣은 일정 수. 일정 테이블(0004)이 없으면 아무것도 하지 않는다 */
+export async function recordIosRelease(client: SupabaseClient, token: string, now: Date = new Date()): Promise<number> {
+  const body = await ascJson(`${ASC_API}/apps/${APPSTORE_APP_ID}/appStoreVersions?limit=10&fields[appStoreVersions]=versionString,appVersionState,appStoreState`, token);
+  const live = liveVersion(((body.data as { attributes: VersionAttrs }[] | undefined) ?? []).map((d) => d.attributes));
+  const { data, error } = await client.from("metrics_events").select("label").like("label", "iOS % 출시");
   if (error) return 0;
-  const rows2 = (data ?? []) as { day: string; label: string }[];
-  const have = new Set(rows2.map((r) => r.label));
-  // 판매 리포트 날짜가 한국 날짜와 맞아 옮기지 않고 그대로 견주고 넣는다(#154)
-  const known = rows2.map((r) => ({ version: r.label.replace(/^iOS /, "").replace(/ 출시$/, ""), day: r.day }));
-  const add = plausible(
-    found.filter((f) => !have.has(releaseLabel(f.version))),
-    known,
-  ).map((f) => ({ day: f.day, label: releaseLabel(f.version) }));
-  if (add.length === 0) return 0;
-  const res = await client.from("metrics_events").insert(add);
-  return res.error ? 0 : add.length;
+  const add = iosReleaseToAdd(((data ?? []) as { label: string }[]).map((r) => r.label), live, todayIn("Asia/Seoul", now));
+  if (!add) return 0;
+  return (await client.from("metrics_events").insert(add)).error ? 0 : 1;
 }
