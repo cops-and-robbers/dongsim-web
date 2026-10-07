@@ -10,7 +10,7 @@ import { db, selectAll } from "../db.ts";
 import { addDays, todayIn } from "../dates.ts";
 import { claimNotification, releaseNotification } from "../instagram/store.ts";
 import { buildWeeklyReport } from "./messages.ts";
-import { lastTwoWeeks, weeklyNumbers, type WeeklyInput } from "./numbers.ts";
+import { lastTwoWeeks, playWindow, shiftPt, weeklyNumbers, type WeeklyInput } from "./numbers.ts";
 import { runGa4 } from "../ga4/run.ts";
 import { runAppStore } from "../appstore/run.ts";
 
@@ -43,7 +43,7 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
 
   // 전부 끝까지 쪽을 넘겨 읽는다(db.ts selectAll). Supabase 는 한 번에 1,000줄까지만 주고,
   // 잘려도 오류가 없어 합계가 조용히 틀린다. GA4 는 2주만 읽어도 1,000줄 가까이 된다
-  const [igDays, igPosts, ga4, sales, admob] = await Promise.all([
+  const [igDays, igPosts, ga4, sales, admob, play] = await Promise.all([
     selectAll<{ day: string; views: number | null; profile_views: number | null; website_clicks: number | null }>(
       (a, b) =>
         client.from("instagram_account_daily").select("day, views, profile_views, website_clicks").gte("day", ptFrom).lte("day", to).order("day").range(a, b),
@@ -69,7 +69,9 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
           .select("property, day, breakdown, key, metric, value")
           .gte("day", from)
           .lte("day", to)
-          .in("breakdown", ["total", "session_campaign", "event", "download_source", "download_page", "platform", "retention", "activation"])
+          // 첫 실행은 테스트 기기를 뺀 first_open_country(뺀 몫은 first_open_test), 활성화는 funnel 줄로 센다(#157).
+          // 이 목록에서 빠지면 오류 없이 0 으로 나온다
+          .in("breakdown", ["total", "session_campaign", "event", "download_source", "download_page", "platform", "retention", "first_open_country", "first_open_test", "funnel"])
           .order("day")
           .order("property")
           .order("breakdown")
@@ -106,6 +108,21 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
           .range(a, b),
       "AdMob 읽기",
     ),
+    // Google Play 설치(#147). PT 날짜라 하루 앞부터 읽고 numbers 가 하루 뒤로 옮긴다. 0005 전이면 테이블이 없어 비운다
+    selectAll<NonNullable<WeeklyInput["play"]>[number]>(
+      (a, b) =>
+        client
+          .from("play_daily")
+          .select("report, dim, key, day, metric, value")
+          .eq("report", "installs")
+          .eq("dim", "overview")
+          .gte("day", ptFrom)
+          .lte("day", to)
+          .order("day")
+          .order("metric")
+          .range(a, b),
+      "Play 읽기",
+    ).catch(() => []),
   ]);
 
   const input: WeeklyInput = {
@@ -128,6 +145,7 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
       matchedRequests: Number(r.matched_requests),
       impressions: Number(r.impressions),
     })),
+    play,
   };
   const thisWeek = weeklyNumbers(input, current);
   const lastWeek = weeklyNumbers(input, previous);
@@ -139,7 +157,13 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
     thisWeek.installs.appStoreNew = weeklyNumbers(input, toSaturday(current)).installs.appStoreNew;
     lastWeek.installs.appStoreNew = weeklyNumbers(input, toSaturday(previous)).installs.appStoreNew;
   }
-  const content = buildWeeklyReport(current, thisWeek, lastWeek, { appStoreUntilSaturday });
+  // Play 는 3~7일 늦게 들어와 월요일 아침엔 지난주가 다 없다. 들어온 날까지 두 주를 같은 날 수로 자른다
+  const playLast = play.filter((r) => r.metric === "user_installs").map((r) => r.day).sort().at(-1);
+  const pw = playWindow(current, previous, playLast ? shiftPt(playLast) : null);
+  const playInstalls = pw
+    ? { now: weeklyNumbers(input, pw.current).play.installs, before: weeklyNumbers(input, pw.previous).play.installs, days: pw.cut ? (Date.parse(pw.current.end) - Date.parse(pw.current.start)) / 86_400_000 + 1 : 7 }
+    : null;
+  const content = buildWeeklyReport(current, thisWeek, lastWeek, { appStoreUntilSaturday, playInstalls });
   const base = { dry: opts.dry, week: current, content };
 
   if (opts.dry) return { ok: true, status: "preview", ...base };

@@ -1,11 +1,11 @@
 # 지표 수집 (개발자용)
 
-마케팅, 스토어, 광고 숫자를 매일 Supabase 에 모으는 장치 (#140, #142, #143).
+마케팅, 스토어, 광고 숫자를 매일 Supabase 에 모으는 장치 (#140, #142, #143, #147).
 인스타그램 리포트(디스코드 메시지)는 [instagram-report.md](instagram-report.md) 에 따로 있다.
 
 ## 왜 직접 모으나
 
-숫자가 네 콘솔(인스타, App Store Connect, GA4, AdMob)에 흩어져 있고, 콘솔마다 기록이 지워진다.
+숫자가 다섯 콘솔(인스타, App Store Connect, Google Play Console, GA4, AdMob)에 흩어져 있고, 콘솔마다 기록이 지워진다.
 App Store 분석 리포트 파일은 35일, 판매 리포트는 1년, 인스타 계정 지표는 30일이 지나면 다시 받을 수 없다.
 매일 받아 우리 DB 에 쌓으면 1년 뒤에도 "작년 같은 행사 때"와 비교할 수 있고, 화면은 콘솔을 부르지 않고 이 테이블만 읽는다.
 
@@ -17,6 +17,7 @@ GitHub Actions
   metrics-collect.yml   매일 UTC 20:43 → /api/metrics/appstore
                                        → /api/metrics/ga4
                                        → /api/metrics/admob
+                                       → /api/metrics/play
 ```
 
 소스마다 라우트를 나눈 이유: 한 소스가 실패해도 나머지는 저장되고, 각 호출이 Vercel 300초 한도 안에 든다.
@@ -31,6 +32,7 @@ GitHub Actions
 | App Store 분석 | `appstore_analytics_daily` | UTC | 새 인스턴스만 | 같은 날짜가 여러 파일(처리일)에 나온다. 가장 최근 처리일만 남긴다. 5명 미만 칸은 애플이 뺀다 |
 | GA4 | `ga4_daily` | 속성 시간대 | 최근 7일 | 세로로 길게 저장. `totalUsers` 는 날짜끼리 더하면 안 된다(같은 사람을 여러 번 센다) |
 | AdMob | `admob_daily` | Asia/Seoul | 최근 7일 | 서비스 계정 불가, 사람 계정 갱신 토큰. 매치율, 노출률은 저장하지 않고 요청 수에서 계산 |
+| Google Play | `play_daily` | 미국 서부(PT) | 지난달과 이번 달 파일 | API 가 없고 Cloud Storage 에 달마다 CSV(UTF-16). 3~7일 늦게 채워진다. 같은 버킷에 다른 앱 파일도 있어 패키지로 거른다. 아래 "Google Play" |
 
 **App Store 판매 상품 유형(`product_type`)**: `1`, `1F`, `1T` 신규 다운로드 / `3`, `3F` 재다운로드 / `7`, `7F`, `7T` 업데이트.
 
@@ -58,6 +60,41 @@ GitHub Actions
 | app | `platform` | Android, iOS | 활성 사용자, 신규, 세션 |
 | app | `event` | `이벤트\|플랫폼` | `first_open`, `login`, `game_start`, `game_over`, `app_remove` 등 |
 | app | `first_user_campaign` | `출처\|매체\|캠페인\|플랫폼` | `/download` 가 Play 로 넘긴 referrer(#144)로 들어온 첫 실행 |
+
+### Google Play (#147)
+
+Play 는 설치 통계를 API 로 주지 않는다. Play Console 이 개발자 계정의 Cloud Storage 버킷에 달마다 CSV 를 다시 쓴다.
+서비스 계정(`metrics-collector`)을 Play Console 사용자로 초대하고(권한 "앱 정보 보기 및 보고서 일괄 다운로드") 버킷을 읽는다.
+Play Developer Reporting API 는 비정상 종료율 같은 품질 지표만 줘서 쓰지 않는다.
+
+| 받는 파일 | 축 | 저장하는 지표 | 화면에서 |
+| --- | --- | --- | --- |
+| `stats/installs` | overview, country | `user_installs`(그날 처음 설치한 사람), `install_events`(다시 설치 포함), `user_uninstalls`, `uninstall_events`, `device_installs`, `device_upgrades`, `active_devices`(깔려 있고 최근 30일 안에 켜진 기기) | Google Play 최초 설치, 삭제, 설치된 Android 기기, 나라별 최초 설치 |
+| `stats/store_performance` | country, traffic_source | `visitors`(앱이 없는 사람 중 스토어 등록정보를 본 사람), `acquisitions`(그중 설치) | 스토어 페이지 |
+| `stats/crashes` | overview, app_version | `crashes`, `anrs` | 안정성 |
+| `stats/ratings` | overview | `rating_daily`, `rating_total` | 평점 |
+
+기기, 통신사, 언어, OS 축과 리뷰 파일은 받지 않는다. 리뷰는 글쓴이 정보가 들어 있고, 나머지는 마케팅 판단에 쓰지 않는다.
+
+**2026-10-07 에 원본과 GA4 를 대조해 정한 것**
+
+- **날짜는 PT 다.** 7/4 서울게임타운(한국 낮) 설치 52건 중 43건이 Play 7/3 에 찍혔고, 9/19 행사도 9/18 에 19건, 9/19 에 11건으로 나뉘었다. 한국 낮은 PT 전날 밤이다. 하루 뒤로 옮기면 GA4 Android 첫 실행과 날짜별 상관이 0.34 에서 0.90 이 된다. 그래서 인스타처럼 `shiftPt` 로 옮긴다. 테이블에는 파일 날짜 그대로 둔다
+- **Google Play 최초 설치에는 출시 전 테스트 기기가 없다.** 9월 GA4 Android 첫 실행은 실사용 129회 + 테스트 기기 108회였고, Play 최초 설치는 87명이었다. 남아공(ZA), 짐바브웨(ZW) 설치가 16건씩 있지만 출시 날에 몰리지 않고 흩어져 있어 테스트 기기로 보지 않았다
+- **첫 실행보다 설치가 적은 이유.** GA4 첫 실행은 다시 깔아도, 앱 데이터를 지워도 다시 센다. Play 최초 설치는 사람마다 처음 한 번만 센다
+- **스토어 등록정보는 나라를 거의 못 나눈다.** 방문자 5,548명 중 한국만 57명이고 나머지는 기타(Other)다. 구글이 적은 나라를 묶는다. 유입 경로도 대부분 기타라 전체 방문자와 획득만 쓴다. overview 파일이 없어 나라 축의 합을 전체로 쓴다(유입 경로 축까지 더하면 두 번 센다)
+- **`Daily Device Uninstalls`, `Total User Installs` 는 늘 0 이다.** 옛 지표라 받지 않는다
+- **설치 파일은 3~7일, 비정상 종료와 평점은 그보다 빨리 채워진다.** 화면과 주간 리포트는 설치를 들어온 날까지 잘라 비교 기간도 같은 날 수로 센다(`numbers.ts playWindow`). 비정상 종료와 평점은 자르지 않는다
+- **하루 평균 평점 0.0 은 "그날 평점 없음"이다.** 저장하지 않는다
+
+**Android 출시 일정은 자동으로 넣지 않는다.** 버전별 설치 파일로 "그 버전이 처음 퍼진 날"을 잡으려 했는데, 기존 사용자의 업데이트(`Daily Device Upgrades`)가 늘 0 이라
+새로 깐 사람만 보였다. 그러면 출시일이 아니라 설치가 몰린 날이 잡힌다(빌드 285 가 7/4 행사 날로 잡혔다). 차트에 "업데이트 때문에 늘었다"처럼 읽히는 표시를 틀리게 넣는 것보다
+없는 게 낫다. 대신 Play Developer Reporting API 의 `fetchReleaseFilterOptions` 로 지금 프로덕션 트랙에 나가 있는 버전("365 (3.1.24)")을 매일 보고,
+바뀐 걸 처음 본 날의 전날을 "Android x.y.z 출시"로 넣는다(`play/releases.ts`). 보기 권한으로 되고, 구글 클라우드에서 이 API 를 켜 둬야 한다(2026-10-07 켬).
+이 API 는 날짜 없이 지금 상태만 줘서, 처음 본 버전(3.1.24)과 그 전 출시는 자동으로 못 넣는다. 지난 출시는 Play Console 출시 기록을 보고 일정에 직접 넣는다.
+앱 저장소 CI 는 내부 테스트 트랙에만 올리고 프로덕션은 콘솔에서 손으로 올려서, CI 기록으로도 출시일을 못 찾는다.
+
+**App Store 분석 리포트도 화면에 쓴다.** 노출(`Impression`), 제품 페이지 조회(`Page view`)를 나라별로 본다. 날짜는 UTC 라 옮기지 않는다(하루 경계가 한국 오전 9시).
+고유 기기 수는 하루마다 센 값이라 기간으로 더하면 App Store Connect 의 기간 값보다 조금 크다. 비율의 분모로만 쓰고 그렇게 적는다.
 
 ### 숫자를 셀 때 걸리는 함정
 
@@ -93,6 +130,7 @@ GitHub Actions
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Vercel | 서비스 계정 `metrics-collector` 의 JSON 키 파일 내용 전체 |
 | `ADMOB_CLIENT_ID`, `ADMOB_CLIENT_SECRET` | Vercel | OAuth 클라이언트 JSON(`installed`)의 두 값 |
 | `ADMOB_REFRESH_TOKEN` | Vercel | 팀 계정이 허락해 받은 갱신 토큰 |
+| `PLAY_GCS_URI` | Vercel | Play Console > 보고서 다운로드 > 통계 > Cloud Storage URI 복사(`gs://pubsite_prod_...`). 서비스 계정은 `GOOGLE_SERVICE_ACCOUNT_JSON` 을 같이 쓴다 |
 
 비밀이 아닌 식별자(앱 ID, Vendor 번호, GA4 속성 ID, AdMob 퍼블리셔 ID, 처음 채울 날짜)는 `lib/metrics/config.ts` 에 있다.
 
@@ -104,7 +142,9 @@ GitHub Actions
    node --env-file=.env.local scripts/metrics-collect.mjs appstore --from all
    node --env-file=.env.local scripts/metrics-collect.mjs ga4 --from all
    node --env-file=.env.local scripts/metrics-collect.mjs admob --from all
+   node --env-file=.env.local scripts/metrics-collect.mjs play --from all
    ```
+   Play 는 `supabase/migrations/0005_play_metrics.sql` 을 먼저 실행한다
 3. Vercel 환경변수를 넣고 배포한 뒤 Actions > metrics-collect > Run workflow
 
 `--dry` 를 붙이면 저장하지 않고 센다. Node 22.18 이상이 필요하다(.ts 를 그대로 실행).
@@ -190,15 +230,60 @@ Supabase 에서 읽어 내려준다. 지표 테이블은 service role 로만 읽
 | App Store 나라별 최초 다운로드 | `appstore_sales_daily` country | |
 | 인스타 팔로워 수 | `instagram_followers` (0004) | 하루 증감 지표는 팔로워 100명 미만이면 인스타가 안 줘서, 수집 때마다 지금 수를 찍고 차이로 증감을 센다 |
 | 일정(행사, 업데이트) | `metrics_events` (0004) | 어드민 화면에서 넣고 지운다(`/api/admin/metrics/events`). 모든 차트에 마름모로 겹친다 |
-| iOS 출시 일정 | App Store 판매 리포트 Version 칸 | 수집 때 새 버전이 처음 내려받아진 날을 "iOS x.y.z 출시"로 자동으로 넣는다(`appstore/releases.ts`). 더 높은 버전보다 늦게 잡힌 버전은 뺀다 |
+| 앱 출시 일정 | App Store Connect 버전 목록, Play Reporting API 프로덕션 트랙 | 매일 지금 배포 중인 버전을 보고 일정에 없으면 "iOS x.y.z 출시", "Android x.y.z 출시"로 처음 본 날의 전날에 넣는다(`appstore/releases.ts`, `play/releases.ts`). 예전엔 판매 리포트의 Version 칸으로 처음 내려받아진 날을 썼는데, 콘솔의 "배포 준비됨" 날짜와 30개 중 6개가 하루 어긋나고 4월 앞쪽은 못 잡아서 바꿨다(2026-10-08). 2026-10-08 전 출시는 두 콘솔의 출시 기록을 옮겨 넣었다 |
 | 실제 판 수, 판당 인원 | 백엔드 `adminGameHistories` | 화면을 여는 어드민의 토큰으로 최신순 100개씩 읽다가 이전 기간 첫날보다 앞서면 멈춘다(최대 4,000판) |
 
 0004 마이그레이션(`supabase/migrations/0004_followers_and_events.sql`)을 실행하기 전에는 팔로워와 일정 칸만 비어 있고 나머지는 그대로 보인다.
 
+## Google Play 노출(Reach)은 아직 자동으로 못 받는다 (2026-10-08)
+
+Play Console 통계에는 2026-07 부터 총노출수, 사용자 노출수(그날 우리 앱을 본 사람), 기기 노출수가 나라별로 있다.
+구글은 "Play Console, Play Developer Reporting API, MCP 에 냈다"고 발표했지만, 2026-10-08 에 우리 서비스 계정으로 받을 수 있는 길을 하나씩 확인한 결과 콘솔 화면의 내보내기 말고는 없었다.
+
+| 경로 | 확인한 것 | 결과 |
+| --- | --- | --- |
+| Play 리포트 버킷(`PLAY_GCS_URI`) | 같은 개발자 계정의 모든 앱 파일 329개, 리포트 종류 23개 | 설치, 비정상 종료, 평점, 스토어 등록정보, 리뷰뿐. 노출 없음 |
+| Play Developer Reporting API | 구글 클라우드에서 켠 뒤(2026-10-07) 공개 명세와 우리 프로젝트로 받은 명세 둘 다, 지표 자원 이름 13가지를 직접 호출 | 품질 지표(vitals)와 출시 정보만 있다. 노출 자원은 404. 공식 지표 목록(2026-09-17 수정)에도 없다 |
+| Play Developer API(androidpublisher v3) | 공개 명세 전체 | 출시, 리뷰, 결제 관리뿐. 통계 없음 |
+| BigQuery Data Transfer(Google Play) | 공식 표 목록(2026-10-05 수정) 23개 | 리포트 버킷과 같은 리포트를 옮긴다(`p_Installs_*`, `p_Store_Performance_*` 등). 노출 표 없음 |
+| GA4 의 Google Play 연결 | 공식 도움말 | 인앱 결제, 구독 이벤트만 들어온다 |
+| 공식 MCP | 검색 | 구글이 공개한 Play MCP 는 찾지 못했다. 나와 있는 MCP 는 개인이 만든 것으로, 위 API 와 버킷을 다시 부른다 |
+| 콘솔 통계 "보고서 내보내기" | 사용자가 받은 CSV | **여기서만 나온다.** 사람이 매번 받아야 한다 |
+
+로그인된 콘솔 화면을 자동으로 긁는 방법은 팀 계정으로 계속 대신 접속하는 셈이고 화면이 바뀌면 깨져서 쓰지 않는다.
+사람이 매달 올리는 칸도 만들지 않았다. 끊긴 차트는 숫자가 없는 것보다 더 헷갈린다. 노출 API 가 실제로 열리면 그때 수집으로 바꾼다.
+
+### 콘솔 내보내기로 본 것 (2026-05-01 ~ 09-30, 사용자가 받은 CSV)
+
+설치는 우리 수집의 Play 나라별 최초 설치(`play_daily` installs country). 노출은 콘솔 날짜 그대로 견줬다.
+
+| 기간 | 나라 | 하루에 본 사람 | 한 사람이 본 횟수 | 본 사람 1,000명당 설치 |
+| --- | --- | --- | --- | --- |
+| 5/1~8/20 | 한국 | 37 | 2.2 | 24 |
+| | 일본 | 7 | 2.0 | 11 |
+| | 인도 | 80 | 1.7 | 0 |
+| | 미국 | 60 | 2.0 | 1 |
+| 8/21~9/30 | 한국 | 70 | 2.2 | 19 |
+| | 일본 | 11 | 2.2 | 14 |
+| | 인도 | 406 | 1.7 | 0.3 |
+| | 미국 | 131 | 1.9 | 0 |
+
+- 총노출수의 약 82% 가 한국, 일본, 인도, 미국 밖에서 나왔고 그쪽 설치는 거의 없다. 전체 노출은 마케팅 판단에 쓰지 않는다
+- 8/21 에 총노출수가 하루 2천에서 1만 2천으로 뛰었는데 설치는 그대로였다. 구글이 다른 나라에 더 보여 준 것이다. 같은 때 한국에서 본 사람도 하루 37명에서 70명으로 늘었지만 1,000명당 설치는 24명에서 19명으로 내려갔다
+- 한국에서 가장 많이 보인 6일(9/24, 8/22, 9/12, 8/29, 8/21, 9/5)의 한국 설치는 다 합쳐 4건이다. 설치는 행사 날에 몰린다. 우리 설치는 스토어 노출보다 오프라인에서 이름을 듣고 찾아오는 사람이 만든다
+- 콘솔의 DAU, MAU 는 GA4 하루 활성 사용자와 겹쳐 따로 받지 않는다. 9/29 MAU 118명은 `play_daily` 의 설치된 기기(active_devices) 137대와 크기가 맞아 확인용으로만 썼다
+- "하루에 본 사람"은 날마다 센 사람 수의 평균이다. 같은 사람이 여러 날 보면 여러 번 세진다
+
+노출 API 가 열리면 첫 지표는 "한국과 일본에서 본 사람 1,000명당 설치"로 만든다. 전체 노출보다 판단에 쓸모 있다.
+
+### 지켜볼 것: 스토어 등록정보 파일이 멈췄다
+
+리포트 버킷의 `store_performance_*` 은 2026-09-30, `total_store_performance_*` 은 2026-08-20 이후 갱신되지 않았다(설치 파일은 10-07 까지 갱신).
+구글이 2026-07 에 스토어 등록정보 지표를 "획득"에서 "설치 버튼 클릭" 기준으로 바꾼다고 했는데, 그 여파로 이 파일이 끊기는 것일 수 있다.
+10월 파일이 계속 안 생기면 스토어 탭의 Google Play 방문자, 획득, 전환율은 9월까지만 보이게 된다. 그때 칸을 접을지 정한다.
+
 ## 아직 남은 것
 
-- Android 출시 일정은 아직 자동이 아니다. GA4 앱 버전은 시험 빌드가 섞이고(iOS TestFlight 3.1.22, 3.1.23 같은), Play 의 출시 기록은 Play Console 권한이 열려야 읽힌다(#147). 열리면 매일 프로덕션 트랙의 버전을 보고 바뀐 날을 넣는다
-
-- App Store 분석 리포트 첫 파일이 나오면 실제 열을 보고 화면에서 쓸 축을 정한다
-- 전체 기록(ONE_TIME_SNAPSHOT) 파일을 받으면 일회용 관리자 키(analytics-setup)를 폐기한다
-- Play 설치 통계(#147)는 권한 반영을 기다린다
+- Android 출시 일정은 2026-10-07 부터 자동이다. 그 전 출시는 Play Console 출시 기록을 보고 일정에 직접 넣는다
+- Play 노출(Reach)은 2026-07 에 "Reporting API 에도 냈다"는 발표가 있지만, 2026-10-07 에 켠 API 와 공식 문서에는 아직 없다. 생기면 수집으로 바꾼다
+- 전체 기록(ONE_TIME_SNAPSHOT) 파일을 받으면 일회용 관리자 키(analytics-setup)를 폐기한다. 받으면 App Store 노출, 조회가 10월 3일 앞으로도 채워진다

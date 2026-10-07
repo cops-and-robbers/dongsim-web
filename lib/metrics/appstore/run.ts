@@ -13,7 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { AscError, ascToken } from "./auth.ts";
 import { fetchInstanceRows, listInstances, shouldReplace, dimsKey, type Instance } from "./analytics.ts";
 import { fetchSalesDay, type SalesRow } from "./sales.ts";
-import { recordReleases } from "./releases.ts";
+import { recordIosRelease } from "./releases.ts";
 import { APPSTORE_APP_ID, APPSTORE_VENDOR_NUMBER, REFETCH_DAYS } from "../config.ts";
 import { addDays, todayIn, ymdRange } from "../dates.ts";
 import { check, db, insertChunks, replaceRange, selectAll } from "../db.ts";
@@ -84,9 +84,7 @@ async function collectSales(client: SupabaseClient | null, token: string, from: 
       );
     }
   }
-  // 새 버전이 처음 내려받아진 날을 일정에 "iOS x.y.z 출시"로 넣는다(releases.ts)
-  const releases = client ? await recordReleases(client, rows, from).catch(() => 0) : 0;
-  return { from, to, days: days.length, rows: rows.length, units: rows.reduce((a, r) => a + r.units, 0), failedDays, pendingDays, releases };
+  return { from, to, days: days.length, rows: rows.length, units: rows.reduce((a, r) => a + r.units, 0), failedDays, pendingDays };
 }
 
 async function storedProcessingDates(client: SupabaseClient, report: string, days: string[]): Promise<Map<string, string>> {
@@ -174,6 +172,8 @@ export async function runAppStore(opts: { dry: boolean; now?: Date; from?: strin
   const from = opts.from ?? addDays(to, -(REFETCH_DAYS - 1));
   const sales = await collectSales(client, token, from, to);
   if (sales.failedDays.length) warnings.push(`판매 리포트를 못 받은 날: ${sales.failedDays.join(", ")}`);
+  // 지금 배포 중인 버전이 일정에 없으면 "iOS x.y.z 출시"로 넣는다(releases.ts). 실패해도 수집은 실패로 치지 않는다
+  if (client && !opts.salesOnly) await recordIosRelease(client, token, now).catch(() => 0);
 
   if (opts.salesOnly) {
     return { ok: sales.failedDays.length === 0, dry: opts.dry, sales, analytics: { instances: 0, processed: 0, skippedOlder: 0, rows: 0, error: null }, warnings };

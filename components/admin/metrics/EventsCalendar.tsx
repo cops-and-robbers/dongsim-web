@@ -15,7 +15,7 @@ import { addDays, ymdRange } from "@/lib/metrics/dates";
  *
  * 일정은 차트에 마름모로 겹쳐 "그날 왜 숫자가 바뀌었나"를 설명한다. 넣고 보는 곳은 이 달력이다.
  * - 한 달씩 본다. 처음엔 지금 보는 기간의 마지막 달
- * - 행사(사람이 넣은 것)는 진한 칩, iOS 업데이트(판매 리포트에서 자동)는 작은 회색 점과 글씨.
+ * - 행사(사람이 넣은 것)는 진한 칩, 앱 업데이트(지금 배포 중인 버전을 매일 보고 자동)는 작은 회색 점과 글씨.
  *   업데이트는 켜고 끌 수 있다. 목록에서 행사를 묻지 않게
  * - 날짜를 누르면 그날 일정과 입력 칸이 열린다. 넓은 화면은 달력 오른쪽 칸, 폰은 아래에서 올라오는 시트.
  *   (처음엔 달력 아래에 열었는데, 달력을 보던 위치에서는 화면 밖이라 눌러도 반응이 없는 것처럼 보였다)
@@ -31,8 +31,8 @@ import { addDays, ymdRange } from "@/lib/metrics/dates";
 
 type Event = { id: number; day: string; label: string };
 
-/** 판매 리포트에서 자동으로 들어온 iOS 출시 */
-export const isRelease = (label: string) => /^iOS .+ 출시$/.test(label);
+/** 자동으로 들어온 출시(App Store Connect 버전 목록, Play 프로덕션 트랙, #147) */
+export const isRelease = (label: string) => /^(iOS|Android) .+ 출시$/.test(label);
 const shortRelease = (label: string) => label.replace(/ 출시$/, "");
 
 async function call(url: string, init: RequestInit = {}): Promise<Response> {
@@ -260,7 +260,7 @@ export function EventsCalendar({
               <details className="group">
                 <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-1 py-1 text-sd-fg-subtle hover:bg-sd-gray-200">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-sd-fg-subtle" aria-hidden />
-                  iOS 업데이트 {monthReleases.length}개
+                  앱 업데이트 {monthReleases.length}개
                   <ChevronRightIcon className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
                 </summary>
                 <ul className="mt-1 flex flex-col gap-1 pl-4">
@@ -292,7 +292,7 @@ export function EventsCalendar({
           }`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${showUpdates ? "bg-sd-fg-subtle" : "bg-sd-gray-400"}`} />
-          iOS 업데이트 보기
+          앱 업데이트 보기
         </button>
       }
     >
@@ -301,7 +301,7 @@ export function EventsCalendar({
       ) : (
         <div ref={rootRef} className="flex flex-col gap-4">
           <p className="text-[13px] leading-relaxed text-sd-fg-muted">
-            날짜를 누르고 행사나 광고 이름을 넣으면 모든 차트에 마름모로 표시돼서, 숫자가 왜 바뀌었는지 같이 볼 수 있어요. iOS 업데이트 날짜는 자동으로 들어와요.
+            날짜를 누르고 행사나 광고 이름을 넣으면 모든 차트에 마름모로 표시돼서, 숫자가 왜 바뀌었는지 같이 볼 수 있어요. 앱 업데이트 날짜는 자동으로 들어와요.
           </p>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
