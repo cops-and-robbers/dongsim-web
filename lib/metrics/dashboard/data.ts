@@ -120,6 +120,9 @@ export type Dashboard = {
   play: {
     until: string | null;
     window: { current: Week; previous: Week; cut: boolean } | null;
+    /** 스토어 등록정보(방문자, 획득)는 파일이 따로라 들어온 날과 자르는 기간도 따로다 */
+    storeUntil: string | null;
+    storeWindow: { current: Week; previous: Week; cut: boolean } | null;
     current: WeeklyNumbers["play"];
     previous: WeeklyNumbers["play"];
     /** 이 기간 비정상 종료가 난 버전(코드)과 횟수, 많은 순 */
@@ -435,12 +438,22 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
   const playUntil = playLast ? shiftPt(playLast) : null;
   const pw = playWindow(range, previous, playUntil);
   const emptyPlay = weeklyNumbers({ ...input, play: [] }, range).play;
-  // 비정상 종료와 평점 파일은 설치 파일보다 빨리 채워진다(2026-10-07: 설치 9/30, 비정상 종료 10/3).
-  // 설치가 들어온 날로 자르면 그 사이 비정상 종료가 빠져서 이 둘은 기간 전체로 센다
-  const playOf = (w: Week | undefined, whole: Week) => {
+  // 파일마다 채워지는 날이 다르다(2026-10-07: 설치 9/30, 스토어 등록정보 9/24, 비정상 종료 10/3, 모두 PT).
+  // 스토어 등록정보는 그 파일이 들어온 날로 따로 자르고, 비정상 종료와 평점은 설치로 자르면 빠지는 날이 생겨 기간 전체로 센다
+  const storeUntil = storeLast ? shiftPt(storeLast) : null;
+  const sw = playWindow(range, previous, storeUntil);
+  const playOf = (w: Week | undefined, s: Week | undefined, whole: Week) => {
     const cut = w ? weeklyNumbers(input, w).play : emptyPlay;
+    const store = s ? weeklyNumbers(input, s).play : emptyPlay;
     const full = weeklyNumbers(input, whole).play;
-    return { ...cut, crashes: full.crashes, anrs: full.anrs, ratingTotal: full.ratingTotal };
+    return {
+      ...cut,
+      storeVisitors: store.storeVisitors,
+      storeAcquisitions: store.storeAcquisitions,
+      crashes: full.crashes,
+      anrs: full.anrs,
+      ratingTotal: full.ratingTotal,
+    };
   };
 
   // 기간 안에 올린 게시물의 최신 누적값
@@ -532,8 +545,10 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
     play: {
       until: playUntil,
       window: pw,
-      current: playOf(pw?.current, range),
-      previous: playOf(pw?.previous, previous),
+      storeUntil,
+      storeWindow: sw,
+      current: playOf(pw?.current, sw?.current, range),
+      previous: playOf(pw?.previous, sw?.previous, previous),
       crashVersions: crashVersions(playRows ?? [], range),
     },
     followers: followerSummary(followerRows, range),

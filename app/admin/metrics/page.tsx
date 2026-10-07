@@ -577,6 +577,10 @@ function MetricsBody({
   const playDays = pl.window ? ymdRange(pl.window.current.start, pl.window.current.end).length : 0;
   const playNoPrev = !pl.window || !d.since.play || d.since.play > pl.window.previous.start;
   const playNote = playCut && pl.until ? `${md(pl.until)}까지${compare ? `, ${cw}도 같은 ${playDays}일` : ""}` : undefined;
+  // 스토어 등록정보는 설치보다 늦게 채워져 들어온 날도 따로 적는다
+  const storeDays = pl.storeWindow ? ymdRange(pl.storeWindow.current.start, pl.storeWindow.current.end).length : 0;
+  const storeNote = pl.storeWindow?.cut && pl.storeUntil ? `${md(pl.storeUntil)}까지${compare ? `, ${cw}도 같은 ${storeDays}일` : ""}` : undefined;
+  const storeNoPrev = !pl.storeWindow || !d.since.playStore || d.since.playStore > pl.storeWindow.previous.start;
   // 두 스토어 최초 설치. App Store 는 기간 전체, Play 는 들어온 날까지(비교도 같은 규칙)
   const storeNew = { now: c.installs.appStoreNew + pl.current.installs, before: p.installs.appStoreNew + pl.previous.installs };
   const storeSplit = `App Store ${fmt(c.installs.appStoreNew)}, Google Play ${pl.window ? `${fmt(pl.current.installs)}${playCut && pl.until ? `(${md(pl.until)}까지)` : ""}` : "아직 없음"}`;
@@ -785,7 +789,11 @@ function MetricsBody({
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <SegmentedControl options={[...STORES]} value={store} onChange={(v) => onStore(v as Store)} />
-            {pl.until && <span className="text-[12px] text-sd-fg-subtle tabular-nums">Google Play 는 {md(pl.until)}까지 들어왔어요</span>}
+            {pl.until && (
+              <span className="text-[12px] text-sd-fg-subtle tabular-nums">
+                Google Play 는 설치 {md(pl.until)}, 스토어 방문 {md(pl.storeUntil)}까지 들어왔어요
+              </span>
+            )}
           </div>
 
           {store === "both" && (
@@ -832,12 +840,12 @@ function MetricsBody({
                   />
                   <StoreSteps
                     title="Google Play"
-                    since={playCut && pl.until ? `${md(pl.until)}까지 들어왔어요` : undefined}
+                    since={pl.storeWindow?.cut && pl.storeUntil ? `${md(pl.storeUntil)}까지 들어왔어요` : undefined}
                     steps={[
                       { label: "스토어 방문자", value: pl.current.storeVisitors },
                       { label: "그중 설치(획득)", value: pl.current.storeAcquisitions, of: "방문자 중" },
                     ]}
-                    none={!pl.window}
+                    none={!pl.storeWindow}
                   />
                 </div>
               </Group>
@@ -883,16 +891,16 @@ function MetricsBody({
               <EmptyBlock title="이 기간 Google Play 숫자는 아직 없어요" />
             ) : (
               <>
-                <Group title="Google Play 화면에서 설치까지" note="Play Console 의 스토어 등록정보 실적과 같은 순서예요. 구글이 3~7일 늦게 채워서 들어온 날까지만 세고, 비교 기간도 같은 날 수로 잘랐어요.">
+                <Group title="Google Play 화면에서 설치까지" note="Play Console 의 스토어 등록정보 실적과 같은 순서예요. 구글이 며칠 늦게 채워서 파일마다 들어온 날까지만 세고, 비교 기간도 같은 날 수로 잘랐어요.">
                   <Cells cols={5}>
-                    <Step label="스토어 방문자" now={pl.current.storeVisitors} before={pl.previous.storeVisitors} sub={playNote} noPrev={playNoPrev} />
-                    <Step label="스토어 획득" now={pl.current.storeAcquisitions} before={pl.previous.storeAcquisitions} sub={playNote} noPrev={playNoPrev} />
+                    <Step label="스토어 방문자" now={pl.current.storeVisitors} before={pl.previous.storeVisitors} sub={storeNote} noPrev={storeNoPrev} />
+                    <Step label="스토어 획득" now={pl.current.storeAcquisitions} before={pl.previous.storeAcquisitions} sub={storeNote} noPrev={storeNoPrev} />
                     <RatioCell
                       label="전환율"
                       now={{ num: pl.current.storeAcquisitions, den: pl.current.storeVisitors }}
                       before={{ num: pl.previous.storeAcquisitions, den: pl.previous.storeVisitors }}
                       of="방문자 중 설치"
-                      noPrev={playNoPrev}
+                      noPrev={storeNoPrev}
                     />
                     <Step label="최초 설치" now={pl.current.installs} before={pl.previous.installs} sub={playNote} noPrev={playNoPrev} />
                     <CountryCell d={d} source="play" />
