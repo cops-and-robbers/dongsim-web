@@ -69,7 +69,9 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
           .select("property, day, breakdown, key, metric, value")
           .gte("day", from)
           .lte("day", to)
-          .in("breakdown", ["total", "session_campaign", "event", "download_source", "download_page", "platform", "retention", "activation"])
+          // 첫 실행은 테스트 기기를 뺀 first_open_country(뺀 몫은 first_open_test), 활성화는 funnel 줄로 센다(#157).
+          // 이 목록에서 빠지면 오류 없이 0 으로 나온다
+          .in("breakdown", ["total", "session_campaign", "event", "download_source", "download_page", "platform", "retention", "first_open_country", "first_open_test", "funnel"])
           .order("day")
           .order("property")
           .order("breakdown")
