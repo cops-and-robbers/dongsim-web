@@ -4,6 +4,7 @@
  * 1. 버킷에서 우리 패키지 파일 목록을 받는다(같은 개발자 계정의 다른 앱 파일도 보여서 패키지로 거른다)
  * 2. 기본은 지난달과 이번 달 파일만 받는다. 구글이 3~7일 늦게 그 달 파일을 다시 쓰기 때문이다
  * 3. 파일마다 그 달 칸을 통째로 바꾼다(다시 받았을 때 사라진 나라, 버전이 옛 값으로 남지 않게)
+ * 4. 프로덕션 트랙 버전이 바뀌었으면 일정에 "Android x.y.z 출시"를 넣는다(releases.ts)
  *
  * dry 면 받아서 세기만 하고 저장하지 않는다.
  */
@@ -13,6 +14,7 @@ import { serviceAccountFromEnv, serviceAccountToken } from "../google.ts";
 import { BACKFILL_FROM, PLAY_PACKAGE } from "../config.ts";
 import { db, replaceRange } from "../db.ts";
 import { decodePlayFile, monthBounds, parsePlayCsv, parsePlayName, PLAY_REPORTS, type PlayRow } from "./parse.ts";
+import { recordAndroidRelease } from "./releases.ts";
 
 export type PlayResult = {
   ok: boolean;
@@ -22,6 +24,8 @@ export type PlayResult = {
   rows: number;
   /** overview 의 마지막 날(PT). 구글이 늦게 채워 어제보다 며칠 앞이다 */
   installsUntil: string | null;
+  /** 지금 프로덕션 트랙 버전과, 이번에 일정에 넣은 출시 수 */
+  release: { version: string | null; added: number } | null;
   warnings: string[];
 };
 
@@ -130,5 +134,13 @@ export async function runPlay(opts: { dry: boolean; from?: string; now?: Date })
   const missing = months.slice(0, -1).filter((m) => !installMonths.has(m) && m >= BACKFILL_FROM.play);
   if (missing.length) warnings.push(`설치 파일이 없는 달: ${missing.join(", ")}`);
 
-  return { ok: warnings.length === 0, dry: opts.dry, months, files: files.length, rows: rowCount, installsUntil, warnings };
+  let release: PlayResult["release"] = null;
+  if (client) {
+    try {
+      release = await recordAndroidRelease(client, now);
+    } catch (e) {
+      warnings.push(`Android 출시 확인: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return { ok: warnings.length === 0, dry: opts.dry, months, files: files.length, rows: rowCount, installsUntil, release, warnings };
 }
