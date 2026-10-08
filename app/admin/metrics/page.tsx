@@ -159,6 +159,8 @@ function downloadCsv(d: Dashboard) {
     ["playStoreVisitors", "Google Play 스토어 방문자"],
     ["appStoreImpressions", "App Store 노출"],
     ["appStorePageViews", "App Store 제품 페이지 조회"],
+    ["appStoreFromSearch", "App Store 최초 다운로드(스토어 검색)"],
+    ["appStoreFromLink", "App Store 최초 다운로드(링크)"],
   ];
   const games = d.games?.error ? null : d.games?.daily;
   // 그 소스를 모으기 전이거나 아직 안 들어온 날은 0 이 아니라 빈칸(차트에서 선을 끊는 것과 같은 규칙)
@@ -884,6 +886,65 @@ function MetricsBody({
                 <FadeIn delay={0.04}>{chart("노출", "appStoreImpressions", "회", "노출")}</FadeIn>
                 <FadeIn delay={0.08}>{chart("최초 다운로드", "appStoreNew", "건", "최초 다운로드")}</FadeIn>
               </div>
+
+              {/* 어떻게 받았나(#160). 행사가 있는 달은 링크, 없는 달은 검색이 늘어서 행사가 설치를 얼마나 끌었는지 보인다 */}
+              <Group
+                title="어떻게 받았나"
+                note="App Store 에서 처음 받은 사람이 어느 길로 왔는지예요. 행사 QR 과 사이트 버튼은 웹 링크, 카카오톡이나 문자에서 누른 링크는 다른 앱 링크로 잡혀요."
+              >
+                <Cells>
+                  {(
+                    [
+                      ["search", "스토어 검색"],
+                      ["web", "웹 링크(사이트, QR)"],
+                      ["app", "다른 앱 링크(카톡, 문자 등)"],
+                      ["other", "그 밖(둘러보기, 알 수 없음)"],
+                    ] as const
+                  ).map(([k, label]) => (
+                    <Step
+                      key={k}
+                      label={label}
+                      now={d.appStoreWays.current[k]}
+                      before={d.appStoreWays.previous[k]}
+                      sub={d.appStoreWays.current.total > 0 ? `전체의 ${Math.round((d.appStoreWays.current[k] / d.appStoreWays.current.total) * 100)}%` : undefined}
+                      noPrev={noPrev("appstorePage")}
+                      none={none("appstorePage")}
+                    />
+                  ))}
+                </Cells>
+              </Group>
+              <FadeIn>
+                <SectionCard title="받은 길">
+                  <TrendChart
+                    days={days}
+                    series={[
+                      { label: "스토어 검색", values: col("appStoreFromSearch") },
+                      { label: "링크(웹, 다른 앱)", values: col("appStoreFromLink") },
+                    ]}
+                    markers={markers}
+                    unit="건"
+                  />
+                </SectionCard>
+              </FadeIn>
+
+              <Group title="받고 금방 지운 사람 (iOS)" note="행사 때 받은 사람이 바로 지우는지 봐요. Android 는 Google Play 화면의 삭제에 있어요.">
+                <Cells cols={2}>
+                  <RatioCell
+                    label="7일 안에 지운 비율"
+                    now={d.appStoreWays.quickDeletes.current}
+                    before={d.appStoreWays.quickDeletes.previous.until ? d.appStoreWays.quickDeletes.previous : undefined}
+                    of="받은 사람 중 7일 안에 지운 사람"
+                    good="down"
+                    noPrev={!d.appStoreWays.quickDeletes.previous.until}
+                  />
+                  <Cell
+                    label="센 기간"
+                    value={d.appStoreWays.quickDeletes.current.until ? `${md(d.range.start)}~${md(d.appStoreWays.quickDeletes.current.until)}` : "-"}
+                    lines={["받은 지 7일이 지난 날까지만 셌어요"]}
+                  />
+                </Cells>
+                <Note>애플에 분석 정보 공유를 허락한 사람만 세서 실제 설치의 절반쯤이에요. 그래서 개수 대신 비율로만 봐요.</Note>
+              </Group>
             </>
           )}
 
