@@ -419,13 +419,13 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
           .range(a, b),
       "App Store 분석 읽기",
     ),
-    // 다운로드 경로, 출처, 설치와 삭제(#160). 삭제는 지울 때 날짜로 찍혀서 지금 기간 끝까지 읽는다
+    // 다운로드 경로, 설치와 삭제(#160). 출처(downloads_detailed)는 화면에 안 써서 읽지 않는다
     selectAll<AnalyticsDayRow>(
       (a, b) =>
         client
           .from("appstore_analytics_daily")
           .select("report, day, dims, counts")
-          .in("report", ["downloads", "downloads_detailed", "install_delete"])
+          .in("report", ["downloads", "install_delete"])
           .gte("day", from)
           .lte("day", to)
           .order("report")
