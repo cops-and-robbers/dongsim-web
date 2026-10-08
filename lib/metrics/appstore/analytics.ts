@@ -4,9 +4,13 @@
  * 요청(상시 ONGOING, 전체 기록 ONE_TIME_SNAPSHOT) → 리포트 → 인스턴스(처리일마다 한 파일)
  * → 세그먼트(gzip 파일 주소) 순서로 받는다. 인스턴스는 35일 뒤 지워진다.
  *
- * 쓰는 리포트는 Standard 둘이다. Detailed 는 잡음이 더해지고 칸이 잘게 쪼개진다.
+ * 쓰는 리포트는 넷이다(#142, #160).
  * - App Store Discovery and Engagement Standard: 노출, 제품 페이지 조회, 탭 (Event 열)
- * - App Downloads Standard: 신규 다운로드, 재다운로드, 유입 경로, 캠페인
+ * - App Downloads Standard: 신규 다운로드, 재다운로드, 유입 유형(Source Type: 검색, 웹 링크, 다른 앱 링크)
+ * - App Downloads Detailed: 어느 앱이나 사이트에서 왔나(Source Info: 카카오톡, 우리 사이트 등), 캠페인.
+ *   칸이 잘게 나뉘어 5명 미만 칸이 빠진다. 출처 이름을 보려고 받는다
+ * - App Store Installation and Deletion Standard: 설치와 삭제(Event), 처음 받은 날(App Download Date).
+ *   분석 공유에 동의한 사용자만 세서 실제의 절반쯤이다(2026-09: 33 / 판매 리포트 80). 비율로만 쓴다
  * 사용자 5명 미만인 칸은 애플이 뺀다. 그대로 둔다.
  */
 
@@ -16,6 +20,8 @@ import { ASC_API, ascJson } from "./auth.ts";
 export const WANTED_REPORTS: Record<string, string> = {
   "App Store Discovery and Engagement Standard": "engagement",
   "App Downloads Standard": "downloads",
+  "App Downloads Detailed": "downloads_detailed",
+  "App Store Installation and Deletion Standard": "install_delete",
 };
 
 export type AnalyticsRow = {
@@ -26,7 +32,7 @@ export type AnalyticsRow = {
 };
 
 /** 숫자로 읽을 열. 나머지 열은 전부 나눠 보는 축(dims)이다 */
-const MEASURES = new Set(["counts", "unique counts"]);
+const MEASURES = new Set(["counts", "unique counts", "unique devices"]);
 /** 모든 줄에 같은 값이라 저장할 필요가 없는 열 */
 const DROP = new Set(["app name", "app apple identifier"]);
 
@@ -43,7 +49,8 @@ export function parseAnalyticsTsv(text: string): AnalyticsRow[] {
   const iDate = lower.indexOf("date");
   if (iDate < 0) throw new Error(`분석 리포트에 Date 열이 없어요 (열: ${head.join(", ")})`);
   const iCounts = lower.indexOf("counts");
-  const iUnique = lower.indexOf("unique counts");
+  // 설치와 삭제 리포트는 고유 수 열 이름이 Unique Devices 다
+  const iUnique = lower.indexOf("unique counts") >= 0 ? lower.indexOf("unique counts") : lower.indexOf("unique devices");
   const num = (s: string | undefined) => (s === undefined || s === "" ? null : Number(s));
   return lines.slice(1).map((line) => {
     const c = line.split("\t");

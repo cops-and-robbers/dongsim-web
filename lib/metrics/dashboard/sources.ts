@@ -38,4 +38,7 @@ export const SOURCE_OF: Record<Exclude<keyof DailyPoint, "day">, Source> = {
   // App Store 분석 리포트(노출, 제품 페이지 조회). 2026-10-03 부터 있다
   appStoreImpressions: "appstorePage",
   appStorePageViews: "appstorePage",
+  // 다운로드 경로도 같은 분석 리포트라 같은 날까지 있다(#160)
+  appStoreFromSearch: "appstorePage",
+  appStoreFromLink: "appstorePage",
 };

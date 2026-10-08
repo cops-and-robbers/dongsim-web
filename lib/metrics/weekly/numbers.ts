@@ -35,6 +35,8 @@ export type WeeklyInput = {
   admob: { day: string; earningsMicros: number; matchedRequests: number; impressions: number }[];
   /** Google Play 리포트(play_daily). day 는 PT 날짜 그대로 - 여기서 shiftPt 로 옮긴다. 없으면 0 으로 센다 */
   play?: { day: string; report: string; dim: string; key: string; metric: string; value: number }[];
+  /** App Store 분석 리포트의 다운로드 경로, 설치와 삭제(downloads, install_delete). 화면만 쓴다 */
+  appstoreDownloads?: { report: string; day: string; dims: Record<string, string>; counts: number | null }[];
   /** App Store 분석 리포트의 노출, 제품 페이지 조회(engagement). day 는 UTC 날짜 */
   appstoreEngagement?: { day: string; event: string; counts: number; uniqueCounts: number }[];
 };

@@ -36,7 +36,16 @@ GitHub Actions
 
 **App Store 판매 상품 유형(`product_type`)**: `1`, `1F`, `1T` 신규 다운로드 / `3`, `3F` 재다운로드 / `7`, `7F`, `7T` 업데이트.
 
-**App Store 분석 리포트**는 Standard 두 개만 쓴다(`appstore/analytics.ts` 의 `WANTED_REPORTS`).
+**App Store 분석 리포트**는 네 개를 받는다(`appstore/analytics.ts` 의 `WANTED_REPORTS`, #160).
+
+| 리포트 | report 값 | 화면에서 | 주의 |
+| --- | --- | --- | --- |
+| Discovery and Engagement Standard | `engagement` | 노출, 제품 페이지 조회, 나라별 | 하루 고유 기기를 기간으로 더하면 콘솔 값보다 조금 크다 |
+| App Downloads Standard | `downloads` | 어떻게 받았나(스토어 검색, 웹 링크, 다른 앱 링크) | 최초 다운로드 합이 판매 리포트와 거의 같다(2026-09: 79 / 80) |
+| App Downloads Detailed | `downloads_detailed` | 안 쓴다(모으기만) | 출처 앱, 사이트(Source Info)와 캠페인이 있지만 칸이 잘게 나뉘어 5명 미만 칸이 빠진다. 최초 다운로드로는 한 달에 한두 줄. 카카오톡은 자동 업데이트 줄에만 잡혔다(기존 사용자가 처음 들어온 곳) |
+| Installation and Deletion Standard | `install_delete` | 받고 7일 안에 지운 비율(iOS) | 분석 공유에 동의한 사용자만 센다(2026-09 최초 설치 33 / 판매 80). 개수가 아니라 비율로만 쓴다. 고유 수 열 이름이 Unique Devices 다 |
+
+전체 기록(ONE_TIME_SNAPSHOT)은 2026-10-08 에 도착해 2026-04-06 부터 채워졌다. 이 파일은 35일 뒤 애플에서 지워지므로, 새 리포트를 받기로 하면 그 안에 수집에 넣어야 예전 기록이 남는다.
 열 이름을 미리 정하지 않고 머리줄을 읽어, 숫자(`Counts`, `Unique Counts`) 외의 열은 `dims`(jsonb)에 그대로 둔다.
 상시 수집(ONGOING, 2026-10-05)과 전체 기록(ONE_TIME_SNAPSHOT, 2026-10-06) 요청을 둘 다 읽는다.
 한 번 처리한 인스턴스는 `appstore_analytics_instances` 에 남겨 다시 받지 않는다.

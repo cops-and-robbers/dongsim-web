@@ -17,6 +17,7 @@ import { CHANNELS, channelOf, isInternal, type Channel } from "../channels.ts";
 import { addDays, ymdRange } from "../dates.ts";
 import { splitKey } from "../ga4/run.ts";
 import { funnelData, type FunnelData } from "../funnel.ts";
+import { quickDeletes, sourceGroup, sourceTotals, type AnalyticsDayRow, type SourceGroup } from "./appstoreSources.ts";
 import { fromInstagram, playWindow, shiftPt, weeklyNumbers, type Week, type WeeklyInput, type WeeklyNumbers } from "../weekly/numbers.ts";
 
 export type DailyPoint = {
@@ -47,6 +48,9 @@ export type DailyPoint = {
   /** App Store 노출, 제품 페이지 조회(분석 리포트, 횟수) */
   appStoreImpressions: number;
   appStorePageViews: number;
+  /** App Store 최초 다운로드 중 스토어 검색으로, 링크(웹, 다른 앱)로 받은 것(분석 리포트, #160) */
+  appStoreFromSearch: number;
+  appStoreFromLink: number;
 };
 
 export type PostRow = {
@@ -110,6 +114,15 @@ export type Dashboard = {
   channels: { current: ChannelRow[]; previous: ChannelRow[] };
   /** 나라별 최초 설치(이 기간). App Store 최초 다운로드와 Google Play 최초 설치(들어온 날까지) */
   countries: { country: string; appStore: number; play: number }[];
+  /**
+   * App Store 최초 다운로드를 받은 길(검색, 웹 링크, 다른 앱 링크)과 받고 7일 안에 지운 비율(#160).
+   * 삭제는 분석 공유에 동의한 사용자만 센 값이라 비율로만 쓴다(appstoreSources.ts)
+   */
+  appStoreWays: {
+    current: Record<SourceGroup, number> & { total: number };
+    previous: Record<SourceGroup, number> & { total: number };
+    quickDeletes: { current: { num: number; den: number; until: string | null }; previous: { num: number; den: number; until: string | null } };
+  };
   /** App Store 나라별 노출, 제품 페이지 조회(분석 리포트)와 최초 다운로드(판매 리포트) */
   appStoreTerritories: { country: string; impressions: number; pageViews: number; downloads: number }[];
   /**
@@ -181,6 +194,8 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
         playStoreVisitors: 0,
         appStoreImpressions: 0,
         appStorePageViews: 0,
+        appStoreFromSearch: 0,
+        appStoreFromLink: 0,
       },
     ]),
   );
@@ -239,6 +254,13 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
     if (!p) continue;
     if (e.event === "Impression") p.appStoreImpressions += e.counts;
     if (e.event === "Page view") p.appStorePageViews += e.counts;
+  }
+  for (const r of input.appstoreDownloads ?? []) {
+    const p = at(r.day);
+    if (!p || r.report !== "downloads" || r.dims["Download Type"] !== "First-time download") continue;
+    const g = sourceGroup(r.dims["Source Type"] ?? "");
+    if (g === "search") p.appStoreFromSearch += Number(r.counts ?? 0);
+    if (g === "web" || g === "app") p.appStoreFromLink += Number(r.counts ?? 0);
   }
   return [...byDay.values()];
 }
@@ -306,7 +328,7 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
   };
   // Play 는 PT 날짜를 하루 뒤로 옮겨 쓰고, 기간 첫날 전날의 설치 기기 수도 보므로 이틀 앞부터 읽는다
   const playFrom = addDays(from, -2);
-  const [igDays, igMedia, ga4, sales, admob, fresh, followerRows, eventRows, playRows, playCountryRows, engagementRows] = await Promise.all([
+  const [igDays, igMedia, ga4, sales, admob, fresh, followerRows, eventRows, playRows, playCountryRows, engagementRows, waysRows] = await Promise.all([
     selectAll((a, b) => client.from("instagram_account_daily").select("day, views, profile_views, website_clicks").gte("day", ptFrom).lte("day", to).order("day").range(a, b), "인스타 하루 지표 읽기"),
     selectAll((a, b) => client.from("instagram_media").select("id, posted_at, product_type, caption, permalink").gte("posted_at", `${addDays(from, -1)}T00:00:00Z`).lte("posted_at", `${addDays(to, 1)}T23:59:59Z`).order("posted_at").order("id").range(a, b), "게시물 읽기"),
     selectAll(
@@ -397,6 +419,21 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
           .range(a, b),
       "App Store 분석 읽기",
     ),
+    // 다운로드 경로, 설치와 삭제(#160). 출처(downloads_detailed)는 화면에 안 써서 읽지 않는다
+    selectAll<AnalyticsDayRow>(
+      (a, b) =>
+        client
+          .from("appstore_analytics_daily")
+          .select("report, day, dims, counts")
+          .in("report", ["downloads", "install_delete"])
+          .gte("day", from)
+          .lte("day", to)
+          .order("report")
+          .order("day")
+          .order("dims_key")
+          .range(a, b),
+      "App Store 다운로드 경로 읽기",
+    ),
   ]);
 
   // Play, App Store 분석 리포트의 첫날과 마지막 날. Play 는 PT 라 화면에 쓸 때 하루 뒤로 옮긴다
@@ -433,6 +470,7 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
       impressions: Number(r.impressions),
     })),
     play: playRows ?? [],
+    appstoreDownloads: waysRows,
     appstoreEngagement: engagementRows.map((r) => ({ day: r.day, event: r.dims.Event ?? "", counts: Number(r.counts ?? 0), uniqueCounts: Number(r.unique_counts ?? 0) })),
   };
   const playUntil = playLast ? shiftPt(playLast) : null;
@@ -541,6 +579,14 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
     appCampaigns: campaigns(input.ga4, range, "app"),
     channels: { current: channelTable(input.ga4, range), previous: channelTable(input.ga4, previous) },
     countries: countryTable(sales as { day: string; product_type: string; units: number; country: string }[], playCountryRows ?? [], range),
+    appStoreWays: {
+      current: sourceTotals(waysRows, range),
+      previous: sourceTotals(waysRows, previous),
+      quickDeletes: {
+        current: quickDeletes(waysRows, range, asaLast),
+        previous: quickDeletes(waysRows, previous, asaLast),
+      },
+    },
     appStoreTerritories: territoryTable(engagementRows, sales as { day: string; product_type: string; units: number; country: string }[], range),
     play: {
       until: playUntil,
