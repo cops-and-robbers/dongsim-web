@@ -34,6 +34,7 @@ pnpm build                 # 검증 기준은 이 빌드의 "Compiled successful
 | 블로그(노션 CMS) 관련 개발 | `docs/blog-system.md` |
 | 인스타 성과 수집, 디스코드 리포트 | `docs/instagram-report.md` |
 | App Store, GA4, AdMob 지표 수집 | `docs/metrics-collection.md` |
+| 어드민 지표 챗봇(물어보기 탭) | `docs/metrics-chat.md` |
 | 빌드·배포·환경 문제가 생겼을 때 | `docs/gotchas.md` |
 | 어드민 웹 애플 로그인 설정·문제 해결 | `docs/apple-signin-web.md` |
 | 팀원에게 블로그 글쓰기를 안내할 때 | `docs/blog-writing-guide.md` |
