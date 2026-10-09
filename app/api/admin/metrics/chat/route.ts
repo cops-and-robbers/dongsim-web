@@ -45,8 +45,15 @@ async function auth(req: Request): Promise<{ token: string } | NextResponse> {
   return { token };
 }
 
-/** 오늘(한국 날짜) 이 사람이 한 질문 수와 이번 달 전체 비용 */
-async function usage(key: string, today: string) {
+// 기록 표(0006 마이그레이션)를 아직 안 만든 프로젝트. PostgREST 가 "표를 못 찾았다"고 할 때의 코드
+const NO_TABLE = "PGRST205";
+const NO_TABLE_MESSAGE = "질문 기록 표(metrics_chat_log)가 아직 없어요. Supabase SQL Editor 에서 supabase/migrations/0006_metrics_chat.sql 을 한 번 실행해 주세요.";
+
+/**
+ * 오늘(한국 날짜) 이 사람이 한 질문 수와 이번 달 전체 비용.
+ * 기록 표가 없으면 진짜 모델에서는 멈춘다(비용 상한을 셀 수 없다). 개발용 가짜 모델(비용 0)은 표 없이도 화면을 볼 수 있게 0 으로 둔다
+ */
+async function usage(key: string, today: string, devMock = false) {
   const client = db();
   const dayStart = new Date(`${today}T00:00:00+09:00`).toISOString();
   const monthStart = new Date(`${today.slice(0, 8)}01T00:00:00+09:00`).toISOString();
@@ -54,6 +61,9 @@ async function usage(key: string, today: string) {
     client.from("metrics_chat_log").select("id", { count: "exact", head: true }).eq("user_key", key).gte("created_at", dayStart),
     client.from("metrics_chat_log").select("cost_usd").gte("created_at", monthStart),
   ]);
+  const missing = mine.error?.code === NO_TABLE || month.error?.code === NO_TABLE;
+  if (missing && devMock) return { usedToday: 0, spentMonth: 0 };
+  if (missing) throw new Error(NO_TABLE_MESSAGE);
   if (mine.error) throw new Error(`질문 기록 읽기: ${mine.error.message}`);
   if (month.error) throw new Error(`비용 기록 읽기: ${month.error.message}`);
   const spent = (month.data as { cost_usd: number }[]).reduce((a, r) => a + r.cost_usd, 0);
@@ -64,7 +74,8 @@ export async function GET(req: Request): Promise<NextResponse> {
   const a = await auth(req);
   if (a instanceof NextResponse) return a;
   const today = todayIn("Asia/Seoul");
-  const enabled = !!chatModelFromEnv();
+  const chat = chatModelFromEnv();
+  const enabled = !!chat;
   try {
     const ctx = makeCtx({ client: db(), apiBase: process.env.NEXT_PUBLIC_API_BASE_URL, token: a.token, today });
     const y = addDays(today, -1);
@@ -73,7 +84,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     const [cmp, ev, u] = await Promise.all([
       metricsCompare(ctx, last7, prev7),
       eventsList(ctx, { start: addDays(y, -13), end: y }),
-      enabled ? usage(userKey(a.token), today) : Promise.resolve({ usedToday: 0, spentMonth: 0 }),
+      chat ? usage(userKey(a.token), today, chat.modelId === "dev-mock") : Promise.resolve({ usedToday: 0, spentMonth: 0 }),
     ]);
     const data = cmp.status === "ok" ? dataSuggestions(cmp.metrics, ev.status === "ok" ? ev.events : []) : [];
     return NextResponse.json(
@@ -99,7 +110,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const key = userKey(a.token);
   const client = db();
   try {
-    const u = await usage(key, today);
+    const u = await usage(key, today, chat.modelId === "dev-mock");
     if (u.usedToday >= DAILY_LIMIT) return NextResponse.json({ error: `오늘 질문 ${DAILY_LIMIT}개를 다 썼어요. 내일 다시 물어봐 주세요.` }, { status: 429 });
     if (u.spentMonth >= MONTHLY_USD) return NextResponse.json({ error: "이번 달 챗봇 예산을 다 썼어요. 다음 달 1일에 다시 열려요." }, { status: 429 });
   } catch (e) {
