@@ -18,7 +18,7 @@
       "ms": 140,
       "loop": true,
       "name": "걷기",
-      "when": "마우스를 따라갈 때 (왼쪽은 좌우 반전)"
+      "when": "마우스를 따라갈 때 (그림은 왼쪽을 본다. 오른쪽으로 갈 때 좌우 반전)"
     },
     "run": {
       "row": 2,
@@ -132,13 +132,45 @@
       "name": "졸기",
       "when": "2분 동안 아무것도 안 할 때"
     },
-    "wake": {
+    "lift": {
       "row": 16,
+      "frames": 4,
+      "ms": 130,
+      "loop": true,
+      "name": "들림",
+      "when": "꾹 눌러서 옮기는 동안"
+    },
+    "land": {
+      "row": 17,
+      "frames": 4,
+      "ms": 110,
+      "loop": false,
+      "name": "착지",
+      "when": "옮기다 놓았을 때"
+    },
+    "wake": {
+      "row": 18,
       "frames": 4,
       "ms": 140,
       "loop": false,
       "name": "깨기",
       "when": "졸다가 마우스가 움직이면"
+    },
+    "box": {
+      "row": 19,
+      "frames": 1,
+      "ms": 1000,
+      "loop": true,
+      "name": "보관함",
+      "when": "비어 있는 증거물 보관함"
+    },
+    "boxed": {
+      "row": 20,
+      "frames": 2,
+      "ms": 600,
+      "loop": true,
+      "name": "보관함 속",
+      "when": "보관함에 넣어 두었을 때 (따라다니지 않는다)"
     }
   }
 }

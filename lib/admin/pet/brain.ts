@@ -7,16 +7,20 @@
  * 3. 오래 가만히 있으면 앉기(30초), 졸기(2분)
  * 4. 그 밖에는 마우스를 따라간다. 멀면 달리고, 가까우면 걷고, 아주 가까우면 선다
  *
+ * 꾹 눌러 들고 다니는 동안(들림), 떨어지는 동안, 보관함에 들어가 있는 동안은 화면이 직접 정하고 이 함수를 부르지 않는다.
+ * 내려놓으면 착지(land)가 한 번짜리로 이어진다.
+ *
  * 움직임 줄이기 설정이면 걷지도 뛰지도 않고 제자리에서 대기 첫 프레임만 쓴다(화면이 처리한다).
  */
 
 export type Anim =
   | "idle" | "walk" | "run" | "listen" | "think" | "sniff" | "happy" | "confused" | "fall"
-  | "love" | "sad" | "surprise" | "wave" | "squish" | "sit" | "sleep" | "wake";
+  | "love" | "sad" | "surprise" | "wave" | "squish" | "sit" | "sleep" | "wake"
+  | "lift" | "land" | "box" | "boxed";
 
 export type SheetMeta = { cell: [number, number]; states: Record<Anim, { row: number; frames: number; ms: number; loop: boolean }> };
 
-export const ONCE: Anim[] = ["happy", "fall", "love", "sad", "surprise", "wave", "squish", "wake"];
+export const ONCE: Anim[] = ["happy", "fall", "love", "sad", "surprise", "wave", "squish", "wake", "land"];
 export const SIT_AFTER = 30_000;
 export const SLEEP_AFTER = 120_000;
 const WALK_FROM = 50;

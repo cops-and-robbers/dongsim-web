@@ -210,8 +210,8 @@ def make(f):
 A = lambda **k: k
 STATES = [
     ("idle", "대기", 260, True, "평소", [A(), A(dy=1), A(), A(eyes="closed")]),
-    ("walk", "걷기", 140, True, "마우스를 따라갈 때 (왼쪽은 좌우 반전)", [A(legs="a"), A(dy=-1), A(legs="b"), A(dy=-1)]),
-    ("run", "달리기", 90, True, "마우스가 멀리 있을 때", [A(legs="kick", dy=-1, mouth="open", look=1), A(legs="a", look=1, mouth="open"), A(legs="kick", dy=-2, mouth="open", look=1), A(legs="b", look=1, mouth="open")]),
+    ("walk", "걷기", 140, True, "마우스를 따라갈 때 (그림은 왼쪽을 본다. 오른쪽으로 갈 때 좌우 반전)", [A(legs="a"), A(dy=-1), A(legs="b"), A(dy=-1)]),
+    ("run", "달리기", 90, True, "마우스가 멀리 있을 때", [A(legs="kick", dy=-1, mouth="open", look=-1), A(legs="a", look=-1, mouth="open"), A(legs="kick", dy=-2, mouth="open", look=-1), A(legs="b", look=-1, mouth="open")]),
     ("listen", "귀 기울이기", 220, True, "챗봇 입력창에 글을 쓰는 동안", [A(look=-1, mouth="o"), A(look=-1, mouth="o", dy=1), A(look=-1, mouth="smile"), A(look=-1, mouth="o", eyes="closed")]),
     ("think", "생각", 260, True, "질문을 보내고 답을 기다릴 때", [A(look=-1, mouth="flat", fx="dots1"), A(look=-1, mouth="flat", fx="dots2"), A(look=1, mouth="flat", fx="dots3"), A(look=1, mouth="flat", fx="dots3", eyes="closed")]),
     ("sniff", "킁킁", 180, True, "답을 찾는 중(생각과 번갈아)", [A(mouth="sniff", eyes="closed", fx="smell"), A(mouth="sniff", eyes="closed", dy=1), A(mouth="sniff", eyes="closed", fx="smell"), A(mouth="sniff", eyes="open", look=1)]),
@@ -225,8 +225,58 @@ STATES = [
     ("squish", "꾹", 100, False, "펫을 누르고 있을 때", [A(squash=True, eyes="closed", mouth="wobble"), A(squash=True, eyes="closed", mouth="wobble", dy=1), A(eyes="wide", mouth="o", dy=-1), A()]),
     ("sit", "앉아 쉬기", 400, True, "30초 동안 아무것도 안 할 때", [A(legs="tuck", dy=3, squash=True), A(legs="tuck", dy=3, squash=True, eyes="closed"), A(legs="tuck", dy=3, squash=True, look=-1), A(legs="tuck", dy=3, squash=True, look=1)]),
     ("sleep", "졸기", 420, True, "2분 동안 아무것도 안 할 때", [A(legs="tuck", dy=3, squash=True, eyes="closed", mouth="flat"), A(legs="tuck", dy=3, squash=True, eyes="closed", mouth="o", fx="z1"), A(legs="tuck", dy=4, squash=True, eyes="closed", mouth="o", fx="z2"), A(legs="tuck", dy=3, squash=True, eyes="closed", mouth="flat")]),
+    ("lift", "들림", 130, True, "꾹 눌러서 옮기는 동안", [A(eyes="wide", mouth="o", legs="a", lean=-1), A(eyes="happy", mouth="open", legs="b", lean=1), A(eyes="wide", mouth="o", legs="kick", lean=-1), A(eyes="happy", mouth="open", legs="b", lean=1)]),
+    ("land", "착지", 110, False, "옮기다 놓았을 때", [A(squash=True, eyes="closed", mouth="o"), A(squash=True, dy=1, eyes="closed", mouth="wobble"), A(stretch=True, dy=-1, eyes="wide", mouth="o"), A(eyes="happy", mouth="smile")]),
     ("wake", "깨기", 140, False, "졸다가 마우스가 움직이면", [A(legs="tuck", dy=3, squash=True, eyes="closed"), A(legs="tuck", dy=2, eyes="wide", mouth="o", fx="bang"), A(stretch=True, dy=-1, eyes="open", mouth="o"), A(eyes="open", mouth="smile")]),
 ]
+
+BOX = (176, 122, 69)     # 상자
+TAPE = (222, 172, 106)   # 테이프, 윗면
+
+
+def make_box(peek):
+    """증거물 보관함. peek 이면 치즈가 뚜껑 위로 빼꼼 나와 잔다(peek 은 프레임 번호)"""
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    p = img.load()
+
+    def put(x, y, c):
+        if 0 <= x < W and 0 <= y < H:
+            p[x, y] = c + (255,)
+    x0, x1, y0, y1 = 3, 24, 13, 26
+    if peek is not None:
+        # 뚜껑 위로 치즈 윗부분: 몸 그림의 위쪽만 잘라 붙인다
+        c = make(A(eyes="closed", mouth="flat", legs="tuck", dy=-1, fx="z1" if peek % 2 == 0 else "z2"))
+        # 감은 눈까지 보이게 위로 뺀다(처음엔 얼굴이 상자에 가려 치즈 윗면만 보였다)
+        top = c.crop((0, 3, W, 16))
+        img.alpha_composite(top, (0, 0 if peek % 2 == 0 else 1))
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
+            edge = x in (x0, x1) or y in (y0, y1)
+            put(x, y, K if edge else BOX)
+    for x in range(x0 + 1, x1):  # 뚜껑 띠
+        put(x, y0 + 1, TAPE); put(x, y0 + 2, TAPE)
+    put(x0 + 1, y0 + 3, K); put(x1 - 1, y0 + 3, K)
+    for x in range(x0, x1 + 1):
+        put(x, y0 + 3, K)
+    for y in range(y0 + 4, y1):  # 가운데 테이프
+        put(12, y, TAPE); put(13, y, TAPE); put(14, y, TAPE)
+    for x, y in [(6, 18), (7, 18), (8, 18), (6, 20), (7, 20)]:  # 표식 (글자 없이 줄 두 개)
+        put(x, y, K)
+    return img
+
+
+STATES.append(("box", "보관함", 1000, True, "비어 있는 증거물 보관함", ["BOX:None"]))
+STATES.append(("boxed", "보관함 속", 600, True, "보관함에 넣어 두었을 때 (따라다니지 않는다)", ["BOX:0", "BOX:1"]))
+
+_make = make
+
+
+def make(f):  # noqa: F811 보관함 프레임은 문자열로 표시한다
+    if isinstance(f, str) and f.startswith("BOX:"):
+        v = f[4:]
+        return make_box(None if v == "None" else int(v))
+    return _make(f)
+
 
 cols = max(len(fr) for *_, fr in STATES)
 sheet = Image.new("RGBA", (cols * W, len(STATES) * H), (0, 0, 0, 0))
