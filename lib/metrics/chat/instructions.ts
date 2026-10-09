@@ -62,8 +62,29 @@ ${METRICS.map((m) => `- ${m.key}: ${m.label}(${m.unit}). ${m.note}`.trim()).join
 - followUps: 이어서 물으면 좋은 질문 2~3개. 도구로 답할 수 있는 것만, 기간을 넣어서
 - 말투는 해요체. 짧고 쉬운 말로. 긴 대시, 굵은 글씨, 이모지는 쓰지 마`;
 
-/** 날마다 바뀌는 부분: 오늘, 풀어 둔 기간, 소스별로 숫자가 들어온 마지막 날 */
-export function dynamicPart(today: string, status: Pick<Dashboard, "freshness" | "since">): string {
+/** 지표 화면의 탭. 챗봇 패널은 어느 탭에서든 열려서, 지금 어느 탭을 보며 묻는지 모델에게 알린다 */
+export const VIEW_TABS = { summary: "요약", instagram: "인스타그램", traffic: "유입 경로", store: "스토어", app: "앱과 광고" } as const;
+
+/** 질문할 때 화면에 걸려 있던 탭과 기간. "이 기간"을 이 날짜로 푼다 */
+export type View = { tab: keyof typeof VIEW_TABS; range: { start: string; end: string }; previous: { start: string; end: string } | null };
+
+const YMD = /^\d{4}-\d{2}-\d{2}$/;
+const isRange = (x: unknown): x is { start: string; end: string } => {
+  const r = x as { start?: unknown; end?: unknown } | null;
+  return !!r && typeof r.start === "string" && typeof r.end === "string" && YMD.test(r.start) && YMD.test(r.end) && r.start <= r.end;
+};
+
+/** 화면이 보낸 값을 그대로 믿지 않는다. 모양이 틀리면 없는 것으로 친다(지시문에 엉뚱한 글이 섞이지 않게) */
+export function parseView(x: unknown): View | undefined {
+  const v = x as { tab?: unknown; range?: unknown; previous?: unknown } | null;
+  if (!v || typeof v.tab !== "string" || !(v.tab in VIEW_TABS) || !isRange(v.range)) return undefined;
+  const { start, end } = v.range;
+  const previous = isRange(v.previous) ? { start: v.previous.start, end: v.previous.end } : null;
+  return { tab: v.tab as View["tab"], range: { start, end }, previous };
+}
+
+/** 날마다 바뀌는 부분: 오늘, 풀어 둔 기간, 소스별로 숫자가 들어온 마지막 날, 화면에서 보고 있는 것 */
+export function dynamicPart(today: string, status: Pick<Dashboard, "freshness" | "since">, view?: View): string {
   const periods = namedPeriods(today)
     .map((p) => `- ${p.label}: ${p.start} ~ ${p.end}`)
     .join("\n");
@@ -77,5 +98,10 @@ export function dynamicPart(today: string, status: Pick<Dashboard, "freshness" |
 ${periods}
 
 # 데이터 현황 (소스별로 숫자가 있는 첫날 ~ 마지막 날)
-${fresh}`;
+${fresh}${view ? `
+
+# 화면에서 보고 있는 것
+팀원은 지표 화면의 "${VIEW_TABS[view.tab]}" 탭을 보며 묻고 있어. 질문에 기간이 없거나 "이 기간", "지금 보는 기간"이라고 하면 아래 기간으로 답해.
+- 보고 있는 기간: ${view.range.start} ~ ${view.range.end}${view.previous ? `
+- 비교 기간: ${view.previous.start} ~ ${view.previous.end}` : ""}` : ""}`;
 }

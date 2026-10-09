@@ -4,6 +4,7 @@ import { checkAdmin } from "@/lib/admin/server/checkAdmin";
 import { addDays, todayIn } from "@/lib/metrics/dates";
 import { db } from "@/lib/metrics/db";
 import { chatModelFromEnv } from "@/lib/metrics/chat/model";
+import { parseView } from "@/lib/metrics/chat/instructions";
 import { askMetrics, costUsd } from "@/lib/metrics/chat/run";
 import { dataSuggestions, FIXED_SUGGESTIONS } from "@/lib/metrics/chat/suggest";
 import { eventsList, makeCtx, metricsCompare } from "@/lib/metrics/chat/tools";
@@ -12,7 +13,7 @@ import { eventsList, makeCtx, metricsCompare } from "@/lib/metrics/chat/tools";
  * 어드민 지표 챗봇 (#163). 지표 화면(/api/admin/metrics)과 같은 방식으로 어드민 토큰을 확인한다.
  *
  * GET   켜져 있는지, 오늘 남은 질문 수, 추천 질문
- * POST  { question } -> 답, 검증 결과, 부른 도구, 토큰
+ * POST  { question, view? } -> 답, 검증 결과, 부른 도구, 토큰. view 는 질문할 때 화면에 걸린 탭과 기간("이 기간"을 푼다)
  * PATCH { id, feedback: "good" | "bad" } -> 답 평가 (골든 질문 후보)
  *
  * 비용 상한은 두 겹이다. 프로젝트의 Spend Cap 과, 여기서 세는 사람당 하루 질문 수와 이번 달 비용 합계
@@ -89,7 +90,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (a instanceof NextResponse) return a;
   const chat = chatModelFromEnv();
   if (!chat) return NextResponse.json({ error: "챗봇이 아직 연결되지 않았어요. docs/metrics-chat.md 의 설정을 마쳐 주세요." }, { status: 503 });
-  const body = (await req.json().catch(() => ({}))) as { question?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { question?: unknown; view?: unknown };
   const question = typeof body.question === "string" ? body.question.trim() : "";
   if (!question) return NextResponse.json({ error: "질문을 적어 주세요." }, { status: 400 });
   if (question.length > MAX_QUESTION) return NextResponse.json({ error: `질문은 ${MAX_QUESTION}자까지 적을 수 있어요.` }, { status: 400 });
@@ -108,7 +109,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   // 무료 등급은 보낸 내용이 구글 개선에 쓰여 광고 수익은 보내지 않는다(model.ts)
   const ctx = makeCtx({ client, apiBase: process.env.NEXT_PUBLIC_API_BASE_URL, token: a.token, today, redact: chat.free ? new Set(["ad_earnings_usd"]) : undefined });
   try {
-    const r = await askMetrics({ model: chat.model, ctx, question, providerOptions: chat.providerOptions });
+    const r = await askMetrics({ model: chat.model, ctx, question, view: parseView(body.view), providerOptions: chat.providerOptions });
     const cost = chat.free ? 0 : costUsd(chat.modelId, r.usage);
     const log = await client
       .from("metrics_chat_log")

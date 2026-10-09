@@ -11,7 +11,7 @@ import { generateText, isStepCount, Output, type LanguageModel, type LanguageMod
 import { z } from "zod";
 import { addDays } from "../dates.ts";
 import { previousRange } from "../dashboard/data.ts";
-import { dynamicPart, FIXED } from "./instructions.ts";
+import { dynamicPart, FIXED, type View } from "./instructions.ts";
 import { chatTools, type Ctx } from "./tools.ts";
 import { verifyAnswer, type Answer, type Problem } from "./verify.ts";
 
@@ -44,13 +44,20 @@ const addUsage = (a: AskResult["usage"], u: LanguageModelUsage) => ({
   cachedInputTokens: a.cachedInputTokens + (u.inputTokenDetails?.cacheReadTokens ?? 0),
 });
 
-export async function askMetrics(opts: { model: LanguageModel; ctx: Ctx; question: string; providerOptions?: Record<string, Record<string, unknown>> }): Promise<AskResult> {
+export async function askMetrics(opts: {
+  model: LanguageModel;
+  ctx: Ctx;
+  question: string;
+  /** 질문할 때 화면에 걸려 있던 탭과 기간 */
+  view?: View;
+  providerOptions?: Record<string, Record<string, unknown>>;
+}): Promise<AskResult> {
   const { model, ctx, question } = opts;
   // 데이터 현황(소스별 마지막 날)은 최근 7일 집계에 같이 들어 있다. 도구가 같은 집계를 다시 쓰면 기억해 둔 것을 쓴다
   const y = addDays(ctx.today, -1);
   const last7 = { start: addDays(y, -6), end: y };
   const status = await ctx.dashboard(last7, previousRange(last7));
-  const instructions = `${FIXED}\n\n${dynamicPart(ctx.today, status)}`;
+  const instructions = `${FIXED}\n\n${dynamicPart(ctx.today, status, opts.view)}`;
   // 무료 등급은 분당 요청 수가 작아 두 사람이 같이 물으면 429 가 날 수 있다. SDK 가 기다렸다 다시 보내게 3번까지 둔다
   const common = { model, instructions, output: Output.object({ schema: answerSchema }), maxOutputTokens: 3000, maxRetries: 3, providerOptions: opts.providerOptions as never };
 
