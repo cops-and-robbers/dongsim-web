@@ -5,7 +5,7 @@
 //
 // 운영과 다른 점(결과를 읽을 때 감안한다)
 // - agy 는 자기 에이전트 지시문을 앞에 붙인다. 우리 지시문은 시스템이 아니라 사용자 글로 들어간다
-// - 다시 쓰기(검증에 걸리면 한 번 더)는 하지 않는다. 첫 답의 통과율을 잰다
+// - 기본은 첫 답의 통과율을 잰다. --retry 를 주면 운영처럼 걸린 곳(또는 잘린 답)을 알려 주고 같은 대화에서 한 번 다시 쓰게 한 뒤 채점한다
 // - 게임 서버 숫자는 비어 있다(어드민 토큰 없음)
 //
 // 준비(한 번)
@@ -43,6 +43,7 @@ const RESCORE = opt("--rescore");
 const OUT = opt("--out", path.join(os.tmpdir(), "chat-eval"));
 const MODEL = opt("--model", "gemini-3.8-flash-low");
 const ONLY = opt("--only")?.split(",");
+const RETRY = args.includes("--retry");
 if (!LOG && !RESCORE) throw new Error("--log 로 MCP 서버의 EVAL_LOG 와 같은 파일을 주세요");
 fs.mkdirSync(OUT, { recursive: true });
 const AGY = path.join(os.homedir(), ".agy", "bin", "agy.exe");
@@ -81,10 +82,14 @@ function firstJson(text) {
   return null;
 }
 
+/** 운영(run.ts)과 같은 지시문. 주의점 검증에 그 숫자를 허용한다 */
+const instructionsOf = (c) => `${FIXED}
+
+${dynamicPart(today, status, c.view ? parseView(c.view) : undefined)}`;
 const nameOk = (want, name) => (want instanceof RegExp ? want.test(name) : want === name);
 const texts = (a) => [a.headline.text, ...a.facts.map((f) => f.text), ...a.caveats];
 
-function grade(c, raw, answer, calls) {
+function grade(c, raw, answer, calls, retried = false) {
   const checks = [];
   const add = (name, ok, note = "") => checks.push({ name, ok, note });
   add("답 모양", !!answer, answer ? "" : "스키마에 맞는 JSON 이 아님");
@@ -92,8 +97,8 @@ function grade(c, raw, answer, calls) {
   const results = new Map(calls.map((t) => [t.id, t.output]));
   // 운영(run.ts)과 같은 순서: 가설 인용 고치기, 지시문 숫자 허용
   answer = repairHypothesisRefs(answer, results);
-  const v = verifyAnswer(answer, results, c.q, numbersIn(FIXED));
-  add("숫자 검증(첫 답)", v.ok, v.problems.map((p) => `${p.where}: ${p.issue}`).join(" / "));
+  const v = verifyAnswer(answer, results, c.q, numbersIn(instructionsOf(c)));
+  add(retried ? "숫자 검증(고쳐 쓴 뒤)" : "숫자 검증(첫 답)", v.ok, v.problems.map((p) => `${p.where}: ${p.issue}`).join(" / "));
   const md = /\*\*|`|^#+\s/m.test(raw);
   add("마크다운 안 씀", !md, md ? "서버가 걷어 내지만 지시를 어김" : "");
   const iso = texts(answer).some((t) => /\d{4}-\d{2}-\d{2}/.test(t));
@@ -101,10 +106,8 @@ function grade(c, raw, answer, calls) {
   for (const group of c.tools ?? []) add(`도구: ${group.join(" 또는 ")}`, calls.some((t) => group.includes(t.name)), calls.map((t) => t.name).join(","));
   if (c.call) add(`호출: ${c.call.why}`, calls.some((t) => nameOk(c.call.name, t.name) && c.call.test(t.input)), JSON.stringify(calls.map((t) => [t.name, t.input])).slice(0, 300));
   for (const re of c.says ?? []) add(`말함: ${re}`, texts(answer).some((t) => re.test(t)), answer.headline.text);
-  if (c.refuse) {
-    const nums = texts(answer).flatMap(numbersIn).filter((n) => n > 31);
-    add("볼 수 없다고 답함", /볼 수 없|없어요|못 |어려워|알 수 없|않아요/.test(texts(answer).join(" ")) && nums.length === 0, answer.headline.text);
-  }
+  // 거절: 첫 문장에서 볼 수 없다고 말하면 된다. 참고로 실제 지난 숫자를 덧붙이는 건 괜찮다(지어낸 숫자인지는 위 숫자 검증이 본다)
+  if (c.refuse) add("볼 수 없다고 답함", /볼 수 없|수 없어요|못 |어려워|알 수 없|않아요/.test(answer.headline.text), answer.headline.text);
   if (c.hypotheses) add("가설을 따로 둠", answer.hypotheses.length > 0, "");
   const cited = answer.hypotheses.filter((h) => h.refs.length).length;
   if (answer.hypotheses.length) add("가설 중 비교해 본 것", true, `${cited}/${answer.hypotheses.length}`);
@@ -127,6 +130,36 @@ if (RESCORE) {
   process.exit(0);
 }
 
+/** agy 로 한 번 묻는다. conversation 을 주면 그 대화를 이어 간다(다시 쓰기) */
+function callAgy(prompt, conversation) {
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), "chat-eval-"));
+  const started = Date.now();
+  const r = spawnSync(
+    AGY,
+    ["-p", prompt, ...(conversation ? ["--conversation", conversation] : []), "--model", MODEL, "--mode", "plan", "--sandbox", "--output-format", "json", "--json-schema", schemaFile, "--print-timeout", "5m"],
+    { cwd: work, encoding: "utf8", maxBuffer: 32 * 1024 * 1024, timeout: 6 * 60 * 1000 },
+  );
+  fs.rmSync(work, { recursive: true, force: true });
+  let res = null;
+  try {
+    res = JSON.parse(r.stdout);
+  } catch {
+    // 답 모양 실패로 센다
+  }
+  const raw = String(res?.response ?? "");
+  const parsed = answerSchema.safeParse(firstJson(raw));
+  const answer = parsed.success
+    ? {
+        headline: { ...parsed.data.headline, text: plain(parsed.data.headline.text) },
+        facts: parsed.data.facts.map((f) => ({ ...f, text: plain(f.text) })),
+        hypotheses: parsed.data.hypotheses.map((h) => ({ ...h, text: plain(h.text) })),
+        caveats: parsed.data.caveats.map(plain),
+        followUps: parsed.data.followUps.map(plain),
+      }
+    : null;
+  return { res, raw, answer, seconds: Math.round((Date.now() - started) / 1000) };
+}
+
 const rows = [];
 for (const c of GOLDEN) {
   if (ONLY && !ONLY.includes(c.id)) continue;
@@ -143,44 +176,52 @@ ${dynamicPart(today, status, view)}
 
 # 질문
 ${c.q}`;
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), "chat-eval-"));
-  const started = Date.now();
-  const r = spawnSync(AGY, ["-p", prompt, "--model", MODEL, "--mode", "plan", "--sandbox", "--output-format", "json", "--json-schema", schemaFile, "--print-timeout", "5m"], {
-    cwd: work,
-    encoding: "utf8",
-    maxBuffer: 32 * 1024 * 1024,
-    timeout: 6 * 60 * 1000,
-  });
-  fs.rmSync(work, { recursive: true, force: true });
-  const seconds = Math.round((Date.now() - started) / 1000);
-  let res = null;
-  try {
-    res = JSON.parse(r.stdout);
-  } catch {
-    // 아래에서 답 모양 실패로 센다
+  const first = callAgy(prompt);
+  let { raw, answer } = first;
+  let seconds = first.seconds;
+  let tokens = first.res?.usage?.total_tokens ?? 0;
+  const readCalls = () =>
+    fs
+      .readFileSync(LOG, "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+  let retried = false;
+  if (RETRY && first.res?.conversation_id) {
+    // 운영(run.ts)과 같은 다시 쓰기 요청. 잘렸으면 짧게, 검증에 걸렸으면 걸린 곳을 알려 준다
+    const results = new Map(readCalls().map((t) => [t.id, t.output]));
+    let feedback = null;
+    if (!answer) feedback = "답이 중간에 잘렸거나 정해진 JSON 모양이 아니었어요. 도구는 다시 부르지 말고, 위 도구 결과로 같은 내용을 더 짧게 JSON 하나로 다시 써 주세요. 사실은 다섯 문장까지.";
+    else {
+      const v = verifyAnswer(repairHypothesisRefs(answer, results), results, c.q, numbersIn(instructionsOf(c)));
+      if (!v.ok)
+        feedback = [
+          "방금 답을 코드로 검증했더니 아래 문장이 걸렸어요. 도구는 다시 부르지 말고, 위 도구 결과만으로 답 전체를 다시 써 주세요.",
+          "도구 결과에 없는 숫자는 빼고, 원인을 단정하는 말은 hypotheses 로 옮기세요.",
+          ...v.problems.map((p) => `- ${p.where}: "${p.text}" -> ${p.issue}`),
+        ].join("\n");
+    }
+    if (feedback) {
+      retried = true;
+      const second = callAgy(feedback, first.res.conversation_id);
+      seconds += second.seconds;
+      tokens += second.res?.usage?.total_tokens ?? 0;
+      // 다시 쓴 답이 모양을 못 갖추면 첫 답을 그대로 둔다(운영과 같다)
+      if (second.answer) ({ raw, answer } = second);
+    }
   }
-  const raw = String(res?.response ?? "");
-  const parsed = answerSchema.safeParse(firstJson(raw));
-  const answer = parsed.success
-    ? {
-        headline: { ...parsed.data.headline, text: plain(parsed.data.headline.text) },
-        facts: parsed.data.facts.map((f) => ({ ...f, text: plain(f.text) })),
-        hypotheses: parsed.data.hypotheses.map((h) => ({ ...h, text: plain(h.text) })),
-        caveats: parsed.data.caveats.map(plain),
-        followUps: parsed.data.followUps.map(plain),
-      }
-    : null;
+  const res = { usage: { total_tokens: tokens }, denied_actions: first.res?.denied_actions };
   const calls = fs
     .readFileSync(LOG, "utf8")
     .split("\n")
     .filter(Boolean)
     .map((l) => JSON.parse(l));
-  const checks = grade(c, raw, answer, calls);
-  const row = { id: c.id, q: c.q, seconds, tokens: res?.usage?.total_tokens ?? null, denied: res?.denied_actions ?? [], calls: calls.map((t) => ({ id: t.id, name: t.name, input: t.input, status: t.output?.status })), answer, raw: answer ? undefined : raw.slice(0, 800), checks };
+  const checks = grade(c, raw, answer, calls, retried);
+  const row = { id: c.id, q: c.q, retried, seconds, tokens: res?.usage?.total_tokens ?? null, denied: res?.denied_actions ?? [], calls: calls.map((t) => ({ id: t.id, name: t.name, input: t.input, status: t.output?.status })), answer, raw: answer ? undefined : raw.slice(0, 800), checks };
   rows.push(row);
   fs.writeFileSync(path.join(OUT, `${c.id}.json`), JSON.stringify({ ...row, toolOutputs: calls }, null, 2));
   const failed = checks.filter((x) => !x.ok);
-  console.log(`${failed.length ? "FAIL" : "PASS"} ${c.id} ${seconds}s ${row.tokens ?? "?"}tok tools=${calls.map((t) => t.name).join(",") || "-"}${failed.length ? ` | ${failed.map((x) => `${x.name}(${x.note})`).join(" ; ")}` : ""}`);
+  console.log(`${failed.length ? "FAIL" : "PASS"} ${c.id}${retried ? " (고쳐 씀)" : ""} ${seconds}s ${row.tokens ?? "?"}tok tools=${calls.map((t) => t.name).join(",") || "-"}${failed.length ? ` | ${failed.map((x) => `${x.name}(${x.note})`).join(" ; ")}` : ""}`);
 }
 fs.writeFileSync(path.join(OUT, "summary.json"), JSON.stringify(rows, null, 2));
 const pass = rows.filter((r) => r.checks.every((x) => x.ok)).length;
