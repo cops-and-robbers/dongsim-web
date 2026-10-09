@@ -139,7 +139,7 @@ export const METRICS: MetricDef[] = [
     ratio: (_d, s, w) => (s ? s.activation[w] : null),
     note: "기간 안에 가입한 사람 중 7일 안에 한 판이라도 한 비율. 2026-08-17 이후 가입자, 7일이 다 지난 가입자만. 마케팅이 실제 게임으로 이어졌는지 보는 숫자" }),
 
-  { key: "download_link_clicks", label: "QR, 링크트리 링크로 스토어에 넘긴 횟수", unit: "회", source: "ga4web", additive: true,
+  { key: "download_link_clicks", label: "QR, 링크트리 링크로 스토어에 넘긴 횟수", unit: "회", source: "ga4web", additive: true, daily: "downloadLinkClicks",
     total: (d, _s, w) => T(d, w).web.downloadLinkClicks,
     note: "/download 링크(행사 QR, 링크트리)로 들어와 바로 스토어로 넘어간 횟수. download_clicks 안에 든 몫" },
   ratioMetric({ key: "site_conversion", label: "사이트 전환율", source: "ga4web",

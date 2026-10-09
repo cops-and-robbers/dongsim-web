@@ -29,6 +29,8 @@ export type DailyPoint = {
   webFromInstagram: number;
   downloadClicks: number;
   downloadClicksFromInstagram: number;
+  /** 그중 /download 링크(행사 QR, 링크트리)로 넘어간 몫. 주간 집계(numbers.ts linkRows)와 같은 규칙. 챗봇 훑어보기가 주마다 묶는다(#163) */
+  downloadLinkClicks: number;
   appStoreNew: number;
   firstOpenAndroid: number;
   firstOpenIos: number;
@@ -181,6 +183,7 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
         webFromInstagram: 0,
         downloadClicks: 0,
         downloadClicksFromInstagram: 0,
+        downloadLinkClicks: 0,
         appStoreNew: 0,
         firstOpenAndroid: 0,
         firstOpenIos: 0,
@@ -224,6 +227,10 @@ export function dailySeries(input: WeeklyInput, r: Week): DailyPoint[] {
     if (g.property === "web" && g.breakdown === "session_campaign" && g.metric === "sessions" && fromInstagram(first)) p.webFromInstagram += g.value;
     if (g.property === "web" && g.breakdown === "download_source" && g.metric === "eventCount" && fromInstagram(first)) p.downloadClicksFromInstagram += g.value;
     if (g.property === "web" && g.breakdown === "event" && g.key === "app_download_click" && g.metric === "eventCount") p.downloadClicks += g.value;
+    if (g.property === "web" && g.breakdown === "download_page" && g.metric === "eventCount") {
+      const [source, , page] = splitKey(g.key);
+      if (page === "/download" && !isInternal(source)) p.downloadLinkClicks += g.value;
+    }
     if (g.property === "app" && g.breakdown === "event" && g.metric === "eventCount") {
       if (first === "game_start") p.playerStarts += g.value;
     }
