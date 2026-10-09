@@ -19,7 +19,9 @@ const claim = z.object({ text: z.string(), refs: z.array(z.string()).describe("�
 export const answerSchema = z.object({
   headline: claim.describe("질문에 대한 답 한 문장"),
   facts: z.array(claim).describe("도구로 확인한 사실"),
-  hypotheses: z.array(z.string()).describe("확인 안 된 가능한 이유. 확인에 필요한 데이터를 덧붙인다"),
+  hypotheses: z
+    .array(z.object({ text: z.string(), refs: z.array(z.string()).describe("이 가설을 확인하려고 부른 도구 호출의 toolCallId. 확인 못 했으면 비운다") }))
+    .describe("가능한 이유. 확인하려고 돌린 비교가 있으면 그 결과를 숫자로 쓰고 인용한다. 원인으로 단정하지 않는다"),
   caveats: z.array(z.string()).describe("덜 들어온 숫자, 적은 표본 등 주의점"),
   followUps: z.array(z.string()).describe("이어서 물을 질문 2~3개"),
 });
@@ -37,6 +39,25 @@ export type AskResult = {
 };
 
 const MAX_STEPS = 8;
+
+/**
+ * 답 글에서 마크다운 표시를 걷어 낸다. 화면은 마크다운을 그리지 않고 글자 그대로 보여 줘서,
+ * 모델이 지시를 어기고 **굵게**, `코드`, 줄머리 "- " 를 넣으면 별표가 그대로 보인다. 굵기와 목록 모양은 화면이 정한다
+ */
+export function plain(text: string): string {
+  return text
+    .replace(/\*\*|__|`/g, "")
+    .replace(/^\s*(?:[-*•]|\d+\.)\s+/, "")
+    .replace(/^#+\s*/, "")
+    .trim();
+}
+const clean = (a: Answer): Answer => ({
+  headline: { ...a.headline, text: plain(a.headline.text) },
+  facts: a.facts.map((f) => ({ ...f, text: plain(f.text) })),
+  hypotheses: a.hypotheses.map((h) => ({ ...h, text: plain(h.text) })),
+  caveats: a.caveats.map(plain),
+  followUps: a.followUps.map(plain),
+});
 
 const addUsage = (a: AskResult["usage"], u: LanguageModelUsage) => ({
   inputTokens: a.inputTokens + (u.inputTokens ?? 0),
@@ -65,7 +86,7 @@ export async function askMetrics(opts: {
   const tools: ToolTrace[] = first.steps.flatMap((s) => s.toolResults.map((r) => ({ id: r.toolCallId, name: r.toolName, input: r.input, output: r.output })));
   const results = new Map(tools.map((t) => [t.id, t.output]));
   let usage = addUsage({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 }, first.usage);
-  let answer = first.output as Answer;
+  let answer = clean(first.output as Answer);
   let check = verifyAnswer(answer, results, question);
   let retried = false;
 
@@ -82,7 +103,7 @@ export async function askMetrics(opts: {
     const messages: ModelMessage[] = [{ role: "user", content: question }, ...history, { role: "user", content: feedback }];
     const second = await generateText({ ...common, messages, stopWhen: isStepCount(1) });
     usage = addUsage(usage, second.usage);
-    answer = second.output as Answer;
+    answer = clean(second.output as Answer);
     check = verifyAnswer(answer, results, question);
   }
   const unverified = [...new Set(check.problems.map((p) => p.where).filter((w) => w === "headline" || w.startsWith("facts")))];

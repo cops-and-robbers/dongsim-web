@@ -2,14 +2,15 @@
  * 답변 검증 (#163). 모델 판정이 아니라 코드로 한다(결정적, 비용 0).
  *
  * - 사실(headline, facts)의 숫자는 인용한 도구 결과에 있어야 한다. 반올림, 부호(감소를 양수로 말하기)는 봐준다
- * - 가설과 주의점의 숫자도 어떤 도구 결과든 하나에는 있어야 한다. 후속 질문은 질문이라 보지 않는다
+ * - 가설이 도구 호출을 인용했으면(확인하려고 비교를 돌렸으면) 그 숫자는 인용한 결과에 있어야 한다.
+ *   인용이 없는 가설과 주의점의 숫자는 어떤 도구 결과든 하나에는 있어야 한다. 후속 질문은 질문이라 보지 않는다
  * - 사실에는 인과 표현을 쓰지 않는다. 행사와 설치 증가는 "같은 기간에 함께"까지만 (LLM 은 상관에서 인과를 거의 못 가린다)
  * - 숫자가 있는 사실은 인용(refs)이 있어야 하고, 인용은 실제로 부른 도구여야 한다
  * - 도구를 하나도 안 불렀는데 숫자가 나오면 실패
  */
 
 export type Claim = { text: string; refs: string[] };
-export type Answer = { headline: Claim; facts: Claim[]; hypotheses: string[]; caveats: string[]; followUps: string[] };
+export type Answer = { headline: Claim; facts: Claim[]; hypotheses: Claim[]; caveats: string[]; followUps: string[] };
 export type Problem = { where: string; text: string; issue: string };
 
 const NUM = /\d[\d,]*(?:\.\d+)?/g;
@@ -63,8 +64,19 @@ export function verifyAnswer(answer: Answer, results: Map<string, unknown>, ques
     const missing = nums.filter((n) => !grounded(n, pool));
     if (missing.length) problems.push({ where, text: c.text, issue: `인용한 결과에 없는 숫자: ${missing.join(", ")}` });
   }
+  // 가설은 원인을 말해도 된다(그래서 인과 표현은 보지 않는다). 인용했으면 그 결과의 숫자만, 아니면 아래 느슨한 대조
+  answer.hypotheses.forEach((h, i) => {
+    if (!h.refs.length) return;
+    const where = `hypotheses[${i}]`;
+    const unknown = h.refs.filter((r) => !results.has(r));
+    if (unknown.length) problems.push({ where, text: h.text, issue: `없는 도구 호출을 인용했어요: ${unknown.join(", ")}` });
+    const pool = new Set<number>(numbersIn(question));
+    for (const r of h.refs) if (results.has(r)) numbersOfResult(results.get(r), pool);
+    const missing = numbersIn(h.text).filter((n) => !grounded(n, pool));
+    if (missing.length) problems.push({ where, text: h.text, issue: `인용한 결과에 없는 숫자: ${missing.join(", ")}` });
+  });
   const loose: [string, string][] = [
-    ...answer.hypotheses.map((t, i) => [`hypotheses[${i}]`, t] as [string, string]),
+    ...answer.hypotheses.flatMap((h, i) => (h.refs.length ? [] : [[`hypotheses[${i}]`, h.text] as [string, string]])),
     ...answer.caveats.map((t, i) => [`caveats[${i}]`, t] as [string, string]),
   ];
   for (const [where, t] of loose) {
