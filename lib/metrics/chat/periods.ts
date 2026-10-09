@@ -7,6 +7,9 @@ import { addDays } from "../dates.ts";
 
 export type Period = { label: string; start: string; end: string };
 
+/** 숫자를 모으기 시작한 날(App Store 판매, GA4 사이트). "전체"는 여기부터 */
+export const DATA_FROM = "2026-04-01";
+
 const dow = (ymd: string) => new Date(`${ymd}T00:00:00Z`).getUTCDay(); // 0 일요일
 const monthStart = (ymd: string) => `${ymd.slice(0, 8)}01`;
 const prevMonthEnd = (ymd: string) => addDays(monthStart(ymd), -1);
@@ -21,6 +24,7 @@ export function namedPeriods(today: string): Period[] {
     { label: "어제", start: y, end: y },
     { label: "최근 7일", start: addDays(y, -6), end: y },
     { label: "최근 28일", start: addDays(y, -27), end: y },
+    { label: "최근 13주(91일)", start: addDays(y, -90), end: y },
     { label: "지난주(월~일)", start: lastMon, end: addDays(lastMon, 6) },
     { label: "지지난주(월~일)", start: addDays(lastMon, -7), end: addDays(lastMon, -1) },
   ];
@@ -29,5 +33,7 @@ export function namedPeriods(today: string): Period[] {
   if (thisMonth <= y) out.push({ label: "이번 달(1일~어제)", start: thisMonth, end: y });
   const lastMonthEnd = prevMonthEnd(today);
   out.push({ label: "지난달", start: monthStart(lastMonthEnd), end: lastMonthEnd });
+  // "전체", "지금까지", "누적", "처음부터"는 화면에 걸린 기간이 아니라 이것이다
+  out.push({ label: "전체(수집 시작부터, 지금까지, 누적)", start: DATA_FROM, end: y });
   return out;
 }
