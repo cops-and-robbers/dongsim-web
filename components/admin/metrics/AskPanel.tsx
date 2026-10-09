@@ -6,6 +6,8 @@ import { Callout } from "@/components/admin/Callout";
 import { SURFACE } from "@/components/admin/Parts";
 import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
+import { petSignal } from "@/lib/admin/pet/signal";
+import { showPet } from "@/components/admin/pet/CheesePet";
 
 /**
  * 지표 챗봇 질문 탭 (#163). 서버(/api/admin/metrics/chat)가 도구로 숫자를 찾고, 답의 숫자를 도구 결과와 대조한 뒤 돌려준다.
@@ -71,16 +73,22 @@ export function AskPanel() {
     const question = q.trim();
     if (!question || busy) return;
     setDraft("");
+    petSignal("asking");
     const i = turns.length;
     setTurns((t) => [...t, { question, state: "loading" }]);
     const patch = (p: Partial<Turn>) => setTurns((t) => t.map((x, j) => (j === i ? { ...x, ...p } : x)));
     try {
       const res = await authed("/api/admin/metrics/chat", { method: "POST", body: JSON.stringify({ question }) });
       const body = (await res.json().catch(() => ({}))) as Result & { error?: string };
-      if (!res.ok) return patch({ state: "error", error: body.error ?? `HTTP ${res.status}` });
+      if (!res.ok) {
+        petSignal("error");
+        return patch({ state: "error", error: body.error ?? `HTTP ${res.status}` });
+      }
+      petSignal(body.unverified.length ? "unverified" : "answered");
       patch({ state: "done", result: body });
       setInfo((x) => (x ? { ...x, remainingToday: Math.max(0, x.remainingToday - 1) } : x));
     } catch (e) {
+      petSignal("error");
       patch({ state: "error", error: e instanceof Error ? e.message : String(e) });
     }
   };
@@ -89,6 +97,7 @@ export function AskPanel() {
     const id = turns[i]?.result?.id;
     if (!id) return;
     setTurns((t) => t.map((x, j) => (j === i ? { ...x, feedback: value } : x)));
+    petSignal(value === "good" ? "liked" : "disliked");
     await authed("/api/admin/metrics/chat", { method: "PATCH", body: JSON.stringify({ id, feedback: value }) }).catch(() => undefined);
   };
 
@@ -142,7 +151,10 @@ export function AskPanel() {
         >
           <textarea
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              petSignal("typing");
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
@@ -160,7 +172,14 @@ export function AskPanel() {
           </Button>
         </form>
       )}
-      {info && !closed && <p className="text-[12px] text-sd-fg-subtle">오늘 {info.remainingToday}개 더 물어볼 수 있어요.</p>}
+      {info && !closed && (
+        <p className="flex items-center gap-2 text-[12px] text-sd-fg-subtle">
+          오늘 {info.remainingToday}개 더 물어볼 수 있어요.
+          <button type="button" className="underline-offset-2 hover:underline" onClick={showPet}>
+            치즈 부르기
+          </button>
+        </p>
+      )}
     </div>
   );
 }

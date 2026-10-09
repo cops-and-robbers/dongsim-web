@@ -25,6 +25,7 @@ import { SmallReachNote } from "@/components/admin/metrics/PostDrawer";
 import { compareParam, parseCompare, rangeLabel } from "@/lib/metrics/dashboard/calendar";
 import { CompareMenu } from "@/components/admin/metrics/CompareMenu";
 import { AskPanel } from "@/components/admin/metrics/AskPanel";
+import { CheesePet } from "@/components/admin/pet/CheesePet";
 import { CompareContext, useCompare } from "@/components/admin/metrics/compareContext";
 import { addDays, todayIn, ymdRange } from "@/lib/metrics/dates";
 import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
@@ -231,6 +232,8 @@ export default function MetricsPage() {
 
   return (
     <ScrollPage>
+      {/* 치즈 조각 펫(#163). 화면 아래를 돌아다니고 물어보기 탭의 챗봇 상태에 반응한다 */}
+      <CheesePet />
       <PageHeader
         title="지표"
         description="매일 아침 모은 어제까지의 숫자예요."
