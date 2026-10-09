@@ -7,7 +7,7 @@ import { SURFACE } from "@/components/admin/Parts";
 import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
 import { petSignal } from "@/lib/admin/pet/signal";
-import { showPet } from "@/components/admin/pet/CheesePet";
+import { setPetBoxed, usePetBoxed } from "@/components/admin/pet/CheesePet";
 
 /**
  * 지표 챗봇 질문 탭 (#163). 서버(/api/admin/metrics/chat)가 도구로 숫자를 찾고, 답의 숫자를 도구 결과와 대조한 뒤 돌려준다.
@@ -51,6 +51,7 @@ export function AskPanel() {
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const busy = turns.some((t) => t.state === "loading");
+  const petBoxed = usePetBoxed();
 
   useEffect(() => {
     let alive = true;
@@ -105,7 +106,7 @@ export function AskPanel() {
   if (info && !info.enabled)
     return (
       <Callout variant="info" title="아직 연결 전이에요">
-        지표 챗봇은 Gemini 연결 설정을 마치면 열려요. 설정 순서는 docs/metrics-chat.md 에 있어요.
+        지표 챗봇은 Gemini 연결 설정을 마치면 열려요. 설정 순서는 docs/metrics-chat.md 에 있어요. 개발 서버에서 가짜 모델로 보려면 .env.local 에 CHAT_MOCK=1 을 넣고 서버를 다시 켜 주세요.
       </Callout>
     );
 
@@ -175,8 +176,8 @@ export function AskPanel() {
       {info && !closed && (
         <p className="flex items-center gap-2 text-[12px] text-sd-fg-subtle">
           오늘 {info.remainingToday}개 더 물어볼 수 있어요.
-          <button type="button" className="underline-offset-2 hover:underline" onClick={showPet}>
-            치즈 부르기
+          <button type="button" className="underline-offset-2 hover:underline" onClick={() => setPetBoxed(!petBoxed)}>
+            {petBoxed ? "치즈 꺼내기" : "치즈 보관함에 넣기"}
           </button>
         </p>
       )}
