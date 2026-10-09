@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { frameOf, initial, play, setMood, step, suddenlyNear, type PetState } from "@/lib/admin/pet/brain";
-import { PET_EVENT, type PetSignal } from "@/lib/admin/pet/signal";
+import { PET_EVENT, PET_SAY_EVENT, petSay, type PetSignal } from "@/lib/admin/pet/signal";
 import { sheetStyle, useSheet } from "@/components/admin/pet/PetSprite";
 
 /**
@@ -18,6 +18,8 @@ import { sheetStyle, useSheet } from "@/components/admin/pet/PetSprite";
  *   처음엔 치즈 위에 닫기(×) 버튼을 뒀는데, 만지다 눌려 사라진 뒤 다시 부르는 곳을 몰라 "아예 안 나온다"가 됐고 × 자체도 별로라는 의견이 있었다(2026-10-09)
  * - 움직임 줄이기 설정이면 걷지 않고 대기 첫 프레임만 보인다. 옮기기는 되지만 떨어지는 장면 없이 바로 바닥에 놓인다.
  *   터치 기기에서는 마우스를 따라가지 않지만 꾹 눌러 옮기기는 된다
+ * - 머리 위 말풍선(petSay)은 알림 한 줄만 띄운다. 물어보기 창을 닫아 둔 사이 답이 오면 "답 찾았어요", 처음 온 사람에게 한 번 "누르면 물어볼 수 있어요".
+ *   화면 끝에서는 말풍선이 밖으로 나가지 않게 옆으로 밀고, 꼬리는 치즈 머리를 계속 가리킨다
  * - 그림은 왼쪽을 본다. 오른쪽으로 갈 때 좌우를 뒤집는다(처음엔 반대로 뒤집어 뒷걸음질쳤다)
  * - body 에 포털로 붙인다. 화면 안쪽에 transform 이 걸린 조상이 있으면 fixed 가 화면이 아니라 그 조상 기준이 된다
  * - 층은 z-[55]. 어드민 본문 판(AdminShell)이 fixed z-50 이라 그보다 낮으면 판 뒤로 숨는다(포털로 옮긴 직후 z-40 이라 안 보였다).
@@ -32,6 +34,8 @@ const BOX_MARGIN = 24; // 상자 둘레 이만큼까지는 상자 위로 친다(
 const RUN_OUT = 240; // 패널이 덮었을 때 비켜 나오는 빠르기(px/초)
 export const PET_BOXED_KEY = "cheese-pet-boxed";
 export const PET_BOX_EVENT = "cheese-pet-box";
+// 처음 온 사람에게 "누르면 물어볼 수 있어요"를 한 번만 보여 줬는지
+const HINT_KEY = "cheese-pet-hint-seen";
 
 const readBoxed = () => {
   try {
@@ -91,6 +95,48 @@ export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
   const pos = useRef({ x: -1, y: 0, vy: 0 });
   const drag = useRef<Drag>({ phase: "idle", timer: null, sx: 0, sy: 0, lx: 0, ly: 0, over: false });
   const lastActive = useRef(0);
+  const [say, setSay] = useState<string | null>(null);
+  const bubbleRef = useRef<HTMLButtonElement>(null);
+  const tailRef = useRef<HTMLSpanElement>(null);
+  // 화면이 다시 그려질 때마다 onTap 이 새로 만들어져도 알림 타이머가 끊기지 않게, 처음 값만 본다
+  const tappable = useRef(!!onTap);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onSay = (e: Event) => {
+      const { text, ms } = (e as CustomEvent<{ text: string; ms: number }>).detail;
+      setSay(text);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setSay(null), ms);
+    };
+    window.addEventListener(PET_SAY_EVENT, onSay);
+    // 치즈를 누르면 물어볼 수 있다는 걸 처음 한 번만 알린다
+    let hint: ReturnType<typeof setTimeout> | null = null;
+    const cw0 = 28 * SCALE;
+    if (tappable.current) {
+      try {
+        if (!localStorage.getItem(HINT_KEY))
+          hint = setTimeout(() => {
+            // 물어보기 창이 이미 열려 있으면 알릴 필요가 없다. 다음에 닫혀 있을 때 알린다
+            const b = petBounds(cw0);
+            if (b.maxX < window.innerWidth - cw0 || b.floor > 0) return;
+            try {
+              localStorage.setItem(HINT_KEY, "1");
+            } catch {
+              // 못 남겨도 이번에는 보여 준다
+            }
+            petSay("누르면 물어볼 수 있어요", 7000);
+          }, 2500);
+      } catch {
+        // 저장이 막혀 있으면 알리지 않는다(매번 뜨면 성가시다)
+      }
+    }
+    return () => {
+      window.removeEventListener(PET_SAY_EVENT, onSay);
+      if (timer) clearTimeout(timer);
+      if (hint) clearTimeout(hint);
+    };
+  }, []);
 
   // 돌아다니는 치즈
   useEffect(() => {
@@ -103,7 +149,8 @@ export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
     stateRef.current = reduced ? { ...initial(now0), anim: "idle" } : initial(now0);
     const p = pos.current;
     const d0 = drag.current;
-    if (p.x < 0) p.x = Math.max(16, window.innerWidth - W - 32);
+    // 처음 자리는 오른쪽 아래. 물어보기 창이 열려 있으면 그 왼쪽
+    if (p.x < 0) p.x = Math.max(16, Math.min(window.innerWidth - W - 32, petBounds(W).maxX - 8));
     p.y = 0;
     p.vy = 0;
     drag.current.phase = "idle";
@@ -185,6 +232,14 @@ export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
       const st = meta.states[s.anim];
       const frame = reduced ? 0 : (frameOf(s, t, meta) ?? st.frames - 1);
       if (wrapRef.current) wrapRef.current.style.transform = `translate(${Math.round(p.x)}px, ${-Math.round(p.y)}px)`;
+      // 말풍선은 치즈 머리 위 가운데. 화면 밖으로 나가면 안쪽으로 밀고 꼬리만 머리에 둔다
+      const bub = bubbleRef.current;
+      if (bub) {
+        const bw = bub.offsetWidth;
+        const left = Math.min(Math.max(W / 2 - bw / 2, 6 - p.x), window.innerWidth - 6 - p.x - bw);
+        bub.style.left = `${Math.round(left)}px`;
+        if (tailRef.current) tailRef.current.style.left = `${Math.round(Math.min(Math.max(W / 2 - left, 12), bw - 12))}px`;
+      }
       if (spriteRef.current) {
         spriteRef.current.style.backgroundPosition = `${-frame * cw * SCALE}px ${-st.row * ch * SCALE}px`;
         spriteRef.current.style.transform = s.facing === 1 ? "scaleX(-1)" : "";
@@ -316,6 +371,20 @@ export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
     <>
       {!boxed && (
         <div ref={wrapRef} className="pointer-events-none fixed bottom-0 left-0 z-[55]" style={{ width: W, height: H }}>
+          {say && (
+            <button
+              ref={bubbleRef}
+              type="button"
+              onClick={() => {
+                setSay(null);
+                onTap?.();
+              }}
+              className="pointer-events-auto absolute bottom-full mb-2 whitespace-nowrap rounded-lg border-2 border-sd-fg bg-sd-surface px-2.5 py-1 text-[12px] font-semibold text-sd-fg shadow-sm"
+            >
+              {say}
+              <span ref={tailRef} aria-hidden className="absolute top-full -mt-[5px] h-2 w-2 -translate-x-1/2 rotate-45 border-b-2 border-r-2 border-sd-fg bg-sd-surface" />
+            </button>
+          )}
           <div
             ref={spriteRef}
             title={onTap ? "누르면 물어볼 수 있어요. 꾹 누르면 옮겨요" : "꾹 눌러서 옮길 수 있어요"}

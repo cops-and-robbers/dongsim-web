@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
-import { petSignal } from "@/lib/admin/pet/signal";
+import { petSay, petSignal } from "@/lib/admin/pet/signal";
 import type { Anim } from "@/lib/admin/pet/brain";
 import { setPetBoxed, usePetBoxed } from "@/components/admin/pet/CheesePet";
 import { PetSprite } from "@/components/admin/pet/PetSprite";
@@ -26,9 +26,12 @@ import type { Target } from "@/lib/metrics/chat/evidence";
  *   (PostHog 의 고슴도치처럼 캐릭터가 상태를 대신 말한다. 별 모양 반짝이 아이콘은 쓰지 않는다)
  * - 추천 질문은 알약 대신 줄 목록. 지금 탭에 맞춘 둘을 앞에 둔다
  *
- * - 넓은 화면(xl)은 본문 옆에 붙어 그래프를 가리지 않고, 그보다 좁으면 오른쪽에 겹쳐 열리고, 휴대폰은 아래에서 올라온다
+ * - 오른쪽 아래에 떠 있는 작은 창(380px)이다. 화면 한쪽을 통째로 덮는 옆 패널은 "한쪽 창을 다 덮는 느낌"이라 바꿨다(2026-10-10).
+ *   채팅 상담 창(채널톡 등)처럼 익숙한 자리이고, 지표 화면 배치는 건드리지 않는다. 휴대폰은 아래에서 올라오는 시트
+ * - 답의 "지표 화면에서 이 기간 보기"를 누르면 창을 접어 그래프가 다 보이게 하고, 치즈가 "이 기간을 열었어요"라고 알린다
+ * - 창을 접어 둔 사이 답이 오면 치즈 머리 위 말풍선으로 알린다. 답 자체를 말풍선에 넣지는 않는다(숫자 비교와 막대가 안 들어간다)
  * - 닫아도 대화는 남는다(언마운트하지 않고 숨긴다). 서버 상태(남은 질문 수, 추천)는 처음 열 때 한 번 받는다
- * - data-pet-avoid: 돌아다니는 치즈가 이 패널을 피해 다닌다
+ * - data-pet-avoid: 돌아다니는 치즈가 이 창을 피해 그 왼쪽에 선다
  */
 
 type Turn = { question: string; state: "loading" | "done" | "error"; result?: Result; error?: string; feedback?: "good" | "bad" };
@@ -57,6 +60,11 @@ export function AskPanel({ open, onClose, view, onShow }: { open: boolean; onClo
   const loadedFor = useRef(-1);
   const busy = turns.some((t) => t.state === "loading");
   const petBoxed = usePetBoxed();
+  // 답이 왔을 때 창이 열려 있나. ask 안의 비동기 흐름에서 최신 값을 보려고 ref 로 든다
+  const openRef = useRef(open);
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   useEffect(() => {
     if (!open || loadedFor.current === attempt) return;
@@ -79,10 +87,11 @@ export function AskPanel({ open, onClose, view, onShow }: { open: boolean; onClo
 
   // 새 질문이 붙으면 패널 안만 맨 아래로. scrollIntoView 는 바깥 화면까지 움직이고,
   // 최근 Chrome 에선 Promise 를 돌려줘서 effect 에서 그대로 돌려주면 React 가 "destroy is not a function"으로 멈췄다(2026-10-10)
+  // 접혀 있던 동안 온 답은 창을 열 때 내린다(접힌 동안에는 높이가 0 이라 못 내린다)
   useEffect(() => {
     const el = bodyRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [turns]);
+    if (el && open) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [turns, open]);
 
   const ask = async (q: string) => {
     const question = q.trim();
@@ -98,13 +107,16 @@ export function AskPanel({ open, onClose, view, onShow }: { open: boolean; onClo
       const body = (await res.json().catch(() => ({}))) as Result & { error?: string };
       if (!res.ok) {
         petSignal("error");
+        if (!openRef.current) petSay("답을 못 찾았어요");
         return patch({ state: "error", error: body.error ?? `HTTP ${res.status}` });
       }
       petSignal(body.unverified.length ? "unverified" : "answered");
+      if (!openRef.current) petSay("답 찾았어요");
       patch({ state: "done", result: body });
       setInfo((x) => (x ? { ...x, remainingToday: Math.max(0, x.remainingToday - 1) } : x));
     } catch (e) {
       petSignal("error");
+      if (!openRef.current) petSay("답을 못 찾았어요");
       patch({ state: "error", error: e instanceof Error ? e.message : String(e) });
     }
   };
@@ -128,7 +140,7 @@ export function AskPanel({ open, onClose, view, onShow }: { open: boolean; onClo
       data-pet-avoid
       aria-label="치즈에게 물어보기"
       onKeyDown={(e) => e.key === "Escape" && onClose()}
-      className={`${open ? "flex" : "hidden"} fixed inset-x-0 bottom-0 z-40 h-[85dvh] flex-col rounded-t-2xl border border-sd-line bg-sd-surface shadow-xl sm:inset-y-0 sm:left-auto sm:right-0 sm:h-auto sm:w-[420px] sm:rounded-none sm:border-y-0 sm:border-r-0 xl:static xl:z-auto xl:h-full xl:shrink-0 xl:shadow-none`}
+      className={`${open ? "flex" : "hidden"} fixed inset-x-0 bottom-0 z-40 h-[85dvh] flex-col overflow-hidden rounded-t-2xl border border-sd-line bg-sd-surface shadow-xl sm:inset-x-auto sm:bottom-4 sm:right-4 sm:h-[min(640px,calc(100dvh-32px))] sm:w-[380px] sm:rounded-2xl sm:shadow-2xl`}
     >
       <header className="flex h-14 shrink-0 items-center gap-2.5 border-b border-sd-hairline pl-4 pr-2">
         <PetSprite anim="idle" play={false} />
@@ -197,8 +209,9 @@ export function AskPanel({ open, onClose, view, onShow }: { open: boolean; onClo
                       onFeedback={(v) => feedback(i, v)}
                       onShow={(target) => {
                         onShow(target);
-                        // 휴대폰에서는 시트가 화면을 덮어서, 지표를 보여 주려면 닫는다
-                        if (window.matchMedia("(max-width: 639px)").matches) onClose();
+                        // 창을 접어 그래프가 다 보이게 한다. 대화는 남아 있어 치즈나 머리말 버튼으로 다시 연다
+                        onClose();
+                        petSay("이 기간을 열었어요", 4000);
                       }}
                     />
                   )}

@@ -15,15 +15,46 @@ import { matches, numbersIn } from "./verify.ts";
 
 export type Range = { start: string; end: string };
 export type Trace = { id: string; name: string; input: Record<string, unknown>; output: Record<string, unknown> };
-type Metric = { key: string; label: string; unit: string; a?: number | null; b?: number | null; value?: number | null; diff?: number | null; changePct?: number | null; lowSample?: boolean };
+type Ratio = { num: number; den: number };
+type Metric = {
+  key: string;
+  label: string;
+  unit: string;
+  a?: number | null;
+  b?: number | null;
+  value?: number | null;
+  diff?: number | null;
+  diffPoints?: number | null;
+  changePct?: number | null;
+  lowSample?: boolean;
+  num?: number;
+  den?: number;
+  aOf?: Ratio | null;
+  bOf?: Ratio | null;
+};
 
 export type DashTab = "summary" | "instagram" | "traffic" | "store" | "app";
 /** 지표 화면에서 열 곳. cmpFrom 은 비교 기간 첫날(바로 앞 같은 길이면 null) */
 export type Target = { range: Range; cmpFrom: string | null; tab: DashTab };
 
 export type Evidence = { id: string; target: Target | null; notes: string[] } & (
-  | { kind: "compare"; title: string | null; a: Range; b: Range; rows: { key: string; label: string; unit: string; a: number | null; b: number | null; changePct: number | null; lowSample: boolean }[] }
-  | { kind: "summary"; range: Range; rows: { key: string; label: string; unit: string; value: number | null }[] }
+  | {
+      kind: "compare";
+      title: string | null;
+      a: Range;
+      b: Range;
+      /** 비율 지표는 points(%p 차이)와 aOf(분자/분모), 개수 지표는 changePct */
+      rows: { key: string; label: string; unit: string; a: number | null; b: number | null; changePct: number | null; points: number | null; aOf: Ratio | null; lowSample: boolean }[];
+    }
+  | { kind: "summary"; range: Range; rows: { key: string; label: string; unit: string; value: number | null; of: Ratio | null }[] }
+  | {
+      kind: "weekly";
+      range: Range;
+      unit: "week" | "month";
+      buckets: Range[];
+      events: { day: string; label: string }[];
+      rows: { key: string; label: string; unit: string; total: number | null; values: (number | null)[] }[];
+    }
   | { kind: "daily"; range: Range; label: string; unit: string; series: { day: string; value: number | null }[]; peak: { day: string; value: number } | null; total: number | null }
   | { kind: "bars"; range: Range; title: string; unit: string; country: boolean; rows: { label: string; value: number }[] }
   | { kind: "events"; range: Range; events: { day: string; label: string }[] }
@@ -64,7 +95,8 @@ function cmpFromOf(a: Range, b: Range): string | null {
 
 /** 답에 나온 숫자가 든 지표만. 없으면 값이 있는 앞의 셋 */
 function pick<T extends Metric>(rows: T[], said: number[]): T[] {
-  const has = (m: T) => [m.a, m.b, m.value, m.changePct, m.diff].some((v) => typeof v === "number" && said.some((x) => matches(x, v)));
+  const has = (m: T) =>
+    [m.a, m.b, m.value, m.changePct, m.diff, m.diffPoints, m.num, m.den, m.aOf?.num, m.aOf?.den].some((v) => typeof v === "number" && said.some((x) => matches(x, v)));
   const hit = rows.filter(has);
   const withValue = rows.filter((m) => [m.a, m.b, m.value].some((v) => typeof v === "number"));
   return (hit.length ? hit : withValue.slice(0, 3)).slice(0, MAX_ROWS);
@@ -74,8 +106,37 @@ function one(t: Trace, said: number[]): Evidence | null {
   const o = t.output;
   if (o.status !== "ok") return null;
   const base = { id: t.id, notes: [] as string[] };
+  if (Array.isArray(o.metrics) && Array.isArray(o.buckets) && isRange(o.range)) {
+    // 훑어보기: 답에 나온 숫자(합계나 어느 칸 값)가 든 지표 둘까지, 없으면 합계가 있는 앞의 둘
+    type Row = { key: string; label: string; unit: string; total: number | null; values: (number | null)[] };
+    const all = o.metrics as Row[];
+    const hit = all.filter((m) => [m.total, ...m.values].some((v) => typeof v === "number" && said.some((x) => matches(x, v))));
+    const rows = (hit.length ? hit : all.filter((m) => m.total !== null)).slice(0, 2).map(({ key, label, unit, total, values }) => ({ key, label, unit, total, values }));
+    if (!rows.length) return null;
+    return {
+      ...base,
+      notes: notesFor(o.notes, rows.map((r) => r.key)),
+      kind: "weekly",
+      range: o.range,
+      unit: o.unit === "month" ? "month" : "week",
+      buckets: (o.buckets as Range[]).map(({ start, end }) => ({ start, end })),
+      events: Array.isArray(o.events) ? (o.events as { day: string; label: string }[]) : [],
+      rows,
+      target: { range: o.range, cmpFrom: null, tab: tabOf(rows[0].key) },
+    };
+  }
   if (Array.isArray(o.metrics) && isRange(o.periodA) && isRange(o.periodB)) {
-    const rows = pick(o.metrics as Metric[], said).map((m) => ({ key: m.key, label: m.label, unit: m.unit, a: m.a ?? null, b: m.b ?? null, changePct: m.changePct ?? null, lowSample: !!m.lowSample }));
+    const rows = pick(o.metrics as Metric[], said).map((m) => ({
+      key: m.key,
+      label: m.label,
+      unit: m.unit,
+      a: m.a ?? null,
+      b: m.b ?? null,
+      changePct: m.changePct ?? null,
+      points: m.diffPoints ?? null,
+      aOf: m.aOf ?? null,
+      lowSample: !!m.lowSample,
+    }));
     if (!rows.length) return null;
     const event = isRange(o.eventPeriod);
     return {
@@ -90,7 +151,7 @@ function one(t: Trace, said: number[]): Evidence | null {
     };
   }
   if (Array.isArray(o.metrics) && isRange(o.range)) {
-    const rows = pick(o.metrics as Metric[], said).map((m) => ({ key: m.key, label: m.label, unit: m.unit, value: m.value ?? null }));
+    const rows = pick(o.metrics as Metric[], said).map((m) => ({ key: m.key, label: m.label, unit: m.unit, value: m.value ?? null, of: typeof m.den === "number" ? { num: m.num ?? 0, den: m.den } : null }));
     if (!rows.length) return null;
     return { ...base, notes: notesFor(o.notes, rows.map((r) => r.key)), kind: "summary", range: o.range, rows, target: { range: o.range, cmpFrom: null, tab: tabOf(rows[0].key) } };
   }

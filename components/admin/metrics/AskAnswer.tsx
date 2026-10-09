@@ -12,12 +12,13 @@ import { evidenceOf, type Evidence, type Range, type Target, type Trace } from "
  * - 그 아래 근거는 도구 결과를 그대로 그린 것이다(evidence.ts). 지표 화면의 숫자 칸, 증감 화살표와 같은 모양이라 화면과 바로 대조된다
  * - 근거마다 "지표 화면에서 보기"로 같은 기간, 같은 탭을 연다(Mixpanel Spark, Metabase Metabot 의 "보고서로 열기")
  * - 확인하지 못한 문장은 숨기지 않고 물결 밑줄과 한 줄 안내로 표시한다. 큰 경고 딱지는 붙이지 않는다
- * - 추측(hypotheses)은 접어 둔다. 확인한 것과 같은 무게로 보이지 않게
+ * - 추측(hypotheses)은 접어 둔다. 확인한 것과 같은 무게로 보이지 않게. 모델이 확인하려고 비교를 돌린 추측은 그 비교 그림을 같이 펼친다
  * - 평가는 글 대신 엄지 아이콘 둘
  */
 
 export type Claim = { text: string; refs: string[] };
-export type Answer = { headline: Claim; facts: Claim[]; hypotheses: string[]; caveats: string[]; followUps: string[] };
+// 예전 답(가설이 글자만이던 때)도 그릴 수 있게 string 을 받는다
+export type Answer = { headline: Claim; facts: Claim[]; hypotheses: (Claim | string)[]; caveats: string[]; followUps: string[] };
 export type Result = { id: number | null; answer: Answer; unverified: string[]; retried: boolean; tools: Trace[]; costUsd: number };
 
 const md = (ymd: string) => `${Number(ymd.slice(5, 7))}월 ${Number(ymd.slice(8))}일`;
@@ -67,7 +68,17 @@ export function AnswerBody({
         </ul>
       )}
 
-      {answer.hypotheses.length > 0 && <Guesses items={answer.hypotheses} />}
+      {answer.hypotheses.length > 0 && (
+        <Guesses
+          items={answer.hypotheses.map((h, i) => {
+            const c = typeof h === "string" ? { text: h, refs: [] } : h;
+            const shown = new Set(evidence.map((e) => e.id));
+            const checks = c.refs.length ? evidenceOf(result.tools, { headline: c, facts: [] }).filter((e) => !shown.has(e.id)) : [];
+            return { ...c, checked: c.refs.length > 0, unchecked: unchecked(`hypotheses[${i}]`), checks };
+          })}
+          onShow={onShow}
+        />
+      )}
 
       <div className="flex items-center gap-1 text-sd-fg-subtle">
         <IconToggle label="도움이 됐어요" on={feedback === "good"} disabled={!!feedback || result.id === null} onClick={() => onFeedback("good")}>
@@ -93,18 +104,31 @@ function Sentence({ text, unchecked, strong }: { text: string; unchecked: boolea
   );
 }
 
-function Guesses({ items }: { items: string[] }) {
+/**
+ * 추측. 접어 두고 몇 개를 데이터로 비교해 봤는지 먼저 말한다.
+ * 비교해 본 추측도 "확인한 사실"이 아니다. 같은 시기에 함께 움직였다는 것까지라 사실 단락과 떼어 둔다
+ */
+function Guesses({ items, onShow }: { items: { text: string; checked: boolean; unchecked: boolean; checks: Evidence[] }[]; onShow: (t: Target) => void }) {
   const [open, setOpen] = useState(false);
+  const checked = items.filter((h) => h.checked).length;
   return (
     <div className="text-[13px]">
       <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1 text-sd-fg-muted transition hover:text-sd-fg">
-        확인하지 않은 추측 {items.length}개
+        왜 그랬을지 추측 {items.length}개{checked > 0 && `, ${checked}개는 데이터로 비교해 봤어요`}
         <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <ul className="mt-1.5 flex flex-col gap-1.5 border-l-2 border-sd-line pl-3 leading-relaxed text-sd-fg-muted">
+        <ul className="mt-2 flex flex-col gap-3 border-l-2 border-sd-line pl-3 leading-relaxed text-sd-fg-muted">
           {items.map((h, i) => (
-            <li key={i}>{h}</li>
+            <li key={i} className="flex flex-col gap-2">
+              <p>
+                <span className="mr-1.5 text-[11px] font-semibold text-sd-fg-subtle">{h.checked ? "비교해 봄" : "확인 못 함"}</span>
+                <Sentence text={h.text} unchecked={h.unchecked} />
+              </p>
+              {h.checks.map((e) => (
+                <EvidenceBlock key={e.id} e={e} onShow={onShow} />
+              ))}
+            </li>
           ))}
         </ul>
       )}
@@ -131,7 +155,13 @@ function IconToggle({ label, on, disabled, onClick, children }: { label: string;
 /** 근거 한 덩어리. 머리에 기간, 몸에 숫자나 작은 그림, 끝에 지표 화면으로 가는 길 */
 function EvidenceBlock({ e, onShow }: { e: Evidence; onShow: (t: Target) => void }) {
   const head =
-    e.kind === "compare" ? `${e.title ? `${e.title}, ` : ""}${rangeText(e.b)} → ${rangeText(e.a)}` : e.kind === "bars" ? `${e.title}, ${rangeText(e.range)}` : rangeText(e.range);
+    e.kind === "compare"
+      ? `${e.title ? `${e.title}, ` : ""}${rangeText(e.b)} → ${rangeText(e.a)}`
+      : e.kind === "bars"
+        ? `${e.title}, ${rangeText(e.range)}`
+        : e.kind === "weekly"
+          ? `${e.unit === "week" ? "주마다" : "달마다"} 더한 값, ${rangeText(e.range)}`
+          : rangeText(e.range);
   return (
     <figure className="overflow-hidden rounded-xl bg-sd-fill">
       <figcaption className="px-3.5 pt-3 text-[12px] text-sd-fg-subtle tabular-nums">{head}</figcaption>
@@ -145,10 +175,18 @@ function EvidenceBlock({ e, onShow }: { e: Evidence; onShow: (t: Target) => void
                 <dd className="text-[18px] font-bold text-sd-fg">
                   {fmt(r.value)}
                   <span className="ml-0.5 text-[12px] font-semibold text-sd-fg-muted">{r.unit}</span>
+                  {r.of && <span className="ml-1.5 text-[11px] font-normal text-sd-fg-subtle">{fmt(r.of.den)} 중 {fmt(r.of.num)}</span>}
                 </dd>
               </div>
             ))}
           </dl>
+        )}
+        {e.kind === "weekly" && (
+          <div className="flex flex-col gap-4">
+            {e.rows.map((r) => (
+              <WeeklyBars key={r.key} row={r} buckets={e.buckets} events={e.events} unit={e.unit} />
+            ))}
+          </div>
         )}
         {e.kind === "daily" && <Spark label={e.label} unit={e.unit} series={e.series} peak={e.peak} total={e.total} />}
         {e.kind === "bars" && <Bars rows={e.rows.map((r) => ({ label: e.country ? countryName(r.label) : r.label, value: r.value }))} unit={e.unit} />}
@@ -182,11 +220,20 @@ function CompareRows({ rows }: { rows: Extract<Evidence, { kind: "compare" }>["r
   return (
     <ul className="flex flex-col gap-2.5">
       {rows.map((r) => {
-        const up = r.changePct !== null && r.changePct > 0;
-        const flat = r.changePct === 0;
+        // 비율은 %p 차이, 개수는 증감률
+        const change = r.points ?? r.changePct;
+        const up = change !== null && change > 0;
+        const flat = change === 0;
         return (
           <li key={r.key} className="flex items-baseline justify-between gap-3">
-            <span className="min-w-0 text-[13px] text-sd-fg-muted">{r.label}</span>
+            <span className="min-w-0 text-[13px] text-sd-fg-muted">
+              {r.label}
+              {r.aOf && (
+                <span className="block text-[11px] text-sd-fg-subtle tabular-nums">
+                  {fmt(r.aOf.den)} 중 {fmt(r.aOf.num)}
+                </span>
+              )}
+            </span>
             <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
               {/* 비교 기간에서 이번 기간으로: "30 → 42건" */}
               <span className="text-[12px] text-sd-fg-subtle">{fmt(r.b)} →</span>
@@ -194,13 +241,14 @@ function CompareRows({ rows }: { rows: Extract<Evidence, { kind: "compare" }>["r
                 {fmt(r.a)}
                 <span className="ml-0.5 text-[12px] font-semibold text-sd-fg-muted">{r.unit}</span>
               </span>
-              {r.changePct !== null && !r.lowSample && !flat && (
+              {change !== null && !r.lowSample && !flat && (
                 <span className={`inline-flex items-center text-[12px] font-bold ${up ? "text-chart-up" : "text-sd-fg-muted"}`}>
                   <svg viewBox="0 0 24 24" className={`h-3 w-3 ${up ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M12 19V6M6 12l6-6 6 6" />
                   </svg>
                   <span className="sr-only">{up ? "늘어남" : "줄어듦"}</span>
-                  {Math.abs(r.changePct)}%
+                  {Math.abs(change)}
+                  {r.points !== null ? "%p" : "%"}
                 </span>
               )}
               {r.lowSample && <span className="text-[11px] text-sd-fg-subtle">숫자가 적어요</span>}
@@ -246,6 +294,61 @@ function Spark({ label, unit, series, peak, total }: { label: string; unit: stri
           {unit}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * 주(또는 달)마다 더한 막대. 가장 큰 칸에 값을 적고, 일정이 있던 칸 밑에 점을 찍는다(지표 화면 차트의 일정 점과 같은 뜻).
+ * 칸이 30개를 넘지 않아(tools.ts WEEKLY_UNTIL) 막대 폭이 너무 얇아지지 않는다
+ */
+function WeeklyBars({
+  row,
+  buckets,
+  events,
+  unit,
+}: {
+  row: { label: string; unit: string; total: number | null; values: (number | null)[] };
+  buckets: Range[];
+  events: { day: string; label: string }[];
+  unit: "week" | "month";
+}) {
+  const max = Math.max(1, ...row.values.map((v) => v ?? 0));
+  const peak = row.values.reduce<number>((best, v, i) => ((v ?? -1) > (row.values[best] ?? -1) ? i : best), 0);
+  const hasEvent = buckets.map((b) => events.filter((x) => x.day >= b.start && x.day <= b.end));
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between gap-2 text-[13px]">
+        <span className="text-sd-fg-muted">{row.label}</span>
+        {row.total !== null && (
+          <span className="font-bold text-sd-fg tabular-nums">
+            모두 {fmt(row.total)}
+            {row.unit}
+          </span>
+        )}
+      </div>
+      <div className="flex h-14 items-end gap-[2px]" role="img" aria-label={`${row.label} ${unit === "week" ? "주별" : "달별"}, 가장 많은 칸 ${rangeText(buckets[peak])} ${fmt(row.values[peak] ?? null)}${row.unit}`}>
+        {row.values.map((v, i) => (
+          <span
+            key={buckets[i].start}
+            title={`${rangeText(buckets[i])} ${fmt(v)}${row.unit}${hasEvent[i].length ? `, ${hasEvent[i].map((x) => x.label).join(", ")}` : ""}`}
+            className={`min-w-0 flex-1 rounded-t-[3px] ${v === null ? "bg-sd-gray-200" : i === peak ? "bg-chart-1" : "bg-chart-1/45"}`}
+            style={{ height: `${v === null ? 6 : Math.max(4, (v / max) * 100)}%` }}
+          />
+        ))}
+      </div>
+      <div className="mt-1 flex gap-[2px]" aria-hidden>
+        {buckets.map((b, i) => (
+          <span key={b.start} className="flex min-w-0 flex-1 justify-center">
+            {hasEvent[i].length > 0 && <span className="h-1 w-1 rounded-full bg-chart-2" />}
+          </span>
+        ))}
+      </div>
+      <p className="mt-1 text-[12px] text-sd-fg-subtle tabular-nums">
+        가장 많은 {unit === "week" ? "주" : "달"} {rangeText(buckets[peak])}, {fmt(row.values[peak] ?? null)}
+        {row.unit}
+        {events.length > 0 && <span className="block">아래 점은 일정이 있던 {unit === "week" ? "주" : "달"}예요</span>}
+      </p>
     </div>
   );
 }

@@ -16,3 +16,13 @@ export const PET_EVENT = "cheese-pet";
 export function petSignal(signal: PetSignal) {
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent<PetSignal>(PET_EVENT, { detail: signal }));
 }
+
+export const PET_SAY_EVENT = "cheese-pet-say";
+
+/**
+ * 치즈 머리 위 말풍선 한 줄. 긴 답을 담는 곳이 아니라 알림이다(물어보기 창을 닫아 둔 사이 답이 왔을 때 등).
+ * 답 자체를 말풍선에 넣지 않는 이유: 숫자 비교와 막대가 들어가야 하는데 말풍선에는 안 들어가고, 몇 줄만 넘어도 읽기 힘들다
+ */
+export function petSay(text: string, ms = 6000) {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent<{ text: string; ms: number }>(PET_SAY_EVENT, { detail: { text, ms } }));
+}

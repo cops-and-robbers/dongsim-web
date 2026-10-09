@@ -236,105 +236,101 @@ export default function MetricsPage() {
   const view: View | null = shown ? { tab, range: shown.range, previous: compare ? shown.previous : null } : null;
 
   return (
-    <div className="flex h-full">
-      <div className="h-full min-w-0 flex-1">
-        <ScrollPage>
-          {/* 치즈 조각 펫(#163). 화면 아래를 돌아다니고 물어보기 패널의 챗봇 상태에 반응한다. 누르면 패널이 열린다 */}
-          <CheesePet onTap={() => setAsk(true)} />
-          <PageHeader
-            title="지표"
-            description="매일 아침 모은 어제까지의 숫자예요."
-            actions={
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1">
-                  {/* 직접 고른 기간이 적용 중이면 기간 버튼은 아무것도 고르지 않은 모양이 된다 */}
-                  <SegmentedControl
-                    options={PERIODS}
-                    value={(custom ? "" : days) as Days}
-                    onChange={(d) => setParams({ days: d === "28" ? null : d, from: null, to: null, ...(cmpMode.kind === "custom" && { cmp: null }) })}
-                  />
-                  <DateRangePicker
-                    value={custom}
-                    current={showing}
-                    min={MIN_DAY}
-                    max={yesterday}
-                    onApply={(r) => setParams({ from: r.from, to: r.to, days: null, ...(cmpMode.kind === "custom" && { cmp: null }) })}
-                  />
-                </div>
-                <CompareMenu range={showing} mode={cmpMode} min={MIN_DAY} onChange={(m) => setParams({ cmp: compareParam(m) })} />
-                <Button variant="neutral" size="sm" disabled={!current?.data} onClick={() => current?.data && downloadCsv(current.data)}>
-                  CSV
-                </Button>
-                <Button size="sm" aria-expanded={askOpen} onClick={() => setAsk(!askOpen)}>
-                  물어보기
-                </Button>
-              </div>
-            }
-          />
-          {/* 회색 밑줄은 border 대신 안쪽 그림자로 그린다. 탭 밑줄을 border 에 겹치려고 -mb-px 로 1px 내리면
-              그만큼 넘쳐서, 좁은 화면용 가로 스크롤(overflow-x-auto)이 세로 스크롤바까지 띄운다 */}
-          <div
-            role="tablist"
-            aria-label="지표 묶음"
-            className="mb-5 flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--sd-line)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {TABS.map((t) => {
-              const active = t.value === tab;
-              return (
-                <button
-                  key={t.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setParams({ tab: t.value === "summary" ? null : t.value, ...(t.value !== "store" && { store: null }) })}
-                  className={`shrink-0 border-b-2 px-3 pb-2.5 pt-1 text-[14px] font-semibold transition-colors ${
-                    active ? "border-accent text-sd-fg" : "border-transparent text-sd-fg-subtle hover:text-sd-fg-muted"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              );
-            })}
+    <ScrollPage>
+      {/* 치즈 조각 펫(#163). 화면 아래를 돌아다니고 물어보기 패널의 챗봇 상태에 반응한다. 누르면 패널이 열린다 */}
+      <CheesePet onTap={() => setAsk(true)} />
+      <PageHeader
+        title="지표"
+        description="매일 아침 모은 어제까지의 숫자예요."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              {/* 직접 고른 기간이 적용 중이면 기간 버튼은 아무것도 고르지 않은 모양이 된다 */}
+              <SegmentedControl
+                options={PERIODS}
+                value={(custom ? "" : days) as Days}
+                onChange={(d) => setParams({ days: d === "28" ? null : d, from: null, to: null, ...(cmpMode.kind === "custom" && { cmp: null }) })}
+              />
+              <DateRangePicker
+                value={custom}
+                current={showing}
+                min={MIN_DAY}
+                max={yesterday}
+                onApply={(r) => setParams({ from: r.from, to: r.to, days: null, ...(cmpMode.kind === "custom" && { cmp: null }) })}
+              />
+            </div>
+            <CompareMenu range={showing} mode={cmpMode} min={MIN_DAY} onChange={(m) => setParams({ cmp: compareParam(m) })} />
+            <Button variant="neutral" size="sm" disabled={!current?.data} onClick={() => current?.data && downloadCsv(current.data)}>
+              CSV
+            </Button>
+            <Button size="sm" aria-expanded={askOpen} onClick={() => setAsk(!askOpen)}>
+              물어보기
+            </Button>
           </div>
-          {current?.error && !shown ? (
-            <ErrorBlock message={current.error} onRetry={reload} />
-          ) : !shown ? (
-            <MetricsSkeleton />
-          ) : (
-            <>
-              {current?.error && (
-                <div className="mb-4">
-                  <Callout variant="danger" title="새 숫자를 못 불러왔어요">
-                    {current.error} 아래는 바로 전에 불러온 숫자예요.
-                  </Callout>
-                </div>
-              )}
-              <p className="-mt-2 mb-4 text-[12px] text-sd-fg-subtle tabular-nums">
-                지금 {rangeLabel({ from: shown.range.start, to: shown.range.end }, shown.range.end)}
-                {compare && `, ${cmpWord} ${rangeLabel({ from: shown.previous.start, to: shown.previous.end }, shown.range.end)}`}
-              </p>
-              <CompareContext.Provider value={{ on: compare, word: cmpWord, days: ymdRange(shown.previous.start, shown.previous.end) }}>
-                <div role="tabpanel" className={`transition-opacity duration-200 ${loading ? "pointer-events-none opacity-50" : ""}`} aria-busy={loading}>
-                  <MetricsBody
-                    d={shown}
-                    compare={compare}
-                    tab={tab}
-                    store={store}
-                    onStore={(v) => setParams({ store: v === "all" ? null : v })}
-                    yesterday={yesterday}
-                    onChanged={reload}
-                    onCompareEvent={(day) => {
-                      // 행사 효과: 그날부터 7일(어제까지)을 바로 앞 같은 길이와 비교한다
-                      const to = addDays(day, 6) > yesterday ? yesterday : addDays(day, 6);
-                      setParams({ from: day, to, days: null, cmp: null, tab: null });
-                    }}
-                  />
-                </div>
-              </CompareContext.Provider>
-            </>
-          )}
-        </ScrollPage>
+        }
+      />
+      {/* 회색 밑줄은 border 대신 안쪽 그림자로 그린다. 탭 밑줄을 border 에 겹치려고 -mb-px 로 1px 내리면
+          그만큼 넘쳐서, 좁은 화면용 가로 스크롤(overflow-x-auto)이 세로 스크롤바까지 띄운다 */}
+      <div
+        role="tablist"
+        aria-label="지표 묶음"
+        className="mb-5 flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--sd-line)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {TABS.map((t) => {
+          const active = t.value === tab;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setParams({ tab: t.value === "summary" ? null : t.value, ...(t.value !== "store" && { store: null }) })}
+              className={`shrink-0 border-b-2 px-3 pb-2.5 pt-1 text-[14px] font-semibold transition-colors ${
+                active ? "border-accent text-sd-fg" : "border-transparent text-sd-fg-subtle hover:text-sd-fg-muted"
+              }`}
+            >
+              {t.label}
+            </button>
+          );
+        })}
       </div>
+      {current?.error && !shown ? (
+        <ErrorBlock message={current.error} onRetry={reload} />
+      ) : !shown ? (
+        <MetricsSkeleton />
+      ) : (
+        <>
+          {current?.error && (
+            <div className="mb-4">
+              <Callout variant="danger" title="새 숫자를 못 불러왔어요">
+                {current.error} 아래는 바로 전에 불러온 숫자예요.
+              </Callout>
+            </div>
+          )}
+          <p className="-mt-2 mb-4 text-[12px] text-sd-fg-subtle tabular-nums">
+            지금 {rangeLabel({ from: shown.range.start, to: shown.range.end }, shown.range.end)}
+            {compare && `, ${cmpWord} ${rangeLabel({ from: shown.previous.start, to: shown.previous.end }, shown.range.end)}`}
+          </p>
+          <CompareContext.Provider value={{ on: compare, word: cmpWord, days: ymdRange(shown.previous.start, shown.previous.end) }}>
+            <div role="tabpanel" className={`transition-opacity duration-200 ${loading ? "pointer-events-none opacity-50" : ""}`} aria-busy={loading}>
+              <MetricsBody
+                d={shown}
+                compare={compare}
+                tab={tab}
+                store={store}
+                onStore={(v) => setParams({ store: v === "all" ? null : v })}
+                yesterday={yesterday}
+                onChanged={reload}
+                onCompareEvent={(day) => {
+                  // 행사 효과: 그날부터 7일(어제까지)을 바로 앞 같은 길이와 비교한다
+                  const to = addDays(day, 6) > yesterday ? yesterday : addDays(day, 6);
+                  setParams({ from: day, to, days: null, cmp: null, tab: null });
+                }}
+              />
+            </div>
+          </CompareContext.Provider>
+        </>
+      )}
       <AskPanel
         open={askOpen}
         onClose={() => setAsk(false)}
@@ -342,7 +338,7 @@ export default function MetricsPage() {
         // 답의 근거에서 "지표 화면에서 보기": 그 기간과 탭을 그대로 연다. 비교 기간이 바로 앞이 아니면 직접 고른 비교로
         onShow={(t) => setParams({ from: t.range.start, to: t.range.end, days: null, cmp: t.cmpFrom, tab: t.tab === "summary" ? null : t.tab, store: null })}
       />
-    </div>
+    </ScrollPage>
   );
 }
 
