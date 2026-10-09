@@ -68,7 +68,10 @@ export async function askMetrics(opts: { model: LanguageModel; ctx: Ctx; questio
       "도구 결과에 없는 숫자는 빼고, 원인을 단정하는 말은 hypotheses 로 옮기세요.",
       ...check.problems.map((p) => `- ${p.where}: "${p.text}" -> ${p.issue}`),
     ].join("\n");
-    const messages: ModelMessage[] = [{ role: "user", content: question }, ...first.response.messages, { role: "user", content: feedback }];
+    // 단계마다 쌓인 메시지(도구 호출, 도구 결과, 답)를 모은다. first.response.messages 에는 마지막 단계만 들어 있어서
+    // 그것만 넘기면 모델이 도구 결과 없이 다시 쓰게 된다(2026-10-09 실제 데이터 시험에서 잡음)
+    const history = first.steps.flatMap((st) => st.response.messages);
+    const messages: ModelMessage[] = [{ role: "user", content: question }, ...history, { role: "user", content: feedback }];
     const second = await generateText({ ...common, messages, stopWhen: isStepCount(1) });
     usage = addUsage(usage, second.usage);
     answer = second.output as Answer;
