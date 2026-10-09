@@ -8,11 +8,20 @@ import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
 import { petSignal } from "@/lib/admin/pet/signal";
 import { setPetBoxed, usePetBoxed } from "@/components/admin/pet/CheesePet";
+import { TAB_SUGGESTIONS } from "@/lib/metrics/chat/suggest";
+import type { View } from "@/lib/metrics/chat/instructions";
 
 /**
- * 지표 챗봇 질문 탭 (#163). 서버(/api/admin/metrics/chat)가 도구로 숫자를 찾고, 답의 숫자를 도구 결과와 대조한 뒤 돌려준다.
+ * 지표 챗봇 패널 (#163). 서버(/api/admin/metrics/chat)가 도구로 숫자를 찾고, 답의 숫자를 도구 결과와 대조한 뒤 돌려준다.
  * 화면은 확인한 사실과 확인 안 된 추측을 다른 모양으로 두고, 끝내 대조를 통과 못 한 문장에는 표시를 붙인다(숨기지 않는다).
  * 질문마다 따로 묻는다(대화를 이어 보내지 않는다). 토큰을 아끼고, 이어 묻기는 기간이 들어간 후속 질문으로 한다
+ *
+ * 처음엔 지표 화면의 여섯째 탭이었다. 질문은 그래프를 보다 생기는데 탭이면 그래프를 떠나야 물을 수 있고,
+ * 답의 숫자를 그래프에서 다시 찾으려면 탭을 오가야 해서 오른쪽 패널로 옮겼다(2026-10-10).
+ * - 넓은 화면(xl)은 본문 옆에 붙어 그래프를 가리지 않고, 그보다 좁으면 오른쪽에 겹쳐 열리고, 휴대폰은 아래에서 올라온다
+ * - 질문할 때 화면에 걸린 탭과 기간(view)을 같이 보내 "이 기간"을 그 날짜로 푼다. 추천 질문도 탭마다 바뀐다
+ * - 닫아도 대화는 남는다(언마운트하지 않고 숨긴다). 서버 상태(남은 질문 수, 추천)는 처음 열 때 한 번 받는다
+ * - data-pet-avoid: 치즈 펫이 이 패널을 피해 다닌다(옆 패널이면 왼쪽까지만, 아래 시트면 그 위에 선다)
  */
 
 type Claim = { text: string; refs: string[] };
@@ -43,32 +52,42 @@ const range = (r: unknown) => {
   return x?.start ? (x.start === x.end ? md(x.start) : `${md(x.start)}~${md(x.end)}`) : "";
 };
 const num = (v: unknown) => (typeof v === "number" ? v.toLocaleString("ko-KR") : "-");
+// 탭 질문 둘에 서버가 만든 질문(크게 움직인 지표, 최근 행사, 고정 질문)을 더해 다섯까지
+const MAX_CHIPS = 5;
 
-export function AskPanel() {
+export function AskPanel({ open, onClose, view }: { open: boolean; onClose: () => void; view: View | null }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [infoError, setInfoError] = useState<string | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
-  const endRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const asked = useRef(false);
   const busy = turns.some((t) => t.state === "loading");
   const petBoxed = usePetBoxed();
 
   useEffect(() => {
-    let alive = true;
+    if (!open || asked.current) return;
+    asked.current = true;
     authed("/api/admin/metrics/chat")
       .then(async (res) => {
         const body = (await res.json().catch(() => ({}))) as Info & { error?: string };
-        if (!alive) return;
         if (!res.ok) setInfoError(body.error ?? `HTTP ${res.status}`);
         else setInfo(body);
       })
-      .catch((e: unknown) => alive && setInfoError(e instanceof Error ? e.message : String(e)));
-    return () => {
-      alive = false;
-    };
-  }, []);
+      .catch((e: unknown) => setInfoError(e instanceof Error ? e.message : String(e)));
+  }, [open]);
 
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), [turns.length]);
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open, info]);
+
+  // 새 질문이 붙으면 패널 안만 맨 아래로. scrollIntoView 는 바깥 화면까지 움직이고,
+  // 최근 Chrome 에선 Promise 를 돌려줘서 effect 에서 그대로 돌려주면 React 가 "destroy is not a function"으로 멈췄다(2026-10-10)
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [turns.length]);
 
   const ask = async (q: string) => {
     const question = q.trim();
@@ -79,7 +98,7 @@ export function AskPanel() {
     setTurns((t) => [...t, { question, state: "loading" }]);
     const patch = (p: Partial<Turn>) => setTurns((t) => t.map((x, j) => (j === i ? { ...x, ...p } : x)));
     try {
-      const res = await authed("/api/admin/metrics/chat", { method: "POST", body: JSON.stringify({ question }) });
+      const res = await authed("/api/admin/metrics/chat", { method: "POST", body: JSON.stringify({ question, view }) });
       const body = (await res.json().catch(() => ({}))) as Result & { error?: string };
       if (!res.ok) {
         petSignal("error");
@@ -102,86 +121,123 @@ export function AskPanel() {
     await authed("/api/admin/metrics/chat", { method: "PATCH", body: JSON.stringify({ id, feedback: value }) }).catch(() => undefined);
   };
 
-  if (infoError) return <Callout variant="danger" title="챗봇을 불러오지 못했어요">{infoError}</Callout>;
-  if (info && !info.enabled)
-    return (
-      <Callout variant="info" title="아직 연결 전이에요">
-        지표 챗봇은 Gemini 연결 설정을 마치면 열려요. 설정 순서는 docs/metrics-chat.md 에 있어요. 개발 서버에서 가짜 모델로 보려면 .env.local 에 CHAT_MOCK=1 을 넣고 서버를 다시 켜 주세요.
-      </Callout>
-    );
-
   const closed = !!info && (info.remainingToday === 0 || info.monthFull);
+  const ready = !!info && info.enabled && !infoError;
+  const chips = info ? [...new Set([...(view ? TAB_SUGGESTIONS[view.tab] : []), ...info.suggestions])].slice(0, MAX_CHIPS) : [];
+
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-[13px] leading-relaxed text-sd-fg-muted">
-        지표를 말로 물어보면 숫자를 찾아 답해요. 숫자는 모두 지표 화면과 같은 집계에서 가져오고, 답에 쓴 숫자가 그 결과와 맞는지 확인한 뒤 보여 줘요.
-      </p>
-
-      {turns.map((t, i) => (
-        <div key={i} className="flex flex-col gap-3">
-          <div className="self-end rounded-2xl bg-sd-fill px-4 py-2.5 text-[14px] text-sd-fg">{t.question}</div>
-          {t.state === "loading" && <div className={`${SURFACE} px-5 py-4 text-[14px] text-sd-fg-subtle`}>숫자를 찾고 있어요</div>}
-          {t.state === "error" && <Callout variant="danger" title="답을 만들지 못했어요">{t.error}</Callout>}
-          {t.state === "done" && t.result && (
-            <AnswerCard result={t.result} feedback={t.feedback} onFeedback={(v) => feedback(i, v)} onAsk={ask} disabled={busy || closed} />
-          )}
+    <aside
+      data-pet-avoid
+      aria-label="지표에 물어보기"
+      onKeyDown={(e) => e.key === "Escape" && onClose()}
+      className={`${open ? "flex" : "hidden"} fixed inset-x-0 bottom-0 z-40 h-[85dvh] flex-col rounded-t-2xl border border-sd-line bg-sd-surface shadow-xl sm:inset-y-0 sm:left-auto sm:right-0 sm:h-auto sm:w-[400px] sm:rounded-none sm:border-y-0 sm:border-r-0 xl:static xl:z-auto xl:h-full xl:shrink-0 xl:shadow-none`}
+    >
+      <div className="flex items-start justify-between gap-3 border-b border-sd-hairline px-5 py-4">
+        <div>
+          <h2 className="text-[16px] font-bold text-sd-fg">물어보기</h2>
+          <p className="mt-0.5 text-[12px] text-sd-fg-subtle tabular-nums">
+            {view ? `지금 보는 ${range(view.range)}을 기준으로 답해요` : "지표를 말로 물어보면 숫자를 찾아 답해요"}
+          </p>
         </div>
-      ))}
-      <div ref={endRef} />
-
-      {info && !closed && (
-        <div className="flex flex-wrap gap-2">
-          {(turns.length ? [] : info.suggestions).map((s) => (
-            <Chip key={s} onClick={() => ask(s)} disabled={busy}>
-              {s}
-            </Chip>
-          ))}
-        </div>
-      )}
-      {closed ? (
-        <Callout variant="neutral" title={info?.monthFull ? "이번 달 예산을 다 썼어요" : "오늘 질문을 다 썼어요"}>
-          {info?.monthFull ? "다음 달 1일에 다시 열려요." : "내일 다시 물어봐 주세요."}
-        </Callout>
-      ) : (
-        <form
-          className={`${SURFACE} flex items-end gap-2 p-2`}
-          onSubmit={(e) => {
-            e.preventDefault();
-            ask(draft);
-          }}
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 rounded-lg px-2 py-1 text-[13px] font-semibold text-sd-fg-subtle transition hover:bg-sd-fill hover:text-sd-fg"
         >
-          <textarea
-            value={draft}
-            onChange={(e) => {
-              setDraft(e.target.value);
-              petSignal("typing");
+          닫기
+        </button>
+      </div>
+
+      <div ref={bodyRef} className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
+        {infoError ? (
+          <Callout variant="danger" title="챗봇을 불러오지 못했어요">
+            {infoError}
+          </Callout>
+        ) : info && !info.enabled ? (
+          <Callout variant="info" title="아직 연결 전이에요">
+            지표 챗봇은 Gemini 연결 설정을 마치면 열려요. 설정 순서는 docs/metrics-chat.md 에 있어요. 개발 서버에서 가짜 모델로 보려면 .env.local 에 CHAT_MOCK=1 을 넣고
+            서버를 다시 켜 주세요.
+          </Callout>
+        ) : (
+          <>
+            {turns.length === 0 && (
+              <p className="text-[13px] leading-relaxed text-sd-fg-muted">
+                숫자는 모두 지표 화면과 같은 집계에서 가져오고, 답에 쓴 숫자가 그 결과와 맞는지 확인한 뒤 보여 줘요.
+              </p>
+            )}
+            {turns.map((t, i) => (
+              <div key={i} className="flex flex-col gap-3">
+                <div className="self-end rounded-2xl bg-sd-fill px-4 py-2.5 text-[14px] text-sd-fg">{t.question}</div>
+                {t.state === "loading" && <div className={`${SURFACE} px-5 py-4 text-[14px] text-sd-fg-subtle`}>숫자를 찾고 있어요</div>}
+                {t.state === "error" && (
+                  <Callout variant="danger" title="답을 만들지 못했어요">
+                    {t.error}
+                  </Callout>
+                )}
+                {t.state === "done" && t.result && (
+                  <AnswerCard result={t.result} feedback={t.feedback} onFeedback={(v) => feedback(i, v)} onAsk={ask} disabled={busy || closed} />
+                )}
+              </div>
+            ))}
+            {ready && !closed && turns.length === 0 && (
+              <div className="flex flex-wrap gap-2">
+                {chips.map((s) => (
+                  <Chip key={s} onClick={() => ask(s)} disabled={busy}>
+                    {s}
+                  </Chip>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-sd-hairline px-4 py-3">
+        {closed ? (
+          <Callout variant="neutral" title={info?.monthFull ? "이번 달 예산을 다 썼어요" : "오늘 질문을 다 썼어요"}>
+            {info?.monthFull ? "다음 달 1일에 다시 열려요." : "내일 다시 물어봐 주세요."}
+          </Callout>
+        ) : (
+          <form
+            className="flex items-end gap-2 rounded-xl border border-sd-line bg-sd-surface p-1.5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              ask(draft);
             }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                ask(draft);
-              }
-            }}
-            maxLength={300}
-            rows={2}
-            placeholder="예: 지난주 iOS 설치가 왜 늘었어?"
-            aria-label="지표에 대해 물어보기"
-            className="min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2 text-[14px] text-sd-fg outline-none placeholder:text-sd-fg-subtle"
-          />
-          <Button type="submit" disabled={busy || !draft.trim()}>
-            물어보기
-          </Button>
-        </form>
-      )}
-      {info && !closed && (
-        <p className="flex items-center gap-2 text-[12px] text-sd-fg-subtle">
-          오늘 {info.remainingToday}개 더 물어볼 수 있어요.
+          >
+            <textarea
+              ref={inputRef}
+              value={draft}
+              disabled={!ready}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                petSignal("typing");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  ask(draft);
+                }
+              }}
+              maxLength={300}
+              rows={2}
+              placeholder="예: 이 기간 iOS 설치가 왜 늘었어?"
+              aria-label="지표에 대해 물어보기"
+              className="min-h-[44px] flex-1 resize-none bg-transparent px-2.5 py-2 text-[14px] text-sd-fg outline-none placeholder:text-sd-fg-subtle disabled:opacity-50"
+            />
+            <Button type="submit" size="sm" disabled={!ready || busy || !draft.trim()}>
+              물어보기
+            </Button>
+          </form>
+        )}
+        <p className="flex items-center justify-between gap-2 text-[12px] text-sd-fg-subtle">
+          <span>{ready && !closed ? `오늘 ${info.remainingToday}개 더 물어볼 수 있어요` : ""}</span>
           <button type="button" className="underline-offset-2 hover:underline" onClick={() => setPetBoxed(!petBoxed)}>
             {petBoxed ? "치즈 꺼내기" : "치즈 보관함에 넣기"}
           </button>
         </p>
-      )}
-    </div>
+      </div>
+    </aside>
   );
 }
 

@@ -10,9 +10,10 @@ import { PET_EVENT, type PetSignal } from "@/lib/admin/pet/signal";
  * 그림은 public/admin/pet/cheese-sheet.png (scripts/pet/cheese.py 로 만든 28x28 칸 스프라이트 시트), 판단은 lib/admin/pet/brain.ts.
  *
  * - React 상태로 프레임마다 다시 그리지 않는다. requestAnimationFrame 한 줄이 위치와 배경 위치를 직접 바꾼다
- * - 펫 몸만 포인터를 받는다. 짧게 누르면 하트, 꾹(0.25초) 누르면 들려서 포인터를 따라오고, 놓으면 떨어져 착지한다
+ * - 펫 몸만 포인터를 받는다. 짧게 누르면 물어보기 패널이 열리고(onTap, 없으면 하트), 꾹(0.25초) 누르면 들려서 포인터를 따라오고, 놓으면 떨어져 착지한다
+ * - 물어보기 패널(data-pet-avoid)을 가리지 않는다. 옆 패널이면 그 왼쪽까지만 다니고, 휴대폰의 아래 시트면 그 위에 올라선다(petBounds)
  * - 치우고 싶으면 오른쪽 아래 "증거물 보관함"에 넣는다. 들고 있는 동안만 상자가 보이고, 넣으면 상자 속에서 졸며 더는 따라다니지 않는다.
- *   상자를 누르면 손을 흔들며 나온다. 물어보기 탭의 버튼으로도 넣고 꺼낸다(키보드 사용자, 움직이는 요소를 멈출 수단 WCAG 2.2.2).
+ *   상자를 누르면 손을 흔들며 나온다. 물어보기 패널 아래 버튼으로도 넣고 꺼낸다(키보드 사용자, 움직이는 요소를 멈출 수단 WCAG 2.2.2).
  *   처음엔 치즈 위에 닫기(×) 버튼을 뒀는데, 만지다 눌려 사라진 뒤 다시 부르는 곳을 몰라 "아예 안 나온다"가 됐고 × 자체도 별로라는 의견이 있었다(2026-10-09)
  * - 움직임 줄이기 설정이면 걷지 않고 대기 첫 프레임만 보인다. 옮기기는 되지만 떨어지는 장면 없이 바로 바닥에 놓인다.
  *   터치 기기에서는 마우스를 따라가지 않지만 꾹 눌러 옮기기는 된다
@@ -27,6 +28,7 @@ const HOLD_MS = 250;
 const DRAG_FROM = 8; // 꾹 누르기 전에 이만큼 끌면 바로 든다(px)
 const GRAVITY = 2600; // 떨어질 때 px/초²
 const BOX_MARGIN = 24; // 상자 둘레 이만큼까지는 상자 위로 친다(px)
+const RUN_OUT = 240; // 패널이 덮었을 때 비켜 나오는 빠르기(px/초)
 export const PET_BOXED_KEY = "cheese-pet-boxed";
 export const PET_BOX_EVENT = "cheese-pet-box";
 
@@ -50,9 +52,31 @@ const subscribeBoxed = (cb: () => void) => {
 /** 치즈가 보관함에 들어가 있는지. 다른 탭에서 넣고 꺼낸 것도 따라간다 */
 export const usePetBoxed = () => useSyncExternalStore(subscribeBoxed, readBoxed, () => false);
 
+/**
+ * 치즈가 다닐 수 있는 곳. 물어보기 패널(data-pet-avoid)을 가리지 않게 피한다.
+ * 오른쪽 패널이면 그 왼쪽까지만(maxX), 아래에서 올라온 시트(휴대폰)면 그 윗변이 바닥(floor)이다.
+ * right 는 보관함을 둘 오른쪽 여백(패널이 있으면 그 왼쪽에 둔다)
+ */
+function petBounds(W: number) {
+  const vw = window.innerWidth;
+  let maxX = vw - W;
+  let floor = 0;
+  let right = 0;
+  const el = document.querySelector<HTMLElement>("[data-pet-avoid]");
+  const r = el?.getBoundingClientRect();
+  if (r && r.width > 0 && r.height > 0) {
+    if (r.left < W) floor = Math.max(0, window.innerHeight - r.top);
+    else {
+      maxX = Math.max(0, r.left - W);
+      right = vw - r.left;
+    }
+  }
+  return { maxX, floor, right };
+}
+
 type Drag = { phase: "idle" | "press" | "drag" | "fall"; timer: ReturnType<typeof setTimeout> | null; sx: number; sy: number; lx: number; ly: number; over: boolean };
 
-export function CheesePet() {
+export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
   const [meta, setMeta] = useState<SheetMeta | null>(null);
   const boxed = usePetBoxed();
   const [dragging, setDragging] = useState(false);
@@ -60,6 +84,7 @@ export function CheesePet() {
   const spriteRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLButtonElement>(null);
   const boxSpriteRef = useRef<HTMLDivElement>(null);
+  const boxWrapRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef<PetState | null>(null);
   // x 가 음수면 아직 자리를 안 잡았다. y 는 바닥에서 띄운 높이
   const pos = useRef({ x: -1, y: 0, vy: 0 });
@@ -132,19 +157,35 @@ export function CheesePet() {
       last = t;
       const d = drag.current;
       let s = stateRef.current!;
+      const b = petBounds(W);
       if (d.phase === "fall") {
         p.vy += GRAVITY * dt;
-        p.y = Math.max(0, p.y - p.vy * dt);
-        if (p.y === 0) {
+        p.y = Math.max(b.floor, p.y - p.vy * dt);
+        if (p.y === b.floor) {
           d.phase = "idle";
           p.vy = 0;
           s = play(s, "land", t);
         }
-      } else if (d.phase !== "drag" && !reduced) {
-        const r = step(s, { now: t, dt, mouseX, petX: p.x, idleMs: t - lastActive.current }, meta);
-        s = r.state;
-        p.x += r.dx;
+      } else if (d.phase !== "drag") {
+        // 바닥이 내려갔으면(시트를 닫음) 떨어지고, 올라갔으면(시트를 엶) 그 위로 올라선다
+        if (p.y > b.floor + 2 && !reduced) {
+          d.phase = "fall";
+          p.vy = 0;
+        } else p.y = b.floor;
+        if (reduced) p.x = Math.min(p.x, b.maxX);
+        else if (p.x > b.maxX + 1) {
+          // 패널이 열리며 치즈를 덮으면 패널 왼쪽 끝으로 달려 나온다. 생각 중이어도 패널 위에 앉아 입력창을 가리지 않게 먼저 비킨다
+          s = { ...s, anim: "run", facing: -1, since: s.anim === "run" ? s.since : t };
+          p.x = Math.max(b.maxX, p.x - RUN_OUT * dt);
+        } else {
+          // 마우스가 패널 위에 있어도 패널 앞까지만 따라간다
+          const target = mouseX === null ? null : Math.min(mouseX, b.maxX);
+          const r = step(s, { now: t, dt, mouseX: target, petX: p.x, idleMs: t - lastActive.current }, meta);
+          s = r.state;
+          p.x += r.dx;
+        }
       }
+      // 들고 있을 때는 패널 위로도 간다(패널 왼쪽에 놓인 보관함까지 끌어 가거나 아무 데나 놓을 수 있게)
       p.x = Math.min(Math.max(0, p.x), window.innerWidth - W);
       stateRef.current = s;
       const st = meta.states[s.anim];
@@ -167,23 +208,26 @@ export function CheesePet() {
     };
   }, [meta, boxed]);
 
-  // 상자: 비었으면 한 장, 치즈가 들어 있으면 두 장을 번갈아(조는 숨소리)
+  // 상자: 비었으면 한 장, 치즈가 들어 있으면 두 장을 번갈아(조는 숨소리). 물어보기 패널이 열리면 그 왼쪽(휴대폰은 시트 위)으로 비킨다
   useEffect(() => {
     if (!meta || (!boxed && !dragging)) return;
     const [cw, ch] = meta.cell;
     const st = meta.states[boxed ? "boxed" : "box"];
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let i = 0;
-    const paint = () => {
-      if (boxSpriteRef.current) boxSpriteRef.current.style.backgroundPosition = `${-(i % st.frames) * cw * SCALE}px ${-st.row * ch * SCALE}px`;
+    let raf = 0;
+    const t0 = performance.now();
+    const loop = (t: number) => {
+      const i = reduced ? 0 : Math.floor((t - t0) / st.ms) % st.frames;
+      if (boxSpriteRef.current) boxSpriteRef.current.style.backgroundPosition = `${-i * cw * SCALE}px ${-st.row * ch * SCALE}px`;
+      const b = petBounds(cw * SCALE);
+      if (boxWrapRef.current) {
+        boxWrapRef.current.style.right = `${b.right + 16}px`;
+        boxWrapRef.current.style.bottom = `${b.floor}px`;
+      }
+      raf = requestAnimationFrame(loop);
     };
-    paint();
-    if (reduced || st.frames < 2) return;
-    const id = setInterval(() => {
-      i += 1;
-      paint();
-    }, st.ms);
-    return () => clearInterval(id);
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
   }, [meta, boxed, dragging]);
 
   if (!meta) return null;
@@ -254,7 +298,12 @@ export function CheesePet() {
       if (d.timer) clearTimeout(d.timer);
       d.timer = null;
       d.phase = "idle";
-      if (!cancelled) stateRef.current = play(stateRef.current!, "love", now);
+      if (cancelled) return;
+      // 짧게 누르면 물어보기 패널을 연다(지표 화면). 패널이 없는 화면이면 하트
+      if (onTap) {
+        onTap();
+        stateRef.current = play(stateRef.current!, "wave", now);
+      } else stateRef.current = play(stateRef.current!, "love", now);
       return;
     }
     if (d.phase !== "drag") return;
@@ -282,7 +331,7 @@ export function CheesePet() {
         <div ref={wrapRef} className="pointer-events-none fixed bottom-0 left-0 z-[55]" style={{ width: W, height: H }}>
           <div
             ref={spriteRef}
-            title="꾹 눌러서 옮길 수 있어요"
+            title={onTap ? "누르면 물어볼 수 있어요. 꾹 누르면 옮겨요" : "꾹 눌러서 옮길 수 있어요"}
             className={`pointer-events-auto h-full w-full touch-none select-none ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
             style={sheet}
             onPointerDown={onDown}
@@ -293,7 +342,7 @@ export function CheesePet() {
         </div>
       )}
       {showBox && (
-        <div className="fixed right-4 bottom-0 z-[55] flex flex-col items-center">
+        <div ref={boxWrapRef} className="fixed right-4 bottom-0 z-[55] flex flex-col items-center">
           {dragging && <span className="mb-1 rounded bg-sd-surface/90 px-1.5 text-xs text-sd-fg-muted">여기 넣어 두기</span>}
           <button
             ref={boxRef}
@@ -318,7 +367,7 @@ export function CheesePet() {
   );
 }
 
-/** 보관함에 넣거나 꺼낸다 (상자, 물어보기 탭의 버튼) */
+/** 보관함에 넣거나 꺼낸다 (상자, 물어보기 패널의 버튼) */
 export function setPetBoxed(box: boolean) {
   try {
     if (box) localStorage.setItem(PET_BOXED_KEY, "1");
