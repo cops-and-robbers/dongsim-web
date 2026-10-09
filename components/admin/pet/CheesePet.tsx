@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type PointerEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
-import { frameOf, initial, play, setMood, step, suddenlyNear, type PetState, type SheetMeta } from "@/lib/admin/pet/brain";
+import { frameOf, initial, play, setMood, step, suddenlyNear, type PetState } from "@/lib/admin/pet/brain";
 import { PET_EVENT, type PetSignal } from "@/lib/admin/pet/signal";
+import { sheetStyle, useSheet } from "@/components/admin/pet/PetSprite";
 
 /**
  * 치즈 조각 펫 (#163). 지표 화면 아래를 돌아다니고, 마우스를 따라가고, 챗봇 상태에 따라 동작이 바뀐다.
@@ -77,7 +78,7 @@ function petBounds(W: number) {
 type Drag = { phase: "idle" | "press" | "drag" | "fall"; timer: ReturnType<typeof setTimeout> | null; sx: number; sy: number; lx: number; ly: number; over: boolean };
 
 export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
-  const [meta, setMeta] = useState<SheetMeta | null>(null);
+  const meta = useSheet();
   const boxed = usePetBoxed();
   const [dragging, setDragging] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -90,13 +91,6 @@ export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
   const pos = useRef({ x: -1, y: 0, vy: 0 });
   const drag = useRef<Drag>({ phase: "idle", timer: null, sx: 0, sy: 0, lx: 0, ly: 0, over: false });
   const lastActive = useRef(0);
-
-  useEffect(() => {
-    fetch("/admin/pet/cheese-sheet.json")
-      .then((r) => r.json())
-      .then(setMeta)
-      .catch(() => undefined);
-  }, []);
 
   // 돌아다니는 치즈
   useEffect(() => {
@@ -234,14 +228,7 @@ export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
   const [cw, ch] = meta.cell;
   const W = cw * SCALE;
   const H = ch * SCALE;
-  const cols = Math.max(...Object.values(meta.states).map((s) => s.frames));
-  const rows = Object.keys(meta.states).length;
-  const sheet: CSSProperties = {
-    backgroundImage: "url(/admin/pet/cheese-sheet.png)",
-    backgroundRepeat: "no-repeat",
-    backgroundSize: `${cols * W}px ${rows * H}px`,
-    imageRendering: "pixelated",
-  };
+  const sheet = sheetStyle(meta, SCALE);
 
   const overBox = (x: number, y: number) => {
     const r = boxRef.current?.getBoundingClientRect();

@@ -335,7 +335,13 @@ export default function MetricsPage() {
           )}
         </ScrollPage>
       </div>
-      <AskPanel open={askOpen} onClose={() => setAsk(false)} view={view} />
+      <AskPanel
+        open={askOpen}
+        onClose={() => setAsk(false)}
+        view={view}
+        // 답의 근거에서 "지표 화면에서 보기": 그 기간과 탭을 그대로 연다. 비교 기간이 바로 앞이 아니면 직접 고른 비교로
+        onShow={(t) => setParams({ from: t.range.start, to: t.range.end, days: null, cmp: t.cmpFrom, tab: t.tab === "summary" ? null : t.tab, store: null })}
+      />
     </div>
   );
 }
