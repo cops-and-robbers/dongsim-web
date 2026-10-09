@@ -1,0 +1,94 @@
+/**
+ * 질문 하나를 처리한다 (#163). 라우트와 시험이 같이 쓴다.
+ *
+ * 1. 지시문(고정 + 오늘, 기간, 데이터 현황) 과 질문으로 모델을 부른다. 모델은 도구를 부르고 구조화된 답을 낸다
+ * 2. 답의 숫자를 도구 결과와 대조한다(verify.ts)
+ * 3. 걸리면 걸린 곳을 알려 주고 한 번만 다시 쓰게 한다. 도구는 다시 부르지 않는다(비용, 같은 결과)
+ * 4. 그래도 걸리면 걸린 문장에 "검증 안 됨"을 붙여 보여 준다. 숨기지 않는다
+ */
+
+import { generateText, isStepCount, Output, type LanguageModel, type LanguageModelUsage, type ModelMessage } from "ai";
+import { z } from "zod";
+import { addDays } from "../dates.ts";
+import { previousRange } from "../dashboard/data.ts";
+import { dynamicPart, FIXED } from "./instructions.ts";
+import { chatTools, type Ctx } from "./tools.ts";
+import { verifyAnswer, type Answer, type Problem } from "./verify.ts";
+
+const claim = z.object({ text: z.string(), refs: z.array(z.string()).describe("이 문장의 숫자가 나온 도구 호출의 toolCallId") });
+export const answerSchema = z.object({
+  headline: claim.describe("질문에 대한 답 한 문장"),
+  facts: z.array(claim).describe("도구로 확인한 사실"),
+  hypotheses: z.array(z.string()).describe("확인 안 된 가능한 이유. 확인에 필요한 데이터를 덧붙인다"),
+  caveats: z.array(z.string()).describe("덜 들어온 숫자, 적은 표본 등 주의점"),
+  followUps: z.array(z.string()).describe("이어서 물을 질문 2~3개"),
+});
+
+export type ToolTrace = { id: string; name: string; input: unknown; output: unknown };
+export type AskResult = {
+  answer: Answer;
+  /** 검증을 끝내 통과 못 한 문장 자리(headline, facts[0] 등) */
+  unverified: string[];
+  problems: Problem[];
+  retried: boolean;
+  tools: ToolTrace[];
+  usage: { inputTokens: number; outputTokens: number; cachedInputTokens: number };
+  steps: number;
+};
+
+const MAX_STEPS = 8;
+
+const addUsage = (a: AskResult["usage"], u: LanguageModelUsage) => ({
+  inputTokens: a.inputTokens + (u.inputTokens ?? 0),
+  outputTokens: a.outputTokens + (u.outputTokens ?? 0),
+  cachedInputTokens: a.cachedInputTokens + (u.inputTokenDetails?.cacheReadTokens ?? 0),
+});
+
+export async function askMetrics(opts: { model: LanguageModel; ctx: Ctx; question: string; providerOptions?: Record<string, Record<string, unknown>> }): Promise<AskResult> {
+  const { model, ctx, question } = opts;
+  // 데이터 현황(소스별 마지막 날)은 최근 7일 집계에 같이 들어 있다. 도구가 같은 집계를 다시 쓰면 기억해 둔 것을 쓴다
+  const y = addDays(ctx.today, -1);
+  const last7 = { start: addDays(y, -6), end: y };
+  const status = await ctx.dashboard(last7, previousRange(last7));
+  const instructions = `${FIXED}\n\n${dynamicPart(ctx.today, status)}`;
+  const common = { model, instructions, output: Output.object({ schema: answerSchema }), maxOutputTokens: 3000, providerOptions: opts.providerOptions as never };
+
+  const first = await generateText({ ...common, prompt: question, tools: chatTools(ctx), stopWhen: isStepCount(MAX_STEPS) });
+  const tools: ToolTrace[] = first.steps.flatMap((s) => s.toolResults.map((r) => ({ id: r.toolCallId, name: r.toolName, input: r.input, output: r.output })));
+  const results = new Map(tools.map((t) => [t.id, t.output]));
+  let usage = addUsage({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 }, first.usage);
+  let answer = first.output as Answer;
+  let check = verifyAnswer(answer, results, question);
+  let retried = false;
+
+  if (!check.ok) {
+    retried = true;
+    const feedback = [
+      "방금 답을 코드로 검증했더니 아래 문장이 걸렸어요. 도구는 다시 부르지 말고, 위 도구 결과만으로 답 전체를 다시 써 주세요.",
+      "도구 결과에 없는 숫자는 빼고, 원인을 단정하는 말은 hypotheses 로 옮기세요.",
+      ...check.problems.map((p) => `- ${p.where}: "${p.text}" -> ${p.issue}`),
+    ].join("\n");
+    const messages: ModelMessage[] = [{ role: "user", content: question }, ...first.response.messages, { role: "user", content: feedback }];
+    const second = await generateText({ ...common, messages, stopWhen: isStepCount(1) });
+    usage = addUsage(usage, second.usage);
+    answer = second.output as Answer;
+    check = verifyAnswer(answer, results, question);
+  }
+  const unverified = [...new Set(check.problems.map((p) => p.where).filter((w) => w === "headline" || w.startsWith("facts")))];
+  return { answer, unverified, problems: check.problems, retried, tools, usage, steps: first.steps.length };
+}
+
+/**
+ * 비용 추정(달러). Gemini API 가격표(2026-10-09, 100만 토큰당)를 쓴다. Vertex 가격 페이지는 확인하지 못했다.
+ * 캐시로 읽은 입력은 캐시 단가로 센다. 생각 토큰은 출력에 들어 있다
+ */
+export const PRICES: Record<string, { input: number; output: number; cached: number }> = {
+  "gemini-3.8-flash": { input: 0.75, output: 3.75, cached: 0.075 },
+  "gemini-3.5-flash-lite": { input: 0.3, output: 2.5, cached: 0.03 },
+  "gemini-3.1-flash-lite": { input: 0.25, output: 1.5, cached: 0.025 },
+};
+export function costUsd(modelId: string, u: AskResult["usage"]): number {
+  const p = PRICES[modelId] ?? PRICES["gemini-3.8-flash"];
+  const fresh = Math.max(0, u.inputTokens - u.cachedInputTokens);
+  return (fresh * p.input + u.cachedInputTokens * p.cached + u.outputTokens * p.output) / 1_000_000;
+}
