@@ -51,7 +51,8 @@ export async function askMetrics(opts: { model: LanguageModel; ctx: Ctx; questio
   const last7 = { start: addDays(y, -6), end: y };
   const status = await ctx.dashboard(last7, previousRange(last7));
   const instructions = `${FIXED}\n\n${dynamicPart(ctx.today, status)}`;
-  const common = { model, instructions, output: Output.object({ schema: answerSchema }), maxOutputTokens: 3000, providerOptions: opts.providerOptions as never };
+  // 무료 등급은 분당 요청 수가 작아 두 사람이 같이 물으면 429 가 날 수 있다. SDK 가 기다렸다 다시 보내게 3번까지 둔다
+  const common = { model, instructions, output: Output.object({ schema: answerSchema }), maxOutputTokens: 3000, maxRetries: 3, providerOptions: opts.providerOptions as never };
 
   const first = await generateText({ ...common, prompt: question, tools: chatTools(ctx), stopWhen: isStepCount(MAX_STEPS) });
   const tools: ToolTrace[] = first.steps.flatMap((s) => s.toolResults.map((r) => ({ id: r.toolCallId, name: r.toolName, input: r.input, output: r.output })));

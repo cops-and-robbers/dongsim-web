@@ -105,10 +105,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 
-  const ctx = makeCtx({ client, apiBase: process.env.NEXT_PUBLIC_API_BASE_URL, token: a.token, today });
+  // 무료 등급은 보낸 내용이 구글 개선에 쓰여 광고 수익은 보내지 않는다(model.ts)
+  const ctx = makeCtx({ client, apiBase: process.env.NEXT_PUBLIC_API_BASE_URL, token: a.token, today, redact: chat.free ? new Set(["ad_earnings_usd"]) : undefined });
   try {
     const r = await askMetrics({ model: chat.model, ctx, question, providerOptions: chat.providerOptions });
-    const cost = costUsd(chat.modelId, r.usage);
+    const cost = chat.free ? 0 : costUsd(chat.modelId, r.usage);
     const log = await client
       .from("metrics_chat_log")
       .insert({

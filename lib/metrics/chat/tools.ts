@@ -23,13 +23,16 @@ export type Ctx = {
   /** 집계 함수. 시험에서는 가짜를 넣는다 */
   dashboard: (range: Week, previous: Week) => Promise<Dashboard>;
   server: () => Promise<ServerDaily | null>;
+  /** 모델에 보내지 않을 지표. 무료 등급(내용이 학습에 쓰임)에서는 광고 수익을 뺀다 */
+  redact?: Set<MetricKey>;
 };
 
-export function makeCtx(opts: { client: SupabaseClient; apiBase?: string; token: string; today: string }): Ctx {
+export function makeCtx(opts: { client: SupabaseClient; apiBase?: string; token: string; today: string; redact?: Set<MetricKey> }): Ctx {
   const dash = new Map<string, Promise<Dashboard>>();
   let srv: Promise<ServerDaily | null> | null = null;
   return {
     today: opts.today,
+    redact: opts.redact,
     dashboard: (r, p) => {
       const k = `${r.start}|${r.end}|${p.start}|${p.end}`;
       if (!dash.has(k)) dash.set(k, loadDashboard(opts.client, r, p));
@@ -68,9 +71,10 @@ function coverage(d: Dashboard, key: MetricKey, r: Week): string | null {
   return null;
 }
 
-function values(d: Dashboard, s: ServerNumbers | null, keys: MetricKey[], which: "current" | "previous") {
-  return Object.fromEntries(keys.map((k) => [k, metricDef(k).total(d, s, which)])) as Record<MetricKey, number | null>;
+function values(d: Dashboard, s: ServerNumbers | null, keys: MetricKey[], which: "current" | "previous", redact?: Set<MetricKey>) {
+  return Object.fromEntries(keys.map((k) => [k, redact?.has(k) ? null : metricDef(k).total(d, s, which)])) as Record<MetricKey, number | null>;
 }
+const REDACTED = "이 연결(무료 등급)에서는 보내지 않는 지표예요";
 
 const ALL: MetricKey[] = METRICS.map((m) => m.key);
 
@@ -80,11 +84,11 @@ export async function metricsSummary(ctx: Ctx, r: Week, keys: MetricKey[] = ALL)
   if (why) return bad(why);
   const [d, all] = await Promise.all([ctx.dashboard(r, previousRange(r)), ctx.server()]);
   const s = all ? serverNumbers(all, r, previousRange(r)) : null;
-  const v = values(d, s, keys, "current");
+  const v = values(d, s, keys, "current", ctx.redact);
   return {
     status: "ok" as const,
     range: r,
-    metrics: keys.map((k) => ({ key: k, label: metricDef(k).label, unit: metricDef(k).unit, value: v[k], lowSample: v[k] !== null && v[k]! < LOW_SAMPLE, coverage: coverage(d, k, r) })),
+    metrics: keys.map((k) => ({ key: k, label: metricDef(k).label, unit: metricDef(k).unit, value: v[k], lowSample: v[k] !== null && v[k]! < LOW_SAMPLE, coverage: ctx.redact?.has(k) ? REDACTED : coverage(d, k, r) })),
     notes: notes(d, s, r),
   };
 }
@@ -95,8 +99,8 @@ export async function metricsCompare(ctx: Ctx, a: Week, b: Week, keys: MetricKey
   if (why) return bad(why);
   const [d, all] = await Promise.all([ctx.dashboard(a, b), ctx.server()]);
   const s = all ? serverNumbers(all, a, b) : null;
-  const va = values(d, s, keys, "current");
-  const vb = values(d, s, keys, "previous");
+  const va = values(d, s, keys, "current", ctx.redact);
+  const vb = values(d, s, keys, "previous", ctx.redact);
   return {
     status: "ok" as const,
     periodA: a,
@@ -113,7 +117,7 @@ export async function metricsCompare(ctx: Ctx, a: Week, b: Week, keys: MetricKey
         diff: both ? round1(x! - y!) : null,
         changePct: both ? pct(x!, y!) : null,
         lowSample: both && Math.min(x!, y!) < LOW_SAMPLE,
-        coverage: coverage(d, k, a) ?? coverage(d, k, b),
+        coverage: ctx.redact?.has(k) ? REDACTED : (coverage(d, k, a) ?? coverage(d, k, b)),
       };
     }),
     notes: notes(d, s, a),
@@ -135,6 +139,7 @@ export async function metricsDaily(ctx: Ctx, key: MetricKey, r: Week) {
   const why = checkRange(r, ctx.today);
   if (why) return bad(why);
   const m = metricDef(key);
+  if (ctx.redact?.has(key)) return bad(REDACTED);
   if (!m.daily) return bad(`${m.label} 은(는) 날짜별로는 볼 수 없어요. 기간 합계(metrics_summary)로 물어 주세요`);
   const [d, all] = await Promise.all([ctx.dashboard(r, previousRange(r)), ctx.server()]);
   const days = ymdRange(r.start, r.end);

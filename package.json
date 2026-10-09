@@ -18,6 +18,7 @@
     "node": ">=20.9.0"
   },
   "dependencies": {
+    "@ai-sdk/google": "4.0.80",
     "@ai-sdk/google-vertex": "5.0.93",
     "@googlemaps/markerclusterer": "^2.6.2",
     "@supabase/supabase-js": "^2.115.0",
