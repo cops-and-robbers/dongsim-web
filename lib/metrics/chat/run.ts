@@ -7,7 +7,7 @@
  * 4. 그래도 걸리면 걸린 문장에 "검증 안 됨"을 붙여 보여 준다. 숨기지 않는다
  */
 
-import { generateText, isStepCount, Output, type LanguageModel, type LanguageModelUsage, type ModelMessage } from "ai";
+import { generateText, isStepCount, NoObjectGeneratedError, Output, type LanguageModel, type LanguageModelUsage, type ModelMessage } from "ai";
 import { z } from "zod";
 import { addDays } from "../dates.ts";
 import { previousRange } from "../dashboard/data.ts";
@@ -39,6 +39,28 @@ export type AskResult = {
 };
 
 const MAX_STEPS = 8;
+
+type Step = {
+  toolResults: { toolCallId: string; toolName: string; input: unknown; output: unknown }[];
+  response: { messages: ModelMessage[] };
+  usage: LanguageModelUsage;
+};
+
+/**
+ * 모델을 부르고 단계마다 결과를 모아 둔다. 답이 정해진 JSON 모양이 아니면(중간에 잘림 등) SDK 가 generateText 에서 던지는데,
+ * 그러면 앞서 부른 도구 결과까지 잃는다. 단계가 끝날 때마다 따로 모아 두어, 던져도 도구 결과와 대화는 남긴다.
+ * output 이 null 이면 답 모양을 못 만든 것이다
+ */
+async function generate(args: Parameters<typeof generateText>[0]): Promise<{ steps: Step[]; output: Answer | null }> {
+  const steps: Step[] = [];
+  try {
+    const r: unknown = await generateText({ ...args, onStepFinish: (st: unknown) => void steps.push(st as Step) } as never);
+    return { steps, output: (r as { output: Answer }).output };
+  } catch (e) {
+    if (NoObjectGeneratedError.isInstance(e)) return { steps, output: null };
+    throw e;
+  }
+}
 
 /**
  * 답 글에서 마크다운 표시를 걷어 낸다. 화면은 마크다운을 그리지 않고 글자 그대로 보여 줘서,
@@ -82,18 +104,38 @@ export async function askMetrics(opts: {
   const status = await ctx.dashboard(last7, previousRange(last7));
   const instructions = `${FIXED}\n\n${dynamicPart(ctx.today, status, opts.view)}`;
   // 무료 등급은 분당 요청 수가 작아 두 사람이 같이 물으면 429 가 날 수 있다. SDK 가 기다렸다 다시 보내게 3번까지 둔다
-  const common = { model, instructions, output: Output.object({ schema: answerSchema }), maxOutputTokens: 3000, maxRetries: 3, providerOptions: opts.providerOptions as never };
+  const common = { model, instructions, output: Output.object({ schema: answerSchema }), maxOutputTokens: 4096, maxRetries: 3, providerOptions: opts.providerOptions as never };
 
-  const first = await generateText({ ...common, prompt: question, tools: chatTools(ctx), stopWhen: isStepCount(MAX_STEPS) });
-  const tools: ToolTrace[] = first.steps.flatMap((s) => s.toolResults.map((r) => ({ id: r.toolCallId, name: r.toolName, input: r.input, output: r.output })));
+  const first = await generate({ ...common, prompt: question, tools: chatTools(ctx), stopWhen: isStepCount(MAX_STEPS) } as never);
+  const tools: ToolTrace[] = first.steps.flatMap((st) => st.toolResults.map((r) => ({ id: r.toolCallId, name: r.toolName, input: r.input, output: r.output })));
   const results = new Map(tools.map((t) => [t.id, t.output]));
-  let usage = addUsage({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 }, first.usage);
-  let answer = clean(first.output as Answer);
-  // 주의점과 가설은 지시문에 적힌 숫자("3~7일 늦게")를 말할 수 있다
-  const ruleNumbers = numbersIn(FIXED);
+  // 단계마다 쌓인 메시지(도구 호출, 도구 결과, 답). 마지막 단계만 넘기면 모델이 도구 결과 없이 다시 쓰게 된다(2026-10-09 실제 데이터 시험에서 잡음)
+  const history = first.steps.flatMap((st) => st.response.messages);
+  let usage = first.steps.reduce((u, st) => addUsage(u, st.usage), { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 });
+  let out = first.output;
+  let retried = false;
+  // 답이 중간에 잘렸거나 모양이 틀리면 도구 결과는 그대로 두고 한 번만 짧게 다시 쓰게 한다.
+  // agy 로 돌린 실제 Gemini 평가(2026-10-10)에서 15문항 중 하나가 첫 문장 중간에서 잘렸다
+  if (!out) {
+    retried = true;
+    const again = await generate({
+      ...common,
+      messages: [
+        { role: "user", content: question },
+        ...history,
+        { role: "user", content: "답이 중간에 잘렸거나 정해진 JSON 모양이 아니었어요. 도구는 다시 부르지 말고, 위 도구 결과로 같은 내용을 더 짧게 JSON 하나로 다시 써 주세요. 사실은 다섯 문장까지." },
+      ],
+      stopWhen: isStepCount(1),
+    } as never);
+    usage = again.steps.reduce((u, st) => addUsage(u, st.usage), usage);
+    out = again.output;
+    if (!out) throw new Error("답 모양을 만들지 못했어요(두 번 잘림)");
+  }
+  let answer = clean(out);
+  // 주의점과 가설은 지시문에 적힌 숫자("3~7일 늦게", 데이터 현황의 "10월 5일까지")를 말할 수 있다
+  const ruleNumbers = numbersIn(instructions);
   answer = repairHypothesisRefs(answer, results);
   let check = verifyAnswer(answer, results, question, ruleNumbers);
-  let retried = false;
 
   if (!check.ok) {
     retried = true;
@@ -102,15 +144,14 @@ export async function askMetrics(opts: {
       "도구 결과에 없는 숫자는 빼고, 원인을 단정하는 말은 hypotheses 로 옮기세요.",
       ...check.problems.map((p) => `- ${p.where}: "${p.text}" -> ${p.issue}`),
     ].join("\n");
-    // 단계마다 쌓인 메시지(도구 호출, 도구 결과, 답)를 모은다. first.response.messages 에는 마지막 단계만 들어 있어서
-    // 그것만 넘기면 모델이 도구 결과 없이 다시 쓰게 된다(2026-10-09 실제 데이터 시험에서 잡음)
-    const history = first.steps.flatMap((st) => st.response.messages);
     const messages: ModelMessage[] = [{ role: "user", content: question }, ...history, { role: "user", content: feedback }];
-    const second = await generateText({ ...common, messages, stopWhen: isStepCount(1) });
-    usage = addUsage(usage, second.usage);
-    answer = clean(second.output as Answer);
-    answer = repairHypothesisRefs(answer, results);
-    check = verifyAnswer(answer, results, question, ruleNumbers);
+    const second = await generate({ ...common, messages, stopWhen: isStepCount(1) } as never);
+    usage = second.steps.reduce((u, st) => addUsage(u, st.usage), usage);
+    // 다시 쓴 답이 모양을 못 갖추면 첫 답을 그대로 두고 걸린 문장에 표시만 한다
+    if (second.output) {
+      answer = repairHypothesisRefs(clean(second.output), results);
+      check = verifyAnswer(answer, results, question, ruleNumbers);
+    }
   }
   const unverified = [...new Set(check.problems.map((p) => p.where).filter((w) => w === "headline" || w.startsWith("facts")))];
   return { answer, unverified, problems: check.problems, retried, tools, usage, steps: first.steps.length };
