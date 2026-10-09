@@ -43,6 +43,14 @@ export function matches(x: number, v: number): boolean {
 
 const grounded = (x: number, pool: Set<number>) => [...pool].some((v) => matches(x, v));
 
+/**
+ * "최근 28일", "최근 7일", "13주(91일)" 같은 기간 이름은 숫자가 아니라 이름이다. 지시문의 기간 표에 있는 이름이라 결과에 없어도 된다.
+ * 실제 Gemini 평가(2026-10-10)에서 "최근 28일(9월 12일~10월 9일)"의 28 을 근거 없는 숫자로 잡았다
+ */
+const PERIOD_NAME = /(최근|지난)?\s*\d+\s*주\s*\(\s*\d+\s*일\s*\)|(최근|지난)\s*\d+\s*(일|주|개월|달)/g;
+export const withoutPeriodNames = (text: string) => text.replace(PERIOD_NAME, " ");
+const withoutDates = (text: string) => text.replace(/\d{1,2}\s*월\s*\d{1,2}\s*일|\d{1,2}\s*일/g, " ");
+
 /** 지시문에 적힌 기준 숫자: 표본 기준(catalog.ts LOW_SAMPLE, LOW_RATIO_DEN), 가입 후 첫 게임 기간(server.ts ACTIVATION_DAYS) */
 const RULE_NUMBERS = [20, 30, 7];
 
@@ -100,11 +108,12 @@ export function verifyAnswer(answer: Answer, results: Map<string, unknown>, ques
 
   const claims: [string, Claim][] = [["headline", answer.headline], ...answer.facts.map((f, i) => [`facts[${i}]`, f] as [string, Claim])];
   for (const [where, c] of claims) {
-    const nums = numbersIn(c.text);
+    const nums = numbersIn(withoutPeriodNames(c.text));
     if (CAUSAL.test(c.text)) problems.push({ where, text: c.text, issue: "사실에 인과 표현이 있어요. '같은 기간에 함께'로만 쓰거나 가설로 옮기세요" });
     if (!nums.length) continue;
     if (noTools) {
-      problems.push({ where, text: c.text, issue: "도구를 부르지 않고 숫자를 말했어요" });
+      // 도구 없이 할 수 있는 말은 날짜뿐이다("오늘 숫자는 없고 어제(10월 9일)까지 볼 수 있어요"). 날짜를 빼고도 숫자가 남으면 지어낸 것이다
+      if (numbersIn(withoutDates(withoutPeriodNames(c.text))).length) problems.push({ where, text: c.text, issue: "도구를 부르지 않고 숫자를 말했어요" });
       continue;
     }
     const unknown = c.refs.filter((r) => !results.has(r));
