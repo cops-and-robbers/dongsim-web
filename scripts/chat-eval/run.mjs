@@ -99,7 +99,9 @@ function grade(c, raw, answer, calls, retried = false) {
   answer = repairHypothesisRefs(answer, results);
   const v = verifyAnswer(answer, results, c.q, numbersIn(instructionsOf(c)));
   add(retried ? "숫자 검증(고쳐 쓴 뒤)" : "숫자 검증(첫 답)", v.ok, v.problems.map((p) => `${p.where}: ${p.issue}`).join(" / "));
-  const md = /\*\*|`|^#+\s/m.test(raw);
+  // 답 글 안의 마크다운만 본다. JSON 전체를 감싼 코드 울타리(```json)는 답 글이 아니다
+  const obj = firstJson(raw);
+  const md = /\*\*|`|^#+\s/m.test(obj ? JSON.stringify(Object.values(obj)) : raw);
   add("마크다운 안 씀", !md, md ? "서버가 걷어 내지만 지시를 어김" : "");
   const iso = texts(answer).some((t) => /\d{4}-\d{2}-\d{2}/.test(t));
   add("날짜를 한국어로", !iso, iso ? "2026-09-19 꼴 날짜" : "");
@@ -120,7 +122,7 @@ if (RESCORE) {
     const f = path.join(RESCORE, `${c.id}.json`);
     if (!fs.existsSync(f)) continue;
     const saved = JSON.parse(fs.readFileSync(f, "utf8"));
-    const checks = grade(c, JSON.stringify(saved.answer ?? ""), saved.answer, saved.toolOutputs);
+    const checks = grade(c, saved.raw ?? JSON.stringify(saved.answer ?? ""), saved.answer, saved.toolOutputs, saved.retried);
     const failed = checks.filter((x) => !x.ok);
     out.push(!failed.length);
     console.log(`${failed.length ? "FAIL" : "PASS"} ${c.id}${failed.length ? ` | ${failed.map((x) => `${x.name}(${x.note})`).join(" ; ")}` : ""}`);
@@ -217,7 +219,7 @@ ${c.q}`;
     .filter(Boolean)
     .map((l) => JSON.parse(l));
   const checks = grade(c, raw, answer, calls, retried);
-  const row = { id: c.id, q: c.q, retried, seconds, tokens: res?.usage?.total_tokens ?? null, denied: res?.denied_actions ?? [], calls: calls.map((t) => ({ id: t.id, name: t.name, input: t.input, status: t.output?.status })), answer, raw: answer ? undefined : raw.slice(0, 800), checks };
+  const row = { id: c.id, q: c.q, retried, seconds, tokens: res?.usage?.total_tokens ?? null, denied: res?.denied_actions ?? [], calls: calls.map((t) => ({ id: t.id, name: t.name, input: t.input, status: t.output?.status })), answer, raw: raw.slice(0, 8000), checks };
   rows.push(row);
   fs.writeFileSync(path.join(OUT, `${c.id}.json`), JSON.stringify({ ...row, toolOutputs: calls }, null, 2));
   const failed = checks.filter((x) => !x.ok);
