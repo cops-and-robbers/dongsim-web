@@ -13,7 +13,7 @@ import { addDays } from "../dates.ts";
 import { previousRange } from "../dashboard/data.ts";
 import { dynamicPart, FIXED, type View } from "./instructions.ts";
 import { chatTools, type Ctx } from "./tools.ts";
-import { verifyAnswer, type Answer, type Problem } from "./verify.ts";
+import { numbersIn, repairHypothesisRefs, verifyAnswer, type Answer, type Problem } from "./verify.ts";
 
 const claim = z.object({ text: z.string(), refs: z.array(z.string()).describe("이 문장의 숫자가 나온 도구 호출의 toolCallId") });
 export const answerSchema = z.object({
@@ -46,6 +46,8 @@ const MAX_STEPS = 8;
  */
 export function plain(text: string): string {
   return text
+    // 도구 결과의 2026-09-09 꼴 날짜를 그대로 옮겨 써도 "9월 9일"로(실제 Gemini 평가에서 지시를 어긴 적이 있다)
+    .replace(/\b\d{4}-(\d{2})-(\d{2})\b\s?/g, (_, m: string, d: string) => `${Number(m)}월 ${Number(d)}일`)
     .replace(/\*\*|__|`/g, "")
     .replace(/^\s*(?:[-*•]|\d+\.)\s+/, "")
     .replace(/^#+\s*/, "")
@@ -87,7 +89,10 @@ export async function askMetrics(opts: {
   const results = new Map(tools.map((t) => [t.id, t.output]));
   let usage = addUsage({ inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 }, first.usage);
   let answer = clean(first.output as Answer);
-  let check = verifyAnswer(answer, results, question);
+  // 주의점과 가설은 지시문에 적힌 숫자("3~7일 늦게")를 말할 수 있다
+  const ruleNumbers = numbersIn(FIXED);
+  answer = repairHypothesisRefs(answer, results);
+  let check = verifyAnswer(answer, results, question, ruleNumbers);
   let retried = false;
 
   if (!check.ok) {
@@ -104,7 +109,8 @@ export async function askMetrics(opts: {
     const second = await generateText({ ...common, messages, stopWhen: isStepCount(1) });
     usage = addUsage(usage, second.usage);
     answer = clean(second.output as Answer);
-    check = verifyAnswer(answer, results, question);
+    answer = repairHypothesisRefs(answer, results);
+    check = verifyAnswer(answer, results, question, ruleNumbers);
   }
   const unverified = [...new Set(check.problems.map((p) => p.where).filter((w) => w === "headline" || w.startsWith("facts")))];
   return { answer, unverified, problems: check.problems, retried, tools, usage, steps: first.steps.length };

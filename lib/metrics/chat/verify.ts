@@ -7,13 +7,15 @@
  * - 사실에는 인과 표현을 쓰지 않는다. 행사와 설치 증가는 "같은 기간에 함께"까지만 (LLM 은 상관에서 인과를 거의 못 가린다)
  * - 숫자가 있는 사실은 인용(refs)이 있어야 하고, 인용은 실제로 부른 도구여야 한다
  * - 도구를 하나도 안 불렀는데 숫자가 나오면 실패
+ * - 표본이 적은(lowSample) 지표의 증감률을 % 로 말하면 실패. 10건에서 39건을 "290% 늘었다"고 하면 부풀려 읽힌다(2026-10-10 실제 Gemini 평가에서 잡음)
  */
 
 export type Claim = { text: string; refs: string[] };
 export type Answer = { headline: Claim; facts: Claim[]; hypotheses: Claim[]; caveats: string[]; followUps: string[] };
 export type Problem = { where: string; text: string; issue: string };
 
-const NUM = /\d[\d,]*(?:\.\d+)?/g;
+// 영문자에 붙은 숫자는 이름의 일부라 세지 않는다("GA4", "D7"). 2026-10-10 실제 Gemini 평가에서 "GA4" 의 4 를 근거 없는 숫자로 잡았다
+const NUM = /(?<![A-Za-z\d.])\d[\d,]*(?:\.\d+)?(?![A-Za-z])/g;
 export const CAUSAL = /때문|덕분|덕에|로 인해|으로 인해|효과로|효과가 있|견인|기여|원인|영향으로|영향을 줬|결과로|이끌었/;
 
 export function numbersIn(text: string): number[] {
@@ -41,9 +43,58 @@ export function matches(x: number, v: number): boolean {
 
 const grounded = (x: number, pool: Set<number>) => [...pool].some((v) => matches(x, v));
 
-export function verifyAnswer(answer: Answer, results: Map<string, unknown>, question = ""): { ok: boolean; problems: Problem[] } {
+/** 지시문에 적힌 기준 숫자: 표본 기준(catalog.ts LOW_SAMPLE, LOW_RATIO_DEN), 가입 후 첫 게임 기간(server.ts ACTIVATION_DAYS) */
+const RULE_NUMBERS = [20, 30, 7];
+
+/** 글 속 "290%", "17.8 %" 같은 증감률 숫자(%p 는 뺀다) */
+const PCT = /(\d[\d,]*(?:\.\d+)?)\s*%(?!p)/g;
+
+/** 인용한 결과에서 표본이 적다고 표시된 지표의 증감률을 글에 썼나 */
+function smallSamplePct(text: string, refs: string[], results: Map<string, unknown>): string[] {
+  const said = [...text.matchAll(PCT)].map((m) => Number(m[1].replace(/,/g, "")));
+  if (!said.length) return [];
+  const out: string[] = [];
+  for (const r of refs) {
+    const metrics = (results.get(r) as { metrics?: { label?: string; lowSample?: boolean; changePct?: number | null }[] } | undefined)?.metrics;
+    for (const m of metrics ?? []) {
+      if (!m.lowSample || typeof m.changePct !== "number" || m.changePct === 0) continue;
+      if (said.some((x) => matches(x, m.changePct!))) out.push(`${m.label ?? "지표"} ${Math.abs(m.changePct)}%`);
+    }
+  }
+  return out;
+}
+
+/**
+ * 가설이 숫자를 쓰면서 그 숫자가 없는 결과를 인용했으면, 그 숫자가 있는 결과를 인용에 더한다.
+ * 실제 Gemini 평가(2026-10-10)에서 두 결과의 숫자를 한 문장에 섞고 하나만 인용하는 일이 15문항 중 둘 있었다.
+ * 숫자는 도구 결과에 있으니 지어낸 게 아니고 인용 장부만 틀린 것이라, 다시 쓰게 하지 않고 코드가 고친다.
+ * 우연히 같은 작은 숫자로 엉뚱한 결과를 붙이지 않게 10 이상만, 그리고 모든 빠진 숫자를 찾았을 때만 고친다. 사실(facts)은 고치지 않는다
+ */
+export function repairHypothesisRefs(answer: Answer, results: Map<string, unknown>): Answer {
+  const pools = [...results].map(([id, r]) => [id, numbersOfResult(r)] as const);
+  return {
+    ...answer,
+    hypotheses: answer.hypotheses.map((h) => {
+      if (!h.refs.length) return h;
+      const cited = new Set<number>();
+      for (const r of h.refs) if (results.has(r)) numbersOfResult(results.get(r), cited);
+      const missing = numbersIn(h.text).filter((n) => !grounded(n, cited));
+      if (!missing.length || missing.some((n) => n < 10)) return h;
+      const add = new Set<string>();
+      for (const n of missing) {
+        const hit = pools.find(([, p]) => grounded(n, p));
+        if (!hit) return h;
+        add.add(hit[0]);
+      }
+      return { ...h, refs: [...new Set([...h.refs, ...add])] };
+    }),
+  };
+}
+
+export function verifyAnswer(answer: Answer, results: Map<string, unknown>, question = "", ruleNumbers: number[] = []): { ok: boolean; problems: Problem[] } {
   const problems: Problem[] = [];
-  const all = new Set<number>(numbersIn(question));
+  // 주의점과 가설은 지시문의 기준 숫자도 말할 수 있다("표본이 20 미만", "분모 30 미만", "7일 안"). 사실(facts)에는 허용하지 않는다
+  const all = new Set<number>([...numbersIn(question), ...RULE_NUMBERS, ...ruleNumbers]);
   for (const r of results.values()) numbersOfResult(r, all);
   const noTools = results.size === 0;
 
@@ -63,6 +114,8 @@ export function verifyAnswer(answer: Answer, results: Map<string, unknown>, ques
     for (const r of c.refs) if (results.has(r)) numbersOfResult(results.get(r), pool);
     const missing = nums.filter((n) => !grounded(n, pool));
     if (missing.length) problems.push({ where, text: c.text, issue: `인용한 결과에 없는 숫자: ${missing.join(", ")}` });
+    const small = smallSamplePct(c.text, c.refs, results);
+    if (small.length) problems.push({ where, text: c.text, issue: `표본이 적은 지표의 증감률을 말했어요(${small.join(", ")}). % 대신 개수로만 말하세요` });
   }
   // 가설은 원인을 말해도 된다(그래서 인과 표현은 보지 않는다). 인용했으면 그 결과의 숫자만, 아니면 아래 느슨한 대조
   answer.hypotheses.forEach((h, i) => {
