@@ -1,0 +1,144 @@
+{
+  "cell": [
+    28,
+    28
+  ],
+  "states": {
+    "idle": {
+      "row": 0,
+      "frames": 4,
+      "ms": 260,
+      "loop": true,
+      "name": "대기",
+      "when": "평소"
+    },
+    "walk": {
+      "row": 1,
+      "frames": 4,
+      "ms": 140,
+      "loop": true,
+      "name": "걷기",
+      "when": "마우스를 따라갈 때 (왼쪽은 좌우 반전)"
+    },
+    "run": {
+      "row": 2,
+      "frames": 4,
+      "ms": 90,
+      "loop": true,
+      "name": "달리기",
+      "when": "마우스가 멀리 있을 때"
+    },
+    "listen": {
+      "row": 3,
+      "frames": 4,
+      "ms": 220,
+      "loop": true,
+      "name": "귀 기울이기",
+      "when": "챗봇 입력창에 글을 쓰는 동안"
+    },
+    "think": {
+      "row": 4,
+      "frames": 4,
+      "ms": 260,
+      "loop": true,
+      "name": "생각",
+      "when": "질문을 보내고 답을 기다릴 때"
+    },
+    "sniff": {
+      "row": 5,
+      "frames": 4,
+      "ms": 180,
+      "loop": true,
+      "name": "킁킁",
+      "when": "답을 찾는 중(생각과 번갈아)"
+    },
+    "happy": {
+      "row": 6,
+      "frames": 4,
+      "ms": 120,
+      "loop": false,
+      "name": "기쁨",
+      "when": "검증을 다 통과한 답이 왔을 때"
+    },
+    "confused": {
+      "row": 7,
+      "frames": 4,
+      "ms": 240,
+      "loop": true,
+      "name": "갸웃",
+      "when": "답에 '숫자를 확인하지 못했어요'가 있을 때"
+    },
+    "fall": {
+      "row": 8,
+      "frames": 7,
+      "ms": 150,
+      "loop": false,
+      "name": "꽈당",
+      "when": "오류가 났을 때"
+    },
+    "love": {
+      "row": 9,
+      "frames": 4,
+      "ms": 160,
+      "loop": false,
+      "name": "하트",
+      "when": "'도움이 됐어요'를 눌렀을 때, 펫을 클릭했을 때"
+    },
+    "sad": {
+      "row": 10,
+      "frames": 4,
+      "ms": 260,
+      "loop": false,
+      "name": "시무룩",
+      "when": "'아니에요'를 눌렀을 때"
+    },
+    "surprise": {
+      "row": 11,
+      "frames": 4,
+      "ms": 110,
+      "loop": false,
+      "name": "깜짝",
+      "when": "마우스가 갑자기 가까이 왔을 때"
+    },
+    "wave": {
+      "row": 12,
+      "frames": 4,
+      "ms": 180,
+      "loop": false,
+      "name": "손 흔들기",
+      "when": "화면에 처음 나타날 때, 탭을 옮겼을 때"
+    },
+    "squish": {
+      "row": 13,
+      "frames": 4,
+      "ms": 100,
+      "loop": false,
+      "name": "꾹",
+      "when": "펫을 누르고 있을 때"
+    },
+    "sit": {
+      "row": 14,
+      "frames": 4,
+      "ms": 400,
+      "loop": true,
+      "name": "앉아 쉬기",
+      "when": "30초 동안 아무것도 안 할 때"
+    },
+    "sleep": {
+      "row": 15,
+      "frames": 4,
+      "ms": 420,
+      "loop": true,
+      "name": "졸기",
+      "when": "2분 동안 아무것도 안 할 때"
+    },
+    "wake": {
+      "row": 16,
+      "frames": 4,
+      "ms": 140,
+      "loop": false,
+      "name": "깨기",
+      "when": "졸다가 마우스가 움직이면"
+    }
+  }
+}
