@@ -8,15 +8,19 @@
  * - CHAT_VERTEX_PROJECT: 챗봇 전용 프로젝트 id (없으면 챗봇을 끈다)
  * - CHAT_VERTEX_LOCATION: 기본 global
  * - CHAT_MODEL: 기본 gemini-3.8-flash
+ * - CHAT_MOCK=1: 개발 서버에서 가짜 모델(devMock.ts). Vertex 없이 화면을 볼 때
  * - CHAT_GOOGLE_SERVICE_ACCOUNT_JSON: 없으면 GOOGLE_SERVICE_ACCOUNT_JSON(지표 수집 계정)을 쓴다. 그 계정에 Vertex AI 사용자 역할을 줘야 한다
  */
 
 import { createGoogleVertex } from "@ai-sdk/google-vertex";
 import type { LanguageModel } from "ai";
+import { devMockModel } from "./devMock.ts";
 
 export type ChatModel = { model: LanguageModel; modelId: string; providerOptions: Record<string, Record<string, unknown>> };
 
 export function chatModelFromEnv(): ChatModel | null {
+  // 개발 서버에서만: 가짜 모델로 화면과 검증 흐름을 본다(devMock.ts). 운영 빌드에서는 무시한다
+  if (process.env.CHAT_MOCK === "1" && process.env.NODE_ENV !== "production") return { model: devMockModel(), modelId: "dev-mock", providerOptions: {} };
   const project = process.env.CHAT_VERTEX_PROJECT;
   const raw = process.env.CHAT_GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!project || !raw) return null;
