@@ -24,6 +24,7 @@ import { Tooltip } from "@/components/admin/Tooltip";
 import { SmallReachNote } from "@/components/admin/metrics/PostDrawer";
 import { compareParam, parseCompare, rangeLabel } from "@/lib/metrics/dashboard/calendar";
 import { CompareMenu } from "@/components/admin/metrics/CompareMenu";
+import { AskPanel } from "@/components/admin/metrics/AskPanel";
 import { CompareContext, useCompare } from "@/components/admin/metrics/compareContext";
 import { addDays, todayIn, ymdRange } from "@/lib/metrics/dates";
 import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
@@ -62,6 +63,8 @@ const TABS = [
   { value: "traffic", label: "유입 경로" },
   { value: "store", label: "스토어" },
   { value: "app", label: "앱과 광고" },
+  // 지표 챗봇(#163). 기간과 상관없이 질문에 적힌 기간을 본다
+  { value: "ask", label: "물어보기" },
 ] as const;
 type Tab = (typeof TABS)[number]["value"];
 
@@ -280,7 +283,9 @@ export default function MetricsPage() {
           );
         })}
       </div>
-      {current?.error && !shown ? (
+      {tab === "ask" ? (
+        <AskPanel />
+      ) : current?.error && !shown ? (
         <ErrorBlock message={current.error} onRetry={reload} />
       ) : !shown ? (
         <MetricsSkeleton />
