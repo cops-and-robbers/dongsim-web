@@ -32,6 +32,6 @@ export function progressLines(events: ProgressEvent[]): string[] {
 /** 오래 걸릴 때 덧붙이는 말. 20초가 넘으면 기다려 달라고, 40초가 넘으면 거의 다 됐다고 하지 않고 그대로 알린다 */
 export function waitingLine(seconds: number): string | null {
   if (seconds >= 40) return "평소보다 오래 걸리고 있어요. 1분이 지나면 멈추고 알려 드릴게요";
-  if (seconds >= 20) return "숫자가 많아서 조금 더 걸려요";
+  if (seconds >= 20) return "숫자가 꽤 많네요. 조금만 더 기다려 주세요";
   return null;
 }

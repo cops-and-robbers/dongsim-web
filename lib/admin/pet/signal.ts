@@ -8,8 +8,9 @@ export type PetSignal =
   | "answered" // 검증을 다 통과한 답 -> 기쁨
   | "unverified" // 확인 못 한 숫자가 있는 답 -> 갸웃
   | "error" // 오류 -> 꽈당
-  | "liked" // 도움이 됐어요 -> 하트
-  | "disliked"; // 아니에요 -> 시무룩
+  | "liked" // 만족해요 -> 하트
+  | "meh" // 보통이에요 -> 갸웃
+  | "disliked"; // 아쉬워요 -> 시무룩
 
 export const PET_EVENT = "cheese-pet";
 

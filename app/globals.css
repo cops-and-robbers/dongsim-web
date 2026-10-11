@@ -40,6 +40,16 @@
   --sd-positive-weak: #edfaf6;
   --sd-warning: #9b7821;
   --sd-warning-weak: #fff7de;
+  /* 치즈 펫 노랑(scripts/pet/cheese.py). 치즈가 고른 표정, 진행 중 표시처럼 치즈 몫에만 쓴다 */
+  --cheese: #ffcc3e;
+  --cheese-weak: #fff4d1;
+  /* 답 평가 신선도(lib/metrics/chat/feedback.ts). 글자는 진하게, 바탕은 옅게 */
+  --fresh: #a8780a;
+  --fresh-weak: #fff4d1;
+  --ripe: #8a5a26;
+  --ripe-weak: #f5e8d8;
+  --mold: #3f7d36;
+  --mold-weak: #e5f1e1;
   --sd-critical: #fa342c;
   --sd-critical-weak: #fdf0f0;
   --sd-info: #3f63d9;
@@ -94,6 +104,14 @@
   --sd-positive-weak: rgba(38, 193, 153, 0.16);
   --sd-warning: #e5b84f;
   --sd-warning-weak: rgba(229, 184, 79, 0.16);
+  --cheese: #ffcc3e;
+  --cheese-weak: rgba(255, 204, 62, 0.14);
+  --fresh: #f2c447;
+  --fresh-weak: rgba(255, 204, 62, 0.14);
+  --ripe: #d6a066;
+  --ripe-weak: rgba(205, 150, 82, 0.18);
+  --mold: #8cc77f;
+  --mold-weak: rgba(92, 158, 74, 0.2);
   --sd-critical: #ff6b64;
   --sd-critical-weak: rgba(255, 107, 100, 0.16);
   --sd-info: #7ea2ff;
@@ -165,6 +183,14 @@
   --color-sd-positive-weak: var(--sd-positive-weak);
   --color-sd-warning: var(--sd-warning);
   --color-sd-warning-weak: var(--sd-warning-weak);
+  --color-cheese: var(--cheese);
+  --color-cheese-weak: var(--cheese-weak);
+  --color-fresh: var(--fresh);
+  --color-fresh-weak: var(--fresh-weak);
+  --color-ripe: var(--ripe);
+  --color-ripe-weak: var(--ripe-weak);
+  --color-mold: var(--mold);
+  --color-mold-weak: var(--mold-weak);
   --color-sd-critical: var(--sd-critical);
   --color-sd-critical-weak: var(--sd-critical-weak);
   --color-sd-info: var(--sd-info);
@@ -1024,4 +1050,22 @@ body {
 .hljs-number,
 .hljs-literal {
   color: #e0b073;
+}
+
+/*
+ * 체다 답에서 숫자를 확인하지 못한 문장 (#163). 물결 밑줄은 맞춤법 검사 같고 AI 도구처럼 보여서(2026-10-11),
+ * 손으로 비스듬히 그은 형광펜처럼 칠한다. 붓자국 SVG 를 줄마다 깔고(box-decoration-break), 글자 아래쪽 절반만 덮는다
+ */
+.chat-marker {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M1 9C18 4 38 7 58 5S88 4 99 7L98 15C80 18 57 13 36 16S9 18 2 14Z' fill='%23ff8a3d' fill-opacity='.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 100% 0.85em;
+  background-position: 0 100%;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding: 0 0.15em;
+  margin: 0 -0.15em;
+}
+.dark .chat-marker {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M1 9C18 4 38 7 58 5S88 4 99 7L98 15C80 18 57 13 36 16S9 18 2 14Z' fill='%23ff8a3d' fill-opacity='.38'/%3E%3C/svg%3E");
 }

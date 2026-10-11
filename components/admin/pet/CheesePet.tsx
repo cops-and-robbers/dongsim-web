@@ -177,7 +177,7 @@ export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
       let s = stateRef.current!;
       if (sig === "typing") s = setMood(s, { anim: "listen", until: t + 2000, since: t });
       if (sig === "asking") s = setMood(s, { anim: "think", until: Infinity, since: t });
-      if (sig === "unverified") s = setMood(s, { anim: "confused", until: t + 4000, since: t });
+      if (sig === "unverified" || sig === "meh") s = setMood(s, { anim: "confused", until: t + 4000, since: t });
       // 들고 있는 동안은 기분만 바꿔 두고, 한 번짜리 동작은 내려놓은 뒤로 미루지 않고 버린다
       const free = drag.current.phase === "idle";
       if (sig === "answered") s = free ? play(setMood(s, null), "happy", t) : setMood(s, null);
@@ -404,8 +404,8 @@ export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
             ref={boxRef}
             type="button"
             disabled={!boxed}
-            aria-label="보관함에서 치즈 꺼내기"
-            title={boxed ? "눌러서 치즈 꺼내기" : undefined}
+            aria-label="보관함에서 체다 꺼내기"
+            title={boxed ? "눌러서 체다 꺼내기" : undefined}
             className="block transition-transform duration-150 enabled:cursor-pointer"
             style={{ width: W, height: H }}
             onClick={() => {

@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { countryName } from "@/components/admin/metrics/countryName";
-import { ArrowRightIcon, ChevronDownIcon, ThumbsDownIcon, ThumbsUpIcon } from "@/components/admin/icons";
-import { evidenceOf, type Evidence, type Range, type Target, type Trace } from "@/lib/metrics/chat/evidence";
+import { ArrowRightIcon, ArrowUpIcon, CalendarIcon, ChevronDownIcon } from "@/components/admin/icons";
+import { evidenceOf, interpretationOf, type Chip, type Evidence, type Range, type Target, type Trace } from "@/lib/metrics/chat/evidence";
+import { changeText, magnitude, valueText } from "@/lib/metrics/chat/format";
+import { emphasize } from "@/lib/metrics/chat/emphasis";
+import { FEEDBACK_FACES, FEEDBACK_REASONS, type Feedback } from "@/lib/metrics/chat/feedback";
 
 /**
  * 챗봇 답 하나 (#163). 글보다 숫자가 먼저 보이게 한다.
@@ -11,14 +14,18 @@ import { evidenceOf, type Evidence, type Range, type Target, type Trace } from "
  * - 답 글은 말풍선이나 카드 없이 치즈 얼굴 옆에 바로 둔다. 첫 문장(headline)이 질문에 대한 답이고, 이어지는 사실은 같은 단락으로 잇는다
  * - 그 아래 근거는 도구 결과를 그대로 그린 것이다(evidence.ts). 지표 화면의 숫자 칸, 증감 화살표와 같은 모양이라 화면과 바로 대조된다
  * - 근거마다 "지표 화면에서 보기"로 같은 기간, 같은 탭을 연다(Mixpanel Spark, Metabase Metabot 의 "보고서로 열기")
- * - 확인하지 못한 문장은 숨기지 않고 물결 밑줄과 한 줄 안내로 표시한다. 큰 경고 딱지는 붙이지 않는다
+ * - 확인하지 못한 문장은 숨기지 않고 손으로 그은 형광펜과 한 줄 안내로 표시한다. 큰 경고 딱지는 붙이지 않는다.
+ *   물결 밑줄은 맞춤법 검사처럼 보이고 AI 도구 같아서 바꿨다(2026-10-11)
+ * - 값(59명, 75.6%)은 화면이 굵게 한다(emphasis.ts). 모델에게 마크다운을 쓰게 하지 않는다
  * - 추측(hypotheses)은 접어 둔다. 확인한 것과 같은 무게로 보이지 않게. 모델이 확인하려고 비교를 돌린 추측은 그 비교 그림을 같이 펼친다
- * - 평가는 글 대신 엄지 아이콘 둘
+ * - 평가는 엄지 대신 치즈 신선도 그림 셋(노랑, 갈색, 곰팡이 초록)에 만족도 말(만족해요, 보통이에요, 아쉬워요). 색만 봐도 좋고 나쁨이 보인다.
+ *   보통이에요, 아쉬워요는 이유를 하나 고르고 한 줄 남길 수 있다(feedback.ts).
+ *   돌아다니는 체다도 같은 기분을 짓는다(하트, 갸웃, 시무룩)
  */
 
 export type Claim = { text: string; refs: string[] };
 // 예전 답(가설이 글자만이던 때)도 그릴 수 있게 string 을 받는다
-export type Answer = { headline: Claim; facts: Claim[]; hypotheses: (Claim | string)[]; caveats: string[]; followUps: string[] };
+export type Answer = { headline: Claim; facts: Claim[]; hypotheses: (Claim | string)[]; caveats: string[]; followUps: string[]; show?: { ref: string; metrics: string[] }[] };
 export type Result = { id: number | null; answer: Answer; unverified: string[]; retried: boolean; tools: Trace[]; costUsd: number };
 
 const md = (ymd: string) => `${Number(ymd.slice(5, 7))}월 ${Number(ymd.slice(8))}일`;
@@ -27,34 +34,43 @@ export const rangeText = (r: Range) =>
   r.start === r.end ? md(r.start) : r.start.slice(0, 7) === r.end.slice(0, 7) ? `${md(r.start)}~${Number(r.end.slice(8))}일` : `${md(r.start)}~${md(r.end)}`;
 const fmt = (v: number | null) => (v === null ? "-" : v.toLocaleString("ko-KR", { maximumFractionDigits: 1 }));
 
+export type FeedbackState = { value: Feedback; reason?: string; note?: string; sent?: boolean };
+
 export function AnswerBody({
   result,
   feedback,
   onFeedback,
   onShow,
+  onReask,
 }: {
   result: Result;
-  feedback?: "good" | "bad";
-  onFeedback: (v: "good" | "bad") => void;
+  feedback?: FeedbackState;
+  onFeedback: (f: FeedbackState) => void;
   onShow: (t: Target) => void;
+  /** 기간을 바꿔 같은 질문을 다시 묻기("최근 28일" 같은 기간 이름) */
+  onReask?: (period: string) => void;
 }) {
   const { answer, unverified } = result;
   const evidence = evidenceOf(result.tools, answer);
+  const chips = interpretationOf(result.tools, answer);
   const unchecked = (where: string) => unverified.includes(where);
   const notes = [...new Set([...answer.caveats, ...evidence.flatMap((e) => e.notes)])];
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
-      <p className="text-[14px] leading-[1.65] text-sd-fg">
-        <Sentence text={answer.headline.text} unchecked={unchecked("headline")} strong />
+      <Understood chips={chips} onReask={onReask} />
+      {/* 결론 한 줄을 따로, 사실은 짧은 단락으로 나눈다. 좁은 창에서 한 단락으로 이으면 글 벽이 된다(2026-10-11 로컬 확인) */}
+      <div className="flex w-fit max-w-full flex-col gap-1.5 rounded-[20px] rounded-tl-md bg-cheese-weak px-3.5 py-2.5 text-[14px] leading-[1.6] text-sd-fg">
+        <p>
+          <Sentence text={answer.headline.text} unchecked={unchecked("headline")} strong />
+        </p>
         {answer.facts.map((f, i) => (
-          <span key={i}>
-            {" "}
+          <p key={i}>
             <Sentence text={f.text} unchecked={unchecked(`facts[${i}]`)} />
-          </span>
+          </p>
         ))}
-      </p>
-      {unverified.length > 0 && <p className="-mt-1 text-[12px] text-sd-warning">물결 밑줄 친 문장은 숫자를 확인하지 못했어요. 지표 화면에서 한 번 더 봐 주세요.</p>}
+      </div>
+      {unverified.length > 0 && <p className="-mt-1 pl-1 text-[12px] text-sd-fg-muted"><span className="chat-marker">형광펜 칠한 문장</span>은 숫자를 확인하지 못했어요. 지표 화면에서 한 번 더 봐 주세요.</p>}
 
       {evidence.map((e) => (
         <EvidenceBlock key={e.id} e={e} onShow={onShow} />
@@ -80,26 +96,182 @@ export function AnswerBody({
         />
       )}
 
-      <div className="flex items-center gap-1 text-sd-fg-subtle">
-        <IconToggle label="도움이 됐어요" on={feedback === "good"} disabled={!!feedback || result.id === null} onClick={() => onFeedback("good")}>
-          <ThumbsUpIcon className="h-[15px] w-[15px]" />
-        </IconToggle>
-        <IconToggle label="아쉬워요" on={feedback === "bad"} disabled={!!feedback || result.id === null} onClick={() => onFeedback("bad")}>
-          <ThumbsDownIcon className="h-[15px] w-[15px]" />
-        </IconToggle>
-        {feedback && <span className="ml-1 text-[12px]">{feedback === "good" ? "고마워요" : "더 나은 답을 찾아볼게요"}</span>}
-      </div>
+      {result.id !== null && <Faces state={feedback} onChange={onFeedback} />}
     </div>
   );
 }
 
-function Sentence({ text, unchecked, strong }: { text: string; unchecked: boolean; strong?: boolean }) {
+/** 기간을 바꿔 다시 물을 때 고르는 기간. 이름은 지시문의 기간 표와 같아서 체다가 그대로 푼다 */
+const REASK_PERIODS: { label: string; name: string }[] = [
+  { label: "최근 7일", name: "최근 7일" },
+  { label: "최근 28일", name: "최근 28일" },
+  { label: "이번 달", name: "이번 달(1일~어제)" },
+  { label: "지난달", name: "지난달" },
+  { label: "전체", name: "전체(수집 시작부터, 지금까지, 누적)" },
+];
+
+/**
+ * "이렇게 봤어요" 칩. 체다가 도구에 넘긴 기간, 행사, 나눠 본 기준을 그대로 보여 준다(evidence.ts interpretationOf).
+ * 기간이 틀렸으면 칩을 눌러 다른 기간으로 같은 질문을 다시 묻는다. 질문을 다시 쓸 필요가 없다(HAX G9 쉬운 고치기, ThoughtSpot 토큰)
+ */
+function Understood({ chips, onReask }: { chips: Chip[]; onReask?: (period: string) => void }) {
+  const [open, setOpen] = useState(false);
+  if (!chips.length) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-[12px] text-sd-fg-subtle">
+      <span>이렇게 봤어요</span>
+      {chips.map((c, i) =>
+        c.kind === "period" && c.range ? (
+          <span key={i} className="relative">
+            <button
+              type="button"
+              disabled={!onReask}
+              aria-expanded={open}
+              onClick={() => setOpen((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-lg border border-sd-line bg-sd-surface px-2 py-0.5 text-sd-fg-muted tabular-nums transition hover:border-sd-fg-subtle hover:text-sd-fg disabled:pointer-events-none"
+            >
+              <CalendarIcon className="h-3 w-3" />
+              {rangeText(c.range)}
+              {c.compare && <span className="text-sd-fg-subtle">, 비교 {rangeText(c.compare)}</span>}
+              {onReask && <ChevronDownIcon className="h-3 w-3" />}
+            </button>
+            {open && onReask && (
+              <span className="absolute left-0 top-full z-10 mt-1 flex w-36 flex-col rounded-xl border border-sd-line bg-sd-surface p-1 shadow-lg">
+                <span className="px-2.5 pb-1 pt-1.5 text-[11px] text-sd-fg-subtle">이 기간으로 다시 묻기</span>
+                {REASK_PERIODS.map((p) => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      onReask(p.name);
+                    }}
+                    className="rounded-lg px-2.5 py-1.5 text-left text-[12px] text-sd-fg-muted transition hover:bg-sd-fill hover:text-sd-fg"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </span>
+            )}
+          </span>
+        ) : (
+          <span key={i} className="rounded-lg bg-sd-fill px-2 py-0.5 text-sd-fg-muted">
+            {c.text}
+          </span>
+        ),
+      )}
+    </div>
+  );
+}
+
+/** 신선도 얼굴 한 칸. freshness.png(28x28 셋)를 정수 배로 키워 픽셀이 번지지 않게 */
+function FreshFace({ frame, scale = 2 }: { frame: number; scale?: number }) {
   return (
     <span
-      className={`${strong ? "font-semibold" : ""} ${unchecked ? "underline decoration-sd-warning decoration-wavy decoration-1 underline-offset-4" : ""}`}
-      title={unchecked ? "숫자를 확인하지 못했어요" : undefined}
-    >
-      {text}
+      aria-hidden
+      className="block shrink-0"
+      style={{
+        width: 28 * scale,
+        height: 28 * scale,
+        backgroundImage: "url(/admin/pet/freshness.png)",
+        backgroundSize: `${84 * scale}px ${28 * scale}px`,
+        backgroundPosition: `${-frame * 28 * scale}px 0`,
+        imageRendering: "pixelated",
+      }}
+    />
+  );
+}
+
+const TONE = {
+  fresh: { on: "bg-fresh-weak ring-fresh text-fresh" },
+  ripe: { on: "bg-ripe-weak ring-ripe text-ripe" },
+  mold: { on: "bg-mold-weak ring-mold text-mold" },
+} as const;
+
+/**
+ * 만족도 평가(feedback.ts). 그림은 치즈 신선도(노랑 만족해요, 갈색 보통이에요, 곰팡이 초록 아쉬워요), 글자는 만족도 말.
+ * 고르면 그 칸만 색 바탕과 테두리가 생기고 나머지는 흐려진다. 보통이에요, 아쉬워요는 이유를 고르면 바로 보낸다. 한 줄 메모는 쓰고 싶은 사람만
+ */
+function Faces({ state, onChange }: { state?: FeedbackState; onChange: (f: FeedbackState) => void }) {
+  const [note, setNote] = useState("");
+  const picked = state?.value;
+  const needsReason = picked === "meh" || picked === "bad";
+  return (
+    <div className="flex flex-col gap-2.5 border-t border-sd-hairline pt-3">
+      <p className="text-[12px] text-sd-fg-subtle">{!picked ? "이 답, 만족스러웠어요?" : state?.sent ? "알려 줘서 고마워요. 모아 보고 다음 체다에 반영할게요" : "어떤 점이 아쉬웠어요?"}</p>
+      <div className="grid grid-cols-3 gap-1.5">
+        {FEEDBACK_FACES.map((f) => {
+          const on = picked === f.key;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              aria-pressed={on}
+              title={f.meaning}
+              onClick={() => onChange({ value: f.key, sent: f.key === "good" })}
+              className={`flex flex-col items-center gap-0.5 rounded-xl py-1.5 transition ${on ? `ring-1 ${TONE[f.tone].on}` : picked ? "opacity-35 hover:opacity-100" : "hover:bg-sd-fill"}`}
+            >
+              <FreshFace frame={f.frame} />
+              <span className={`text-[12px] ${on ? "font-bold" : "text-sd-fg-muted"}`}>{f.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      {needsReason && !state?.sent && (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-1.5">
+            {FEEDBACK_REASONS.map((r) => (
+              <button
+                key={r.key}
+                type="button"
+                onClick={() => onChange({ value: picked!, reason: r.key, note: note.trim() || undefined, sent: true })}
+                className="rounded-lg border border-sd-line px-2.5 py-1 text-[12px] text-sd-fg-muted transition hover:border-sd-fg-subtle hover:text-sd-fg"
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <form
+            className="flex items-center gap-1.5 rounded-lg border border-sd-line px-2.5 focus-within:border-accent"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (note.trim()) onChange({ value: picked!, reason: "other", note: note.trim(), sent: true });
+            }}
+          >
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={300}
+              placeholder="한 줄로 남겨도 돼요"
+              aria-label="평가 메모"
+              className="min-w-0 flex-1 bg-transparent py-1.5 text-[12px] text-sd-fg outline-none placeholder:text-sd-placeholder"
+            />
+            <button type="submit" aria-label="메모 보내기" disabled={!note.trim()} className="text-sd-fg-subtle transition hover:text-sd-fg disabled:opacity-30">
+              <ArrowUpIcon className="h-3.5 w-3.5" />
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 답 문장 하나. 값(59명, 75.6%)은 굵게(emphasis.ts), 확인하지 못한 문장은 손으로 그은 형광펜(globals.css .chat-marker).
+ * 모델에게 마크다운을 쓰게 하지 않고 화면이 정해진 규칙으로 강조해서, 답마다 모양이 같다
+ */
+function Sentence({ text, unchecked, strong }: { text: string; unchecked: boolean; strong?: boolean }) {
+  return (
+    <span className={`${strong ? "font-semibold" : ""} ${unchecked ? "chat-marker" : ""}`} title={unchecked ? "숫자를 확인하지 못했어요" : undefined}>
+      {emphasize(text).map((p, i) =>
+        p.num ? (
+          <span key={i} className="font-bold text-sd-fg tabular-nums">
+            {p.text}
+          </span>
+        ) : (
+          <span key={i}>{p.text}</span>
+        ),
+      )}
     </span>
   );
 }
@@ -136,22 +308,6 @@ function Guesses({ items, onShow }: { items: { text: string; checked: boolean; u
   );
 }
 
-function IconToggle({ label, on, disabled, onClick, children }: { label: string; on: boolean; disabled: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-pressed={on}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={`rounded-md p-1.5 transition hover:bg-sd-fill hover:text-sd-fg disabled:pointer-events-none ${on ? "text-accent" : ""} ${disabled && !on ? "opacity-40" : ""}`}
-    >
-      {children}
-    </button>
-  );
-}
-
 /** 근거 한 덩어리. 머리에 기간, 몸에 숫자나 작은 그림, 끝에 지표 화면으로 가는 길 */
 function EvidenceBlock({ e, onShow }: { e: Evidence; onShow: (t: Target) => void }) {
   const head =
@@ -161,7 +317,11 @@ function EvidenceBlock({ e, onShow }: { e: Evidence; onShow: (t: Target) => void
         ? `${e.title}, ${rangeText(e.range)}`
         : e.kind === "weekly"
           ? `${e.unit === "week" ? "주마다" : "달마다"} 더한 값, ${rangeText(e.range)}`
-          : rangeText(e.range);
+          : e.kind === "event"
+            ? `행사 성적표, ${md(e.day)}${e.time ? ` ${e.time}` : ""}`
+            : e.kind === "posts"
+              ? `올린 게시물, ${rangeText(e.range)}`
+              : rangeText(e.range);
   return (
     <figure className="overflow-hidden rounded-xl bg-sd-fill">
       <figcaption className="px-3.5 pt-3 text-[12px] text-sd-fg-subtle tabular-nums">{head}</figcaption>
@@ -190,6 +350,21 @@ function EvidenceBlock({ e, onShow }: { e: Evidence; onShow: (t: Target) => void
         )}
         {e.kind === "daily" && <Spark label={e.label} unit={e.unit} series={e.series} peak={e.peak} total={e.total} />}
         {e.kind === "bars" && <Bars rows={e.rows.map((r) => ({ label: e.country ? countryName(r.label) : r.label, value: r.value }))} unit={e.unit} />}
+        {e.kind === "event" && <EventCard e={e} />}
+        {e.kind === "posts" && (
+          <ul className="flex flex-col gap-1.5 text-[13px] text-sd-fg">
+            {e.posts.map((x, i) => (
+              <li key={`${x.day}-${i}`} className="flex items-baseline gap-3">
+                <span className="w-14 shrink-0 text-sd-fg-subtle tabular-nums">{md(x.day)}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="mr-1.5 text-[12px] text-sd-fg-subtle">{x.type}</span>
+                  {x.caption || "글 없음"}
+                </span>
+                {x.views !== null && <span className="shrink-0 text-[12px] text-sd-fg-muted tabular-nums">조회 {fmt(x.views)}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
         {e.kind === "events" && (
           <ul className="flex flex-col gap-1 text-[13px] text-sd-fg">
             {e.events.map((x) => (
@@ -215,48 +390,119 @@ function EvidenceBlock({ e, onShow }: { e: Evidence; onShow: (t: Target) => void
   );
 }
 
-/** 지표 화면의 증감과 같은 규칙: 화살표와 색을 같이, 줄면 빨강 대신 회색, 표본이 적으면 %를 감춘다 */
-function CompareRows({ rows }: { rows: Extract<Evidence, { kind: "compare" }>["rows"] }) {
+/**
+ * 행사 성적표 한 장. 위에 행사 이름, 큰 숫자 둘(행사 게임, 만난 방문객), 아래에 그날과 평소(앞선 같은 요일).
+ * 만난 방문객은 여러 판에 나온 사람을 한 번만 센 수다. 판마다 더한 연인원은 작게 곁들인다
+ */
+function EventCard({ e }: { e: Extract<Evidence, { kind: "event" }> }) {
+  const people = e.totals.uniqueVisitors;
   return (
-    <ul className="flex flex-col gap-2.5">
-      {rows.map((r) => {
-        // 비율은 %p 차이, 개수는 증감률
-        const change = r.points ?? r.changePct;
-        const up = change !== null && change > 0;
-        const flat = change === 0;
-        return (
-          <li key={r.key} className="flex items-baseline justify-between gap-3">
-            <span className="min-w-0 text-[13px] text-sd-fg-muted">
-              {r.label}
-              {r.aOf && (
-                <span className="block text-[11px] text-sd-fg-subtle tabular-nums">
-                  {fmt(r.aOf.den)} 중 {fmt(r.aOf.num)}
+    <div className="flex flex-col gap-3">
+      <p className="text-[13px] font-semibold text-sd-fg">{e.label.replace(/\s*\d{1,2}~\d{1,2}시.*$/, "")}</p>
+      {e.totals.games > 0 ? (
+        <dl className="grid grid-cols-2 gap-x-4">
+          <div>
+            <dt className="text-[12px] text-sd-fg-muted">행사 게임</dt>
+            <dd className="text-[18px] font-bold text-sd-fg tabular-nums">
+              {e.totals.games}
+              <span className="ml-0.5 text-[12px] font-semibold text-sd-fg-muted">판</span>
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[12px] text-sd-fg-muted">만난 방문객</dt>
+            <dd className="text-[18px] font-bold text-sd-fg tabular-nums">
+              {fmt(people ?? e.totals.visitorsSum)}
+              <span className="ml-0.5 text-[12px] font-semibold text-sd-fg-muted">명</span>
+              <span className="ml-1.5 text-[11px] font-normal text-sd-fg-subtle">{people === null ? "끝까지 남은 인원" : `판마다 더하면 ${fmt(e.totals.visitorsSum)}명`}</span>
+            </dd>
+          </div>
+        </dl>
+      ) : (
+        <p className="text-[12px] text-sd-fg-subtle">행사 게임을 아직 고르지 않았어요</p>
+      )}
+      {e.rows.length > 0 && (
+        <ul className="flex flex-col gap-2 border-t border-sd-hairline pt-2.5">
+          {e.rows.map((r) => (
+            <li key={r.key} className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 text-[13px] text-sd-fg-muted">{r.label}</span>
+              <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
+                <span className="text-[12px] text-sd-fg-subtle">평소 {fmt(r.usual)} →</span>
+                <span className="text-[16px] font-bold text-sd-fg">
+                  {fmt(r.value)}
+                  <span className="ml-0.5 text-[12px] font-semibold text-sd-fg-muted">{r.unit}</span>
                 </span>
-              )}
-            </span>
-            <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
-              {/* 비교 기간에서 이번 기간으로: "30 → 42건" */}
-              <span className="text-[12px] text-sd-fg-subtle">{fmt(r.b)} →</span>
-              <span className="text-[16px] font-bold text-sd-fg">
-                {fmt(r.a)}
-                <span className="ml-0.5 text-[12px] font-semibold text-sd-fg-muted">{r.unit}</span>
+                {r.pending && <span className="text-[11px] text-sd-fg-subtle">덜 들어옴</span>}
               </span>
-              {change !== null && !r.lowSample && !flat && (
-                <span className={`inline-flex items-center text-[12px] font-bold ${up ? "text-chart-up" : "text-sd-fg-muted"}`}>
-                  <svg viewBox="0 0 24 24" className={`h-3 w-3 ${up ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M12 19V6M6 12l6-6 6 6" />
-                  </svg>
-                  <span className="sr-only">{up ? "늘어남" : "줄어듦"}</span>
-                  {Math.abs(change)}
-                  {r.points !== null ? "%p" : "%"}
-                </span>
-              )}
-              {r.lowSample && <span className="text-[11px] text-sd-fg-subtle">숫자가 적어요</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+type CompareRow = Extract<Evidence, { kind: "compare" }>["rows"][number];
+
+/**
+ * 비교 카드. 늘어난 것과 줄어든 것이 섞여 있고 세 줄이 넘으면 둘로 나눠 많이 바뀐 순으로 둔다(Tableau Pulse 의 오른 것, 내린 것).
+ * 숫자 표기는 format.ts 한 곳(정수 %, 2배 넘으면 N배, 비율은 %p, 표본이 적으면 %를 감춘다).
+ * 지표 화면의 증감과 같은 규칙: 화살표와 색을 같이, 줄면 빨강 대신 회색
+ */
+function CompareRows({ rows }: { rows: CompareRow[] }) {
+  const items = rows.map((r) => ({ r, c: changeText({ a: r.a, b: r.b, changePct: r.changePct, points: r.points, lowSample: r.lowSample }), m: magnitude({ a: r.a, b: r.b, points: r.points, lowSample: r.lowSample }) }));
+  const ups = items.filter((x) => x.c?.dir === "up").sort((x, y) => y.m - x.m);
+  const downs = items.filter((x) => x.c?.dir === "down").sort((x, y) => y.m - x.m);
+  const rest = items.filter((x) => !x.c || x.c.dir === "flat");
+  const grouped = ups.length > 0 && downs.length > 0 && rows.length >= 3;
+  const list = (xs: typeof items) => (
+    <ul className="flex flex-col gap-2.5">
+      {xs.map(({ r, c }) => (
+        <li key={r.key} className="flex items-baseline justify-between gap-3">
+          <span className="min-w-0 text-[13px] text-sd-fg-muted">
+            {r.label}
+            {r.aOf && (
+              <span className="block text-[11px] text-sd-fg-subtle tabular-nums">
+                {valueText(r.aOf.den)} 중 {valueText(r.aOf.num)}
+              </span>
+            )}
+          </span>
+          <span className="flex shrink-0 items-baseline gap-2 tabular-nums">
+            {/* 비교 기간에서 이번 기간으로: "30 → 42건" */}
+            <span className="text-[12px] text-sd-fg-subtle">{valueText(r.b)} →</span>
+            <span className="text-[16px] font-bold text-sd-fg">
+              {valueText(r.a)}
+              <span className="ml-0.5 text-[12px] font-semibold text-sd-fg-muted">{r.unit}</span>
             </span>
-          </li>
-        );
-      })}
+            {c && c.dir !== "flat" && (
+              <span className={`inline-flex items-center text-[12px] font-bold ${c.dir === "up" ? "text-chart-up" : "text-sd-fg-muted"}`}>
+                <svg viewBox="0 0 24 24" className={`h-3 w-3 ${c.dir === "up" ? "" : "rotate-180"}`} fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 19V6M6 12l6-6 6 6" />
+                </svg>
+                <span className="sr-only">{c.dir === "up" ? "늘어남" : "줄어듦"}</span>
+                {c.text}
+              </span>
+            )}
+            {c?.dir === "flat" && <span className="text-[12px] text-sd-fg-subtle">그대로</span>}
+            {r.lowSample && <span className="text-[11px] text-sd-fg-subtle">숫자가 적어요</span>}
+          </span>
+        </li>
+      ))}
     </ul>
+  );
+  // 한쪽으로만 움직였거나 두 줄 이하면 체다가 고른 순서 그대로
+  if (!grouped) return list(items);
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <p className="mb-1.5 text-[11px] font-semibold text-chart-up">늘어난 것</p>
+        {list(ups)}
+      </div>
+      <div>
+        <p className="mb-1.5 text-[11px] font-semibold text-sd-fg-subtle">줄어든 것</p>
+        {list(downs)}
+      </div>
+      {rest.length > 0 && <div>{list(rest)}</div>}
+    </div>
   );
 }
 
