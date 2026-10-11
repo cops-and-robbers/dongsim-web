@@ -23,6 +23,7 @@ export const SOURCE_OF: Record<Exclude<keyof DailyPoint, "day">, Source> = {
   webFromInstagram: "ga4web",
   downloadClicks: "ga4web",
   downloadClicksFromInstagram: "ga4web",
+  downloadLinkClicks: "ga4web",
   appStoreNew: "appstore",
   firstOpenAndroid: "ga4app",
   firstOpenIos: "ga4app",

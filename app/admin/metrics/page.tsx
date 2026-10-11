@@ -25,7 +25,10 @@ import { Tooltip } from "@/components/admin/Tooltip";
 import { SmallReachNote } from "@/components/admin/metrics/PostDrawer";
 import { compareParam, parseCompare, rangeLabel } from "@/lib/metrics/dashboard/calendar";
 import { CompareMenu } from "@/components/admin/metrics/CompareMenu";
+import { AskPanel } from "@/components/admin/metrics/AskPanel";
+import { CheesePet } from "@/components/admin/pet/CheesePet";
 import { CompareContext, useCompare } from "@/components/admin/metrics/compareContext";
+import type { View } from "@/lib/metrics/chat/instructions";
 import { addDays, todayIn, ymdRange } from "@/lib/metrics/dates";
 import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
 
@@ -40,6 +43,7 @@ import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
  *   Google Play 는 남아 있는 설치와 안정성까지. 스토어 화면을 고치는 사람이 자기 스토어만 콘솔 순서대로 본다
  * - 앱과 광고: 첫 실행, 사용(활성 사용자, 실제 판 수), 남는 사람(활성화, 리텐션, 삭제), 광고
  * 기간과 이전 기간 겹치기는 탭 위에 한 번만 두고 모든 탭이 같이 따른다.
+ * 지표 챗봇(#163)은 탭이 아니라 머리말의 "물어보기"로 여는 옆 패널이다. 그래프를 보면서 묻고, 지금 탭과 기간을 같이 보낸다.
  *
  * 개수보다 비율을 함께 본다. 비율은 분자와 분모를 같이 적고, 분모가 MIN_SAMPLE 보다 작으면
  * "숫자가 적어 참고만 해요"를 붙인다. 작은 숫자의 비율은 크게 흔들린다.
@@ -190,6 +194,9 @@ export default function MetricsPage() {
   const cmpQuery = cmpMode.kind === "dow" || cmpMode.kind === "custom" ? compareParam(cmpMode) : null;
   const tabParam = params.get("tab");
   const tab: Tab = TABS.some((x) => x.value === tabParam) ? (tabParam as Tab) : "summary";
+  // 물어보기 패널(#163)도 주소(?ask=1)에 남긴다. 예전 물어보기 탭 주소(?tab=ask)로 들어와도 패널로 연다
+  const askOpen = params.get("ask") === "1" || tabParam === "ask";
+  const setAsk = (open: boolean) => setParams({ ask: open ? "1" : null, ...(tabParam === "ask" && { tab: null }) });
   const storeParam = params.get("store");
   const store: Store = STORES.some((x) => x.value === storeParam) ? (storeParam as Store) : "all";
   const from = params.get("from");
@@ -226,9 +233,13 @@ export default function MetricsPage() {
   // 직접 고른 비교는 "비교 기간", 나머지는 "이전 기간"
   const cmpWord = cmpMode.kind === "custom" ? "비교 기간" : "이전 기간";
   const reload = () => setAttempt((n) => n + 1);
+  // 질문할 때 같이 보내는 화면 상태. "이 기간"을 지금 걸린 기간으로 푼다
+  const view: View | null = shown ? { tab, range: shown.range, previous: compare ? shown.previous : null } : null;
 
   return (
     <ScrollPage>
+      {/* 치즈 조각 펫(#163). 화면 아래를 돌아다니고 물어보기 패널의 챗봇 상태에 반응한다. 누르면 패널이 열린다 */}
+      <CheesePet onTap={() => setAsk(true)} />
       <PageHeader
         title="지표"
         description="매일 아침 모은 어제까지의 숫자예요."
@@ -252,6 +263,9 @@ export default function MetricsPage() {
             <CompareMenu range={showing} mode={cmpMode} min={MIN_DAY} onChange={(m) => setParams({ cmp: compareParam(m) })} />
             <Button variant="neutral" size="sm" disabled={!current?.data} onClick={() => current?.data && downloadCsv(current.data)}>
               CSV
+            </Button>
+            <Button size="sm" aria-expanded={askOpen} onClick={() => setAsk(!askOpen)}>
+              물어보기
             </Button>
           </div>
         }
@@ -318,6 +332,13 @@ export default function MetricsPage() {
           </CompareContext.Provider>
         </>
       )}
+      <AskPanel
+        open={askOpen}
+        onClose={() => setAsk(false)}
+        view={view}
+        // 답의 근거에서 "지표 화면에서 보기": 그 기간과 탭을 그대로 연다. 비교 기간이 바로 앞이 아니면 직접 고른 비교로
+        onShow={(t) => setParams({ from: t.range.start, to: t.range.end, days: null, cmp: t.cmpFrom, tab: t.tab === "summary" ? null : t.tab, store: null })}
+      />
     </ScrollPage>
   );
 }

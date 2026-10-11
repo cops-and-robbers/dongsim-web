@@ -18,12 +18,15 @@
     "node": ">=20.9.0"
   },
   "dependencies": {
+    "@ai-sdk/google": "4.0.80",
+    "@ai-sdk/google-vertex": "5.0.93",
     "@googlemaps/markerclusterer": "^2.6.2",
     "@supabase/supabase-js": "^2.115.0",
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "@vis.gl/react-google-maps": "^1.9.0",
+    "ai": "7.0.114",
     "firebase": "^12.16.0",
     "motion": "^12.42.2",
     "next": "16.2.4",
@@ -39,7 +42,8 @@
     "remark-gfm": "^4.0.1",
     "sharp": "^0.34.5",
     "tz-lookup": "^6.1.25",
-    "unist-util-visit": "^5.1.0"
+    "unist-util-visit": "^5.1.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

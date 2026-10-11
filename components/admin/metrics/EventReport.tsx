@@ -142,7 +142,11 @@ function Done({ report: r, gamesError }: { report: Report; gamesError: string | 
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-sd-line bg-sd-hairline">
             <Stat label="행사 게임" value={`${r.totals.games}판`} line={r.totals.staffOnly ? `운영진끼리 ${r.totals.staffOnly}판 포함` : "모두 방문객과 함께"} />
-            <Stat label="방문객 참가" value={`${r.totals.visitors}명`} line="판마다 더한 수" />
+            <Stat
+              label="만난 방문객"
+              value={r.totals.uniqueVisitors === null ? `${r.totals.visitors}명` : `${r.totals.uniqueVisitors}명`}
+              line={r.totals.uniqueVisitors === null ? "판마다 더한 수(명단 없는 판이 섞임)" : `판마다 더하면 ${r.totals.visitors}명`}
+            />
             <Stat label="운영진 참가" value={`${r.totals.staff}명`} line="판마다 더한 수" />
           </div>
           {r.games.length > 0 && (

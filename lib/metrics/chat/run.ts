@@ -1,0 +1,245 @@
+/**
+ * 질문 하나를 처리한다 (#163). 라우트와 시험이 같이 쓴다.
+ *
+ * 1. 지시문(고정 + 오늘, 기간, 데이터 현황) 과 질문으로 모델을 부른다. 모델은 도구를 부르고 구조화된 답을 낸다
+ * 2. 답의 숫자를 도구 결과와 대조한다(verify.ts)
+ * 3. 걸리면 걸린 곳을 알려 주고 한 번만 다시 쓰게 한다. 도구는 다시 부르지 않는다(비용, 같은 결과)
+ * 4. 그래도 걸리면 걸린 문장에 "검증 안 됨"을 붙여 보여 준다. 숨기지 않는다
+ */
+
+import { generateText, isStepCount, NoObjectGeneratedError, NoOutputGeneratedError, Output, type LanguageModel, type LanguageModelUsage, type ModelMessage } from "ai";
+import { z } from "zod";
+import { addDays } from "../dates.ts";
+import { previousRange } from "../dashboard/data.ts";
+import { METRICS } from "./catalog.ts";
+import { dynamicPart, FIXED, type View } from "./instructions.ts";
+import { chatTools, type Ctx } from "./tools.ts";
+import { numbersIn, repairHypothesisRefs, verifyAnswer, type Answer, type Problem } from "./verify.ts";
+
+const claim = z.object({ text: z.string(), refs: z.array(z.string()).describe("이 문장의 숫자가 나온 도구 호출의 toolCallId") });
+/**
+ * 답 모양 (체다 1.0, 2026-10-11 다시 짬). 숫자는 체다가 문장에 늘어놓지 않고, 보여 줄 지표만 골라(show) 화면이 도구 결과에서 그린다.
+ * 실제 답이 "88건에서 161건으로 73건(83%) 늘었고, ..."처럼 문장마다 숫자 네 개였다. 조사(NN/g, ONS, 재무 요약 숫자 오류 연구)를 보고
+ * 말풍선은 결론 한 문장(숫자 한 쌍까지), 나머지 숫자는 카드로 내렸다. 카드 숫자는 도구 결과 그대로라 틀릴 수 없다
+ */
+export const answerSchema = z.object({
+  headline: claim.describe("질문에 대한 답 한 문장. 숫자는 질문의 핵심 하나만(전과 후 한 쌍까지)"),
+  facts: z.array(claim).describe("결론을 읽는 데 필요한 해석 0~2문장. 숫자를 늘어놓지 않는다(숫자는 show 의 카드가 보여 준다)"),
+  show: z
+    .array(z.object({ ref: z.string().describe("도구 호출의 toolCallId"), metrics: z.array(z.string()).describe("그 결과에서 보여 줄 지표 key. 행사 성적표, 나눠 보기, 게시물 결과는 비워도 된다") }))
+    .optional()
+    // 비어 있거나 빠지면 예전처럼 답에 나온 숫자로 근거를 고른다(evidence.ts). 모델이 빠뜨려도 답이 깨지지 않게 선택 칸으로 둔다
+    .describe("말풍선 아래 카드로 보여 줄 근거. 질문에 답하는 데 필요한 지표만, 모두 합쳐 6개까지"),
+  hypotheses: z
+    .array(z.object({ text: z.string(), refs: z.array(z.string()).describe("이 가설을 확인하려고 부른 도구 호출의 toolCallId. 확인 못 했으면 비운다") }))
+    .describe("가능한 이유. 확인하려고 돌린 비교가 있으면 그 결과를 숫자로 쓰고 인용한다. 원인으로 단정하지 않는다"),
+  caveats: z.array(z.string()).describe("덜 들어온 숫자, 적은 표본 등 주의점"),
+  followUps: z.array(z.string()).describe("이어서 물을 질문 2~3개"),
+});
+
+export type ToolTrace = { id: string; name: string; input: unknown; output: unknown };
+export type AskResult = {
+  answer: Answer;
+  /** 검증을 끝내 통과 못 한 문장 자리(headline, facts[0] 등) */
+  unverified: string[];
+  problems: Problem[];
+  retried: boolean;
+  tools: ToolTrace[];
+  /** outputTokens 는 생각 토큰을 포함한 출력 전체다(SDK 가 candidates + thoughts 로 센다). reasoningTokens 는 그중 생각 몫 */
+  usage: { inputTokens: number; outputTokens: number; cachedInputTokens: number; reasoningTokens: number };
+  steps: number;
+};
+
+const MAX_STEPS = 6;
+/**
+ * 답 시간 상한. 라우트 한도가 60초라 그 안에 끝나야 한다(2026-10-11 실측 최대 57초).
+ * 도구를 부르는 첫 단계는 38초까지, 넘으면 그때까지 꺼낸 결과로 짧게 답하게 한다(12초). 다시 쓰기는 40초가 지났으면 하지 않고 걸린 문장만 표시한다
+ */
+const FIRST_MS = 38_000;
+const FINISH_MS = 12_000;
+const REWRITE_UNTIL_MS = 40_000;
+const isTimeout = (e: unknown) => {
+  const x = e as { name?: string; message?: string } | null;
+  return !!x && (x.name === "TimeoutError" || x.name === "AbortError" || /abort|timed? ?out/i.test(String(x.message)));
+};
+
+type Step = {
+  toolResults: { toolCallId: string; toolName: string; input: unknown; output: unknown }[];
+  response: { messages: ModelMessage[] };
+  usage: LanguageModelUsage;
+};
+
+/**
+ * 모델을 부르고 단계마다 결과를 모아 둔다. 답이 정해진 JSON 모양이 아니면(중간에 잘림 등) SDK 가 generateText 에서 던지는데,
+ * 그러면 앞서 부른 도구 결과까지 잃는다. 단계가 끝날 때마다 따로 모아 두어, 던져도 도구 결과와 대화는 남긴다.
+ * output 이 null 이면 답 모양을 못 만든 것이다
+ */
+async function generate(args: Parameters<typeof generateText>[0], onStep?: (st: Step) => void): Promise<{ steps: Step[]; output: Answer | null; timedOut?: boolean }> {
+  const steps: Step[] = [];
+  try {
+    const r: unknown = await generateText({
+      ...args,
+      onStepFinish: (st: unknown) => {
+        steps.push(st as Step);
+        onStep?.(st as Step);
+      },
+    } as never);
+    return { steps, output: (r as { output: Answer }).output };
+  } catch (e) {
+    // 답 JSON 이 깨졌거나(NoObject) 아예 비어 왔으면(NoOutput, 2026-10-11 v2 평가 117번 중 1번) 모은 도구 결과로 마무리 단계를 부른다
+    if (NoObjectGeneratedError.isInstance(e) || NoOutputGeneratedError.isInstance(e)) return { steps, output: null };
+    // 시간 상한에 걸리면 그때까지 모은 단계(도구 결과)를 돌려준다. 버리면 다시 처음부터 불러야 한다
+    if (isTimeout(e)) return { steps, output: null, timedOut: true };
+    throw e;
+  }
+}
+
+/**
+ * 답 글에서 마크다운 표시를 걷어 낸다. 화면은 마크다운을 그리지 않고 글자 그대로 보여 줘서,
+ * 모델이 지시를 어기고 **굵게**, `코드`, 줄머리 "- " 를 넣으면 별표가 그대로 보인다. 굵기와 목록 모양은 화면이 정한다
+ */
+/** 도구 이름. 답 글에 나오면 지운다(괄호째) */
+const TOOL_NAMES = ["metrics_summary", "metrics_compare", "metrics_daily", "metrics_breakdown", "metrics_overview", "events_list", "event_window", "event_report", "posts_list"];
+const LABEL = new Map<string, string>([...METRICS.map((m) => [m.key, m.label] as const), ["appstore_way", "받은 길"]]);
+/** 지표 키(appstore_new 등)를 한국어 이름으로. 긴 키부터 바꿔야 d1_return 이 d1 로 먼저 잘리지 않는다 */
+const KEY_RE = new RegExp(`\\b(${[...LABEL.keys()].sort((a, b) => b.length - a.length).join("|")})\\b`, "g");
+const TOOL_RE = new RegExp(`\\s?\\(?\\b(${TOOL_NAMES.join("|")})\\b\\)?`, "g");
+
+/**
+ * 답 글에서 도구 이름과 지표 키를 걷어 낸다. 지시해도 모델이 이어 묻기나 주의점에 "event_window", "(games, new_players)"를 쓴다
+ * (2026-10-11 Vertex 실험 28문항 중 4문항). 화면을 보는 사람에게는 뜻 없는 영어다
+ */
+export function humanize(text: string): string {
+  return text.replace(TOOL_RE, "").replace(KEY_RE, (k) => LABEL.get(k) ?? k);
+}
+
+export function plain(text: string): string {
+  return humanize(text)
+    // 도구 결과의 2026-09-09 꼴 날짜를 그대로 옮겨 써도 "9월 9일"로(실제 Gemini 평가에서 지시를 어긴 적이 있다)
+    .replace(/\b\d{4}-(\d{2})-(\d{2})\b\s?/g, (_, m: string, d: string) => `${Number(m)}월 ${Number(d)}일`)
+    .replace(/\*\*|__|`/g, "")
+    .replace(/^\s*(?:[-*•]|\d+\.)\s+/, "")
+    .replace(/^#+\s*/, "")
+    .trim();
+}
+const clean = (a: Answer): Answer => ({
+  headline: { ...a.headline, text: plain(a.headline.text) },
+  facts: a.facts.map((f) => ({ ...f, text: plain(f.text) })),
+  hypotheses: a.hypotheses.map((h) => ({ ...h, text: plain(h.text) })),
+  caveats: a.caveats.map(plain),
+  followUps: a.followUps.map(plain),
+  // 보여 줄 지표는 key 라 다듬지 않는다. 같은 도구 결과를 두 번 고르면 하나로 합친다
+  show: (a.show ?? []).reduce<NonNullable<Answer["show"]>>((acc, s) => {
+    const hit = acc.find((x) => x.ref === s.ref);
+    if (hit) hit.metrics = [...new Set([...hit.metrics, ...s.metrics])];
+    else acc.push({ ref: s.ref, metrics: [...new Set(s.metrics)] });
+    return acc;
+  }, []),
+});
+
+const addUsage = (a: AskResult["usage"], u: LanguageModelUsage) => ({
+  inputTokens: a.inputTokens + (u.inputTokens ?? 0),
+  outputTokens: a.outputTokens + (u.outputTokens ?? 0),
+  cachedInputTokens: a.cachedInputTokens + (u.inputTokenDetails?.cacheReadTokens ?? 0),
+  reasoningTokens: a.reasoningTokens + (u.outputTokenDetails?.reasoningTokens ?? 0),
+});
+
+/**
+ * 답을 만드는 동안 화면에 보일 진행 신호. 도구 이름(어떤 숫자를 봤나)과 검산 단계만 알린다.
+ * 모델의 생각 글은 보내지 않는다. 단계별 설명은 사후 합리화일 수 있어 투명하다는 인상만 준다(NN/g 2025-12)
+ */
+export type { ProgressEvent as Progress } from "./progress.ts";
+import type { ProgressEvent as Progress } from "./progress.ts";
+
+export async function askMetrics(opts: {
+  model: LanguageModel;
+  ctx: Ctx;
+  question: string;
+  /** 질문할 때 화면에 걸려 있던 탭과 기간 */
+  view?: View;
+  providerOptions?: Record<string, Record<string, unknown>>;
+  onProgress?: (p: Progress) => void;
+}): Promise<AskResult> {
+  const { model, ctx, question } = opts;
+  // 데이터 현황(소스별 마지막 날)은 최근 7일 집계에 같이 들어 있다. 도구가 같은 집계를 다시 쓰면 기억해 둔 것을 쓴다
+  const y = addDays(ctx.today, -1);
+  const last7 = { start: addDays(y, -6), end: y };
+  const status = await ctx.dashboard(last7, previousRange(last7));
+  const instructions = `${FIXED}\n\n${dynamicPart(ctx.today, status, opts.view)}`;
+  // 무료 등급은 분당 요청 수가 작아 두 사람이 같이 물으면 429 가 날 수 있다. SDK 가 기다렸다 다시 보내게 3번까지 둔다
+  const common = { model, instructions, output: Output.object({ schema: answerSchema }), maxOutputTokens: 4096, maxRetries: 3, providerOptions: opts.providerOptions as never };
+
+  const tell = opts.onProgress ?? (() => undefined);
+  const started = Date.now();
+  const first = await generate({ ...common, prompt: question, tools: chatTools(ctx), stopWhen: isStepCount(MAX_STEPS), timeout: { totalMs: FIRST_MS } } as never, (st) =>
+    st.toolResults.forEach((r) => tell({ kind: "tool", name: r.toolName })),
+  );
+  if (first.timedOut && !first.steps.some((st) => st.toolResults.length)) throw new Error("시간 안에 숫자를 꺼내지 못했어요");
+  const tools: ToolTrace[] = first.steps.flatMap((st) => st.toolResults.map((r) => ({ id: r.toolCallId, name: r.toolName, input: r.input, output: r.output })));
+  const results = new Map(tools.map((t) => [t.id, t.output]));
+  // 단계마다 쌓인 메시지(도구 호출, 도구 결과, 답). 마지막 단계만 넘기면 모델이 도구 결과 없이 다시 쓰게 된다(2026-10-09 실제 데이터 시험에서 잡음)
+  const history = first.steps.flatMap((st) => st.response.messages);
+  let usage = first.steps.reduce((u, st) => addUsage(u, st.usage), { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, reasoningTokens: 0 });
+  let out = first.output;
+  let retried = false;
+  // 답이 중간에 잘렸거나 모양이 틀리면 도구 결과는 그대로 두고 한 번만 짧게 다시 쓰게 한다.
+  // agy 로 돌린 실제 Gemini 평가(2026-10-10)에서 15문항 중 하나가 첫 문장 중간에서 잘렸다
+  if (!out) {
+    retried = true;
+    tell({ kind: "rewrite" });
+    const why = first.timedOut
+      ? "시간이 다 됐어요. 도구는 더 부르지 말고, 위에서 꺼낸 결과만으로 지금 답해 주세요."
+      : "답이 중간에 잘렸거나 정해진 JSON 모양이 아니었어요. 도구는 다시 부르지 말고, 위 도구 결과로 같은 내용을 더 짧게 JSON 하나로 다시 써 주세요.";
+    const again = await generate({
+      ...common,
+      messages: [{ role: "user", content: question }, ...history, { role: "user", content: why }],
+      stopWhen: isStepCount(1),
+      timeout: { totalMs: FINISH_MS },
+    } as never);
+    usage = again.steps.reduce((u, st) => addUsage(u, st.usage), usage);
+    out = again.output;
+    if (!out) throw new Error("답 모양을 만들지 못했어요(두 번 잘림)");
+  }
+  let answer = clean(out);
+  // 주의점과 가설은 지시문에 적힌 숫자("3~7일 늦게", 데이터 현황의 "10월 5일까지")를 말할 수 있다
+  const ruleNumbers = numbersIn(instructions);
+  answer = repairHypothesisRefs(answer, results);
+  tell({ kind: "check" });
+  let check = verifyAnswer(answer, results, question, ruleNumbers);
+
+  // 다시 쓰기는 시간이 남았을 때만. 넘었으면 걸린 문장에 표시만 하고 보낸다(답을 늦게 주는 것보다 표시해서 주는 게 낫다)
+  if (!check.ok && Date.now() - started < REWRITE_UNTIL_MS) {
+    retried = true;
+    tell({ kind: "rewrite" });
+    const feedback = [
+      "방금 답을 코드로 검증했더니 아래 문장이 걸렸어요. 도구는 다시 부르지 말고, 위 도구 결과만으로 답 전체를 다시 써 주세요.",
+      "도구 결과에 없는 숫자는 빼고, 원인을 단정하는 말은 hypotheses 로 옮기세요.",
+      ...check.problems.map((p) => `- ${p.where}: "${p.text}" -> ${p.issue}`),
+    ].join("\n");
+    const messages: ModelMessage[] = [{ role: "user", content: question }, ...history, { role: "user", content: feedback }];
+    const second = await generate({ ...common, messages, stopWhen: isStepCount(1), timeout: { totalMs: FINISH_MS } } as never);
+    usage = second.steps.reduce((u, st) => addUsage(u, st.usage), usage);
+    // 다시 쓴 답이 모양을 못 갖추면 첫 답을 그대로 두고 걸린 문장에 표시만 한다
+    if (second.output) {
+      answer = repairHypothesisRefs(clean(second.output), results);
+      check = verifyAnswer(answer, results, question, ruleNumbers);
+    }
+  }
+  const unverified = [...new Set(check.problems.map((p) => p.where).filter((w) => w === "headline" || w.startsWith("facts")))];
+  return { answer, unverified, problems: check.problems, retried, tools, usage, steps: first.steps.length };
+}
+
+/**
+ * 비용 추정(달러). Gemini API 가격표(2026-10-09, 100만 토큰당)를 쓴다. Vertex 가격 페이지는 확인하지 못했다.
+ * 캐시로 읽은 입력은 캐시 단가로 센다. 생각 토큰은 출력에 들어 있다
+ */
+export const PRICES: Record<string, { input: number; output: number; cached: number }> = {
+  "gemini-3.8-flash": { input: 0.75, output: 3.75, cached: 0.075 },
+  "gemini-3.5-flash-lite": { input: 0.3, output: 2.5, cached: 0.03 },
+  "gemini-3.1-flash-lite": { input: 0.25, output: 1.5, cached: 0.025 },
+};
+export function costUsd(modelId: string, u: AskResult["usage"]): number {
+  const p = PRICES[modelId] ?? PRICES["gemini-3.8-flash"];
+  const fresh = Math.max(0, u.inputTokens - u.cachedInputTokens);
+  return (fresh * p.input + u.cachedInputTokens * p.cached + u.outputTokens * p.output) / 1_000_000;
+}

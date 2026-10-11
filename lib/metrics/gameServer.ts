@@ -59,6 +59,11 @@ export type GameRow = {
   /** 운영진 참가자 수. 명단이 없는 판은 0 */
   staff: number;
   minutes: number;
+  /**
+   * 운영진이 아닌 참가자 id. 여러 판에 나온 사람을 한 번만 세는 데만 쓴다(행사 성적표의 만난 사람 수).
+   * 화면이나 모델로 내보내는 모양(ReportGame, DayGame)에는 옮기지 않는다. 명단이 없는 판은 빈 배열
+   */
+  visitorIds: string[];
 };
 
 const seoulDay = (iso: string) => seoulClock(iso).day;
@@ -152,7 +157,8 @@ export function tallyServer(
     const day = seoulDay(startedAt);
     const kind = kindOf(h, staff);
     const people = headcount(h, staff);
-    games.push({ id: String(h.id), startedAt, center: centerOf(h.area), kind, ...people, minutes: Math.round((h.durationSeconds ?? 0) / 60) });
+    const visitorIds = idsOf(h).filter((id) => !staff.has(id));
+    games.push({ id: String(h.id), startedAt, center: centerOf(h.area), kind, ...people, minutes: Math.round((h.durationSeconds ?? 0) / 60), visitorIds });
     if (kind === "staff") {
       staffGames.set(day, (staffGames.get(day) ?? 0) + 1);
       continue;

@@ -221,3 +221,67 @@ export function MoonIcon({ className }: IconProps) {
     </Line>
   );
 }
+
+// 지표 챗봇 패널(#163). 모두 Lucide 원본 path 그대로.
+
+export function XIcon({ className }: IconProps) {
+  // Lucide 'x'. 패널 닫기
+  return (
+    <Line className={className}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </Line>
+  );
+}
+
+export function ArrowUpIcon({ className }: IconProps) {
+  // Lucide 'arrow-up'. 질문 보내기
+  return (
+    <Line className={className}>
+      <path d="m5 12 7-7 7 7" />
+      <path d="M12 19V5" />
+    </Line>
+  );
+}
+
+export function SquarePenIcon({ className }: IconProps) {
+  // Lucide 'square-pen'. 새로 묻기(대화 비우기)
+  return (
+    <Line className={className}>
+      <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z" />
+    </Line>
+  );
+}
+
+export function PackageIcon({ className }: IconProps) {
+  // Lucide 'package'. 치즈를 보관함에 넣기
+  return (
+    <Line className={className}>
+      <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" />
+      <path d="M12 22V12" />
+      <path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7" />
+      <path d="m7.5 4.27 9 5.15" />
+    </Line>
+  );
+}
+
+export function ThumbsUpIcon({ className }: IconProps) {
+  // Lucide 'thumbs-up'. 답 평가
+  return (
+    <Line className={className}>
+      <path d="M7 10v12" />
+      <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
+    </Line>
+  );
+}
+
+export function ThumbsDownIcon({ className }: IconProps) {
+  // Lucide 'thumbs-down'. 답 평가
+  return (
+    <Line className={className}>
+      <path d="M17 14V2" />
+      <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
+    </Line>
+  );
+}
