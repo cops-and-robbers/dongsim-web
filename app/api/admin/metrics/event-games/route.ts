@@ -39,13 +39,19 @@ export async function GET(req: Request): Promise<NextResponse> {
   if (!apiBase) return NextResponse.json({ error: "백엔드 주소가 없어 게임 기록을 못 읽어요." }, { status: 500 });
   try {
     const client = db();
-    const event = (await loadEvents(client))?.find((e) => e.id === id);
+    const events = await loadEvents(client);
+    const event = events?.find((e) => e.id === id);
     if (!event || event.category !== "event") return NextResponse.json({ error: "행사 일정을 찾지 못했어요." }, { status: 404 });
     if (event.day > todayIn("Asia/Seoul")) return NextResponse.json({ status: "upcoming" }, { headers: { "Cache-Control": "no-store" } });
-    const [staff, picked] = await Promise.all([loadStaffAccounts(client), loadEventGames(client, id)]);
+    // 같은 날 다른 행사(9/19 서대페와 청춘대로)에 이미 고른 게임은 미리 체크하지 않는다
+    const others = (events ?? []).filter((e) => e.day === event.day && e.category === "event" && e.id !== id);
+    const [staff, picked, ...taken] = await Promise.all([loadStaffAccounts(client), loadEventGames(client, id), ...others.map((e) => loadEventGames(client, e.id))]);
     const server = await loadServerDaily(apiBase, g.token, staff.map((a) => a.userId));
     if (server.error) return NextResponse.json({ error: `게임 기록을 못 읽었어요 (${server.error})` }, { status: 502 });
-    const { places, games } = dayGames(event, server.games);
+    const elsewhere = new Set(taken.flatMap((t) => [...(t ?? [])]));
+    const day = dayGames(event, server.games);
+    const places = day.places;
+    const games = day.games.map((x) => (elsewhere.has(x.id) ? { ...x, suggested: false } : x));
     return NextResponse.json(
       // picked 가 null 이면 0008 마이그레이션 전이라 고른 게임을 저장할 곳이 없다
       { status: "ok", places, games, picked: picked ? [...picked] : null },
