@@ -9,6 +9,7 @@ import { Table, Td, Th, Tr } from "@/components/admin/Table";
 import { FadeIn } from "@/components/admin/motion";
 import { TrendChart, type Marker } from "@/components/admin/metrics/TrendChart";
 import { DateRangePicker, type DayRange } from "@/components/admin/metrics/DateRangePicker";
+import { EventReport } from "@/components/admin/metrics/EventReport";
 import { EventsCalendar } from "@/components/admin/metrics/EventsCalendar";
 import { PostDrawer } from "@/components/admin/metrics/PostDrawer";
 import { FunnelCard } from "@/components/admin/metrics/FunnelCard";
@@ -695,6 +696,10 @@ function MetricsBody({
           </FadeIn>
 
           <FadeIn delay={0.16}>
+            <EventReport today={addDays(yesterday, 1)} refresh={d.events} />
+          </FadeIn>
+
+          <FadeIn delay={0.2}>
             <EventsCalendar initialMonth={d.range.end} today={addDays(yesterday, 1)} onChanged={onChanged} onCompare={onCompareEvent} />
           </FadeIn>
         </>
