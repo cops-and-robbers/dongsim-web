@@ -91,7 +91,11 @@ export type EventReport = {
    * 0 이 아니면 "고르지 않았다"가 아니라 "못 찾았다"고 알린다
    */
   missing: number;
-  totals: { games: number; withVisitors: number; staffOnly: number; visitors: number; staff: number };
+  /**
+   * visitors 는 판마다 방문객을 더한 연인원(두 판 한 사람은 2). uniqueVisitors 는 고른 판에 한 번이라도 나온 사람 수.
+   * 명단이 없는 판(2026-08-17 전)이 섞이면 누가 했는지 몰라 uniqueVisitors 는 null
+   */
+  totals: { games: number; withVisitors: number; staffOnly: number; visitors: number; uniqueVisitors: number | null; staff: number };
   /** 참가자 명단이 없는 판(2026-08-17 전)이 섞였나. 그 판의 방문객은 끝까지 남은 인원이라 적게 잡힌다 */
   noRoster: boolean;
   baseline: string[];
@@ -103,16 +107,16 @@ export type DayValue = (day: string) => number | null;
 export type MetricSource = { key: string; label: string; unit: string; of: DayValue; pending?: (day: string) => boolean };
 
 export function buildEventReport(event: MetricsEvent, games: GameRow[], picked: Set<string>, sources: MetricSource[], baseline: string[]): EventReport {
-  const rows = games
-    .filter((g) => picked.has(g.id))
-    .sort((a, b) => (a.startedAt < b.startedAt ? -1 : 1))
-    .map(toReport);
+  const chosen = games.filter((g) => picked.has(g.id)).sort((a, b) => (a.startedAt < b.startedAt ? -1 : 1));
+  const rows = chosen.map(toReport);
+  const noRoster = rows.some((g) => g.kind === "unknown");
   const staffOnly = rows.filter((g) => g.kind === "staff").length;
   const totals = {
     games: rows.length,
     withVisitors: rows.length - staffOnly,
     staffOnly,
     visitors: rows.reduce((a, g) => a + g.visitors, 0),
+    uniqueVisitors: noRoster ? null : new Set(chosen.flatMap((g) => g.visitorIds ?? [])).size,
     staff: rows.reduce((a, g) => a + g.staff, 0),
   };
   const round1 = (v: number) => Math.round(v * 10) / 10;
@@ -129,5 +133,5 @@ export function buildEventReport(event: MetricsEvent, games: GameRow[], picked: 
       pending: s.pending?.(event.day) ?? false,
     };
   });
-  return { event, games: rows, missing: [...picked].filter((id) => !games.some((g) => g.id === id)).length, totals, noRoster: rows.some((g) => g.kind === "unknown"), baseline, metrics };
+  return { event, games: rows, missing: [...picked].filter((id) => !games.some((g) => g.id === id)).length, totals, noRoster, baseline, metrics };
 }
