@@ -112,6 +112,7 @@ export type Helper = {
  * 도움 주신 분들 - 발자국 카운트 = participationCount.
  * 인프라 제공자는 별도 spotlight로 노출.
  * 정렬: infrastructure 먼저, 그다음 참여 횟수 내림차순, 같은 횟수 안에선 입력 순서.
+ * github 은 두 번 이상 참여한 분에게만 단다. 그리디 멤버는 그리디 사이트 멤버 데이터에서 찾는다.
  */
 export const HELPERS: Helper[] = [
   {
@@ -138,18 +139,43 @@ export const HELPERS: Helper[] = [
     participationCount: 2,
     github: "https://github.com/2Jin1031",
   },
+  {
+    name: "강대현",
+    role: "qa",
+    participationCount: 2,
+    github: "https://github.com/Kdahyn",
+  },
+  {
+    name: "김민욱",
+    role: "qa",
+    participationCount: 2,
+    github: "https://github.com/hapdaypy",
+  },
+  {
+    name: "정명준",
+    role: "qa",
+    participationCount: 2,
+    github: "https://github.com/htdufhc-bit",
+  },
+  {
+    name: "허석준",
+    role: "qa",
+    participationCount: 2,
+    github: "https://github.com/gjtjrl303",
+  },
   { name: "안금서", role: "qa", participationCount: 1 },
   { name: "손건우", role: "qa", participationCount: 1 },
   { name: "신혜빈", role: "qa", participationCount: 1 },
   { name: "정창우", role: "qa", participationCount: 1 },
-  { name: "허석준", role: "qa", participationCount: 1 },
   { name: "서현진", role: "qa", participationCount: 1 },
   { name: "오동현", role: "qa", participationCount: 1 },
   { name: "최승훈", role: "qa", participationCount: 1 },
-  { name: "김민욱", role: "qa", participationCount: 1 },
-  { name: "정명준", role: "qa", participationCount: 1 },
-  { name: "강대현", role: "qa", participationCount: 1 },
   { name: "심 혁", role: "qa", participationCount: 1 },
+  { name: "신희영", role: "qa", participationCount: 1 },
+  { name: "윤재홍", role: "qa", participationCount: 1 },
+  { name: "김병훈", role: "qa", participationCount: 1 },
+  { name: "김동건", role: "qa", participationCount: 1 },
+  { name: "고규민", role: "qa", participationCount: 1 },
 ];
 
 export const HOW_STEPS = [
