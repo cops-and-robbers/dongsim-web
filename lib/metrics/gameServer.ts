@@ -47,8 +47,10 @@ export type ServerNumbers = {
 /** 판의 성격. unknown 은 참가자 기록 전(2026-08-17 전) 판 */
 export type GameKind = "staff" | "mixed" | "users" | "unknown";
 
-/** 판 하나의 요약. 사람을 알아볼 id 는 담지 않는다. 행사 성적표가 쓴다 */
+/** 판 하나의 요약. 사람을 알아볼 id 는 담지 않는다. 행사 성적표와 행사 게임 고르기가 쓴다 */
 export type GameRow = {
+  /** 게임 기록(라운드) id. 행사 게임으로 고를 때 쓴다(metrics_event_games) */
+  id: string;
   startedAt: string;
   center: { lat: number; lng: number } | null;
   kind: GameKind;
@@ -150,7 +152,7 @@ export function tallyServer(
     const day = seoulDay(startedAt);
     const kind = kindOf(h, staff);
     const people = headcount(h, staff);
-    games.push({ startedAt, center: centerOf(h.area), kind, ...people, minutes: Math.round((h.durationSeconds ?? 0) / 60) });
+    games.push({ id: String(h.id), startedAt, center: centerOf(h.area), kind, ...people, minutes: Math.round((h.durationSeconds ?? 0) / 60) });
     if (kind === "staff") {
       staffGames.set(day, (staffGames.get(day) ?? 0) + 1);
       continue;

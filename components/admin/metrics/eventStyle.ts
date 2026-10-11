@@ -17,7 +17,7 @@ export const PICKABLE: Category[] = ["event", "promo", "test", "etc"];
 
 /** 고를 때 보여 주는 한 줄 설명 */
 export const CATEGORY_HINT: Record<Category, string> = {
-  event: "부스, 대회처럼 사람들이 직접 해 보는 자리. 시간과 장소를 넣으면 그 자리의 게임을 찾아 성적표를 만들어요",
+  event: "부스, 대회처럼 사람들이 직접 해 보는 자리. 끝나면 그날 게임 중 행사 게임을 골라 성적표를 만들어요",
   promo: "포스터, 모집글, 광고. 그 뒤 유입을 같이 봐요",
   release: "앱 버전 출시. 자동으로 들어와요",
   test: "QA, 팀 시험. 운영진 계정의 게임은 숫자에서 이미 빠져 있어요",

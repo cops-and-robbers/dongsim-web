@@ -1,5 +1,5 @@
 /**
- * 운영진 계정과 일정 읽기 (#165). 지표 라우트와 챗봇 라우트가 같이 쓴다.
+ * 운영진 계정, 일정, 행사 게임 읽고 쓰기 (#165). 지표 라우트와 챗봇 라우트가 같이 쓴다.
  *
  * 운영진은 백엔드 ADMIN 권한 계정(gameServer.ts 가 계정 목록에서 바로 안다)과 여기 표에 넣은 계정이다.
  * 표에는 권한 없는 팀원 계정과 테스트 계정만 넣는다. 0007 마이그레이션 전이면 표가 없어 ADMIN 만 운영진이다.
@@ -31,4 +31,20 @@ export async function loadEvents(client: SupabaseClient, range?: { from: string;
   if (res.error) res = await read(BASE_COLUMNS);
   if (res.error || !res.data) return null;
   return (res.data as unknown as Record<string, unknown>[]).map(toEvent);
+}
+
+/** 행사에 고른 게임(게임 기록 id). 0008 마이그레이션 전이면 null */
+export async function loadEventGames(client: SupabaseClient, eventId: number): Promise<Set<string> | null> {
+  const { data, error } = await client.from("metrics_event_games").select("game_id").eq("event_id", eventId);
+  if (error || !data) return null;
+  return new Set((data as { game_id: string }[]).map((r) => String(r.game_id)));
+}
+
+/** 행사 게임을 통째로 바꾼다. 실패하면 이유를 던진다 */
+export async function saveEventGames(client: SupabaseClient, eventId: number, gameIds: string[]): Promise<void> {
+  const del = await client.from("metrics_event_games").delete().eq("event_id", eventId);
+  if (del.error) throw new Error(del.error.message);
+  if (!gameIds.length) return;
+  const ins = await client.from("metrics_event_games").insert(gameIds.map((game_id) => ({ event_id: eventId, game_id })));
+  if (ins.error) throw new Error(ins.error.message);
 }

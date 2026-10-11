@@ -9,8 +9,10 @@ import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
 import { WEEK, addMonths, dayLabel, monthEnd, monthStart, shiftMonth, weekday } from "@/lib/metrics/dashboard/calendar";
 import { addDays, ymdRange } from "@/lib/metrics/dates";
-import { CATEGORY_LABEL, DEFAULT_RADIUS_M, parsePlace, type Category, type MetricsEvent } from "@/lib/metrics/events";
+import { CATEGORY_LABEL, type Category, type MetricsEvent } from "@/lib/metrics/events";
 import { CATEGORY_DOT, CATEGORY_HINT, PICKABLE } from "./eventStyle";
+import { EventGamePicker } from "./EventGamePicker";
+import { TimeSelect } from "./TimeSelect";
 
 /**
  * 일정 달력 (#145, #165). 지표 화면 요약 탭 맨 아래.
@@ -18,15 +20,17 @@ import { CATEGORY_DOT, CATEGORY_HINT, PICKABLE } from "./eventStyle";
  * 일정은 차트에 마름모로 겹쳐 "그날 왜 숫자가 바뀌었나"를 설명한다. 넣고 보는 곳은 이 달력이다.
  * - 한 달씩 본다. 처음엔 지금 보는 기간의 마지막 달
  * - 일정은 성격(행사, 홍보, 테스트, 기타)을 골라 넣는다. 성격마다 점 색이 다르고 이름도 같이 적는다(색만으로 구분하지 않는다).
- *   행사는 시간과 장소(지도에서 복사한 좌표)를 넣으면 그 자리의 게임을 찾아 성적표를 만든다(EventReport)
+ *   행사는 시간을 넣어 두면, 행사가 끝난 뒤 성적표에서 그날 게임을 고를 때 그 시간의 게임이 미리 체크된다(EventReport).
+ *   시간은 기본 시간 입력 대신 30분 간격 목록에서 고른다(TimeSelect)
  * - 사람이 넣은 일정은 칩, 앱 업데이트(지금 배포 중인 버전을 매일 보고 자동)는 작은 회색 점과 글씨.
  *   업데이트는 켜고 끌 수 있다. 목록에서 행사를 묻지 않게
  * - 날짜를 누르면 그날 일정과 입력 칸이 열린다. 넓은 화면은 달력 오른쪽 칸, 폰은 아래에서 올라오는 시트.
  *   (처음엔 달력 아래에 열었는데, 달력을 보던 위치에서는 화면 밖이라 눌러도 반응이 없는 것처럼 보였다)
- * - 앞으로 있을 행사도 미리 넣을 수 있다(1년 뒤까지). 장소를 나중에 알게 되면 "고치기"로 넣는다
+ * - 앞으로 있을 행사도 미리 넣을 수 있다(1년 뒤까지). 넣은 일정은 "고치기"로 바꾼다
  * - 폰에서는 칸이 좁아 이름 대신 점만 찍고, 내용은 날짜를 눌러 아래에서 본다
  * - 일정이 있는 지난 날을 누르면 "이날부터 7일을 그 전 7일과 비교"로 바로 넘어간다(#152). 행사를 적어 두는 이유가
  *   "그 뒤 숫자가 어땠나"를 보려는 것이라, 기간과 비교를 따로 맞추지 않아도 되게 했다
+ * - 행사 날을 누르면 그 행사 아래에 그날 게임이 열려 우리 행사 게임을 고른다(EventGamePicker). 성적표가 고른 게임으로 센다
  * - 키보드: 화살표 하루, 위아래 한 주, PageUp/PageDown 한 달, Enter 로 그날 열기, Esc 로 닫기
  *
  * 일정은 전부 한 번에 읽는다(GET /api/admin/metrics/events). 넣거나 고치거나 지우면 다시 읽고,
@@ -39,21 +43,12 @@ type Event = MetricsEvent;
 const isRelease = (e: Event) => e.category === "release";
 const shortRelease = (label: string) => label.replace(/ 출시$/, "");
 
-/** 입력 칸. 행사가 아니면 시간과 장소는 보내지 않는다 */
-type Draft = { label: string; category: Category | null; startsAt: string; endsAt: string; placeText: string; radius: number };
-const EMPTY: Draft = { label: "", category: null, startsAt: "", endsAt: "", placeText: "", radius: DEFAULT_RADIUS_M };
-const RADII = [300, 500, 1000];
-const draftOf = (e: Event): Draft => ({
-  label: e.label,
-  category: e.category,
-  startsAt: e.startsAt ?? "",
-  endsAt: e.endsAt ?? "",
-  placeText: e.place ? `${e.place.lat}, ${e.place.lng}` : "",
-  radius: e.place?.radiusM ?? DEFAULT_RADIUS_M,
-});
-/** 행사의 시간과 장소 한 줄. "14:00~16:00, 장소 반경 500m" */
-const eventDetail = (e: Event) =>
-  [e.startsAt && e.endsAt ? `${e.startsAt}~${e.endsAt}` : "시간 없음", e.place ? `장소 반경 ${e.place.radiusM}m` : "장소 없음"].join(", ");
+/** 입력 칸. 행사가 아니면 시간은 보내지 않는다 */
+type Draft = { label: string; category: Category | null; startsAt: string; endsAt: string };
+const EMPTY: Draft = { label: "", category: null, startsAt: "", endsAt: "" };
+const draftOf = (e: Event): Draft => ({ label: e.label, category: e.category, startsAt: e.startsAt ?? "", endsAt: e.endsAt ?? "" });
+/** 행사 시간 한 줄. "14:00~16:00" */
+const eventDetail = (e: Event) => (e.startsAt && e.endsAt ? `${e.startsAt}~${e.endsAt}` : "시간 없음");
 
 async function call(url: string, init: RequestInit = {}): Promise<Response> {
   const send = () => fetch(url, { ...init, headers: { ...(init.headers ?? {}), Authorization: `Bearer ${getAccessToken() ?? ""}` }, cache: "no-store" });
@@ -131,8 +126,6 @@ export function EventsCalendar({
     const text = draft.label.trim();
     if (!selected || !text || !draft.category) return;
     const isEvent = draft.category === "event";
-    const place = isEvent && draft.placeText.trim() ? parsePlace(draft.placeText) : null;
-    if (isEvent && draft.placeText.trim() && !place) return setError("좌표를 읽지 못했어요. 지도에서 복사한 37.5498, 127.0799 같은 값을 넣어 주세요.");
     if (isEvent && Boolean(draft.startsAt) !== Boolean(draft.endsAt)) return setError("시작과 끝 시간을 둘 다 넣거나 둘 다 비워 주세요.");
     setBusy(true);
     setError(null);
@@ -141,7 +134,6 @@ export function EventsCalendar({
       category: draft.category,
       startsAt: isEvent && draft.startsAt ? draft.startsAt : null,
       endsAt: isEvent && draft.endsAt ? draft.endsAt : null,
-      place: place ? { ...place, radiusM: draft.radius } : null,
     };
     const res = await call(editing ? `/api/admin/metrics/events?id=${editing}` : "/api/admin/metrics/events", {
       method: editing ? "PATCH" : "POST",
@@ -261,29 +253,19 @@ export function EventsCalendar({
         {draft.category && <p className="text-[12px] leading-relaxed text-sd-fg-subtle">{CATEGORY_HINT[draft.category]}</p>}
         {draft.category === "event" && (
           <div className="flex flex-col gap-2 rounded-xl bg-sd-fill p-3">
-            <div className="flex items-center gap-2 text-[13px]">
-              <input type="time" value={draft.startsAt} onChange={(e) => set({ startsAt: e.target.value })} aria-label="행사 시작 시간" className={`${inputClass} flex-1 px-2`} />
-              <span className="text-sd-fg-subtle">~</span>
-              <input type="time" value={draft.endsAt} onChange={(e) => set({ endsAt: e.target.value })} aria-label="행사 끝 시간" className={`${inputClass} flex-1 px-2`} />
-            </div>
-            <div className="flex gap-2">
-              <input
-                value={draft.placeText}
-                onChange={(e) => set({ placeText: e.target.value })}
-                placeholder="지도에서 복사한 좌표"
-                aria-label="행사 장소 좌표"
-                className={`${inputClass} flex-1`}
+            <div className="flex items-center gap-2">
+              <TimeSelect
+                value={draft.startsAt}
+                // 시작을 끝 뒤로 옮기면 끝을 비운다(끝 목록은 시작 뒤만 보여 준다)
+                onChange={(v) => set({ startsAt: v, endsAt: v && draft.endsAt && draft.endsAt <= v ? "" : draft.endsAt })}
+                label="행사 시작 시간"
+                placeholder="시작"
               />
-              <select value={draft.radius} onChange={(e) => set({ radius: Number(e.target.value) })} aria-label="장소 반경" className={`${inputClass} shrink-0 px-2`}>
-                {RADII.map((r) => (
-                  <option key={r} value={r}>
-                    {r >= 1000 ? `${r / 1000}km` : `${r}m`}
-                  </option>
-                ))}
-              </select>
+              <span className="text-[13px] text-sd-fg-subtle">~</span>
+              <TimeSelect value={draft.endsAt} onChange={(v) => set({ endsAt: v })} label="행사 끝 시간" placeholder="끝" after={draft.startsAt || undefined} />
             </div>
             <p className="text-[12px] leading-relaxed text-sd-fg-subtle">
-              지도에서 장소를 길게 누르거나 오른쪽 클릭하면 좌표를 복사할 수 있어요. 시작 30분 전부터 끝날 때까지 이 반경 안에서 시작한 게임을 행사 게임으로 봐요.
+              행사가 끝나면 위 행사 성적표에서 그날 게임 중 우리 행사 게임을 골라요. 이 시간 안에 시작한 게임은 미리 체크해 둘게요.
             </p>
           </div>
         )}
@@ -364,6 +346,11 @@ export function EventsCalendar({
           ))}
         </ul>
       )}
+      {/* 행사 날이면 그날 게임 중 우리 행사 게임을 고른다. 행사가 둘인 날(9/19)은 행사마다 따로 */}
+      {selected <= today &&
+        dayEvents
+          .filter((e) => e.category === "event")
+          .map((e, _, all) => <EventGamePicker key={e.id} event={e} showLabel={all.length > 1} onSaved={onChanged} />)}
     </div>
   ) : (
     <div className="flex flex-col gap-2">
