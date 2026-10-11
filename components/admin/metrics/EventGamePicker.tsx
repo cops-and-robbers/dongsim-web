@@ -113,7 +113,11 @@ export function EventGamePicker({ event, showLabel, onSaved }: { event: MetricsE
       {data.picked === null ? (
         <p className="text-[12px] text-sd-fg-subtle">0008 마이그레이션을 실행하면 고를 수 있어요.</p>
       ) : data.games.length === 0 ? (
-        <p className="text-[12px] text-sd-fg-subtle">이날 끝난 게임이 없어요.</p>
+        <p className="text-[12px] leading-relaxed text-sd-fg-subtle">
+          {data.picked.length > 0
+            ? `골라 둔 게임 ${data.picked.length}판을 지금 연결된 게임 서버에서 찾지 못했어요. 로컬 dev 서버는 개발용 게임 서버를 봐서 운영 게임이 없어요.`
+            : "이날 끝난 게임이 없어요."}
+        </p>
       ) : (
         <>
           {unsaved && <p className="text-[12px] leading-relaxed text-sd-fg-muted">행사 시간에 시작한 게임을 미리 체크해 뒀어요. 맞는지 보고 저장해 주세요.</p>}

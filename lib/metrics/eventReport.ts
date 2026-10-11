@@ -86,6 +86,11 @@ export type EventReport = {
   event: MetricsEvent;
   /** 고른 행사 게임(시작 시각순) */
   games: ReportGame[];
+  /**
+   * 골라 두었는데 지금 읽은 게임 기록에 없는 판 수. 로컬 dev 서버는 개발용 게임 서버를 봐서, 운영에서 고른 게임이 여기 잡힌다.
+   * 0 이 아니면 "고르지 않았다"가 아니라 "못 찾았다"고 알린다
+   */
+  missing: number;
   totals: { games: number; withVisitors: number; staffOnly: number; visitors: number; staff: number };
   /** 참가자 명단이 없는 판(2026-08-17 전)이 섞였나. 그 판의 방문객은 끝까지 남은 인원이라 적게 잡힌다 */
   noRoster: boolean;
@@ -124,5 +129,5 @@ export function buildEventReport(event: MetricsEvent, games: GameRow[], picked: 
       pending: s.pending?.(event.day) ?? false,
     };
   });
-  return { event, games: rows, totals, noRoster: rows.some((g) => g.kind === "unknown"), baseline, metrics };
+  return { event, games: rows, missing: [...picked].filter((id) => !games.some((g) => g.id === id)).length, totals, noRoster: rows.some((g) => g.kind === "unknown"), baseline, metrics };
 }

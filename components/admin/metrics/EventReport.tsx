@@ -132,6 +132,10 @@ function Done({ report: r, gamesError }: { report: Report; gamesError: string | 
 
       {gamesError ? (
         <p className="text-[13px] text-sd-fg-subtle">게임 기록을 못 읽었어요 ({gamesError})</p>
+      ) : r.games.length === 0 && r.missing > 0 ? (
+        <p className="text-[13px] leading-relaxed text-sd-fg-subtle">
+          고른 행사 게임 {r.missing}판을 지금 연결된 게임 서버에서 찾지 못했어요. 로컬 dev 서버는 개발용 게임 서버를 봐서 운영 게임이 없어요.
+        </p>
       ) : r.games.length === 0 ? (
         <p className="text-[13px] text-sd-fg-subtle">아직 행사 게임을 고르지 않았어요. 아래 달력에서 {dayLabel(e.day)}을 누르고 골라 주세요.</p>
       ) : (
