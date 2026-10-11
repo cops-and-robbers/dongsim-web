@@ -9,31 +9,51 @@ import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
 import { WEEK, addMonths, dayLabel, monthEnd, monthStart, shiftMonth, weekday } from "@/lib/metrics/dashboard/calendar";
 import { addDays, ymdRange } from "@/lib/metrics/dates";
+import { CATEGORY_LABEL, DEFAULT_RADIUS_M, parsePlace, type Category, type MetricsEvent } from "@/lib/metrics/events";
+import { CATEGORY_DOT, CATEGORY_HINT, PICKABLE } from "./eventStyle";
 
 /**
- * 일정 달력 (#145). 지표 화면 요약 탭 맨 아래.
+ * 일정 달력 (#145, #165). 지표 화면 요약 탭 맨 아래.
  *
  * 일정은 차트에 마름모로 겹쳐 "그날 왜 숫자가 바뀌었나"를 설명한다. 넣고 보는 곳은 이 달력이다.
  * - 한 달씩 본다. 처음엔 지금 보는 기간의 마지막 달
- * - 행사(사람이 넣은 것)는 진한 칩, 앱 업데이트(지금 배포 중인 버전을 매일 보고 자동)는 작은 회색 점과 글씨.
+ * - 일정은 성격(행사, 홍보, 테스트, 기타)을 골라 넣는다. 성격마다 점 색이 다르고 이름도 같이 적는다(색만으로 구분하지 않는다).
+ *   행사는 시간과 장소(지도에서 복사한 좌표)를 넣으면 그 자리의 게임을 찾아 성적표를 만든다(EventReport)
+ * - 사람이 넣은 일정은 칩, 앱 업데이트(지금 배포 중인 버전을 매일 보고 자동)는 작은 회색 점과 글씨.
  *   업데이트는 켜고 끌 수 있다. 목록에서 행사를 묻지 않게
  * - 날짜를 누르면 그날 일정과 입력 칸이 열린다. 넓은 화면은 달력 오른쪽 칸, 폰은 아래에서 올라오는 시트.
  *   (처음엔 달력 아래에 열었는데, 달력을 보던 위치에서는 화면 밖이라 눌러도 반응이 없는 것처럼 보였다)
- * - 앞으로 있을 행사도 미리 넣을 수 있다(1년 뒤까지)
+ * - 앞으로 있을 행사도 미리 넣을 수 있다(1년 뒤까지). 장소를 나중에 알게 되면 "고치기"로 넣는다
  * - 폰에서는 칸이 좁아 이름 대신 점만 찍고, 내용은 날짜를 눌러 아래에서 본다
  * - 일정이 있는 지난 날을 누르면 "이날부터 7일을 그 전 7일과 비교"로 바로 넘어간다(#152). 행사를 적어 두는 이유가
  *   "그 뒤 숫자가 어땠나"를 보려는 것이라, 기간과 비교를 따로 맞추지 않아도 되게 했다
  * - 키보드: 화살표 하루, 위아래 한 주, PageUp/PageDown 한 달, Enter 로 그날 열기, Esc 로 닫기
  *
- * 일정은 전부 한 번에 읽는다(GET /api/admin/metrics/events). 넣거나 지우면 다시 읽고,
+ * 일정은 전부 한 번에 읽는다(GET /api/admin/metrics/events). 넣거나 고치거나 지우면 다시 읽고,
  * 지표 화면도 다시 불러 차트의 마름모를 맞춘다(onChanged).
  */
 
-type Event = { id: number; day: string; label: string };
+type Event = MetricsEvent;
 
 /** 자동으로 들어온 출시(App Store Connect 버전 목록, Play 프로덕션 트랙, #147) */
-export const isRelease = (label: string) => /^(iOS|Android) .+ 출시$/.test(label);
+const isRelease = (e: Event) => e.category === "release";
 const shortRelease = (label: string) => label.replace(/ 출시$/, "");
+
+/** 입력 칸. 행사가 아니면 시간과 장소는 보내지 않는다 */
+type Draft = { label: string; category: Category | null; startsAt: string; endsAt: string; placeText: string; radius: number };
+const EMPTY: Draft = { label: "", category: null, startsAt: "", endsAt: "", placeText: "", radius: DEFAULT_RADIUS_M };
+const RADII = [300, 500, 1000];
+const draftOf = (e: Event): Draft => ({
+  label: e.label,
+  category: e.category,
+  startsAt: e.startsAt ?? "",
+  endsAt: e.endsAt ?? "",
+  placeText: e.place ? `${e.place.lat}, ${e.place.lng}` : "",
+  radius: e.place?.radiusM ?? DEFAULT_RADIUS_M,
+});
+/** 행사의 시간과 장소 한 줄. "14:00~16:00, 장소 반경 500m" */
+const eventDetail = (e: Event) =>
+  [e.startsAt && e.endsAt ? `${e.startsAt}~${e.endsAt}` : "시간 없음", e.place ? `장소 반경 ${e.place.radiusM}m` : "장소 없음"].join(", ");
 
 async function call(url: string, init: RequestInit = {}): Promise<Response> {
   const send = () => fetch(url, { ...init, headers: { ...(init.headers ?? {}), Authorization: `Bearer ${getAccessToken() ?? ""}` }, cache: "no-store" });
@@ -41,6 +61,8 @@ async function call(url: string, init: RequestInit = {}): Promise<Response> {
   if (res.status === 401 && (await reissue())) res = await send();
   return res;
 }
+
+const inputClass = "h-9 min-w-0 rounded-xl border border-sd-line bg-sd-surface px-3 text-[13px] text-sd-fg outline-none placeholder:text-sd-placeholder focus:border-accent";
 
 export function EventsCalendar({
   initialMonth,
@@ -60,7 +82,8 @@ export function EventsCalendar({
   const [selected, setSelected] = useState<string | null>(null);
   const [focus, setFocus] = useState(initialMonth);
   const [showUpdates, setShowUpdates] = useState(true);
-  const [label, setLabel] = useState("");
+  const [draft, setDraft] = useState<Draft>(EMPTY);
+  const [editing, setEditing] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
@@ -97,34 +120,51 @@ export function EventsCalendar({
 
   const byDay = new Map<string, Event[]>();
   for (const e of events ?? []) byDay.set(e.day, [...(byDay.get(e.day) ?? []), e]);
-  const visible = (list: Event[]) => (showUpdates ? list : list.filter((e) => !isRelease(e.label)));
+  const visible = (list: Event[]) => (showUpdates ? list : list.filter((e) => !isRelease(e)));
+  const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
 
   const changed = () => {
     setReload((n) => n + 1);
     onChanged();
   };
-  const add = async () => {
-    const text = label.trim();
-    if (!selected || !text) return;
+  const save = async () => {
+    const text = draft.label.trim();
+    if (!selected || !text || !draft.category) return;
+    const isEvent = draft.category === "event";
+    const place = isEvent && draft.placeText.trim() ? parsePlace(draft.placeText) : null;
+    if (isEvent && draft.placeText.trim() && !place) return setError("좌표를 읽지 못했어요. 지도에서 복사한 37.5498, 127.0799 같은 값을 넣어 주세요.");
+    if (isEvent && Boolean(draft.startsAt) !== Boolean(draft.endsAt)) return setError("시작과 끝 시간을 둘 다 넣거나 둘 다 비워 주세요.");
     setBusy(true);
     setError(null);
-    const res = await call("/api/admin/metrics/events", {
-      method: "POST",
+    const body = {
+      label: text,
+      category: draft.category,
+      startsAt: isEvent && draft.startsAt ? draft.startsAt : null,
+      endsAt: isEvent && draft.endsAt ? draft.endsAt : null,
+      place: place ? { ...place, radiusM: draft.radius } : null,
+    };
+    const res = await call(editing ? `/api/admin/metrics/events?id=${editing}` : "/api/admin/metrics/events", {
+      method: editing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ day: selected, label: text }),
+      body: JSON.stringify(editing ? body : { day: selected, ...body }),
     }).catch(() => null);
     setBusy(false);
     if (!res?.ok) {
-      const body = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
-      return setError(body?.error ?? "일정을 넣지 못했어요. 잠시 뒤 다시 해 주세요.");
+      const b = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
+      return setError(b?.error ?? (editing ? "일정을 고치지 못했어요. 잠시 뒤 다시 해 주세요." : "일정을 넣지 못했어요. 잠시 뒤 다시 해 주세요."));
     }
-    setLabel("");
+    setDraft(EMPTY);
+    setEditing(null);
     changed();
   };
   const remove = async (id: number) => {
     setError(null);
     const res = await call(`/api/admin/metrics/events?id=${id}`, { method: "DELETE" }).catch(() => null);
     if (!res?.ok) return setError("일정을 지우지 못했어요. 잠시 뒤 다시 해 주세요.");
+    if (editing === id) {
+      setEditing(null);
+      setDraft(EMPTY);
+    }
     changed();
   };
 
@@ -132,6 +172,10 @@ export function EventsCalendar({
     setSelected(d);
     setFocus(d);
     setError(null);
+    if (d !== selected) {
+      setDraft(EMPTY);
+      setEditing(null);
+    }
     // 넓은 화면은 옆 칸, 폰은 아래 시트의 입력 칸 중 보이는 쪽에 초점을 둔다(그려진 뒤에)
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
@@ -166,8 +210,8 @@ export function EventsCalendar({
   const blanks = weekday(view);
   const [y, m] = view.split("-").map(Number);
   const monthEvents = (events ?? []).filter((e) => e.day >= view && e.day <= monthEnd(view));
-  const monthManual = monthEvents.filter((e) => !isRelease(e.label));
-  const monthReleases = monthEvents.filter((e) => isRelease(e.label));
+  const monthManual = monthEvents.filter((e) => !isRelease(e));
+  const monthReleases = monthEvents.filter((e) => isRelease(e));
   const dayEvents = selected ? (byDay.get(selected) ?? []) : [];
 
   // 날짜 칸: 넓은 화면에서는 달력 오른쪽에 늘 붙어 있고, 폰에서는 날짜를 누르면 아래에서 올라온다.
@@ -181,25 +225,87 @@ export function EventsCalendar({
         </button>
       </div>
       <form
-        className="flex gap-2"
+        className="flex flex-col gap-2.5"
         onSubmit={(e) => {
           e.preventDefault();
-          void add();
+          void save();
         }}
       >
         <input
           data-day-input
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
+          value={draft.label}
+          onChange={(e) => set({ label: e.target.value })}
           onKeyDown={(e) => e.key === "Escape" && setSelected(null)}
           maxLength={40}
           placeholder="예: OO대학교 대항전"
           aria-label={`${dayLabel(selected)} 일정 이름`}
-          className="h-9 min-w-0 flex-1 rounded-xl border border-sd-line bg-sd-surface px-3 text-[13px] text-sd-fg outline-none placeholder:text-sd-placeholder focus:border-accent"
+          className={inputClass}
         />
-        <Button size="sm" type="submit" disabled={busy || !label.trim()} className="h-9 shrink-0">
-          넣기
-        </Button>
+        <div role="radiogroup" aria-label="일정 성격" className="flex flex-wrap gap-1.5">
+          {PICKABLE.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={draft.category === c}
+              onClick={() => set({ category: c })}
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[12px] font-semibold transition-colors ${
+                draft.category === c ? "border-sd-fg bg-sd-fill text-sd-fg" : "border-sd-line text-sd-fg-muted hover:bg-sd-gray-200"
+              }`}
+            >
+              <span className={`h-2 w-2 rounded-full ${CATEGORY_DOT[c]}`} aria-hidden />
+              {CATEGORY_LABEL[c]}
+            </button>
+          ))}
+        </div>
+        {draft.category && <p className="text-[12px] leading-relaxed text-sd-fg-subtle">{CATEGORY_HINT[draft.category]}</p>}
+        {draft.category === "event" && (
+          <div className="flex flex-col gap-2 rounded-xl bg-sd-fill p-3">
+            <div className="flex items-center gap-2 text-[13px]">
+              <input type="time" value={draft.startsAt} onChange={(e) => set({ startsAt: e.target.value })} aria-label="행사 시작 시간" className={`${inputClass} flex-1 px-2`} />
+              <span className="text-sd-fg-subtle">~</span>
+              <input type="time" value={draft.endsAt} onChange={(e) => set({ endsAt: e.target.value })} aria-label="행사 끝 시간" className={`${inputClass} flex-1 px-2`} />
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={draft.placeText}
+                onChange={(e) => set({ placeText: e.target.value })}
+                placeholder="지도에서 복사한 좌표"
+                aria-label="행사 장소 좌표"
+                className={`${inputClass} flex-1`}
+              />
+              <select value={draft.radius} onChange={(e) => set({ radius: Number(e.target.value) })} aria-label="장소 반경" className={`${inputClass} shrink-0 px-2`}>
+                {RADII.map((r) => (
+                  <option key={r} value={r}>
+                    {r >= 1000 ? `${r / 1000}km` : `${r}m`}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-[12px] leading-relaxed text-sd-fg-subtle">
+              지도에서 장소를 길게 누르거나 오른쪽 클릭하면 좌표를 복사할 수 있어요. 시작 30분 전부터 끝날 때까지 이 반경 안에서 시작한 게임을 행사 게임으로 봐요.
+            </p>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Button size="sm" type="submit" disabled={busy || !draft.label.trim() || !draft.category} className="h-9 flex-1">
+            {editing ? "고치기" : "넣기"}
+          </Button>
+          {editing && (
+            <Button
+              size="sm"
+              type="button"
+              variant="neutral"
+              onClick={() => {
+                setEditing(null);
+                setDraft(EMPTY);
+              }}
+              className="h-9 shrink-0"
+            >
+              그만두기
+            </Button>
+          )}
+        </div>
       </form>
       {error && <p className="text-[13px] text-sd-critical">{error}</p>}
       {onCompare && dayEvents.length > 0 && selected < today && (
@@ -220,19 +326,40 @@ export function EventsCalendar({
       ) : (
         <ul className="flex flex-col divide-y divide-sd-hairline">
           {dayEvents.map((e) => (
-            <li key={e.id} className="flex items-center justify-between gap-3 py-2 text-[13px]">
-              <span className="flex min-w-0 items-center gap-2">
-                <span className={`h-2 w-2 shrink-0 rounded-full ${isRelease(e.label) ? "bg-sd-fg-subtle" : "bg-sd-fg"}`} aria-hidden />
-                <span className="break-words text-sd-fg">{e.label}</span>
-                {isRelease(e.label) && <span className="shrink-0 text-[11px] text-sd-fg-subtle">자동</span>}
+            <li key={e.id} className="flex items-start justify-between gap-3 py-2 text-[13px]">
+              <span className="flex min-w-0 items-start gap-2">
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${CATEGORY_DOT[e.category]}`} aria-hidden />
+                <span className="min-w-0">
+                  <span className="break-words text-sd-fg">{e.label}</span>
+                  <span className="block text-[12px] text-sd-fg-subtle">
+                    {CATEGORY_LABEL[e.category]}
+                    {isRelease(e) ? ", 자동" : ""}
+                    {e.category === "event" ? `, ${eventDetail(e)}` : ""}
+                  </span>
+                </span>
               </span>
-              <button
-                type="button"
-                onClick={() => void remove(e.id)}
-                className="shrink-0 rounded-lg px-2 py-1 text-sd-fg-subtle transition-colors hover:bg-sd-gray-200 hover:text-sd-critical"
-              >
-                지우기
-              </button>
+              <span className="flex shrink-0 gap-1">
+                {!isRelease(e) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(e.id);
+                      setDraft(draftOf(e));
+                      setError(null);
+                    }}
+                    className="rounded-lg px-2 py-1 text-sd-fg-subtle transition-colors hover:bg-sd-gray-200 hover:text-sd-fg"
+                  >
+                    고치기
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void remove(e.id)}
+                  className="rounded-lg px-2 py-1 text-sd-fg-subtle transition-colors hover:bg-sd-gray-200 hover:text-sd-critical"
+                >
+                  지우기
+                </button>
+              </span>
             </li>
           ))}
         </ul>
@@ -249,9 +376,12 @@ export function EventsCalendar({
           {monthManual.map((e) => (
             <li key={e.id}>
               <button type="button" onClick={() => open(e.day)} className="flex w-full min-w-0 items-start gap-2 rounded-lg px-1 py-1 text-left hover:bg-sd-gray-200">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sd-fg" aria-hidden />
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${CATEGORY_DOT[e.category]}`} aria-hidden />
                 <span className="w-10 shrink-0 tabular-nums text-sd-fg-muted">{dayLabel(e.day).replace(/^\d+월 /, "")}</span>
-                <span className="min-w-0 break-words text-sd-fg">{e.label}</span>
+                <span className="min-w-0 break-words text-sd-fg">
+                  {e.label}
+                  <span className="ml-1.5 text-[12px] text-sd-fg-subtle">{CATEGORY_LABEL[e.category]}</span>
+                </span>
               </button>
             </li>
           ))}
@@ -301,7 +431,7 @@ export function EventsCalendar({
       ) : (
         <div ref={rootRef} className="flex flex-col gap-4">
           <p className="text-[13px] leading-relaxed text-sd-fg-muted">
-            날짜를 누르고 행사나 광고 이름을 넣으면 모든 차트에 마름모로 표시돼서, 숫자가 왜 바뀌었는지 같이 볼 수 있어요. 앱 업데이트 날짜는 자동으로 들어와요.
+            날짜를 누르고 일정 이름과 성격을 넣으면 모든 차트에 성격별 색 마름모로 표시돼서, 숫자가 왜 바뀌었는지 같이 볼 수 있어요. 앱 업데이트 날짜는 자동으로 들어와요.
           </p>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -339,14 +469,14 @@ export function EventsCalendar({
                 ))}
                 {days.map((d) => {
                   const list = visible(byDay.get(d) ?? []);
-                  const manual = list.filter((e) => !isRelease(e.label));
-                  const releases = list.filter((e) => isRelease(e.label));
+                  const manual = list.filter((e) => !isRelease(e));
+                  const releases = list.filter((e) => isRelease(e));
                   const shownReleases = manual.length >= 2 ? 0 : Math.min(1, releases.length);
                   const more = list.length - Math.min(2, manual.length) - shownReleases;
                   const isSel = d === selected;
                   const isToday = d === today;
                   const future = d > today;
-                  const summary = list.length ? `, 일정 ${list.length}개: ${list.map((e) => e.label).join(", ")}` : "";
+                  const summary = list.length ? `, 일정 ${list.length}개: ${list.map((e) => `${CATEGORY_LABEL[e.category]} ${e.label}`).join(", ")}` : "";
                   return (
                     <button
                       key={d}
@@ -371,11 +501,12 @@ export function EventsCalendar({
                       >
                         {Number(d.slice(8))}
                       </span>
-                      {/* 넓은 화면: 행사는 칩, 업데이트는 회색 글씨. 칸이 넘치면 "+N" */}
+                      {/* 넓은 화면: 사람이 넣은 일정은 성격 색 점이 붙은 칩, 업데이트는 회색 글씨. 칸이 넘치면 "+N" */}
                       <span className="hidden min-w-0 flex-col gap-0.5 sm:flex">
                         {manual.slice(0, 2).map((e) => (
-                          <span key={e.id} className="truncate rounded bg-sd-fg/85 px-1 py-px text-[11px] font-medium text-sd-surface">
-                            {e.label}
+                          <span key={e.id} className="flex min-w-0 items-center gap-1 rounded bg-sd-fill px-1 py-px text-[11px] font-medium text-sd-fg">
+                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORY_DOT[e.category]}`} />
+                            <span className="truncate">{e.label}</span>
                           </span>
                         ))}
                         {releases.slice(0, shownReleases).map((e) => (
@@ -386,9 +517,11 @@ export function EventsCalendar({
                         ))}
                         {more > 0 && <span className="text-[10px] text-sd-fg-subtle">+{more}</span>}
                       </span>
-                      {/* 폰: 점만. 행사는 진하게, 업데이트는 회색 */}
+                      {/* 폰: 점만. 성격마다 한 점, 업데이트는 회색 */}
                       <span className="flex gap-0.5 sm:hidden" aria-hidden>
-                        {manual.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-sd-fg" />}
+                        {[...new Set(manual.map((e) => e.category))].map((c) => (
+                          <span key={c} className={`h-1.5 w-1.5 rounded-full ${CATEGORY_DOT[c]}`} />
+                        ))}
                         {releases.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-sd-fg-subtle" />}
                       </span>
                     </button>

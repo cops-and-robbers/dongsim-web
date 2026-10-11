@@ -56,6 +56,12 @@
   --chart-prev: #b0b3ba;
   /* 늘었다는 글자색. --sd-positive(#079171)는 흰 바탕에서 3.96:1 이라 작은 글자 기준 4.5:1 에 못 미친다 */
   --chart-up: #0a7d63;
+
+  /* 일정 성격 색 (#165). 행사, 홍보, 테스트만 색을 주고 출시는 회색(fg-subtle), 기타는 글자색으로 둔다.
+     차트 선 색과 겹치지 않게 고르고 dataviz 검사기(색약, 밝기, 대비)를 통과한 값이다 */
+  --ev-event: #d6336c;
+  --ev-promo: #b86e00;
+  --ev-test: #0b8f86;
 }
 
 .dark {
@@ -103,6 +109,10 @@
   --chart-2: #9085e9;
   --chart-prev: #5b5f66;
   --chart-up: #26c199;
+
+  --ev-event: #e64980;
+  --ev-promo: #b97c14;
+  --ev-test: #20a99f;
 }
 
 @theme inline {
@@ -167,6 +177,9 @@
   --color-chart-2: var(--chart-2);
   --color-chart-prev: var(--chart-prev);
   --color-chart-up: var(--chart-up);
+  --color-ev-event: var(--ev-event);
+  --color-ev-promo: var(--ev-promo);
+  --color-ev-test: var(--ev-test);
 
   --font-sans:
     var(--font-pretendard), -apple-system, BlinkMacSystemFont, system-ui,
