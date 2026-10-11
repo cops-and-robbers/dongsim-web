@@ -21,6 +21,7 @@ import {
 } from "@/components/admin/StatusBadge";
 import { CheckIcon, DeviceIcon } from "@/components/admin/icons";
 import QueryBoundary from "@/components/admin/QueryBoundary";
+import { StaffToggle } from "@/components/admin/metrics/StaffToggle";
 import { DEVICE_LABEL, formatDate, formatDateTime, labelOf } from "@/lib/admin/format";
 
 export default function UserDetailPage() {
@@ -138,6 +139,10 @@ function UserDetail({ id }: { id: string }) {
             <AgreeRow label="마케팅 정보 수신 (선택)" ok={user.allowMarketingPush} />
           </div>
         </SectionCard>
+      </div>
+
+      <div className="mt-5">
+        <StaffToggle userId={user.id} isAdmin={user.role === "ADMIN"} />
       </div>
 
       <div className="mt-5">
