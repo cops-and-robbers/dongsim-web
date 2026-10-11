@@ -18,7 +18,7 @@ import { numbersIn, repairHypothesisRefs, verifyAnswer, type Answer, type Proble
 
 const claim = z.object({ text: z.string(), refs: z.array(z.string()).describe("이 문장의 숫자가 나온 도구 호출의 toolCallId") });
 export const answerSchema = z.object({
-  headline: claim.describe("질문에 대한 답 한 문장"),
+  headline: claim.describe("질문에 대한 답. 한두 문장(늘어난 것과 줄어든 것이 같이 있으면 나눈다)"),
   facts: z.array(claim).describe("도구로 확인한 사실"),
   hypotheses: z
     .array(z.object({ text: z.string(), refs: z.array(z.string()).describe("이 가설을 확인하려고 부른 도구 호출의 toolCallId. 확인 못 했으면 비운다") }))

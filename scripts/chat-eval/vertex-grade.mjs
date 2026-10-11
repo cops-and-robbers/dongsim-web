@@ -19,7 +19,7 @@ for (const c of QUESTIONS) {
   for (const g of c.tools ?? []) if (!calls.some((t) => g.includes(t.name))) fails.push(`도구 ${g.join("|")}`);
   if (c.call && !calls.some((t) => nameOk(c.call.name, t.name) && c.call.test(t.input))) fails.push(`호출 ${c.call.why}`);
   for (const re of c.says ?? []) if (!texts(r.answer).some((t) => re.test(t))) fails.push(`말함 ${re}`);
-  if (c.refuse && !/볼 수 없|수 없어요|못 |어려워|알 수 없|않아요|불가능/.test(r.answer.headline.text)) fails.push("거절");
+  if (c.refuse && !/볼 수 없|수 없어요|수 없는|못 |어려워|알 수 없|않아요|불가능/.test(r.answer.headline.text)) fails.push("거절");
   const leak = texts(r.answer).concat(r.answer.followUps, r.answer.hypotheses.map((h) => h.text)).filter((t) => /\b[a-z]+_[a-z_]+\b/.test(t));
   if (leak.length) fails.push(`영어 이름 ${leak.length}`);
   if (c.hypotheses && !r.answer.hypotheses.length) fails.push("가설 없음");
