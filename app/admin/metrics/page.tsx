@@ -9,6 +9,7 @@ import { Table, Td, Th, Tr } from "@/components/admin/Table";
 import { FadeIn } from "@/components/admin/motion";
 import { TrendChart, type Marker } from "@/components/admin/metrics/TrendChart";
 import { DateRangePicker, type DayRange } from "@/components/admin/metrics/DateRangePicker";
+import { EventReport } from "@/components/admin/metrics/EventReport";
 import { EventsCalendar } from "@/components/admin/metrics/EventsCalendar";
 import { PostDrawer } from "@/components/admin/metrics/PostDrawer";
 import { FunnelCard } from "@/components/admin/metrics/FunnelCard";
@@ -545,7 +546,7 @@ function MetricsBody({
   const sumOf = (a: (number | null)[], b: (number | null)[]) => a.map((v, i) => (v === null && b[i] === null ? null : (v ?? 0) + (b[i] ?? 0)));
   const markers: Marker[] = [
     ...d.posts.map((post) => ({ day: seoulDay(post.postedAt), label: firstLine(post.caption), kind: "post" as const })),
-    ...(d.events ?? []).map((e) => ({ day: e.day, label: e.label, kind: "event" as const })),
+    ...(d.events ?? []).map((e) => ({ day: e.day, label: e.label, kind: "event" as const, category: e.category })),
   ];
   const firstOpen = (n: WeeklyNumbers) => n.installs.firstOpenAndroid + n.installs.firstOpenIos;
   const late = lagging(d);
@@ -695,6 +696,10 @@ function MetricsBody({
           </FadeIn>
 
           <FadeIn delay={0.16}>
+            <EventReport today={addDays(yesterday, 1)} refresh={d.events} />
+          </FadeIn>
+
+          <FadeIn delay={0.2}>
             <EventsCalendar initialMonth={d.range.end} today={addDays(yesterday, 1)} onChanged={onChanged} onCompare={onCompareEvent} />
           </FadeIn>
         </>
@@ -1027,7 +1032,7 @@ function MetricsBody({
 
           <Group
             title="사용"
-            note="진행된 게임은 백엔드 게임 기록으로 센 실제 판 수예요. 게임 참가는 앱이 참가자 폰마다 남기는 기록이라 5명이 한 판 하면 5회예요."
+            note="진행된 게임은 백엔드 게임 기록으로 센 실제 판 수예요. 운영진 계정끼리만 한 판(팀 테스트)은 빼고, 판당 인원은 시작할 때 명단에서 운영진을 뺀 수예요. 게임 참가는 앱이 참가자 폰마다 남기는 기록이라 5명이 한 판 하면 5회예요."
           >
             <Cells>
               <Cell
@@ -1036,14 +1041,20 @@ function MetricsBody({
                 lines={[!compare || noPrev("ga4app") || p.app.dauAvg === null ? "기간 평균" : `기간 평균, ${cw} ${p.app.dauAvg.toFixed(1)}명`]}
               />
               {gamesOk ? (
-                <Step label="진행된 게임" now={games.current.games} before={games.previous.games} unit="판" />
+                <Step
+                  label="진행된 게임"
+                  now={games.current.games}
+                  before={games.previous.games}
+                  unit="판"
+                  sub={games.staffGames.current > 0 ? `운영진 테스트 ${games.staffGames.current}판은 뺐어요` : undefined}
+                />
               ) : (
                 <Cell label="진행된 게임" value="-" lines={[games?.error ?? "백엔드 주소가 없어 못 읽었어요"]} />
               )}
               <Cell
                 label="판당 평균 인원"
                 value={gamesOk && games.current.games > 0 ? `${(games.current.players / games.current.games).toFixed(1)}명` : "-"}
-                lines={[compare && gamesOk && games.previous.games > 0 ? `${cw} ${(games.previous.players / games.previous.games).toFixed(1)}명` : "백엔드 게임 기록 기준"]}
+                lines={[compare && gamesOk && games.previous.games > 0 ? `${cw} ${(games.previous.players / games.previous.games).toFixed(1)}명` : "시작 명단 기준, 운영진 제외"]}
               />
               <Step label="게임 참가(사람 기준)" now={c.game.playerStarts} before={p.game.playerStarts} noPrev={noPrev("ga4app")} none={none("ga4app")} />
             </Cells>

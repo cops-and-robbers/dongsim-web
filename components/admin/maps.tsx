@@ -297,3 +297,63 @@ export function GameDistributionMap({
     </div>
   );
 }
+
+// ── 행사 게임 고르기의 장소 핀 (#165) ──
+// 그날 게임 구역을 장소별로 묶은 가운데에 A, B, C 글자 핀을 꽂는다. 목록의 "장소 A" 와 같은 글자다.
+// 고른 게임이 있는 장소는 진하게, 없는 장소는 흐리게 그려 어디를 골랐는지 지도에서도 보이게 한다.
+export type PlacePin = { letter: string; lat: number; lng: number; active: boolean };
+
+function PinLayer({ pins }: { pins: readonly PlacePin[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || pins.length === 0) return;
+    const markers = pins.map(
+      (p) =>
+        new google.maps.Marker({
+          map,
+          position: { lat: p.lat, lng: p.lng },
+          title: `장소 ${p.letter}`,
+          label: { text: p.letter, color: "#ffffff", fontSize: "12px", fontWeight: "700" },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 12,
+            fillColor: p.active ? "#3f63d9" : "#9aa0a6",
+            fillOpacity: 0.95,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+          },
+          zIndex: p.active ? 2 : 1,
+        }),
+    );
+    if (pins.length === 1) {
+      map.setCenter({ lat: pins[0].lat, lng: pins[0].lng });
+      map.setZoom(15);
+    } else {
+      const bounds = new google.maps.LatLngBounds();
+      pins.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
+      map.fitBounds(bounds, 40);
+    }
+    return () => markers.forEach((m) => m.setMap(null));
+  }, [map, pins]);
+  return null;
+}
+
+export function PlacePinsMap({ pins, height = 160 }: { pins: readonly PlacePin[]; height?: number }) {
+  if (!KEY) return <MapFallback height={height} title="그날 게임 장소" detail={`장소 ${pins.map((p) => p.letter).join(", ")}`} />;
+  return (
+    <div className="overflow-hidden rounded-xl" style={{ height }}>
+      <APIProvider apiKey={KEY}>
+        <Map
+          defaultCenter={{ lat: pins[0]?.lat ?? 37.55, lng: pins[0]?.lng ?? 127.0 }}
+          defaultZoom={14}
+          gestureHandling="cooperative"
+          disableDefaultUI
+          zoomControl
+          style={{ width: "100%", height: "100%" }}
+        >
+          <PinLayer pins={pins} />
+        </Map>
+      </APIProvider>
+    </div>
+  );
+}

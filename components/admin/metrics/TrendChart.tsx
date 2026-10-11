@@ -2,6 +2,8 @@
 
 import { useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useCompare } from "@/components/admin/metrics/compareContext";
+import { CATEGORIES, CATEGORY_LABEL, type Category } from "@/lib/metrics/events";
+import { CATEGORY_DOT } from "./eventStyle";
 
 /**
  * 지표 화면의 날짜별 추이 (#145).
@@ -19,7 +21,10 @@ import { useCompare } from "@/components/admin/metrics/compareContext";
  */
 
 export type Series = { label: string; values: (number | null)[] };
-export type Marker = { day: string; label: string; kind: "post" | "event" };
+export type Marker = { day: string; label: string; kind: "post" | "event"; category?: Category };
+
+/** 하루에 일정이 여럿이면 마름모 색은 이 순서로 앞선 성격을 따른다. 행사가 숫자를 가장 크게 흔든다 */
+const PRIORITY: Category[] = ["event", "promo", "test", "etc", "release"];
 
 type Props = {
   days: string[]; // YYYY-MM-DD
@@ -27,8 +32,8 @@ type Props = {
   /** 이전 기간 값. 첫 번째 선과 같은 순서(이전 기간의 n번째 날)로 겹친다 */
   previous?: (number | null)[];
   /**
-   * 그날 있었던 일. post 는 인스타 게시물(동그라미), event 는 우리가 적은 일정(마름모, 행사나 업데이트).
-   * 색이 아니라 모양으로 가른다
+   * 그날 있었던 일. post 는 인스타 게시물(동그라미), event 는 일정(마름모). 게시물과 일정은 모양으로 가르고,
+   * 일정의 성격(행사, 홍보, 출시, 테스트, 기타)은 마름모 색과 범례, 툴팁의 이름으로 가른다(#165)
    */
   markers?: Marker[];
   /** 툴팁 값 뒤에 붙는 단위 */
@@ -93,6 +98,10 @@ export function TrendChart({ days, series, previous, markers = [], unit = "" }: 
   const markerByDay = new Map<string, Marker[]>();
   for (const m of markers) markerByDay.set(m.day, [...(markerByDay.get(m.day) ?? []), m]);
   const kindsOn = (d: string) => new Set((markerByDay.get(d) ?? []).map((m) => m.kind));
+  const categoryOn = (d: string): Category => {
+    const cs = new Set((markerByDay.get(d) ?? []).filter((m) => m.kind === "event").map((m) => m.category ?? "etc"));
+    return PRIORITY.find((c) => cs.has(c)) ?? "etc";
+  };
 
   const pick = (clientX: number) => {
     const rect = ref.current?.getBoundingClientRect();
@@ -113,6 +122,7 @@ export function TrendChart({ days, series, previous, markers = [], unit = "" }: 
   const hoverPosts = hoverDay ? (markerByDay.get(hoverDay) ?? []) : [];
   const hasPosts = days.some((d) => kindsOn(d).has("post"));
   const hasEvents = days.some((d) => kindsOn(d).has("event"));
+  const shownCategories = CATEGORIES.filter((c) => days.some((d) => (markerByDay.get(d) ?? []).some((m) => m.kind === "event" && (m.category ?? "etc") === c)));
   // 선이 하나뿐이고 비교선도 표시도 없으면 제목이 곧 범례라 따로 두지 않는다
   const legend = series.length === 2 || previous || hasPosts || hasEvents;
 
@@ -153,12 +163,12 @@ export function TrendChart({ days, series, previous, markers = [], unit = "" }: 
               인스타 게시물
             </span>
           )}
-          {hasEvents && (
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rotate-45 rounded-[1px] bg-sd-fg-muted" />
-              일정
+          {shownCategories.map((c) => (
+            <span key={c} className="flex items-center gap-1.5">
+              <span className={`h-2 w-2 rotate-45 rounded-[1px] ${CATEGORY_DOT[c]}`} />
+              {CATEGORY_LABEL[c]}
             </span>
-          )}
+          ))}
         </div>
       )}
       <div className="flex gap-2">
@@ -275,7 +285,7 @@ export function TrendChart({ days, series, previous, markers = [], unit = "" }: 
                 <span
                   key={`dot-${d}`}
                   className={`pointer-events-none absolute -translate-x-1/2 ${
-                    kindsOn(d).has("event") ? "-top-1.5 h-2 w-2 rotate-45 rounded-[1px] bg-sd-fg-muted" : "-top-1 h-1.5 w-1.5 rounded-full bg-sd-fg-subtle"
+                    kindsOn(d).has("event") ? `-top-1.5 h-2 w-2 rotate-45 rounded-[1px] ${CATEGORY_DOT[categoryOn(d)]}` : "-top-1 h-1.5 w-1.5 rounded-full bg-sd-fg-subtle"
                   }`}
                   style={{ left: `${(xAt(i) / W) * 100}%` }}
                 />
@@ -314,7 +324,7 @@ export function TrendChart({ days, series, previous, markers = [], unit = "" }: 
                 )}
                 {hoverPosts.map((m, i) => (
                   <div key={`${i}-${m.label}`} className="mt-1.5 truncate border-t border-sd-hairline pt-1.5 text-sd-fg-muted">
-                    {m.kind === "event" ? "일정" : "게시물"}: {m.label}
+                    {m.kind === "event" ? CATEGORY_LABEL[m.category ?? "etc"] : "게시물"}: {m.label}
                   </div>
                 ))}
               </div>
