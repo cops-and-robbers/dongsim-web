@@ -6,6 +6,9 @@
  * 2. 이번 달 팀 비용(CHAT_MONTHLY_USD): 우리가 토큰으로 센 값. 구글 지출 한도(₩12,000)보다 낮게 둬서 앱이 먼저 멈춘다
  * 3. 구글 Cloud 지출 한도(Vertex AI, ₩12,000): 정가 기준이고 몇 시간 늦게 걸린다. 크레딧(월 ₩13,588) 안쪽이다
  *
+ * 팀 비용에는 평가 실험처럼 챗봇 밖에서 쓴 돈(metrics_chat_spend, otherUsd)도 더한다. 같은 구글 한도에서 빠지기 때문이다.
+ * 질문 수와 평균값에는 넣지 않는다(실험 한 번은 질문 백여 개라 평균이 뒤틀린다)
+ *
  * 화면에는 돈이 아니라 "몇 번 더 물을 수 있나"로 보여 준다. 달러나 원은 어드민이 가늠하기 어렵다
  * (Shape of AI "Cost estimates": 비기술 사용자에게는 제품 단위가 낫다, Hex 는 80% 에서 입력창 위에 알린다).
  * 질문 하나 값은 이번 달 실제 평균으로 잡는다. 2026-10-11 Vertex 실험 29문항 평균은 $0.0133, 가장 비싼 문항 $0.027
@@ -22,6 +25,8 @@ export type Usage = {
     questions: number;
     mine: number;
     spentUsd: number;
+    /** 그중 챗봇 밖(평가 실험)에서 쓴 돈 */
+    otherUsd: number;
     capUsd: number;
     /** 질문 하나 평균 비용. 이번 달 성공한 답이 적으면 실험 평균 */
     avgCostUsd: number;
@@ -47,8 +52,8 @@ const nextMonthFirst = (today: string) => {
 };
 
 /** rows 는 이번 달 기록 전부(팀). dayStart 는 오늘 0시(한국)의 ISO */
-export function usageOf(rows: LogRow[], me: string, dayStart: string, today: string, dailyLimit: number, capUsd: number): Usage {
-  const spent = rows.reduce((a, r) => a + (r.cost_usd || 0), 0);
+export function usageOf(rows: LogRow[], me: string, dayStart: string, today: string, dailyLimit: number, capUsd: number, otherUsd = 0): Usage {
+  const spent = rows.reduce((a, r) => a + (r.cost_usd || 0), 0) + otherUsd;
   const answered = rows.filter((r) => !r.error && r.cost_usd > 0);
   const avg = answered.length >= MIN_SAMPLES ? answered.reduce((a, r) => a + r.cost_usd, 0) / answered.length : DEFAULT_COST_USD;
   const usedToday = rows.filter((r) => r.user_key === me && r.created_at >= dayStart).length;
@@ -63,6 +68,7 @@ export function usageOf(rows: LogRow[], me: string, dayStart: string, today: str
       questions: rows.length,
       mine: rows.filter((r) => r.user_key === me).length,
       spentUsd: Math.round(spent * 10000) / 10000,
+      otherUsd: Math.round(otherUsd * 10000) / 10000,
       capUsd,
       avgCostUsd: Math.round(avg * 10000) / 10000,
       estLeft,

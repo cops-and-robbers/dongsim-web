@@ -69,7 +69,10 @@ async function usage(key: string, today: string, devMock = false) {
   if (month.error?.code === NO_TABLE && devMock) return usageOf([], key, dayStart, today, DAILY_LIMIT, MONTHLY_USD);
   if (month.error?.code === NO_TABLE) throw new Error(NO_TABLE_MESSAGE);
   if (month.error) throw new Error(`질문 기록 읽기: ${month.error.message}`);
-  return usageOf(month.data as LogRow[], key, dayStart, today, DAILY_LIMIT, MONTHLY_USD);
+  // 평가 실험 비용(0011). 표가 아직 없으면 0 으로 센다
+  const other = await db().from("metrics_chat_spend").select("cost_usd").gte("created_at", monthStart);
+  const otherUsd = other.error ? 0 : (other.data as { cost_usd: number }[]).reduce((a, r) => a + (r.cost_usd || 0), 0);
+  return usageOf(month.data as LogRow[], key, dayStart, today, DAILY_LIMIT, MONTHLY_USD, otherUsd);
 }
 
 /** 개발 서버 가짜 모델의 답 번호. 기록 표에 넣지 않아(운영 사용량이 부풀지 않게) 음수로 두고, 평가(PATCH)는 그냥 받는다 */
