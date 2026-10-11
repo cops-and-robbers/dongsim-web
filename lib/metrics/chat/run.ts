@@ -35,7 +35,8 @@ export type AskResult = {
   problems: Problem[];
   retried: boolean;
   tools: ToolTrace[];
-  usage: { inputTokens: number; outputTokens: number; cachedInputTokens: number };
+  /** outputTokens 는 생각 토큰을 포함한 출력 전체다(SDK 가 candidates + thoughts 로 센다). reasoningTokens 는 그중 생각 몫 */
+  usage: { inputTokens: number; outputTokens: number; cachedInputTokens: number; reasoningTokens: number };
   steps: number;
 };
 
@@ -52,10 +53,16 @@ type Step = {
  * 그러면 앞서 부른 도구 결과까지 잃는다. 단계가 끝날 때마다 따로 모아 두어, 던져도 도구 결과와 대화는 남긴다.
  * output 이 null 이면 답 모양을 못 만든 것이다
  */
-async function generate(args: Parameters<typeof generateText>[0]): Promise<{ steps: Step[]; output: Answer | null }> {
+async function generate(args: Parameters<typeof generateText>[0], onStep?: (st: Step) => void): Promise<{ steps: Step[]; output: Answer | null }> {
   const steps: Step[] = [];
   try {
-    const r: unknown = await generateText({ ...args, onStepFinish: (st: unknown) => void steps.push(st as Step) } as never);
+    const r: unknown = await generateText({
+      ...args,
+      onStepFinish: (st: unknown) => {
+        steps.push(st as Step);
+        onStep?.(st as Step);
+      },
+    } as never);
     return { steps, output: (r as { output: Answer }).output };
   } catch (e) {
     if (NoObjectGeneratedError.isInstance(e)) return { steps, output: null };
@@ -103,7 +110,15 @@ const addUsage = (a: AskResult["usage"], u: LanguageModelUsage) => ({
   inputTokens: a.inputTokens + (u.inputTokens ?? 0),
   outputTokens: a.outputTokens + (u.outputTokens ?? 0),
   cachedInputTokens: a.cachedInputTokens + (u.inputTokenDetails?.cacheReadTokens ?? 0),
+  reasoningTokens: a.reasoningTokens + (u.outputTokenDetails?.reasoningTokens ?? 0),
 });
+
+/**
+ * 답을 만드는 동안 화면에 보일 진행 신호. 도구 이름(어떤 숫자를 봤나)과 검산 단계만 알린다.
+ * 모델의 생각 글은 보내지 않는다. 단계별 설명은 사후 합리화일 수 있어 투명하다는 인상만 준다(NN/g 2025-12)
+ */
+export type { ProgressEvent as Progress } from "./progress.ts";
+import type { ProgressEvent as Progress } from "./progress.ts";
 
 export async function askMetrics(opts: {
   model: LanguageModel;
@@ -112,6 +127,7 @@ export async function askMetrics(opts: {
   /** 질문할 때 화면에 걸려 있던 탭과 기간 */
   view?: View;
   providerOptions?: Record<string, Record<string, unknown>>;
+  onProgress?: (p: Progress) => void;
 }): Promise<AskResult> {
   const { model, ctx, question } = opts;
   // 데이터 현황(소스별 마지막 날)은 최근 7일 집계에 같이 들어 있다. 도구가 같은 집계를 다시 쓰면 기억해 둔 것을 쓴다
@@ -122,18 +138,22 @@ export async function askMetrics(opts: {
   // 무료 등급은 분당 요청 수가 작아 두 사람이 같이 물으면 429 가 날 수 있다. SDK 가 기다렸다 다시 보내게 3번까지 둔다
   const common = { model, instructions, output: Output.object({ schema: answerSchema }), maxOutputTokens: 4096, maxRetries: 3, providerOptions: opts.providerOptions as never };
 
-  const first = await generate({ ...common, prompt: question, tools: chatTools(ctx), stopWhen: isStepCount(MAX_STEPS) } as never);
+  const tell = opts.onProgress ?? (() => undefined);
+  const first = await generate({ ...common, prompt: question, tools: chatTools(ctx), stopWhen: isStepCount(MAX_STEPS) } as never, (st) =>
+    st.toolResults.forEach((r) => tell({ kind: "tool", name: r.toolName })),
+  );
   const tools: ToolTrace[] = first.steps.flatMap((st) => st.toolResults.map((r) => ({ id: r.toolCallId, name: r.toolName, input: r.input, output: r.output })));
   const results = new Map(tools.map((t) => [t.id, t.output]));
   // 단계마다 쌓인 메시지(도구 호출, 도구 결과, 답). 마지막 단계만 넘기면 모델이 도구 결과 없이 다시 쓰게 된다(2026-10-09 실제 데이터 시험에서 잡음)
   const history = first.steps.flatMap((st) => st.response.messages);
-  let usage = first.steps.reduce((u, st) => addUsage(u, st.usage), { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 });
+  let usage = first.steps.reduce((u, st) => addUsage(u, st.usage), { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0, reasoningTokens: 0 });
   let out = first.output;
   let retried = false;
   // 답이 중간에 잘렸거나 모양이 틀리면 도구 결과는 그대로 두고 한 번만 짧게 다시 쓰게 한다.
   // agy 로 돌린 실제 Gemini 평가(2026-10-10)에서 15문항 중 하나가 첫 문장 중간에서 잘렸다
   if (!out) {
     retried = true;
+    tell({ kind: "rewrite" });
     const again = await generate({
       ...common,
       messages: [
@@ -151,10 +171,12 @@ export async function askMetrics(opts: {
   // 주의점과 가설은 지시문에 적힌 숫자("3~7일 늦게", 데이터 현황의 "10월 5일까지")를 말할 수 있다
   const ruleNumbers = numbersIn(instructions);
   answer = repairHypothesisRefs(answer, results);
+  tell({ kind: "check" });
   let check = verifyAnswer(answer, results, question, ruleNumbers);
 
   if (!check.ok) {
     retried = true;
+    tell({ kind: "rewrite" });
     const feedback = [
       "방금 답을 코드로 검증했더니 아래 문장이 걸렸어요. 도구는 다시 부르지 말고, 위 도구 결과만으로 답 전체를 다시 써 주세요.",
       "도구 결과에 없는 숫자는 빼고, 원인을 단정하는 말은 hypotheses 로 옮기세요.",
