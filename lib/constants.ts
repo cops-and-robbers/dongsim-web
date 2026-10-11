@@ -112,6 +112,7 @@ export type Helper = {
  * 도움 주신 분들 - 발자국 카운트 = participationCount.
  * 인프라 제공자는 별도 spotlight로 노출.
  * 정렬: infrastructure 먼저, 그다음 참여 횟수 내림차순, 같은 횟수 안에선 입력 순서.
+ * github 은 두 번 이상 참여한 분에게만 단다. 그리디 멤버는 그리디 사이트 멤버 데이터에서 찾는다.
  */
 export const HELPERS: Helper[] = [
   {
