@@ -8,6 +8,8 @@
  * 쓰는 중인 말이 길어져 어떤 틀과도 앞이 안 맞으면 내놓지 않는다. 자기 질문을 쓰는 중이라 방해만 된다
  */
 
+import { iGa } from "./josa.ts";
+
 export type EventName = { day: string; label: string };
 
 const MAX = 4;
@@ -29,7 +31,7 @@ const METRICS: { words: string[]; name: string }[] = [
   { words: ["qr", "큐알", "링크"], name: "QR로 스토어 이동" },
 ];
 
-const metricTemplates = (m: string) => [`이 기간 ${m}, 이전 기간보다 늘었어?`, `이 기간 ${m}이 가장 많았던 날은?`, `지금까지 ${m} 추세 어때?`];
+const metricTemplates = (m: string) => [`이 기간 ${m}, 이전 기간보다 늘었어?`, `이 기간 ${iGa(m)} 가장 많았던 날은?`, `지금까지 ${m} 추세 어때?`];
 const eventTemplates = (e: string) => [`${e} 효과 있었어?`, `${e}에서 실제로 몇 명이랑 게임했어?`, `${e} 앞뒤로 설치와 가입은 어땠어?`];
 
 const GENERAL: { words: string[]; questions: string[] }[] = [

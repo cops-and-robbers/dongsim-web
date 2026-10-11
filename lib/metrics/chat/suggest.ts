@@ -5,6 +5,7 @@
  */
 
 import { LOW_SAMPLE } from "./catalog.ts";
+import { iGa } from "./josa.ts";
 
 type CompareRow = { key: string; label: string; a: number | null; b: number | null; changePct: number | null };
 
@@ -28,7 +29,7 @@ export function dataSuggestions(rows: CompareRow[], events: { day: string; label
     .filter((r) => r.a !== null && r.b !== null && r.changePct !== null && Math.min(r.a, r.b) >= LOW_SAMPLE && Math.abs(r.changePct) >= 50)
     .sort((x, y) => Math.abs(y.changePct!) - Math.abs(x.changePct!))
     .slice(0, 2)
-    .map((r) => `최근 7일 ${r.label}이(가) ${r.changePct! > 0 ? "늘었는데" : "줄었는데"}, 같은 기간에 무슨 일이 있었어?`);
+    .map((r) => `최근 7일 ${iGa(r.label)} ${r.changePct! > 0 ? "늘었는데" : "줄었는데"}, 같은 기간에 무슨 일이 있었어?`);
   const ev = [...events].sort((a, b) => b.day.localeCompare(a.day))[0];
   const evQ = ev ? [`${ev.label}(${Number(ev.day.slice(5, 7))}월 ${Number(ev.day.slice(8))}일) 앞뒤로 설치, 가입, 게임이 어땠어?`] : [];
   return [...moved, ...evQ];

@@ -14,6 +14,7 @@ import { loadDashboard, previousRange, type Dashboard } from "../dashboard/data.
 import type { Week } from "../weekly/numbers.ts";
 import { LOW_RATIO_DEN, LOW_SAMPLE, METRICS, METRIC_KEYS, metricDef, type MetricKey } from "./catalog.ts";
 import { loadEventReport } from "../eventReportData.ts";
+import { eunNeun } from "./josa.ts";
 import type { MetricsEvent } from "../events.ts";
 import { loadServerDaily, serverNumbers, PARTICIPANTS_SINCE, type ServerDaily, type ServerNumbers } from "../gameServer.ts";
 import { loadEvents, loadStaffAccounts } from "../staff.ts";
@@ -231,7 +232,7 @@ export async function metricsDaily(ctx: Ctx, key: MetricKey, r: Week) {
   if (why) return bad(why);
   const m = metricDef(key);
   if (ctx.redact?.has(key)) return bad(REDACTED);
-  if (!m.daily) return bad(`${m.label} 은(는) 날짜별로는 볼 수 없어요. 기간 합계(metrics_summary)로 물어 주세요`);
+  if (!m.daily) return bad(`${eunNeun(m.label)} 날짜별로는 볼 수 없어요. 기간 합계(metrics_summary)로 물어 주세요`);
   const [d, all] = await Promise.all([ctx.dashboard(r, previousRange(r)), ctx.server()]);
   const series = seriesOf(d, all, key, r);
   const known = series.filter((p) => p.value !== null) as { day: string; value: number }[];

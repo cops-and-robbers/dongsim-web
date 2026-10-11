@@ -8,6 +8,7 @@
  * - 질문에 "틀리게"가 들어 있으면 일부러 없는 숫자를 말해 "다시 쓰기"와 "숫자를 확인하지 못했어요" 표시를 볼 수 있다
  */
 
+import { eunNeun } from "./josa.ts";
 import { MockLanguageModelV4 } from "ai/test";
 import { addDays, todayIn } from "../dates.ts";
 import { DATA_FROM } from "./periods.ts";
@@ -69,11 +70,11 @@ export function devMockModel() {
         const top = movers[0];
         answer = {
           headline: {
-            text: metrics[0] ? `수집을 시작한 뒤 지금까지 ${metrics[0].label}은(는) 모두 ${wrong ? metrics[0].total! + 9 : metrics[0].total}${metrics[0].unit}이에요` : "아직 숫자가 없어요",
+            text: metrics[0] ? `수집을 시작한 뒤 지금까지 ${eunNeun(metrics[0].label)} 모두 ${wrong ? metrics[0].total! + 9 : metrics[0].total}${metrics[0].unit}이에요` : "아직 숫자가 없어요",
             refs: ["mock-1"],
           },
           facts: [
-            ...metrics.slice(1, 3).map((m) => ({ text: `${m.label}은(는) 모두 ${m.total}${m.unit}이에요`, refs: ["mock-1"] })),
+            ...metrics.slice(1, 3).map((m) => ({ text: `${eunNeun(m.label)} 모두 ${m.total}${m.unit}이에요`, refs: ["mock-1"] })),
             ...(top ? [{ text: `가장 크게 움직인 주는 ${md(top.period.start)}부터의 ${top.label}로, 앞 주 ${top.before}${top.unit}에서 ${top.value}${top.unit}로 ${Math.abs(top.changePct)}% ${top.changePct > 0 ? "늘었어요" : "줄었어요"}`, refs: ["mock-1"] }] : []),
           ],
           hypotheses: top ? [{ text: `${md(top.period.start)} 주의 일정과 함께 나타난 변화일 수 있어요. 그 주의 받은 길을 나눠 보면 더 볼 수 있어요`, refs: [] }] : [],
@@ -86,11 +87,11 @@ export function devMockModel() {
         answer = {
           headline: {
             text: top
-              ? `지난주 ${top.label}은(는) ${wrong ? (top.a ?? 0) + 7 : top.a}${top.unit}로, 그 전주 ${top.b}${top.unit}과 비교해 ${top.changePct === null ? "비교할 수 없어요" : `${Math.abs(top.changePct)}% ${top.changePct >= 0 ? "늘었어요" : "줄었어요"}`}`
+              ? `지난주 ${eunNeun(top.label)} ${wrong ? (top.a ?? 0) + 7 : top.a}${top.unit}로, 그 전주 ${top.b}${top.unit}과 비교해 ${top.changePct === null ? "비교할 수 없어요" : `${Math.abs(top.changePct)}% ${top.changePct >= 0 ? "늘었어요" : "줄었어요"}`}`
               : "지난주 숫자가 아직 없어요",
             refs: ["mock-1"],
           },
-          facts: rows.slice(1).map((m) => ({ text: `${m.label}은(는) 지난주 ${m.a}${m.unit}, 그 전주 ${m.b}${m.unit}이에요`, refs: ["mock-1"] })),
+          facts: rows.slice(1).map((m) => ({ text: `${eunNeun(m.label)} 지난주 ${m.a}${m.unit}, 그 전주 ${m.b}${m.unit}이에요`, refs: ["mock-1"] })),
           hypotheses: events.length
             ? [{ text: `같은 2주 사이에 ${events.map((e) => `${md(e.day)} ${e.label}`).join(", ")} 일정이 있었어요. 그 일정과 함께 나타난 변화일 수 있어요`, refs: ["mock-2"] }]
             : [{ text: "같은 2주 사이에 등록된 일정은 없어요. 인스타 게시물이나 검색 유입을 나눠 보면 더 볼 수 있어요", refs: [] }],
