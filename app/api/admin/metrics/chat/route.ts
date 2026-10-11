@@ -69,8 +69,9 @@ async function usage(key: string, today: string, devMock = false) {
   if (month.error?.code === NO_TABLE && devMock) return usageOf([], key, dayStart, today, DAILY_LIMIT, MONTHLY_USD);
   if (month.error?.code === NO_TABLE) throw new Error(NO_TABLE_MESSAGE);
   if (month.error) throw new Error(`질문 기록 읽기: ${month.error.message}`);
-  // 평가 실험 비용(0011). 표가 아직 없으면 0 으로 센다
+  // 평가 실험 비용(0011). 표가 아직 없으면 0 으로 센다. 권한 같은 다른 오류는 남은 수가 부풀어 보이니 로그로 알린다
   const other = await db().from("metrics_chat_spend").select("cost_usd").gte("created_at", monthStart);
+  if (other.error && other.error.code !== NO_TABLE) console.warn(`[metrics-chat] 실험 비용 읽기: ${other.error.message}`);
   const otherUsd = other.error ? 0 : (other.data as { cost_usd: number }[]).reduce((a, r) => a + (r.cost_usd || 0), 0);
   return usageOf(month.data as LogRow[], key, dayStart, today, DAILY_LIMIT, MONTHLY_USD, otherUsd);
 }

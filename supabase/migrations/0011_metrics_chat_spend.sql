@@ -21,6 +21,8 @@ create table if not exists metrics_chat_spend (
 
 create index if not exists metrics_chat_spend_created on metrics_chat_spend (created_at);
 
--- 서버(service role)만 읽고 쓴다
+-- 서버(service role)만 읽고 쓴다. grant 가 없으면 서버도 permission denied 로 못 읽는다(처음 낸 0011 에 빠져 있었다)
 alter table metrics_chat_spend enable row level security;
 revoke all on metrics_chat_spend from anon, authenticated;
+grant all on metrics_chat_spend to service_role;
+grant usage, select on sequence metrics_chat_spend_id_seq to service_role;
