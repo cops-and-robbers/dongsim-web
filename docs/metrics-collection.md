@@ -238,7 +238,8 @@ Supabase 에서 읽어 내려준다. 지표 테이블은 service role 로만 읽
 | 채널별 방문, 스토어로 간 방문 | `ga4_daily` session_campaign, download_source | `channels.ts channelOf` 로 인스타그램, 검색, 직접 입력과 QR, AI 서비스, 다른 SNS, 다른 사이트로 묶는다 |
 | App Store 나라별 최초 다운로드 | `appstore_sales_daily` country | |
 | 인스타 팔로워 수 | `instagram_followers` (0004) | 하루 증감 지표는 팔로워 100명 미만이면 인스타가 안 줘서, 수집 때마다 지금 수를 찍고 차이로 증감을 센다 |
-| 일정(행사, 업데이트) | `metrics_events` (0004) | 어드민 화면에서 넣고 지운다(`/api/admin/metrics/events`). 모든 차트에 마름모로 겹친다 |
+| 일정(행사, 홍보, 출시, 테스트, 기타) | `metrics_events` (0004, 성격과 행사 시간, 장소는 0007) | 어드민 화면에서 넣고 고치고 지운다(`/api/admin/metrics/events`). 모든 차트에 성격별 색 마름모로 겹친다. 성격마다 하는 일은 `docs/metrics-events.md` |
+| 운영진 계정 | `metrics_staff_accounts` (0007) + 백엔드 `ADMIN` 권한 | 어드민 유저 상세에서 켜고 끈다(`/api/admin/metrics/staff`). 운영진끼리만 한 판과 운영진 사람을 지표에서 뺀다 |
 | 앱 출시 일정 | App Store Connect 버전 목록, Play Reporting API 프로덕션 트랙 | 매일 지금 배포 중인 버전을 보고 일정에 없으면 "iOS x.y.z 출시", "Android x.y.z 출시"로 처음 본 날의 전날에 넣는다(`appstore/releases.ts`, `play/releases.ts`). 예전엔 판매 리포트의 Version 칸으로 처음 내려받아진 날을 썼는데, 콘솔의 "배포 준비됨" 날짜와 30개 중 6개가 하루 어긋나고 4월 앞쪽은 못 잡아서 바꿨다(2026-10-08). 2026-10-08 전 출시는 두 콘솔의 출시 기록을 옮겨 넣었다 |
 | 실제 판 수, 판당 인원 | 백엔드 `adminGameHistories` | 화면을 여는 어드민의 토큰으로 최신순 100개씩 읽다가 이전 기간 첫날보다 앞서면 멈춘다(최대 4,000판) |
 
