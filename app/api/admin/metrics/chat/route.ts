@@ -10,6 +10,7 @@ import { dataSuggestions, FIXED_SUGGESTIONS } from "@/lib/metrics/chat/suggest";
 import { eventsList, makeCtx, metricsCompare } from "@/lib/metrics/chat/tools";
 import { FEEDBACK_REASONS, FEEDBACKS, INPUT_SOURCES, type Feedback, type InputSource } from "@/lib/metrics/chat/feedback";
 import { usageOf, type LogRow } from "@/lib/metrics/chat/usage";
+import { CHEDDAR_VERSION } from "@/lib/metrics/chat/version";
 
 /**
  * 어드민 지표 챗봇 (#163). 지표 화면(/api/admin/metrics)과 같은 방식으로 어드민 토큰을 확인한다.
@@ -18,7 +19,7 @@ import { usageOf, type LogRow } from "@/lib/metrics/chat/usage";
  * POST  { question, view?, source? } -> 답, 검증 결과, 부른 도구, 토큰. view 는 질문할 때 화면에 걸린 탭과 기간("이 기간"을 푼다)
  *       Accept: application/x-ndjson 이면 한 줄씩 흘려 보낸다. 도구를 부를 때마다 {type:"progress"}, 끝에 {type:"done"} 또는 {type:"error"}
  *       답이 나오기까지 중앙 13초, 길면 45초라(2026-10-11 Vertex 실험) 무엇을 보고 있는지 보여 주려고 흘린다
- * PATCH { id, feedback: "good" | "meh" | "bad", reason?, note? } -> 치즈 표정으로 받은 답 평가. 애매해요, 아쉬워요에는 이유를 받는다
+ * PATCH { id, feedback: "good" | "meh" | "bad", reason?, note? } -> 만족도 평가(만족해요, 보통이에요, 아쉬워요). 보통이에요, 아쉬워요에는 이유를 받는다
  *
  * 비용 상한은 세 겹이다(usage.ts). 구글 지출 한도, 여기서 세는 사람당 하루 질문 수와 이번 달 팀 비용
  */
@@ -109,6 +110,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     return NextResponse.json(
       {
         enabled,
+        version: CHEDDAR_VERSION,
         usage: u,
         // 예전 화면이 읽던 값
         remainingToday: u?.remainingToday ?? DAILY_LIMIT,
@@ -150,7 +152,8 @@ export async function POST(req: Request): Promise<Response> {
   const ctx = makeCtx({ client, apiBase: process.env.NEXT_PUBLIC_API_BASE_URL, token: a.token, today, redact: chat.free ? new Set(["ad_earnings_usd"]) : undefined });
   const started = Date.now();
   const base = { user_key: key, question, model: chat.modelId };
-  const extra = { source, view: view ?? null };
+  // 버전(version.ts)을 같이 남겨 질문, 답, 평가를 버전에 묶는다. 0010 전이면 새 칸과 함께 빠진다
+  const extra = { source, view: view ?? null, version: CHEDDAR_VERSION };
 
   /** 답을 만들고 기록한다. 실패한 질문도 남긴다(하루 질문 수에 들어간다). 같은 질문을 계속 다시 보내 비용이 새는 것을 막는다 */
   const run = async (onProgress?: (p: Progress) => void) => {
@@ -218,7 +221,7 @@ export async function PATCH(req: Request): Promise<NextResponse> {
   // 자기 질문에만 평가를 남긴다. 표정을 바꾸면 덮어쓴다
   const update = (fields: Record<string, unknown>) => db().from("metrics_chat_log").update(fields).eq("id", body.id as number).eq("user_key", userKey(a.token));
   let r = await update({ feedback, feedback_reason: reason, feedback_note: note, feedback_at: new Date().toISOString() });
-  // 0009 전: 새 칸이 없거나 feedback 이 good, bad 만 받는다. 애매해요는 남길 곳이 없어 아쉬워요 쪽으로 두지 않고 그냥 비운다
+  // 0009 전: 새 칸이 없거나 feedback 이 good, bad 만 받는다. 보통이에요는 남길 곳이 없어 아쉬워요 쪽으로 두지 않고 그냥 비운다
   if (r.error?.code === NO_COLUMN || r.error?.code === CHECK_FAILED) r = feedback === "meh" ? { error: null } as typeof r : await update({ feedback });
   if (r.error) return NextResponse.json({ error: r.error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

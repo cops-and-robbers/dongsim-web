@@ -10,8 +10,8 @@
 -- steps         모델이 도구를 부른 단계 수
 -- tool_names    부른 도구(어떤 종류의 질문인지 가늠한다)
 -- reasoning_tokens  출력 토큰 중 생각 몫(output_tokens 에 이미 들어 있다. 비용을 두 번 세지 않는다)
--- feedback      치즈 표정 평가: good(좋았어요), meh(애매해요), bad(아쉬워요). 0006 은 good, bad 만 받아서 제약을 바꾼다
--- feedback_reason, feedback_note, feedback_at  애매해요, 아쉬워요를 누른 이유와 한 줄 메모, 평가한 때
+-- feedback      만족도 평가(그림은 치즈 신선도): good(만족해요), meh(보통이에요), bad(아쉬워요). 0006 은 good, bad 만 받아서 제약을 바꾼다
+-- feedback_reason, feedback_note, feedback_at  보통이에요, 아쉬워요를 누른 이유와 한 줄 메모, 평가한 때
 alter table metrics_chat_log add column if not exists source text check (source in ('typed', 'suggestion', 'autocomplete', 'followup'));
 alter table metrics_chat_log add column if not exists view jsonb;
 alter table metrics_chat_log add column if not exists latency_ms integer;
