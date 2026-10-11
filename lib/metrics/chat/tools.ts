@@ -1,5 +1,5 @@
 /**
- * 챗봇 도구 (#163). 모델은 이 일곱 개로만 데이터를 읽는다. SQL 은 쓰지 않는다.
+ * 챗봇 도구 (#163). 모델은 이 도구들로만 데이터를 읽는다. SQL 은 쓰지 않는다.
  *
  * 계산은 전부 여기서 한다(합계, 차이, 증감률, 행사 전후). 모델이 산수를 하면 틀린 숫자를 자신 있게 말한다.
  * 결과마다 status(ok, no_data, unsupported)와 적용한 기간, 표본이 적은지를 붙인다.
@@ -13,7 +13,10 @@ import { addDays, ymdRange } from "../dates.ts";
 import { loadDashboard, previousRange, type Dashboard } from "../dashboard/data.ts";
 import type { Week } from "../weekly/numbers.ts";
 import { LOW_RATIO_DEN, LOW_SAMPLE, METRICS, METRIC_KEYS, metricDef, type MetricKey } from "./catalog.ts";
-import { loadServerDaily, serverNumbers, PARTICIPANTS_SINCE, type ServerDaily, type ServerNumbers } from "./server.ts";
+import { loadEventReport } from "../eventReportData.ts";
+import type { MetricsEvent } from "../events.ts";
+import { loadServerDaily, serverNumbers, PARTICIPANTS_SINCE, type ServerDaily, type ServerNumbers } from "../gameServer.ts";
+import { loadEvents, loadStaffAccounts } from "../staff.ts";
 
 import { DATA_FROM } from "./periods.ts";
 export { DATA_FROM };
@@ -25,6 +28,10 @@ export type Ctx = {
   /** 집계 함수. 시험에서는 가짜를 넣는다 */
   dashboard: (range: Week, previous: Week) => Promise<Dashboard>;
   server: () => Promise<ServerDaily | null>;
+  /** 모든 일정(행사 성적표가 평소 날에서 다른 행사 날을 뺄 때 쓴다). 표가 없으면 null */
+  events: () => Promise<MetricsEvent[] | null>;
+  /** 행사 성적표. 시험에서는 가짜를 넣는다 */
+  eventReport: (event: MetricsEvent) => ReturnType<typeof loadEventReport>;
   /** 모델에 보내지 않을 지표. 무료 등급(내용이 학습에 쓰임)에서는 광고 수익을 뺀다 */
   redact?: Set<MetricKey>;
 };
@@ -32,6 +39,15 @@ export type Ctx = {
 export function makeCtx(opts: { client: SupabaseClient; apiBase?: string; token: string; today: string; redact?: Set<MetricKey> }): Ctx {
   const dash = new Map<string, Promise<Dashboard>>();
   let srv: Promise<ServerDaily | null> | null = null;
+  let evs: Promise<MetricsEvent[] | null> | null = null;
+  // 운영진(ADMIN 권한 + 지표 화면의 운영진 계정)은 지표 화면, 행사 성적표와 똑같이 거른다(gameServer.ts)
+  const server = () =>
+    (srv ??= opts.apiBase
+      ? loadStaffAccounts(opts.client)
+          .catch(() => [])
+          .then((staff) => loadServerDaily(opts.apiBase!, opts.token, staff.map((a) => a.userId)))
+      : Promise.resolve(null));
+  const events = () => (evs ??= loadEvents(opts.client));
   return {
     today: opts.today,
     redact: opts.redact,
@@ -40,7 +56,13 @@ export function makeCtx(opts: { client: SupabaseClient; apiBase?: string; token:
       if (!dash.has(k)) dash.set(k, loadDashboard(opts.client, r, p));
       return dash.get(k)!;
     },
-    server: () => (srv ??= opts.apiBase ? loadServerDaily(opts.apiBase, opts.token) : Promise.resolve(null)),
+    server,
+    events,
+    eventReport: async (event) => {
+      const [s, all] = await Promise.all([server(), events()]);
+      if (!s) throw new Error("게임 서버 주소가 없어 행사 게임을 읽지 못했어요");
+      return loadEventReport(opts.client, event, all ?? [], s);
+    },
   };
 }
 
@@ -64,7 +86,7 @@ const pct = (a: number, b: number) => (b > 0 ? round1(((a - b) / b) * 100) : nul
 /** 그 지표의 숫자가 이 기간에 다 들어왔나. 소스별 마지막 날 뒤나 첫날 앞이면 덜 들어온 것이다 */
 function coverage(d: Dashboard, key: MetricKey, r: Week): string | null {
   const m = metricDef(key);
-  if (m.source === "server") return r.end < PARTICIPANTS_SINCE && key === "games" ? `${PARTICIPANTS_SINCE} 전 판은 시험 판을 가릴 수 없어 섞여 있어요` : null;
+  if (m.source === "server") return r.end < PARTICIPANTS_SINCE && key === "games" ? `${PARTICIPANTS_SINCE} 전 판은 운영진끼리 한 판을 가릴 수 없어 섞여 있어요` : null;
   const last = d.freshness[m.source];
   const first = d.since[m.source];
   if (!last) return "아직 한 번도 안 들어왔어요";
@@ -113,9 +135,25 @@ export async function metricsSummary(ctx: Ctx, r: Week, keys: MetricKey[] = ALL)
 }
 
 /** 두 기간 비교. 차이와 증감률은 여기서 계산한다 */
-export async function metricsCompare(ctx: Ctx, a: Week, b: Week, keys: MetricKey[] = ALL) {
-  const why = checkRange(a, ctx.today) ?? checkRange(b, ctx.today);
+/**
+ * 두 기간의 날 수를 맞춘다. 긴 쪽의 끝을 잘라 짧은 쪽과 같게 한다.
+ * "이번 주(6일) vs 지난주(7일)", "이번 달(10일) vs 지난달(30일)"을 그대로 더해 비교하면 덜 지난 쪽이 늘 줄어 보인다(2026-10-11 실험에서 잡음)
+ */
+export function alignLengths(a: Week, b: Week): { a: Week; b: Week; note: string | null } {
+  const na = ymdRange(a.start, a.end).length;
+  const nb = ymdRange(b.start, b.end).length;
+  if (na === nb) return { a, b, note: null };
+  const n = Math.min(na, nb);
+  const cut = (w: Week) => ({ start: w.start, end: addDays(w.start, n - 1) });
+  const A = na > n ? cut(a) : a;
+  const B = nb > n ? cut(b) : b;
+  return { a: A, b: B, note: `두 기간의 날 수가 달라(${na}일, ${nb}일) 앞에서부터 ${n}일씩으로 맞춰 비교했어요(${A.start}~${A.end}, ${B.start}~${B.end})` };
+}
+
+export async function metricsCompare(ctx: Ctx, a0: Week, b0: Week, keys: MetricKey[] = ALL) {
+  const why = checkRange(a0, ctx.today) ?? checkRange(b0, ctx.today);
   if (why) return bad(why);
+  const { a, b, note: aligned } = alignLengths(a0, b0);
   const [d, all] = await Promise.all([ctx.dashboard(a, b), ctx.server()]);
   const s = all ? serverNumbers(all, a, b, ctx.today) : null;
   const va = values(d, s, keys, "current", ctx.redact);
@@ -156,7 +194,7 @@ export async function metricsCompare(ctx: Ctx, a: Week, b: Week, keys: MetricKey
         coverage: ctx.redact?.has(k) ? REDACTED : (coverage(d, k, a) ?? coverage(d, k, b)),
       };
     }),
-    notes: notes(d, s, a),
+    notes: [...(aligned ? [aligned] : []), ...notes(d, s, a)],
   };
 }
 
@@ -165,8 +203,8 @@ function notes(d: Dashboard, s: ServerNumbers | null, r: Week): string[] {
   if (d.play.window?.cut && d.play.until) out.push(`Google Play 설치는 ${d.play.until} 까지만 들어와서 두 기간 모두 같은 날 수로 잘라 셌어요`);
   if (s?.error) out.push(`게임 서버를 읽지 못했어요: ${s.error}. 게임, 가입 숫자는 비어 있어요`);
   if (!s) out.push("게임 서버 주소가 없어 게임, 가입 숫자는 비어 있어요");
-  if (s && s.testGamesExcluded > 0) out.push(`관리자만 참가한 시험 판 ${s.testGamesExcluded}판을 뺐어요`);
-  if (r.start < PARTICIPANTS_SINCE) out.push(`${PARTICIPANTS_SINCE} 전 판은 참가자 기록이 없어 시험 판이 섞여 있을 수 있어요`);
+  if (s && s.staffGamesExcluded > 0) out.push(`운영진끼리 한 판 ${s.staffGamesExcluded}판을 뺐어요`);
+  if (r.start < PARTICIPANTS_SINCE) out.push(`${PARTICIPANTS_SINCE} 전 판은 참가자 기록이 없어 운영진끼리 한 판이 섞여 있을 수 있어요`);
   return out;
 }
 
@@ -354,6 +392,63 @@ export async function eventWindow(ctx: Ctx, day: string, days: number) {
   return { ...cmp, eventPeriod: event, baselinePeriod: base, eventsInEventPeriod: overlap(event), eventsInBaseline: overlap(base), reading: "행사 기간과 앞 주 같은 요일을 나란히 둔 것이에요. 원인을 말해 주지는 않아요" };
 }
 
+/**
+ * 행사 하나의 성적표(달력에서 고른 행사 게임 기준). 같은 날 두 행사가 열려도 고른 게임으로 나눠 볼 수 있다.
+ * 방문객은 두 가지로 준다: 판마다 더한 연인원(visitorsSum), 한 번이라도 나온 사람(uniqueVisitors)
+ */
+export async function eventReport(ctx: Ctx, eventId: number) {
+  const all = await ctx.events();
+  const event = all?.find((e) => e.id === eventId);
+  if (!event) return bad("그 id 의 일정을 찾지 못했어요. events_list 로 id 를 먼저 확인해 주세요");
+  if (event.category !== "event") return bad(`행사 일정이 아니에요(${event.label})`);
+  if (event.day > addDays(ctx.today, -1)) return bad("아직 끝나지 않은 행사예요. 어제까지 끝난 행사만 볼 수 있어요");
+  const r = await ctx.eventReport(event);
+  const t = r.report.totals;
+  const sameDay = (all ?? []).filter((e) => e.day === event.day && e.id !== event.id && e.category === "event").map((e) => ({ id: e.id, label: e.label }));
+  return {
+    status: "ok" as const,
+    event: { id: event.id, day: event.day, label: event.label, startsAt: event.startsAt, endsAt: event.endsAt },
+    sameDayEvents: sameDay,
+    games: r.report.games.map((g) => ({ start: g.start, visitors: g.visitors, staff: g.staff, minutes: g.minutes, staffOnly: g.kind === "staff" })),
+    totals: { games: t.games, gamesWithVisitors: t.withVisitors, staffOnlyGames: t.staffOnly, visitorsSum: t.visitors, uniqueVisitors: t.uniqueVisitors, staffSum: t.staff },
+    day: r.report.metrics.map((m) => ({ key: m.key, label: m.label, unit: m.unit, value: m.value, usual: m.usual, pending: m.pending })),
+    usualDays: r.report.baseline,
+    notes: [
+      ...(t.games === 0 && r.report.missing === 0 ? ["이 행사의 게임을 아직 고르지 않았어요. 지표 화면 달력에서 그날을 눌러 행사 게임을 고르면 행사별로 나눠 볼 수 있어요"] : []),
+      ...(r.report.missing > 0 ? [`고른 게임 ${r.report.missing}판을 지금 게임 서버에서 찾지 못했어요`] : []),
+      ...(r.report.noRoster ? [`${PARTICIPANTS_SINCE} 전 판이 섞여 누가 했는지 몰라 uniqueVisitors 는 비어 있고, 방문객은 끝까지 남은 인원이에요`] : []),
+      ...(sameDay.length ? ["day 의 숫자(설치, 가입 등)는 그날 전체라 같은 날 다른 행사 몫이 섞여 있어요. 행사별로 나눌 수 있는 건 고른 게임과 방문객뿐이에요"] : []),
+      ...(r.gamesError ? [`게임 서버를 읽지 못했어요: ${r.gamesError}`] : []),
+      "usual 은 앞선 같은 요일 네 번(다른 행사 날 제외)의 평균이에요",
+    ],
+  };
+}
+
+const seoulDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(iso));
+
+/** 기간 안에 올린 인스타 게시물(올린 날, 종류, 지금까지 누적 조회 등) */
+export async function postsList(ctx: Ctx, r: Week) {
+  const why = checkRange(r, ctx.today);
+  if (why) return bad(why);
+  const d = await ctx.dashboard(r, previousRange(r));
+  const posts = d.posts
+    .map((p) => ({
+      day: seoulDate(p.postedAt),
+      type: p.productType === "REELS" ? "릴스" : p.productType === "FEED" ? "피드" : p.productType,
+      caption: (p.caption ?? "").replace(/\s+/g, " ").slice(0, 40),
+      views: p.views,
+      reach: p.reach,
+      follows: p.follows,
+    }))
+    .sort((a, b) => a.day.localeCompare(b.day));
+  return {
+    status: posts.length ? ("ok" as const) : ("no_data" as const),
+    period: r,
+    posts,
+    notes: ["views, reach, follows 는 올린 뒤 지금까지 쌓인 누적이에요. 올린 날 하루 몫이 아니에요"],
+  };
+}
+
 const range = z.object({
   start: z.string().describe("YYYY-MM-DD, 한국 날짜"),
   end: z.string().describe("YYYY-MM-DD, 한국 날짜, 어제까지"),
@@ -394,6 +489,17 @@ export function chatTools(ctx: Ctx) {
         "긴 기간 훑어보기. 지표마다 주(30주 넘으면 달) 단위 흐름과 합계, 바로 앞 칸보다 크게 움직인 칸(movers), 그 기간 일정과 칸별 게시물 수. \"전체\", \"지금까지\", \"언제 가장 많았어\", \"추세\"를 물을 때 먼저 부른다",
       inputSchema: z.object({ period: range, metrics: z.array(z.enum(METRIC_KEYS)).optional().describe("필요한 지표만. 빼면 날짜별로 있는 개수 지표 전부") }),
       execute: async ({ period, metrics }, { toolCallId }) => withId(await metricsOverview(ctx, period, metrics), toolCallId),
+    }),
+    event_report: tool({
+      description:
+        "행사 성적표. 달력에서 고른 행사 게임 수, 방문객(연인원과 실제 사람 수), 그날 숫자와 평소(앞선 같은 요일). 행사 효과를 물으면 events_list 로 id 를 찾은 뒤 이걸 먼저 부른다. 같은 날 두 행사도 고른 게임으로 나눠 준다",
+      inputSchema: z.object({ eventId: z.number().int().describe("events_list 의 id") }),
+      execute: async ({ eventId }, { toolCallId }) => withId(await eventReport(ctx, eventId), toolCallId),
+    }),
+    posts_list: tool({
+      description: "기간 안에 올린 인스타 게시물 목록(올린 날, 릴스/피드, 누적 조회). 게시물을 올린 날과 다른 지표를 맞춰 볼 때 쓴다",
+      inputSchema: z.object({ period: range }),
+      execute: async ({ period }, { toolCallId }) => withId(await postsList(ctx, period), toolCallId),
     }),
     event_window: tool({
       description: "행사 기간(day 부터 days 일)과 바로 앞 주 같은 요일을 비교. 같은 기간 다른 일정 겹침도 알려 준다. 원인이 아니라 같은 기간에 함께 나타난 변화다",

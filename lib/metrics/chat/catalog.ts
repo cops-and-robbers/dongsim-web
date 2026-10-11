@@ -12,7 +12,7 @@
 
 import type { Dashboard, DailyPoint } from "../dashboard/data.ts";
 import type { Source } from "../dashboard/sources.ts";
-import type { Ratio, ServerNumbers } from "./server.ts";
+import type { Ratio, ServerNumbers } from "../gameServer.ts";
 
 export type MetricKey =
   | "appstore_new"
@@ -127,7 +127,7 @@ export const METRICS: MetricDef[] = [
     total: (d, _s, w) => Math.round(T(d, w).ads.earningsMicros / 10_000) / 100, note: "AdMob 추정 수익" },
   { key: "games", label: "진행된 게임", unit: "판", source: "server", additive: true, daily: "games",
     total: (_d, s, w) => (s ? s[w].games : null),
-    note: "게임 서버의 끝난 판. 관리자만 참가한 시험 판은 뺐다(참가자 기록이 있는 2026-08-17 이후만 가릴 수 있다)" },
+    note: "게임 서버의 끝난 판. 운영진끼리 한 판은 뺐다(참가자 기록이 있는 2026-08-17 이후만 가릴 수 있다)" },
   { key: "game_players", label: "게임 참가 인원 합", unit: "명", source: "server", additive: true, daily: "game_players",
     total: (_d, s, w) => (s ? s[w].players : null), note: "판마다 경찰+도둑 인원을 더한 값. 같은 사람이 여러 판 하면 여러 번 센다" },
   { key: "signups", label: "가입", unit: "명", source: "server", additive: true, daily: "signups",

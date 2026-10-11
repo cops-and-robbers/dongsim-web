@@ -11,6 +11,7 @@ import { generateText, isStepCount, NoObjectGeneratedError, Output, type Languag
 import { z } from "zod";
 import { addDays } from "../dates.ts";
 import { previousRange } from "../dashboard/data.ts";
+import { METRICS } from "./catalog.ts";
 import { dynamicPart, FIXED, type View } from "./instructions.ts";
 import { chatTools, type Ctx } from "./tools.ts";
 import { numbersIn, repairHypothesisRefs, verifyAnswer, type Answer, type Problem } from "./verify.ts";
@@ -66,8 +67,23 @@ async function generate(args: Parameters<typeof generateText>[0]): Promise<{ ste
  * 답 글에서 마크다운 표시를 걷어 낸다. 화면은 마크다운을 그리지 않고 글자 그대로 보여 줘서,
  * 모델이 지시를 어기고 **굵게**, `코드`, 줄머리 "- " 를 넣으면 별표가 그대로 보인다. 굵기와 목록 모양은 화면이 정한다
  */
+/** 도구 이름. 답 글에 나오면 지운다(괄호째) */
+const TOOL_NAMES = ["metrics_summary", "metrics_compare", "metrics_daily", "metrics_breakdown", "metrics_overview", "events_list", "event_window", "event_report", "posts_list"];
+const LABEL = new Map<string, string>([...METRICS.map((m) => [m.key, m.label] as const), ["appstore_way", "받은 길"]]);
+/** 지표 키(appstore_new 등)를 한국어 이름으로. 긴 키부터 바꿔야 d1_return 이 d1 로 먼저 잘리지 않는다 */
+const KEY_RE = new RegExp(`\\b(${[...LABEL.keys()].sort((a, b) => b.length - a.length).join("|")})\\b`, "g");
+const TOOL_RE = new RegExp(`\\s?\\(?\\b(${TOOL_NAMES.join("|")})\\b\\)?`, "g");
+
+/**
+ * 답 글에서 도구 이름과 지표 키를 걷어 낸다. 지시해도 모델이 이어 묻기나 주의점에 "event_window", "(games, new_players)"를 쓴다
+ * (2026-10-11 Vertex 실험 28문항 중 4문항). 화면을 보는 사람에게는 뜻 없는 영어다
+ */
+export function humanize(text: string): string {
+  return text.replace(TOOL_RE, "").replace(KEY_RE, (k) => LABEL.get(k) ?? k);
+}
+
 export function plain(text: string): string {
-  return text
+  return humanize(text)
     // 도구 결과의 2026-09-09 꼴 날짜를 그대로 옮겨 써도 "9월 9일"로(실제 Gemini 평가에서 지시를 어긴 적이 있다)
     .replace(/\b\d{4}-(\d{2})-(\d{2})\b\s?/g, (_, m: string, d: string) => `${Number(m)}월 ${Number(d)}일`)
     .replace(/\*\*|__|`/g, "")

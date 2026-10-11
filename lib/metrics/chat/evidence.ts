@@ -72,7 +72,7 @@ function notesFor(all: unknown, keys: string[]): string[] {
   const play = keys.some((k) => k.startsWith("play_"));
   const server = keys.some((k) => k === "games" || k === "game_players" || k === "signups");
   return (all as string[])
-    .filter((n) => (n.includes("Google Play") ? play : /게임|가입|시험 판/.test(n) ? server : true))
+    .filter((n) => (n.includes("Google Play") ? play : /게임|가입|운영진|시험 판/.test(n) ? server : true))
     .map((n) => n.replace(/(\d{4})-(\d{2})-(\d{2})\s?/g, (_, _y, m: string, d: string) => `${Number(m)}월 ${Number(d)}일`));
 }
 const MAX_BLOCKS = 2;
