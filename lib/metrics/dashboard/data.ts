@@ -12,6 +12,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { selectAll } from "../db.ts";
+import type { MetricsEvent } from "../events.ts";
+import { loadEvents } from "../staff.ts";
 import type { Source } from "./sources.ts";
 import { CHANNELS, channelOf, isInternal, type Channel } from "../channels.ts";
 import { addDays, ymdRange } from "../dates.ts";
@@ -88,13 +90,18 @@ export type PostSnapshot = {
 /** 채널별 방문과 그중 스토어로 넘어간 방문 (우리 팀 방문은 뺀다). 스토어 쪽은 한 방문에서 여러 번 눌러도 한 번 */
 export type ChannelRow = { channel: Channel; sessions: number; storeSessions: number; linkSessions: number };
 
-/** 백엔드 게임 기록으로 센 실제 판 수. 어드민 토큰으로만 읽혀 라우트가 따로 붙인다(games.ts) */
+/**
+ * 백엔드 게임 기록으로 센 실제 판 수. 어드민 토큰으로만 읽혀 라우트가 따로 붙인다(games.ts).
+ * 운영진만 한 판은 빼고 참가 인원(시작 명단 기준)에서도 운영진을 뺐다(gameServer.ts)
+ */
 export type GamesBlock = {
   current: { games: number; players: number };
   previous: { games: number; players: number };
   /** daily[i] 는 range 의 i 번째 날 */
   daily: number[];
   previousDaily: number[];
+  /** 운영진만 해서 뺀 판 수 */
+  staffGames: { current: number; previous: number };
   /** 읽다 막혔거나 너무 많아 끊었을 때 */
   error: string | null;
 };
@@ -143,8 +150,8 @@ export type Dashboard = {
   };
   /** 인스타 팔로워 수. 0004 마이그레이션 전이거나 아직 기록이 없으면 null */
   followers: { now: number; nowDay: string; change: number | null; changeFrom: string | null } | null;
-  /** 차트에 겹쳐 그릴 일정(행사, 업데이트). 0004 마이그레이션 전이면 null */
-  events: { id: number; day: string; label: string }[] | null;
+  /** 차트에 겹쳐 그릴 일정(행사, 홍보, 출시, 테스트, 기타). 0004 마이그레이션 전이면 null */
+  events: MetricsEvent[] | null;
   games: GamesBlock | null;
   /** 신규 사용자 퍼널(funnel.ts). 화면이 플랫폼과 나라를 골라 pickFunnel 로 본다 */
   funnel: { current: FunnelData; previous: FunnelData };
@@ -362,12 +369,8 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
         "팔로워 읽기",
       ),
     ),
-    optional(() =>
-      selectAll<{ id: number; day: string; label: string }>(
-        (a, b) => client.from("metrics_events").select("id, day, label").gte("day", from).lte("day", to).order("day").order("id").range(a, b),
-        "일정 읽기",
-      ),
-    ),
+    // 0007 전이면 성격, 시간, 장소 칸 없이 읽는다(staff.ts). 0004 전이면 null
+    optional(() => loadEvents(client, { from, to })),
     // 0005 마이그레이션 전이면 테이블이 없다. Play 칸만 비운다
     optional(() =>
       selectAll<PlayRow>(

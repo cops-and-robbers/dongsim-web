@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { checkAdmin } from "@/lib/admin/server/checkAdmin";
 import { loadDashboard } from "@/lib/metrics/dashboard/data";
 import { compareError, compareRange, parseCompare } from "@/lib/metrics/dashboard/calendar";
-import { loadGames } from "@/lib/metrics/dashboard/games";
+import { gamesBlock } from "@/lib/metrics/dashboard/games";
+import { loadServerDaily } from "@/lib/metrics/gameServer";
+import { loadStaffAccounts } from "@/lib/metrics/staff";
 import { addDays, todayIn, ymdRange } from "@/lib/metrics/dates";
 import { db } from "@/lib/metrics/db";
 
@@ -55,11 +57,15 @@ export async function GET(req: Request): Promise<NextResponse> {
   const c = compareRange({ from: range.start, to: range.end }, cmp);
   const previous = { start: c.from, end: c.to };
   try {
-    // 실제 판 수는 백엔드 게임 기록에만 있고 어드민 토큰으로만 읽힌다(games.ts). 지표와 동시에 읽는다
+    // 실제 판 수는 백엔드 게임 기록에만 있고 어드민 토큰으로만 읽힌다(games.ts). 지표와 동시에 읽는다.
+    // 챗봇과 같은 함수로 세서 운영진만 한 판과 운영진 사람을 뺀다(gameServer.ts)
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+    const client = db();
     const [data, games] = await Promise.all([
-      loadDashboard(db(), range, previous),
-      apiBase ? loadGames(apiBase, token, range, previous) : Promise.resolve(null),
+      loadDashboard(client, range, previous),
+      apiBase
+        ? loadStaffAccounts(client).then(async (staff) => gamesBlock(await loadServerDaily(apiBase, token, staff.map((s) => s.userId)), range, previous))
+        : Promise.resolve(null),
     ]);
     return NextResponse.json({ ...data, games }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
