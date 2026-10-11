@@ -32,6 +32,21 @@ export type ChatModel = {
   free: boolean;
 };
 
+/**
+ * 서비스 계정 JSON 읽기. 앞뒤 따옴표는 걷는다(Vercel 에 .env 줄을 통째로 붙이면 따옴표가 값에 남을 수 있다).
+ * JSON 파싱 오류 메시지에는 입력 조각(개인 키 일부)이 실려 로그와 응답으로 샌다. 그래서 원래 오류를 버리고 이름만 알린다(google.ts 와 같다)
+ */
+export function serviceAccount(raw: string): { client_email: string; private_key: string } {
+  let sa: { client_email?: string; private_key?: string };
+  try {
+    sa = JSON.parse(raw.trim().replace(/^'([\s\S]*)'$/, "$1"));
+  } catch {
+    throw new Error("CHAT_GOOGLE_SERVICE_ACCOUNT_JSON 을 JSON 으로 읽지 못했어요");
+  }
+  if (!sa.client_email || !sa.private_key) throw new Error("CHAT_GOOGLE_SERVICE_ACCOUNT_JSON 형식이 달라요(client_email, private_key 가 없어요)");
+  return { client_email: sa.client_email, private_key: sa.private_key };
+}
+
 export function chatModelFromEnv(): ChatModel | null {
   // 개발 서버에서만: 가짜 모델로 화면과 검증 흐름을 본다(devMock.ts). 운영 빌드에서는 무시한다
   if (process.env.CHAT_MOCK === "1" && process.env.NODE_ENV !== "production") return { model: devMockModel(), modelId: "dev-mock", providerOptions: {}, free: true };
@@ -43,7 +58,7 @@ export function chatModelFromEnv(): ChatModel | null {
   const project = process.env.CHAT_VERTEX_PROJECT;
   const raw = process.env.CHAT_GOOGLE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!project || !raw) return null;
-  const sa = JSON.parse(raw) as { client_email: string; private_key: string };
+  const sa = serviceAccount(raw);
   const vertex = createGoogleVertex({
     project,
     location: process.env.CHAT_VERTEX_LOCATION || "global",
