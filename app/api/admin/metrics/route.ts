@@ -58,7 +58,7 @@ export async function GET(req: Request): Promise<NextResponse> {
   const previous = { start: c.from, end: c.to };
   try {
     // 실제 판 수는 백엔드 게임 기록에만 있고 어드민 토큰으로만 읽힌다(games.ts). 지표와 동시에 읽는다.
-    // 챗봇과 같은 함수로 세서 운영진만 한 판과 운영진 사람을 뺀다(gameServer.ts)
+    // 운영진만 한 판과 운영진 사람을 뺀다(gameServer.ts)
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
     const client = db();
     const [data, games] = await Promise.all([

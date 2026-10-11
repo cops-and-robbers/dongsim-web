@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { checkAdmin } from "@/lib/admin/server/checkAdmin";
-import { DATA_FROM } from "@/lib/metrics/chat/periods";
 import { loadDashboard, type DailyPoint } from "@/lib/metrics/dashboard/data";
 import type { Source } from "@/lib/metrics/dashboard/sources";
 import { addDays, todayIn } from "@/lib/metrics/dates";
@@ -8,6 +7,9 @@ import { db } from "@/lib/metrics/db";
 import { baselineDays, buildEventReport, type MetricSource } from "@/lib/metrics/eventReport";
 import { loadServerDaily } from "@/lib/metrics/gameServer";
 import { loadEventGames, loadEvents, loadStaffAccounts } from "@/lib/metrics/staff";
+
+/** 지표를 모으기 시작한 날. 이보다 앞은 "평소"로 쓰지 않는다 */
+const DATA_FROM = "2026-04-01";
 
 /**
  * 행사 성적표 (#165).
@@ -77,7 +79,7 @@ export async function GET(req: Request): Promise<NextResponse> {
         pending: (day) => !d.freshness.play || day > d.freshness.play,
       },
       { key: "first_open", label: "앱 첫 실행", unit: "회", of: col("ga4app", (p) => p.firstOpenAndroid + p.firstOpenIos) },
-      { key: "link", label: "QR, 다운로드 링크로 스토어 이동", unit: "회", of: col("ga4web", (p) => p.downloadLinkClicks) },
+      { key: "store_clicks", label: "스토어로 이동(사이트 버튼, QR, 링크)", unit: "회", of: col("ga4web", (p) => p.downloadClicks) },
       { key: "signups", label: "가입", unit: "명", of: srv((r) => r.signups) },
       { key: "new_players", label: "첫 게임을 한 새 가입자", unit: "명", of: srv((r) => r.newPlayers) },
       { key: "games", label: "그날 진행된 게임(운영진끼리 한 판 제외)", unit: "판", of: srv((r) => r.games) },

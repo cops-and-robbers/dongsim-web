@@ -1,5 +1,5 @@
 /**
- * 게임 서버 숫자 (#163, #165). 가입, 끝난 판, 판 참가 인원을 날짜별로 센다. 지표 화면과 챗봇이 같이 쓴다.
+ * 게임 서버 숫자 (#165). 가입, 끝난 판, 판 참가 인원을 날짜별로 센다. 지표 화면과 행사 성적표가 같이 쓴다.
  *
  * 요청한 어드민의 토큰으로 백엔드를 읽는다. 날짜별 합계와 판 단위 요약(시각, 구역 가운데, 인원)만 내보내고,
  * 닉네임이나 사용자 id 같은 개인 단위 기록은 이 파일 밖으로 나가지 않는다.
@@ -208,7 +208,6 @@ const GAMES = `query ServerGames($page: Int!) { adminGameHistories(page: $page, 
 
 /**
  * 계정과 끝난 판을 전부 읽어 날짜별로 센다. 판은 수백 개 규모라 다 읽어도 몇 쪽이다.
- * 한 질문 안에서 챗봇 도구를 여러 번 불러도 이건 한 번만 읽는다(tools.ts 가 기억해 둔다).
  * extraStaff 는 metrics_staff_accounts 의 계정(staff.ts)
  */
 export async function loadServerDaily(apiBase: string, token: string, extraStaff: Iterable<string> = []): Promise<ServerDaily> {
