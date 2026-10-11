@@ -34,3 +34,13 @@ export function dataSuggestions(rows: CompareRow[], events: { day: string; label
   const evQ = ev ? [`${ev.label}(${Number(ev.day.slice(5, 7))}월 ${Number(ev.day.slice(8))}일) 앞뒤로 설치, 가입, 게임이 어땠어?`] : [];
   return [...moved, ...evQ];
 }
+
+/**
+ * 창을 처음 열 때 보여 줄 질문 셋. 체다는 탭이 아니라 고른 기간의 데이터 전체로 답해서, 질문도 그 기간 기준이다(2026-10-11).
+ * 탭마다 다른 질문이나 "최근 7일"처럼 고른 기간과 어긋나는 질문은 두지 않는다. 그 기간에 행사가 있었으면 행사 질문을 가운데 둔다
+ */
+export function starters(range: { start: string; end: string } | null, events: { day: string; label: string }[]): string[] {
+  const inRange = range ? events.filter((e) => e.day >= range.start && e.day <= range.end).sort((a, b) => b.day.localeCompare(a.day)) : [];
+  const event = inRange[0] ? inRange[0].label.trim().split(/[\s,(]/)[0] : null;
+  return ["이 기간에 가장 크게 달라진 게 뭐야?", event ? `${event} 효과 있었어?` : "이 기간 설치는 어디서 왔어?", "이전 기간이랑 비교하면 어때?"];
+}
