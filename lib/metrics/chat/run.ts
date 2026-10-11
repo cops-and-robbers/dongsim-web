@@ -7,7 +7,7 @@
  * 4. 그래도 걸리면 걸린 문장에 "검증 안 됨"을 붙여 보여 준다. 숨기지 않는다
  */
 
-import { generateText, isStepCount, NoObjectGeneratedError, Output, type LanguageModel, type LanguageModelUsage, type ModelMessage } from "ai";
+import { generateText, isStepCount, NoObjectGeneratedError, NoOutputGeneratedError, Output, type LanguageModel, type LanguageModelUsage, type ModelMessage } from "ai";
 import { z } from "zod";
 import { addDays } from "../dates.ts";
 import { previousRange } from "../dashboard/data.ts";
@@ -17,9 +17,19 @@ import { chatTools, type Ctx } from "./tools.ts";
 import { numbersIn, repairHypothesisRefs, verifyAnswer, type Answer, type Problem } from "./verify.ts";
 
 const claim = z.object({ text: z.string(), refs: z.array(z.string()).describe("이 문장의 숫자가 나온 도구 호출의 toolCallId") });
+/**
+ * 답 모양 (체다 1.0, 2026-10-11 다시 짬). 숫자는 체다가 문장에 늘어놓지 않고, 보여 줄 지표만 골라(show) 화면이 도구 결과에서 그린다.
+ * 실제 답이 "88건에서 161건으로 73건(83%) 늘었고, ..."처럼 문장마다 숫자 네 개였다. 조사(NN/g, ONS, 재무 요약 숫자 오류 연구)를 보고
+ * 말풍선은 결론 한 문장(숫자 한 쌍까지), 나머지 숫자는 카드로 내렸다. 카드 숫자는 도구 결과 그대로라 틀릴 수 없다
+ */
 export const answerSchema = z.object({
-  headline: claim.describe("질문에 대한 답. 한두 문장(늘어난 것과 줄어든 것이 같이 있으면 나눈다)"),
-  facts: z.array(claim).describe("도구로 확인한 사실"),
+  headline: claim.describe("질문에 대한 답 한 문장. 숫자는 질문의 핵심 하나만(전과 후 한 쌍까지)"),
+  facts: z.array(claim).describe("결론을 읽는 데 필요한 해석 0~2문장. 숫자를 늘어놓지 않는다(숫자는 show 의 카드가 보여 준다)"),
+  show: z
+    .array(z.object({ ref: z.string().describe("도구 호출의 toolCallId"), metrics: z.array(z.string()).describe("그 결과에서 보여 줄 지표 key. 행사 성적표, 나눠 보기, 게시물 결과는 비워도 된다") }))
+    .optional()
+    // 비어 있거나 빠지면 예전처럼 답에 나온 숫자로 근거를 고른다(evidence.ts). 모델이 빠뜨려도 답이 깨지지 않게 선택 칸으로 둔다
+    .describe("말풍선 아래 카드로 보여 줄 근거. 질문에 답하는 데 필요한 지표만, 모두 합쳐 6개까지"),
   hypotheses: z
     .array(z.object({ text: z.string(), refs: z.array(z.string()).describe("이 가설을 확인하려고 부른 도구 호출의 toolCallId. 확인 못 했으면 비운다") }))
     .describe("가능한 이유. 확인하려고 돌린 비교가 있으면 그 결과를 숫자로 쓰고 인용한다. 원인으로 단정하지 않는다"),
@@ -40,7 +50,18 @@ export type AskResult = {
   steps: number;
 };
 
-const MAX_STEPS = 8;
+const MAX_STEPS = 6;
+/**
+ * 답 시간 상한. 라우트 한도가 60초라 그 안에 끝나야 한다(2026-10-11 실측 최대 57초).
+ * 도구를 부르는 첫 단계는 38초까지, 넘으면 그때까지 꺼낸 결과로 짧게 답하게 한다(12초). 다시 쓰기는 40초가 지났으면 하지 않고 걸린 문장만 표시한다
+ */
+const FIRST_MS = 38_000;
+const FINISH_MS = 12_000;
+const REWRITE_UNTIL_MS = 40_000;
+const isTimeout = (e: unknown) => {
+  const x = e as { name?: string; message?: string } | null;
+  return !!x && (x.name === "TimeoutError" || x.name === "AbortError" || /abort|timed? ?out/i.test(String(x.message)));
+};
 
 type Step = {
   toolResults: { toolCallId: string; toolName: string; input: unknown; output: unknown }[];
@@ -53,7 +74,7 @@ type Step = {
  * 그러면 앞서 부른 도구 결과까지 잃는다. 단계가 끝날 때마다 따로 모아 두어, 던져도 도구 결과와 대화는 남긴다.
  * output 이 null 이면 답 모양을 못 만든 것이다
  */
-async function generate(args: Parameters<typeof generateText>[0], onStep?: (st: Step) => void): Promise<{ steps: Step[]; output: Answer | null }> {
+async function generate(args: Parameters<typeof generateText>[0], onStep?: (st: Step) => void): Promise<{ steps: Step[]; output: Answer | null; timedOut?: boolean }> {
   const steps: Step[] = [];
   try {
     const r: unknown = await generateText({
@@ -65,7 +86,10 @@ async function generate(args: Parameters<typeof generateText>[0], onStep?: (st: 
     } as never);
     return { steps, output: (r as { output: Answer }).output };
   } catch (e) {
-    if (NoObjectGeneratedError.isInstance(e)) return { steps, output: null };
+    // 답 JSON 이 깨졌거나(NoObject) 아예 비어 왔으면(NoOutput, 2026-10-11 v2 평가 117번 중 1번) 모은 도구 결과로 마무리 단계를 부른다
+    if (NoObjectGeneratedError.isInstance(e) || NoOutputGeneratedError.isInstance(e)) return { steps, output: null };
+    // 시간 상한에 걸리면 그때까지 모은 단계(도구 결과)를 돌려준다. 버리면 다시 처음부터 불러야 한다
+    if (isTimeout(e)) return { steps, output: null, timedOut: true };
     throw e;
   }
 }
@@ -104,6 +128,13 @@ const clean = (a: Answer): Answer => ({
   hypotheses: a.hypotheses.map((h) => ({ ...h, text: plain(h.text) })),
   caveats: a.caveats.map(plain),
   followUps: a.followUps.map(plain),
+  // 보여 줄 지표는 key 라 다듬지 않는다. 같은 도구 결과를 두 번 고르면 하나로 합친다
+  show: (a.show ?? []).reduce<NonNullable<Answer["show"]>>((acc, s) => {
+    const hit = acc.find((x) => x.ref === s.ref);
+    if (hit) hit.metrics = [...new Set([...hit.metrics, ...s.metrics])];
+    else acc.push({ ref: s.ref, metrics: [...new Set(s.metrics)] });
+    return acc;
+  }, []),
 });
 
 const addUsage = (a: AskResult["usage"], u: LanguageModelUsage) => ({
@@ -139,9 +170,11 @@ export async function askMetrics(opts: {
   const common = { model, instructions, output: Output.object({ schema: answerSchema }), maxOutputTokens: 4096, maxRetries: 3, providerOptions: opts.providerOptions as never };
 
   const tell = opts.onProgress ?? (() => undefined);
-  const first = await generate({ ...common, prompt: question, tools: chatTools(ctx), stopWhen: isStepCount(MAX_STEPS) } as never, (st) =>
+  const started = Date.now();
+  const first = await generate({ ...common, prompt: question, tools: chatTools(ctx), stopWhen: isStepCount(MAX_STEPS), timeout: { totalMs: FIRST_MS } } as never, (st) =>
     st.toolResults.forEach((r) => tell({ kind: "tool", name: r.toolName })),
   );
+  if (first.timedOut && !first.steps.some((st) => st.toolResults.length)) throw new Error("시간 안에 숫자를 꺼내지 못했어요");
   const tools: ToolTrace[] = first.steps.flatMap((st) => st.toolResults.map((r) => ({ id: r.toolCallId, name: r.toolName, input: r.input, output: r.output })));
   const results = new Map(tools.map((t) => [t.id, t.output]));
   // 단계마다 쌓인 메시지(도구 호출, 도구 결과, 답). 마지막 단계만 넘기면 모델이 도구 결과 없이 다시 쓰게 된다(2026-10-09 실제 데이터 시험에서 잡음)
@@ -154,14 +187,14 @@ export async function askMetrics(opts: {
   if (!out) {
     retried = true;
     tell({ kind: "rewrite" });
+    const why = first.timedOut
+      ? "시간이 다 됐어요. 도구는 더 부르지 말고, 위에서 꺼낸 결과만으로 지금 답해 주세요."
+      : "답이 중간에 잘렸거나 정해진 JSON 모양이 아니었어요. 도구는 다시 부르지 말고, 위 도구 결과로 같은 내용을 더 짧게 JSON 하나로 다시 써 주세요.";
     const again = await generate({
       ...common,
-      messages: [
-        { role: "user", content: question },
-        ...history,
-        { role: "user", content: "답이 중간에 잘렸거나 정해진 JSON 모양이 아니었어요. 도구는 다시 부르지 말고, 위 도구 결과로 같은 내용을 더 짧게 JSON 하나로 다시 써 주세요. 사실은 다섯 문장까지." },
-      ],
+      messages: [{ role: "user", content: question }, ...history, { role: "user", content: why }],
       stopWhen: isStepCount(1),
+      timeout: { totalMs: FINISH_MS },
     } as never);
     usage = again.steps.reduce((u, st) => addUsage(u, st.usage), usage);
     out = again.output;
@@ -174,7 +207,8 @@ export async function askMetrics(opts: {
   tell({ kind: "check" });
   let check = verifyAnswer(answer, results, question, ruleNumbers);
 
-  if (!check.ok) {
+  // 다시 쓰기는 시간이 남았을 때만. 넘었으면 걸린 문장에 표시만 하고 보낸다(답을 늦게 주는 것보다 표시해서 주는 게 낫다)
+  if (!check.ok && Date.now() - started < REWRITE_UNTIL_MS) {
     retried = true;
     tell({ kind: "rewrite" });
     const feedback = [
@@ -183,7 +217,7 @@ export async function askMetrics(opts: {
       ...check.problems.map((p) => `- ${p.where}: "${p.text}" -> ${p.issue}`),
     ].join("\n");
     const messages: ModelMessage[] = [{ role: "user", content: question }, ...history, { role: "user", content: feedback }];
-    const second = await generate({ ...common, messages, stopWhen: isStepCount(1) } as never);
+    const second = await generate({ ...common, messages, stopWhen: isStepCount(1), timeout: { totalMs: FINISH_MS } } as never);
     usage = second.steps.reduce((u, st) => addUsage(u, st.usage), usage);
     // 다시 쓴 답이 모양을 못 갖추면 첫 답을 그대로 두고 걸린 문장에 표시만 한다
     if (second.output) {

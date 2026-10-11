@@ -11,7 +11,9 @@
  */
 
 export type Claim = { text: string; refs: string[] };
-export type Answer = { headline: Claim; facts: Claim[]; hypotheses: Claim[]; caveats: string[]; followUps: string[] };
+/** show: 말풍선 아래 카드로 보여 줄 지표(체다가 고르고 숫자는 화면이 도구 결과에서 그린다). 예전 답에는 없다 */
+export type Show = { ref: string; metrics: string[] };
+export type Answer = { headline: Claim; facts: Claim[]; hypotheses: Claim[]; caveats: string[]; followUps: string[]; show?: Show[] };
 export type Problem = { where: string; text: string; issue: string };
 
 // 영문자에 붙은 숫자는 이름의 일부라 세지 않는다("GA4", "D7"). 2026-10-10 실제 Gemini 평가에서 "GA4" 의 4 를 근거 없는 숫자로 잡았다
@@ -24,6 +26,9 @@ export function numbersIn(text: string): number[] {
 
 /** 도구 결과에 든 숫자 전부. 문자열 속 숫자와 날짜의 연, 월, 일도 넣는다("10월 4일"을 말할 수 있게) */
 export function numbersOfResult(value: unknown, out = new Set<number>()): Set<number> {
+  // 두 기간 비교 줄이면 배수도 말할 수 있다("1.8배로 늘었어요"). 소수 첫째 자리까지
+  const row = value as { a?: unknown; b?: unknown } | null;
+  if (row && typeof row === "object" && !Array.isArray(row) && typeof row.a === "number" && typeof row.b === "number" && row.b > 0) out.add(Math.round((row.a / row.b) * 10) / 10);
   if (typeof value === "number" && Number.isFinite(value)) out.add(value);
   else if (typeof value === "string") {
     for (const m of value.matchAll(/(\d{4})-(\d{2})-(\d{2})/g)) [m[1], m[2], m[3]].forEach((x) => out.add(Number(x)));

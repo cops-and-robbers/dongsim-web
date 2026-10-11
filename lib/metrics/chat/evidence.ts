@@ -58,6 +58,16 @@ export type Evidence = { id: string; target: Target | null; notes: string[] } & 
   | { kind: "daily"; range: Range; label: string; unit: string; series: { day: string; value: number | null }[]; peak: { day: string; value: number } | null; total: number | null }
   | { kind: "bars"; range: Range; title: string; unit: string; country: boolean; rows: { label: string; value: number }[] }
   | { kind: "events"; range: Range; events: { day: string; label: string }[] }
+  | {
+      kind: "event";
+      day: string;
+      label: string;
+      time: string | null;
+      /** uniqueVisitors 가 null 이면 명단 없는 판이 섞여 사람 수를 모른다 */
+      totals: { games: number; uniqueVisitors: number | null; visitorsSum: number; staffOnlyGames: number };
+      rows: { key: string; label: string; unit: string; value: number | null; usual: number | null; pending: boolean }[];
+    }
+  | { kind: "posts"; range: Range; posts: { day: string; type: string; caption: string; views: number | null }[] }
 );
 
 const MAX_ROWS = 4;
@@ -93,8 +103,16 @@ function cmpFromOf(a: Range, b: Range): string | null {
   return b.start === addDays(a.start, -len) && b.end === addDays(a.start, -1) ? null : b.start;
 }
 
-/** 답에 나온 숫자가 든 지표만. 없으면 값이 있는 앞의 셋 */
-function pick<T extends Metric>(rows: T[], said: number[]): T[] {
+/**
+ * 보여 줄 지표 고르기. 체다가 고른 지표(keys, 답의 show)가 있으면 그것만, 6개까지.
+ * 없으면(예전 답) 답에 나온 숫자가 든 지표, 그것도 없으면 값이 있는 앞의 셋
+ */
+const MAX_SHOW = 6;
+function pick<T extends Metric>(rows: T[], said: number[], keys?: string[]): T[] {
+  if (keys?.length) {
+    const chosen = keys.map((k) => rows.find((m) => m.key === k)).filter((m): m is T => !!m);
+    if (chosen.length) return chosen.slice(0, MAX_SHOW);
+  }
   const has = (m: T) =>
     [m.a, m.b, m.value, m.changePct, m.diff, m.diffPoints, m.num, m.den, m.aOf?.num, m.aOf?.den].some((v) => typeof v === "number" && said.some((x) => matches(x, v)));
   const hit = rows.filter(has);
@@ -102,16 +120,41 @@ function pick<T extends Metric>(rows: T[], said: number[]): T[] {
   return (hit.length ? hit : withValue.slice(0, 3)).slice(0, MAX_ROWS);
 }
 
-function one(t: Trace, said: number[]): Evidence | null {
+function one(t: Trace, said: number[], keys?: string[]): Evidence | null {
   const o = t.output;
   if (o.status !== "ok") return null;
   const base = { id: t.id, notes: [] as string[] };
+  // 행사 성적표: 고른 게임과 만난 방문객, 그날 숫자와 평소
+  if (o.event && o.totals && Array.isArray(o.day)) {
+    const ev = o.event as { day: string; label: string; startsAt: string | null; endsAt: string | null };
+    const t2 = o.totals as { games: number; uniqueVisitors: number | null; visitorsSum: number; staffOnlyGames: number };
+    type Day = { key: string; label: string; unit: string; value: number | null; usual: number | null; pending: boolean };
+    const rows = (o.day as Day[]).filter((m) => m.value !== null).map(({ key, label, unit, value, usual, pending }) => ({ key, label, unit, value, usual, pending }));
+    return {
+      ...base,
+      notes: Array.isArray(o.notes) ? (o.notes as string[]).filter((n) => !n.startsWith("usual ")) : [],
+      kind: "event",
+      day: ev.day,
+      label: ev.label,
+      time: ev.startsAt && ev.endsAt ? `${ev.startsAt}~${ev.endsAt}` : null,
+      totals: { games: t2.games, uniqueVisitors: t2.uniqueVisitors, visitorsSum: t2.visitorsSum, staffOnlyGames: t2.staffOnlyGames },
+      rows,
+      target: { range: { start: ev.day, end: ev.day }, cmpFrom: null, tab: "summary" },
+    };
+  }
+  if (Array.isArray(o.posts) && isRange(o.period)) {
+    type Post = { day: string; type: string; caption: string; views: number | null };
+    const posts = (o.posts as Post[]).map(({ day, type, caption, views }) => ({ day, type, caption, views }));
+    if (!posts.length) return null;
+    return { ...base, kind: "posts", range: o.period, posts: posts.slice(0, 6), target: { range: o.period, cmpFrom: null, tab: "instagram" } };
+  }
   if (Array.isArray(o.metrics) && Array.isArray(o.buckets) && isRange(o.range)) {
     // 훑어보기: 답에 나온 숫자(합계나 어느 칸 값)가 든 지표 둘까지, 없으면 합계가 있는 앞의 둘
     type Row = { key: string; label: string; unit: string; total: number | null; values: (number | null)[] };
     const all = o.metrics as Row[];
+    const chosen = keys?.length ? all.filter((m) => keys.includes(m.key)) : [];
     const hit = all.filter((m) => [m.total, ...m.values].some((v) => typeof v === "number" && said.some((x) => matches(x, v))));
-    const rows = (hit.length ? hit : all.filter((m) => m.total !== null)).slice(0, 2).map(({ key, label, unit, total, values }) => ({ key, label, unit, total, values }));
+    const rows = (chosen.length ? chosen : hit.length ? hit : all.filter((m) => m.total !== null)).slice(0, 2).map(({ key, label, unit, total, values }) => ({ key, label, unit, total, values }));
     if (!rows.length) return null;
     return {
       ...base,
@@ -126,7 +169,7 @@ function one(t: Trace, said: number[]): Evidence | null {
     };
   }
   if (Array.isArray(o.metrics) && isRange(o.periodA) && isRange(o.periodB)) {
-    const rows = pick(o.metrics as Metric[], said).map((m) => ({
+    const rows = pick(o.metrics as Metric[], said, keys).map((m) => ({
       key: m.key,
       label: m.label,
       unit: m.unit,
@@ -151,7 +194,7 @@ function one(t: Trace, said: number[]): Evidence | null {
     };
   }
   if (Array.isArray(o.metrics) && isRange(o.range)) {
-    const rows = pick(o.metrics as Metric[], said).map((m) => ({ key: m.key, label: m.label, unit: m.unit, value: m.value ?? null, of: typeof m.den === "number" ? { num: m.num ?? 0, den: m.den } : null }));
+    const rows = pick(o.metrics as Metric[], said, keys).map((m) => ({ key: m.key, label: m.label, unit: m.unit, value: m.value ?? null, of: typeof m.den === "number" ? { num: m.num ?? 0, den: m.den } : null }));
     if (!rows.length) return null;
     return { ...base, notes: notesFor(o.notes, rows.map((r) => r.key)), kind: "summary", range: o.range, rows, target: { range: o.range, cmpFrom: null, tab: tabOf(rows[0].key) } };
   }
@@ -206,9 +249,25 @@ function one(t: Trace, said: number[]): Evidence | null {
   return null;
 }
 
-/** 답이 인용한 도구 결과를 그림 재료로. 답에 나온 숫자로 지표를 고른다 */
-export function evidenceOf(traces: Trace[], answer: { headline: { text: string; refs: string[] }; facts: { text: string; refs: string[] }[] }): Evidence[] {
+/**
+ * 답이 고른 근거를 그림 재료로. 체다가 show 로 고른 도구 결과와 지표가 있으면 그대로 그리고(숫자는 도구 결과 그대로),
+ * 없으면(예전 답, 모델이 빠뜨림) 답에 나온 숫자로 지표를 고른다
+ */
+export function evidenceOf(
+  traces: Trace[],
+  answer: { headline: { text: string; refs: string[] }; facts: { text: string; refs: string[] }[]; show?: { ref: string; metrics: string[] }[] },
+): Evidence[] {
   const said = numbersIn([answer.headline.text, ...answer.facts.map((f) => f.text)].join(" "));
+  if (answer.show?.length) {
+    const out: Evidence[] = [];
+    for (const s of answer.show) {
+      const t = traces.find((x) => x.id === s.ref);
+      const e = t ? one(t, said, s.metrics) : null;
+      if (e && !out.some((x) => x.id === e.id)) out.push(e);
+      if (out.length === 3) break;
+    }
+    if (out.length) return out;
+  }
   const cited = new Set([...answer.headline.refs, ...answer.facts.flatMap((f) => f.refs)]);
   const used = traces.filter((t) => cited.has(t.id));
   const pool = used.length ? used : traces;
@@ -224,4 +283,41 @@ export function evidenceOf(traces: Trace[], answer: { headline: { text: string; 
     if (out.length === MAX_BLOCKS) break;
   }
   return out;
+}
+
+/**
+ * "이렇게 봤어요" 칩 (#163). 체다가 도구에 넘긴 값(기간, 비교 기간, 행사, 나눠 본 기준)을 코드가 그대로 보여 준다.
+ * 모델이 쓴 설명이 아니라 실제 호출 값이라, 잘못 알아들었으면 바로 보인다(Looker "질문을 이렇게 해석", ThoughtSpot 토큰, Power BI "How Copilot arrived at this").
+ * 답이 고른 근거(show)의 호출만, 없으면 부른 도구 전부에서. 같은 칩은 한 번만
+ */
+export type Chip = { kind: "period" | "event" | "dimension"; text: string; range?: Range; compare?: Range };
+
+const DIM_LABEL: Record<string, string> = { country: "나라별", channel: "들어온 길별", campaign: "캠페인별", appstore_way: "App Store 받은 길" };
+
+export function interpretationOf(traces: Trace[], answer: { show?: { ref: string }[] }): Chip[] {
+  const refs = new Set((answer.show ?? []).map((s) => s.ref));
+  const pool = refs.size ? traces.filter((t) => refs.has(t.id)) : traces;
+  const chips: Chip[] = [];
+  const add = (c: Chip) => {
+    if (!chips.some((x) => x.kind === c.kind && x.text === c.text)) chips.push(c);
+  };
+  for (const t of pool) {
+    const o = t.output as Record<string, unknown>;
+    if (o?.status !== "ok") continue;
+    const ev = o.event as { label?: string; day?: string } | undefined;
+    if (ev?.label) add({ kind: "event", text: `${ev.label.split(/[,(]/)[0].replace(/\s*\d{1,2}~\d{1,2}시.*$/, "").trim()}` });
+    if (isRange(o.periodA) && isRange(o.periodB) && !ev) add({ kind: "period", text: "", range: o.periodA, compare: o.periodB });
+    else if (isRange(o.range)) add({ kind: "period", text: "", range: o.range });
+    else if (isRange(o.period)) add({ kind: "period", text: "", range: o.period });
+    if (typeof o.dimension === "string" && DIM_LABEL[o.dimension]) add({ kind: "dimension", text: DIM_LABEL[o.dimension] });
+  }
+  // 기간 칩은 글자를 화면이 만든다(rangeText). 여기선 같은 기간이 겹치지 않게만
+  const seen = new Set<string>();
+  return chips.filter((c) => {
+    if (c.kind !== "period") return true;
+    const k = `${c.range?.start}~${c.range?.end}|${c.compare?.start ?? ""}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).slice(0, 3);
 }
