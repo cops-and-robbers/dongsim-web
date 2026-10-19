@@ -3,7 +3,12 @@ import type {
   PolicyItem,
   PolicySection,
 } from "@/lib/legal/documents";
+import Link from "next/link";
 import Container from "@/components/ui/Container";
+import type { Locale } from "@/lib/i18n/config";
+import { getMessages } from "@/lib/i18n/messages";
+import { historyPath, legalHistory, type HistoryDoc } from "@/lib/legal/history";
+import { formatIsoDate, type PastVersion } from "@/lib/legal/history-periods";
 
 // 타입은 lib/legal/documents 가 정본이다. 같은 문서를 앱 웹뷰(AppLegalView)도
 // 그리기 때문에, 양쪽이 따로 타입을 들고 있으면 스키마가 조용히 갈라진다.
@@ -95,7 +100,62 @@ function Item({ item }: { item: PolicyItem }) {
   );
 }
 
-export default function PolicyRenderer({ data }: { data: PolicyData }) {
+function period(template: string, version: PastVersion, locale: Locale) {
+  return template
+    .replace("{from}", formatIsoDate(version.date, locale))
+    .replace("{until}", formatIsoDate(version.until, locale));
+}
+
+function History({ doc, locale }: { doc: HistoryDoc; locale: Locale }) {
+  const versions = legalHistory(doc, locale);
+  if (versions.length === 0) return null;
+  const copy = getMessages(locale).legal;
+  return (
+    <section
+      aria-labelledby="policy-history"
+      className="mt-14 space-y-3.5 border-t border-slate-200 pt-8 dark:border-white/10"
+    >
+      <h2
+        id="policy-history"
+        className="text-lg font-bold text-slate-900 sm:text-xl dark:text-white"
+      >
+        {copy.history}
+      </h2>
+      <p className="text-sm leading-relaxed text-slate-700 sm:text-[15px] dark:text-slate-300">
+        {copy.historyLead}
+      </p>
+      <ul className="space-y-2">
+        {versions.map((version) => (
+          <li key={version.date}>
+            <Link
+              href={historyPath(doc, locale, version.date)}
+              className="text-sm text-brand-blue underline underline-offset-4 sm:text-[15px] dark:text-brand-green"
+            >
+              {period(copy.period, version, locale)}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+type PolicyRendererProps = {
+  data: PolicyData;
+  locale?: Locale;
+  /** 넘기면 문서 끝에 이전 버전 목록을 단다(#174) */
+  doc?: HistoryDoc;
+  /** 이전 버전 페이지면 맨 위에 적용 기간과 현재 버전 링크를 단다 */
+  archived?: { version: PastVersion; currentHref: string };
+};
+
+export default function PolicyRenderer({
+  data,
+  locale = "ko",
+  doc,
+  archived,
+}: PolicyRendererProps) {
+  const copy = getMessages(locale).legal;
   // Skip redundant first section that just restates title + date
   const sections = data.sections.filter((section, i) => {
     if (i === 0 && !section.heading && section.content.includes(data.title)) {
@@ -108,12 +168,26 @@ export default function PolicyRenderer({ data }: { data: PolicyData }) {
     <section className="py-16 transition-colors duration-500 sm:py-24">
       <Container>
         <article className="mx-auto max-w-3xl">
+          {archived && (
+            <p
+              role="note"
+              className="mb-8 rounded-2xl border border-brand-blue/30 bg-brand-blue-bg px-5 py-4 text-sm leading-relaxed text-slate-700 dark:border-brand-green/40 dark:bg-app-black-900 dark:text-slate-300"
+            >
+              {period(copy.archivedNotice, archived.version, locale)}{" "}
+              <Link
+                href={archived.currentHref}
+                className="font-semibold text-brand-blue underline underline-offset-4 dark:text-brand-green"
+              >
+                {copy.viewCurrent}
+              </Link>
+            </p>
+          )}
           <header className="border-b border-slate-200 pb-8 dark:border-white/10">
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
               {data.title}
             </h1>
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              시행일: {data.effectiveDate}
+              {copy.effectiveDate}: {data.effectiveDate}
             </p>
           </header>
 
@@ -122,6 +196,8 @@ export default function PolicyRenderer({ data }: { data: PolicyData }) {
               <Section key={i} section={section} />
             ))}
           </div>
+
+          {doc && !archived && <History doc={doc} locale={locale} />}
         </article>
       </Container>
     </section>

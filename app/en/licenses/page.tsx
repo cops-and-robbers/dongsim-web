@@ -36,7 +36,10 @@ export default function Page() {
           { name: "Open Source Licenses and Data Attribution", path: "/en/licenses" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("licenses", "en")} />
+      <PolicyRenderer
+        data={getLegalDoc("licenses", "en")}
+        locale="en"
+      />
     </>
   );
 }

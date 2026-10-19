@@ -34,7 +34,10 @@ export default function TermsPage() {
           { name: "서비스 이용약관", path: "/terms" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("terms")} />
+      <PolicyRenderer
+        data={getLegalDoc("terms")}
+        doc="terms"
+      />
     </>
   );
 }

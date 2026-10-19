@@ -35,7 +35,10 @@ export default function LocationPage() {
           { name: "위치정보 이용약관", path: "/location" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("location")} />
+      <PolicyRenderer
+        data={getLegalDoc("location")}
+        doc="location"
+      />
     </>
   );
 }

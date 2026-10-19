@@ -33,7 +33,11 @@ export default function Page() {
           { name: "位置情報利用規約", path: "/ja/location" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("location", "ja")} />
+      <PolicyRenderer
+        data={getLegalDoc("location", "ja")}
+        locale="ja"
+        doc="location"
+      />
     </>
   );
 }

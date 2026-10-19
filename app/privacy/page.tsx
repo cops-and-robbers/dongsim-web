@@ -35,7 +35,10 @@ export default function PrivacyPage() {
           { name: "개인정보 처리방침", path: "/privacy" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("privacy")} />
+      <PolicyRenderer
+        data={getLegalDoc("privacy")}
+        doc="privacy"
+      />
     </>
   );
 }
