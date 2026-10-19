@@ -557,7 +557,7 @@
           "subItems": []
         },
         {
-          "text": "Temporary location data processed during a game is discarded automatically when the game ends, so it is not retained even if no deletion request is made. Requests to access or delete game records stored on the server (such as cumulative distance travelled) and other rights may be exercised by email (copsnro66ers@gmail.com); the Company will verify identity and take the necessary steps without delay.",
+          "text": "Real-time location data processed on the server during a game is deleted automatically when the game session ends, so it is not retained after the session ends even if no deletion request is made (deletion of temporary files on the device is governed by 2-1 ③). Requests to access or delete game records stored on the server (such as cumulative distance travelled) and other rights may be exercised by email (copsnro66ers@gmail.com); the Company will verify identity and take the necessary steps without delay.",
           "subItems": []
         }
       ]
@@ -693,7 +693,7 @@
     },
     {
       "heading": "[Supplementary Provisions]",
-      "content": "This Privacy Policy takes effect on June 29, 2026.\n\nThis amended Policy (reflecting the processing of community activity data and related changes) takes effect on September 8, 2026.\n\nThis amended Policy (game record storage, comprising storage of cumulative distance travelled and team MVP selection, adding a basis for route storage, and correcting the retention period for game activity data) takes effect on October 23, 2026.\n\nThe Korean text of this Policy is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
+      "content": "This Privacy Policy takes effect on June 29, 2026.\n\nThis amended Policy (reflecting the processing of community activity data and related changes) takes effect on September 8, 2026.\n\nThis amended Policy (storage of cumulative distance travelled and team MVP selection in connection with game record retention, addition of a basis for route storage, and correction of the retention period for game activity data) takes effect on October 23, 2026.\n\nThe Korean text of this Policy is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
       "items": []
     }
   ]
