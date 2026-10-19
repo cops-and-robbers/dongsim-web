@@ -7,10 +7,11 @@ export default function robots(): MetadataRoute.Robots {
     // /legal/*/embed 는 앱 웹뷰 전용이다. 사이트의 /terms /privacy /location
     // /marketing 과 내용이 같아서, 색인되면 같은 문서가 두 주소로 잡힌다.
     // /credits/ 도 앱 웹뷰 전용(크레딧 히든 화면)이라 색인하지 않는다.
+    // /q/ 는 행사 QR 짧은 주소라 스토어로 넘기기만 한다(#171).
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/join/", "/legal/", "/ja/legal/", "/en/legal/", "/credits/"],
+      disallow: ["/join/", "/legal/", "/ja/legal/", "/en/legal/", "/credits/", "/q/"],
     },
     sitemap: `${BASE_URL}/sitemap.xml`,
     host: BASE_URL,

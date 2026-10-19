@@ -11,6 +11,7 @@ import { TrendChart, type Marker } from "@/components/admin/metrics/TrendChart";
 import { DateRangePicker, type DayRange } from "@/components/admin/metrics/DateRangePicker";
 import { EventReport } from "@/components/admin/metrics/EventReport";
 import { EventsCalendar } from "@/components/admin/metrics/EventsCalendar";
+import { LinksPanel } from "@/components/admin/metrics/LinksPanel";
 import { PostDrawer } from "@/components/admin/metrics/PostDrawer";
 import { FunnelCard } from "@/components/admin/metrics/FunnelCard";
 import { countryName } from "@/components/admin/metrics/countryName";
@@ -811,6 +812,9 @@ function MetricsBody({
             소스 ig 는 인스타그램이 프로필 링크에 스스로 붙이는 꼬리표예요. (direct)는 주소를 직접 치거나 행사 QR 을 찍어 들어온 방문이에요.
             링크에 UTM 꼬리표를 붙이면 캠페인별로 갈려요. 행사 QR 은 행사 이름을 영어로 붙여요. 앱 경로는 Play 로 설치한 Android 만 갈려요.
           </Note>
+          <FadeIn>
+            <LinksPanel d={d} />
+          </FadeIn>
         </>
       )}
 

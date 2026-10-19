@@ -49,7 +49,8 @@ export function channelOf(source: string, medium: string): Channel {
   const s = source.toLowerCase();
   const m = medium.toLowerCase();
   if (fromInstagram(s)) return "인스타그램";
-  if (s === "(direct)") return "직접 입력과 QR";
+  // 행사 링크 QR(/q/<코드>, #171)은 매체를 qr 로 붙인다. 출처는 행사마다 달라 "다른 사이트"로 새지 않게 먼저 본다
+  if (s === "(direct)" || m === "qr") return "직접 입력과 QR";
   if (s === "(not set)" || s === "") return "알 수 없음";
   if (m === "ai-assistant" || AI.test(s)) return "AI 서비스";
   if (m === "organic" || SEARCH.test(s) || s.includes("search.naver")) return "검색";
