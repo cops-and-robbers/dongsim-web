@@ -1,10 +1,10 @@
 {
   "title": "Terms of Service",
-  "effectiveDate": "September 8, 2026",
+  "effectiveDate": "October 23, 2026",
   "sections": [
     {
       "heading": "",
-      "content": "Cops and Robbers Terms of Service\nEffective date: September 8, 2026",
+      "content": "Cops and Robbers Terms of Service\nEffective date: October 23, 2026",
       "items": []
     },
     {
@@ -109,7 +109,7 @@
           "subItems": []
         },
         {
-          "text": "f. Game statistics on the result screen, such as the user's own route, distance travelled and average speed",
+          "text": "f. Game statistics on the result screen, such as the user's own route, distance travelled and average speed, game record storage and team MVP selection features, route replay (after the service begins)",
           "subItems": []
         },
         {
@@ -173,7 +173,7 @@
           "subItems": []
         },
         {
-          "text": "6. The Company processes location data only for the purpose of running games and does not use location data for advertising. Data processed by advertising and analytics SDKs is governed by the Privacy Policy.",
+          "text": "6. The Company processes location data only for the purpose of running games and providing game records and does not use location data for advertising. Data processed by advertising and analytics SDKs is governed by the Privacy Policy.",
           "subItems": []
         },
         {
@@ -694,7 +694,7 @@
     },
     {
       "heading": "Supplementary Provisions",
-      "content": "These Terms take effect on June 29, 2026.\n\nThese amended Terms (adding the community service provisions and adjusting the liability standards) take effect on September 8, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.\n\nContact: copsnro66ers@gmail.com",
+      "content": "These Terms take effect on June 29, 2026.\n\nThese amended Terms (adding the community service provisions and adjusting the liability standards) take effect on September 8, 2026.\n\nThese amended Terms (reflecting game record storage and team MVP selection features) take effect on October 23, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.\n\nContact: copsnro66ers@gmail.com",
       "items": []
     }
   ]
