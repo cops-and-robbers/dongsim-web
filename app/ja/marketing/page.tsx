@@ -33,7 +33,11 @@ export default function Page() {
           { name: "マーケティング情報の受信同意", path: "/ja/marketing" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("marketing", "ja")} />
+      <PolicyRenderer
+        data={getLegalDoc("marketing", "ja")}
+        locale="ja"
+        doc="marketing"
+      />
     </>
   );
 }

@@ -35,7 +35,10 @@ export default function MarketingPage() {
           { name: "마케팅 정보 수신 동의", path: "/marketing" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("marketing")} />
+      <PolicyRenderer
+        data={getLegalDoc("marketing")}
+        doc="marketing"
+      />
     </>
   );
 }

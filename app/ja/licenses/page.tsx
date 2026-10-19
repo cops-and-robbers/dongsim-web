@@ -36,7 +36,10 @@ export default function Page() {
           { name: "オープンソースライセンス及びデータの出典", path: "/ja/licenses" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("licenses", "ja")} />
+      <PolicyRenderer
+        data={getLegalDoc("licenses", "ja")}
+        locale="ja"
+      />
     </>
   );
 }

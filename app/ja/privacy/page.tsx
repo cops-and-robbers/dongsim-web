@@ -33,7 +33,11 @@ export default function Page() {
           { name: "プライバシーポリシー", path: "/ja/privacy" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("privacy", "ja")} />
+      <PolicyRenderer
+        data={getLegalDoc("privacy", "ja")}
+        locale="ja"
+        doc="privacy"
+      />
     </>
   );
 }

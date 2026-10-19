@@ -33,7 +33,11 @@ export default function Page() {
           { name: "Location Data Terms", path: "/en/location" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("location", "en")} />
+      <PolicyRenderer
+        data={getLegalDoc("location", "en")}
+        locale="en"
+        doc="location"
+      />
     </>
   );
 }

@@ -33,7 +33,11 @@ export default function Page() {
           { name: "Terms of Service", path: "/en/terms" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("terms", "en")} />
+      <PolicyRenderer
+        data={getLegalDoc("terms", "en")}
+        locale="en"
+        doc="terms"
+      />
     </>
   );
 }

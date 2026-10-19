@@ -33,7 +33,11 @@ export default function Page() {
           { name: "Marketing Communications Consent", path: "/en/marketing" },
         ]}
       />
-      <PolicyRenderer data={getLegalDoc("marketing", "en")} />
+      <PolicyRenderer
+        data={getLegalDoc("marketing", "en")}
+        locale="en"
+        doc="marketing"
+      />
     </>
   );
 }

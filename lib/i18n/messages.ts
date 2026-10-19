@@ -375,6 +375,15 @@ const ko = {
       count: "글 {count}개",
     },
   },
+  legal: {
+    effectiveDate: "시행일",
+    history: "이전 버전",
+    historyLead: "이전 버전은 아래에서 볼 수 있어요.",
+    period: "{from}부터 {until}까지 적용",
+    archivedNotice: "{from}부터 {until}까지 적용된 이전 버전이에요.",
+    viewCurrent: "현재 버전 보기",
+    archivedTitle: "{title} (이전 버전, {from} 시행)",
+  },
 };
 
 const en: Messages = {
@@ -754,6 +763,15 @@ const en: Messages = {
       count: "{count} stories",
     },
   },
+  legal: {
+    effectiveDate: "Effective date",
+    history: "Previous versions",
+    historyLead: "You can view previous versions below.",
+    period: "In effect from {from} to {until}",
+    archivedNotice: "This is a previous version, in effect from {from} to {until}.",
+    viewCurrent: "View the current version",
+    archivedTitle: "{title} (previous version, effective {from})",
+  },
 };
 
 const ja: Messages = {
@@ -1130,6 +1148,15 @@ const ja: Messages = {
       list: "リスト表示",
       count: "記事 {count}本",
     },
+  },
+  legal: {
+    effectiveDate: "施行日",
+    history: "過去のバージョン",
+    historyLead: "過去のバージョンは以下からご確認いただけます。",
+    period: "{from}から{until}まで適用",
+    archivedNotice: "{from}から{until}まで適用されていた過去のバージョンです。",
+    viewCurrent: "現在のバージョンを見る",
+    archivedTitle: "{title}（過去のバージョン、{from}施行）",
   },
 };
 
