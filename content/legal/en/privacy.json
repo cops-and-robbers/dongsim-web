@@ -49,26 +49,26 @@
           "subItems": [
             "Data: team selection (police/robber), ready state",
             "Purpose: in-game identification, team composition, arrest and chat features, checking game start conditions",
-            "Retention: until the game session ends"
+            "Retention: until the game session ends. However, the items stored as game records and their retention periods follow ④."
           ]
         },
         {
           "text": "c. Location data",
           "subItems": [
-            "Data: real-time GPS coordinates, location reveal records (footprints), and game statistics accumulated on the device during play such as route, distance travelled and speed, cumulative distance travelled stored on the server (game records), route coordinates (after the route replay service begins)",
+            "Data: real-time GPS coordinates, location reveal records (footprints), and game statistics accumulated on the device during play such as route (route coordinates), arrest/capture locations, distance travelled and speed, cumulative distance travelled and locations of the play area and jail stored on the server (game records), route coordinates (after the route replay service begins)",
             "Purpose: running the game (location reveals, area departure detection, confirming arrival at jail) and showing game statistics such as route and distance on the result screen, storing game records and determining team MVPs, route replay (after the service begins)",
             "When collected: only while a game session is in progress (IN_PROGRESS), both while the app is on screen (foreground) and while the screen is off or another app is running (background). Collection stops automatically as soon as the game ends (GAME_OVER).",
             "Background collection on Android: collected only through a Foreground Service (foregroundServiceType=\"location\") that displays a persistent notification indicating that a game is in progress.",
             "Background collection on iOS: collected through the UIBackgroundModes location option, with the blue location indicator shown in the system status bar so that users can see that background location is in use.",
-            "Retention: real-time coordinates are held temporarily on the server in encrypted form during the game for location reveals and game progression, and deleted from the server as soon as the session ends. Location reveal records (footprints) are deleted as soon as the session ends. Route and statistics accumulated on the device are discarded from the user's device memory as soon as the result screen is closed. Cumulative distance travelled and route coordinates (after the service begins) stored on the server follow the retention period for game records (④)."
+            "Retention: real-time coordinates are held temporarily on the server in encrypted form during the game for location reveals and game progression, and deleted from the server as soon as the session ends. Location reveal records (footprints) are deleted as soon as the session ends. Route and statistics accumulated on the device are held in device memory during the game, with route coordinates and arrest/capture locations also recorded as temporary files in the device's app-specific storage so they can be restored when the user rejoins the same game even if the app is forcibly closed. Route coordinates and arrest/capture locations are not transmitted to the server; only the cumulative distance travelled value is transmitted to the server. Temporary files are deleted immediately when the game ends normally, or remain on the device until the user joins the next game and are deleted then if the game ends while the app is closed. Information in device memory remains after the result screen is closed and disappears when the user joins the next game or fully closes the app. Cumulative distance travelled and route coordinates (after the service begins) stored on the server follow the retention period for game records (④)."
           ]
         },
         {
           "text": "d. Game activity data",
           "subItems": [
-            "Data: state changes during the game (alive / arrested / in jail), team chat messages, game records (team in the game participated in, nickname, number of arrests and captures, whether the user left early, cumulative distance travelled, team MVP status)",
-            "Purpose: running the game and determining the outcome, supporting team communication, viewing the user's own game records after the game ends, determining team MVPs",
-            "Retention: state changes and team chat messages are retained until the game session ends. Game records are stored for the duration of service operation, and records including nicknames are not deleted even after withdrawal, to preserve the records of other users who participated in the same game (the retention period for route coordinates will be announced when the service begins)."
+            "Data: state changes during the game (alive / arrested / in jail), team chat messages, game records (team in the game participated in, nickname at the start of the game, member number, state at the end of the game, number of arrests and captures, time of early departure, cumulative distance travelled, team MVP status, and the game's start and end times, duration, round, winning team, reason for ending, number of participants, location reveal interval, event game status, host's member number, locations of the play area and jail)",
+            "Purpose: running the game and determining the outcome, supporting team communication, viewing the user's own game records after the game ends, determining team MVPs, reviewing game records by the operator to respond to user inquiries",
+            "Retention: state changes during the game and team chat messages are retained until the game session ends (the state at the end of the game is stored as part of game records). Game records are stored for the duration of service operation, and records including nicknames are not deleted even after withdrawal, to preserve the records of other users who participated in the same game (the retention period for route coordinates will be announced when the service begins)."
           ]
         },
         {
@@ -469,11 +469,11 @@
       "content": "Personal data is destroyed without delay once the purpose of collection and use has been achieved. Data held in electronic file form is deleted in a manner that makes it impossible to restore.",
       "items": [
         {
-          "text": "a. Account data (social account identifier, email address): deleted immediately on withdrawal (nicknames remaining in game records are covered by Item 11)",
+          "text": "a. Account data (social account identifier, email address): deleted immediately on withdrawal (nicknames and member numbers remaining in game records are covered by Item 11)",
           "subItems": []
         },
         {
-          "text": "b. State data during the game and team chat messages: deleted as soon as the session ends",
+          "text": "b. State data during the game and team chat messages: deleted as soon as the session ends (the state at the end of the game is covered by Item 11)",
           "subItems": []
         },
         {
@@ -485,7 +485,7 @@
           "subItems": []
         },
         {
-          "text": "e. Route and statistics accumulated on the device during a game: discarded from the user's device memory as soon as the result screen is closed",
+          "text": "e. Route and statistics accumulated on the device during a game: information in device memory disappears when the user joins the next game or fully closes the app, temporary files (route coordinates and arrest/capture locations) are deleted immediately when the game ends normally (deleted when the user joins the next game if the game ends while the app is closed)",
           "subItems": []
         },
         {
@@ -509,7 +509,7 @@
           "subItems": []
         },
         {
-          "text": "k. Game records (team joined, nickname, number of arrests and captures, cumulative distance travelled, team MVP status, and route coordinates after the service begins): stored for the duration of service operation, including nicknames even after withdrawal, to preserve the records of other users who participated in the same game (the retention period for route coordinates will be announced when the service begins)",
+          "text": "k. Game records (game record items in 2-1 ④, and route coordinates after the service begins): stored for the duration of service operation, including nicknames even after withdrawal, to preserve the records of other users who participated in the same game (the retention period for route coordinates will be announced when the service begins)",
           "subItems": []
         },
         {

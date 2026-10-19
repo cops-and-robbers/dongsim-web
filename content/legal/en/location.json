@@ -226,12 +226,13 @@
         {
           "text": "2. Retention and destruction are handled as follows.",
           "subItems": [
-            "a. Real-time location data: held temporarily on the server in encrypted form during the game for location reveals and game progression, and deleted from the server as soon as the session ends. Items stored as game records are governed by Items 5 and 6.",
+            "a. Real-time location data: held temporarily on the server in encrypted form during the game for location reveals and game progression, and deleted from the server as soon as the session ends. Items stored as game records are governed by Items 5 through 7 of this paragraph.",
             "b. Location reveal records (footprints): deleted as soon as the game session ends.",
-            "c. Route and statistics accumulated on the device during a game: discarded from the user's device memory as soon as the result screen is closed (items stored on the server are covered by Items 5 and 6).",
+            "c. Route and statistics accumulated on the device during a game: held in device memory during the game, with route coordinates and arrest/capture locations also recorded as temporary files in the device's app-specific storage so they can be restored in the same game even if the app is forcibly closed. These coordinates are not transmitted to the server. Temporary files are deleted immediately when the game ends normally, or when the user joins the next game if the game ends while the app is closed. Information in device memory disappears when the user joins the next game or fully closes the app (items stored on the server are covered by Items 5 through 7 of this paragraph).",
             "d. Records confirming the collection, use and provision of location data: permanently deleted in an unrecoverable manner once the retention period has passed.",
-            "e. Cumulative distance travelled (game records): stored on the server for the duration of service operation together with game results (team joined, number of arrests, MVP status and similar). Records including nicknames are not deleted even after withdrawal, to preserve the records of other users who participated in the same game.",
-            "f. Routes (GPS coordinates, after the service under Article 3, Paragraph 1, Item 9 begins): stored on the server together with game records. The retention period and disposal method will be announced through an in-app notice before the service begins, and routes will not be stored before the service begins."
+            "e. Cumulative distance travelled (game records): stored on the server for the duration of service operation together with game results (team joined, state at the end of the game, number of arrests and captures, time of early departure, MVP status). Records including nicknames are not deleted even after withdrawal, to preserve the records of other users who participated in the same game.",
+            "f. Routes (GPS coordinates, after the service under Article 3, Paragraph 1, Item 9 begins): stored on the server together with game records. The retention period and disposal method will be announced through an in-app notice before the service begins, and routes will not be stored before the service begins.",
+            "g. Locations of the play area and jail (game records): the locations of the play area and jail set by the host (center coordinates and radius for circles, boundary coordinates for polygons) are stored on the server as game records for the duration of service operation, together with the game's start and end times and participants' member numbers and nicknames."
           ]
         },
         {
@@ -242,7 +243,7 @@
     },
     {
       "heading": "Article 11 (Planned Features)",
-      "content": "The Company may in future introduce features such as local storage of the user's own game records on their device, and sharing of routes with other participants. These features are activated only where the location data subject gives separate consent. When such a feature is introduced, the relevant provisions of these Terms and the Privacy Policy take effect after prior notice; the notice period follows Article 3, Paragraph 3 of the Terms of Service.",
+      "content": "The Company may in future introduce features such as allowing users to save their own game records on their device after the game ends to view them again, and sharing of routes with other participants. These features are activated only where the location data subject gives separate consent. When such a feature is introduced, the relevant provisions of these Terms and the Privacy Policy take effect after prior notice; the notice period follows Article 3, Paragraph 3 of the Terms of Service.",
       "items": []
     },
     {
