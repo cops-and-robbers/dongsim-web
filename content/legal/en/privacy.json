@@ -55,7 +55,7 @@
         {
           "text": "c. Location data",
           "subItems": [
-            "Data: real-time GPS coordinates, location reveal records (footprints), and game statistics accumulated on the device during play such as route (route coordinates), arrest/capture locations, distance travelled and speed, cumulative distance travelled and locations of the play area and jail stored on the server (game records), route coordinates (after the route replay service begins)",
+            "Data: real-time GPS coordinates, location reveal records (footprints), and game statistics accumulated on the device during play such as route (route coordinates), arrest/capture locations, distance travelled and speed, cumulative distance travelled stored on the server (game records), route coordinates (after the route replay service begins)",
             "Purpose: running the game (location reveals, area departure detection, confirming arrival at jail) and showing game statistics such as route and distance on the result screen, storing game records and determining team MVPs, route replay (after the service begins)",
             "When collected: only while a game session is in progress (IN_PROGRESS), both while the app is on screen (foreground) and while the screen is off or another app is running (background). Collection stops automatically as soon as the game ends (GAME_OVER).",
             "Background collection on Android: collected only through a Foreground Service (foregroundServiceType=\"location\") that displays a persistent notification indicating that a game is in progress.",
