@@ -158,3 +158,50 @@ export function linkResult(
     androidFirstOpens: sum(d.appCampaigns, (r) => r.sessions, linkKey),
   };
 }
+
+/**
+ * 비개발자도 고르기만 하면 되게 꼬리표와 코드를 자동으로 짓는다 (#171).
+ * 붙일 곳(출처)은 정해 둔 목록에서 고르고, 캠페인은 일정에서 만든다. 영어를 적을 일이 없다.
+ */
+export const PLACES = [
+  { source: "booth", label: "부스" },
+  { source: "poster", label: "포스터" },
+  { source: "flyer", label: "전단지" },
+  { source: "banner", label: "현수막" },
+  { source: "blog", label: "블로그" },
+  { source: "etc", label: "기타" },
+] as const;
+
+/** 헷갈리는 글자(0 o 1 l i)를 뺀 소문자와 숫자. 포스터를 보고 손으로 칠 때 틀리지 않게 */
+const CODE_CHARS = "abcdefghjkmnpqrstuvwxyz23456789";
+
+export function randomCode(random: () => number = Math.random, length = 5): string {
+  let s = "";
+  for (let i = 0; i < length; i++) s += CODE_CHARS[Math.floor(random() * CODE_CHARS.length)];
+  return s;
+}
+
+/**
+ * 캠페인 이름. 일정이 있으면 날짜와 일정 번호(같은 날 행사가 둘이어도 갈리게), 없으면 오늘 날짜로.
+ * 예) ev-20261024-12, link-20261019. 같은 붙일 곳에 이미 같은 이름이 있으면 -2, -3 을 붙인다(결과가 섞이지 않게)
+ */
+export function autoCampaign(
+  event: { id: number; day: string } | null,
+  today: string,
+  source: string,
+  taken: { source: string; medium: string; campaign: string }[],
+): string {
+  const base = event ? `ev-${event.day.replaceAll("-", "")}-${event.id}` : `link-${today.replaceAll("-", "")}`;
+  const used = new Set(taken.filter((t) => t.source === source && t.medium === "qr").map((t) => t.campaign));
+  if (!used.has(base)) return base;
+  for (let n = 2; ; n++) if (!used.has(`${base}-${n}`)) return `${base}-${n}`;
+}
+
+/** 이미 쓰는 코드를 피해 새 코드를 고른다 */
+export function freshCode(taken: string[], random: () => number = Math.random): string {
+  const used = new Set(taken);
+  for (;;) {
+    const c = randomCode(random);
+    if (!used.has(c)) return c;
+  }
+}
