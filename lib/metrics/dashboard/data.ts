@@ -109,6 +109,7 @@ export type GamesBlock = {
 };
 
 export type CampaignRow = { source: string; medium: string; campaign: string; content: string; sessions: number };
+export type DownloadCampaignRow = { source: string; medium: string; campaign: string; clicks: number };
 
 export type Dashboard = {
   range: Week;
@@ -120,6 +121,8 @@ export type Dashboard = {
   posts: PostRow[];
   webCampaigns: CampaignRow[];
   appCampaigns: (CampaignRow & { platform: string })[];
+  /** 꼬리표 조합별 스토어로 이동(다운로드 버튼과 /download). 행사 링크별 결과에 쓴다(#171) */
+  downloadCampaigns: DownloadCampaignRow[];
   channels: { current: ChannelRow[]; previous: ChannelRow[] };
   /** 나라별 최초 설치(이 기간). App Store 최초 다운로드와 Google Play 최초 설치(들어온 날까지) */
   countries: { country: string; appStore: number; play: number }[];
@@ -302,6 +305,25 @@ export function campaigns(
         : { source, medium, campaign, content: "", platform: content, sessions };
     })
     .sort((a, b) => b.sessions - a.sessions);
+}
+
+/**
+ * 꼬리표 조합별 스토어로 이동 수(download_source, 출처|매체|캠페인). 행사 링크별 결과에 쓴다(#171).
+ * 구분(utm_content) 칸은 이 집계에 없어서 링크는 출처, 매체, 캠페인 조합으로 가른다
+ */
+export function downloadCampaigns(rows: WeeklyInput["ga4"], r: Week): DownloadCampaignRow[] {
+  const sum = new Map<string, number>();
+  for (const g of rows) {
+    if (g.property !== "web" || g.breakdown !== "download_source" || g.metric !== "eventCount" || g.day < r.start || g.day > r.end) continue;
+    if (isInternal(splitKey(g.key)[0])) continue;
+    sum.set(g.key, (sum.get(g.key) ?? 0) + g.value);
+  }
+  return [...sum.entries()]
+    .map(([key, clicks]) => {
+      const [source = "", medium = "", campaign = ""] = splitKey(key);
+      return { source, medium, campaign, clicks };
+    })
+    .sort((a, b) => b.clicks - a.clicks);
 }
 
 /** 채널별 방문과 스토어로 넘어간 방문. 둘 다 0 인 채널은 뺀다 */
@@ -587,6 +609,7 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
     }),
     webCampaigns: campaigns(input.ga4, range, "web").map(({ source, medium, campaign, content, sessions }) => ({ source, medium, campaign, content, sessions })),
     appCampaigns: campaigns(input.ga4, range, "app"),
+    downloadCampaigns: downloadCampaigns(input.ga4, range),
     channels: { current: channelTable(input.ga4, range), previous: channelTable(input.ga4, previous) },
     countries: countryTable(sales as { day: string; product_type: string; units: number; country: string }[], playCountryRows ?? [], range),
     appStoreWays: {
