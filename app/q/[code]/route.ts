@@ -12,7 +12,8 @@ import { LINK_COLUMNS, downloadPath, isCode, toLink } from "@/lib/download/links
  * - 302(임시 이동): 링크의 꼬리표를 나중에 고칠 수 있어야 한다. 308 이면 브라우저가 옛 목적지를 기억한다(/apply 와 같은 이유)
  * - 없는 코드, 잘못된 코드, 저장소 오류는 꼬리표 없이 /download 로 보낸다. 포스터를 찍은 사람을 오류 화면에 세우지 않는다
  */
-export async function GET(req: NextRequest, ctx: RouteContext<"/q/[code]">): Promise<NextResponse> {
+// RouteContext 전역 타입은 next typegen 이 만들어서, 생성 파일 없이 도는 CI 타입 검사에서는 없다. 그래서 직접 적는다
+export async function GET(req: NextRequest, ctx: { params: Promise<{ code: string }> }): Promise<NextResponse> {
   const { code } = await ctx.params;
   const target = await targetOf(code.toLowerCase());
   const res = NextResponse.redirect(new URL(target, req.url), 302);
