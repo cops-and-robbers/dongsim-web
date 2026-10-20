@@ -171,7 +171,8 @@ function HistoryDetail({ id }: { id: string }) {
               }
             >
               {participants.map((p, i) => (
-                <Tr key={p.userId} index={i}>
+                // 이벤트 게임은 나갔다 다시 들어올 수 있어 같은 사람이 두 줄이 된다. userId 만으로는 열쇠가 겹친다
+                <Tr key={`${p.userId}-${i}`} index={i}>
                   <Td>
                     <Link
                       href={`/admin/users/${p.userId}`}
