@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/admin/Button";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import { ListPage, PageHeader, SectionCard, DescriptionList } from "@/components/admin/Parts";
+import { ScrollPage, PageHeader, SectionCard, DescriptionList } from "@/components/admin/Parts";
 import { Pill } from "@/components/admin/StatusBadge";
 import { useToast } from "@/components/admin/Toast";
 import { formatDateTime } from "@/lib/admin/format";
@@ -170,7 +170,7 @@ export default function AdminBlogPage() {
   const orphanCount = gc && !gc.error ? gc.orphans.length : 0;
 
   return (
-    <ListPage>
+    <ScrollPage>
       <PageHeader
         title="블로그"
         description="노션에 쓴 글을 사이트에 반영해요."
@@ -335,6 +335,6 @@ export default function AdminBlogPage() {
         }}
         onClose={() => setConfirmGc(false)}
       />
-    </ListPage>
+    </ScrollPage>
   );
 }

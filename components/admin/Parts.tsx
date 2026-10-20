@@ -13,16 +13,18 @@ import {
 
 export const SURFACE = "rounded-2xl border border-sd-line bg-sd-surface";
 
-// 페이지 전체가 스크롤되는 화면(개요·상세·분석)
+// 페이지 전체가 스크롤되는 화면(개요·상세·분석·폼과 카드만 있는 화면)
+// overscroll-contain: 끝까지 내린 뒤의 손가락 움직임이 뒤 문서로 넘어가 화면이 통째로 튕기지 않게
 export function ScrollPage({ children }: { children: ReactNode }) {
   return (
-    <div className="h-full overflow-y-auto px-4 py-6 md:px-8 md:py-8">
+    <div className="h-full overflow-y-auto overscroll-contain px-4 py-6 md:px-8 md:py-8">
       {children}
     </div>
   );
 }
 
-// 뷰포트 높이에 맞추고 내부(테이블)만 스크롤하는 리스트 화면
+// 뷰포트 높이에 맞추고 내부(테이블)만 스크롤하는 리스트 화면.
+// 이 틀은 스스로 스크롤하지 않는다. 안에 overflow-auto 상자(표)가 없는 화면에 쓰면 아래가 잘린다 - 그땐 ScrollPage
 export function ListPage({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-full flex-col px-4 pt-6 pb-4 md:px-8 md:pt-8 md:pb-6">

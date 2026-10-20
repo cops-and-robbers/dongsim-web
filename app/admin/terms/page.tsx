@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRelayEnvironment, fetchQuery, commitMutation } from "react-relay";
-import { ListPage, PageHeader, Card } from "@/components/admin/Parts";
+import { ScrollPage, PageHeader, Card } from "@/components/admin/Parts";
 import { Button } from "@/components/admin/Button";
 import { Callout } from "@/components/admin/Callout";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
@@ -116,7 +116,7 @@ export default function AdminTermsPage() {
   const hasRequired = TERMS.some((t) => selected.includes(t.type) && t.required);
 
   return (
-    <ListPage>
+    <ScrollPage>
       <PageHeader
         title="약관 재동의"
         description="약관이 개정되면 대상 약관을 골라 사용자에게 다시 동의를 받아요."
@@ -207,6 +207,6 @@ export default function AdminTermsPage() {
         onConfirm={run}
         onClose={() => !running && setConfirming(false)}
       />
-    </ListPage>
+    </ScrollPage>
   );
 }
