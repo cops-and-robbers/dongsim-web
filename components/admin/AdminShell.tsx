@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import {
   OverviewIcon,
   UsersIcon,
@@ -140,9 +140,28 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
+  // 어드민 셸은 공개 사이트 문서(머리, 바닥) 위에 fixed 로 덮여 있다. 폰에서 셸을 끌면 그 손가락
+  // 움직임이 뒤 문서로 넘어가 주소창이 접히고 셸이 통째로 튕긴다(약관 탭에서 처음 보고됨).
+  // 어드민에 있는 동안 뒤 문서의 스크롤을 잠근다. 문서의 스크롤러는 html(h-full)이라 html 과 body 둘 다 건다.
+  // 스크롤은 각 화면의 ScrollPage 나 표 상자가 맡는다(데모 전체 화면 DemoApp 과 같은 방식)
+  useEffect(() => {
+    const targets = [document.documentElement, document.body];
+    const prev = targets.map((el) => [el.style.overflow, el.style.overscrollBehavior] as const);
+    for (const el of targets) {
+      el.style.overflow = "hidden";
+      el.style.overscrollBehavior = "none";
+    }
+    return () => {
+      targets.forEach((el, i) => {
+        el.style.overflow = prev[i][0];
+        el.style.overscrollBehavior = prev[i][1];
+      });
+    };
+  }, []);
+
   return (
     <ToastProvider>
-      <div className="admin-shell fixed inset-0 z-50 flex flex-col bg-sd-fill text-sd-fg md:flex-row">
+      <div className="admin-shell fixed inset-0 z-50 flex flex-col overscroll-none bg-sd-fill text-sd-fg md:flex-row">
         {/* 데스크톱 사이드바 */}
         <aside className="hidden w-60 shrink-0 flex-col border-r border-sd-line bg-sd-surface px-3 py-5 md:flex">
           <Link href="/admin" className="mb-8 block px-2.5 py-1">
