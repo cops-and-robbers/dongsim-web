@@ -4,12 +4,14 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { retryClockSkew } from "./retryFetch.ts";
 
 export function db(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("Supabase 환경변수(NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)가 없어요");
-  return createClient(url, key, { auth: { persistSession: false } });
+  // 시계 차이 거절은 읽기, 지우기, 넣기 어디서든 날 수 있어 요청 단위에서 다시 보낸다 (#176)
+  return createClient(url, key, { auth: { persistSession: false }, global: { fetch: retryClockSkew() } });
 }
 
 export function check<T>(res: { data: T; error: { message: string } | null }, what: string): T {
@@ -31,13 +33,8 @@ export async function selectAll<T>(
 ): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; ; from += 1000) {
-    let res = await build(from, from + 999);
-    // Supabase 가 가끔 "JWT issued at future" 처럼 서버 사이 시계 차이로 한 번 거절한다
-    // (2026-10-06 실측, 바로 다시 하면 된다). 한 번만 다시 묻는다
-    if (res.error) {
-      await new Promise((r) => setTimeout(r, 800));
-      res = await build(from, from + 999);
-    }
+    // 시계 차이로 한 번 거절되는 일은 db() 의 fetch 가 다시 보낸다 (#176)
+    const res = await build(from, from + 999);
     if (res.error) throw new Error(`${what} 실패: ${res.error.message}`);
     const page = res.data ?? [];
     out.push(...page);
