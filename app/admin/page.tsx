@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useLazyLoadQuery } from "react-relay";
+import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 import type { AdminDashboard } from "@/__generated__/AdminDashboard.graphql";
 import type { AdminUsers } from "@/__generated__/AdminUsers.graphql";
 import type { AdminGames } from "@/__generated__/AdminGames.graphql";
@@ -45,13 +46,16 @@ export default function AdminOverviewPage() {
 }
 
 function Overview() {
-  const d = useLazyLoadQuery<AdminDashboard>(AdminDashboardQuery, {}).adminDashboard;
+  // 진행중 게임, 처리 대기 수는 지금 상태라 열어 둔 동안 뒤에서 새로 받는다(lib/admin/useLiveRefresh.ts)
+  const live = useLiveRefresh();
+  const fresh = { fetchKey: live, fetchPolicy: "store-and-network" } as const;
+  const d = useLazyLoadQuery<AdminDashboard>(AdminDashboardQuery, {}, fresh).adminDashboard;
   const games = useLazyLoadQuery<AdminGames>(AdminGamesQuery, {
     page: 0, size: 6, sortDirection: "DESC",
-  });
+  }, fresh);
   const users = useLazyLoadQuery<AdminUsers>(AdminUsersQuery, {
     page: 0, size: 6, sortDirection: "DESC",
-  });
+  }, fresh);
 
   const reasonSegments = d.endReasonDistribution.map((r) => ({
     label: labelOf(END_REASON_LABEL, r.endReason),

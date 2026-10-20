@@ -31,6 +31,7 @@ import {
   formatDuration,
   labelOf,
 } from "@/lib/admin/format";
+import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 
 export default function GameDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,7 +45,9 @@ export default function GameDetailPage() {
 }
 
 function GameDetail({ id }: { id: string }) {
-  const data = useLazyLoadQuery<AdminGame>(AdminGameQuery, { id });
+  // 목록에서 다시 들어와도 예전 상태를 그대로 믿지 않게, 보여 주면서 뒤에서 새로 받는다
+  const live = useLiveRefresh();
+  const data = useLazyLoadQuery<AdminGame>(AdminGameQuery, { id }, { fetchKey: live, fetchPolicy: "store-and-network" });
   const game = data.adminGame;
 
   if (!game) {
