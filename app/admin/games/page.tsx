@@ -20,6 +20,7 @@ import { Button } from "@/components/admin/Button";
 import { InviteCode } from "@/components/admin/InviteCode";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { formatDate } from "@/lib/admin/format";
+import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 
 // 게임은 끝나도 FINISHED로 남지 않고 다시 WAITING이 되며, 방이 비면 삭제된다.
 // 그래서 조회되는 상태는 대기중·진행중 둘뿐이다. 지난 게임은 '지난 게임' 화면에서 본다.
@@ -44,7 +45,7 @@ export default function GamesPage() {
 
   return (
     <ListPage>
-      <PageHeader title="게임" description="지금 열려 있는 게임 방을 조회해요." />
+      <PageHeader title="게임" description="지금 열려 있는 게임 방이에요. 화면을 보고 있는 동안 30초마다 목록을 새로 불러와요." />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <GameTabs />
@@ -129,9 +130,11 @@ function GamesResults({
   onPage: (p: number) => void;
   emptyAction?: ReactNode;
 }) {
+  // 방 상태는 앱에서 바뀐다. 보던 목록은 그대로 두고 뒤에서 새로 받아 바꾼다(lib/admin/useLiveRefresh.ts)
+  const live = useLiveRefresh();
   const data = useLazyLoadQuery<AdminGames>(AdminGamesQuery, variables, {
-    fetchKey,
-    fetchPolicy: "store-or-network",
+    fetchKey: `${fetchKey}-${live}`,
+    fetchPolicy: "store-and-network",
   });
   const pageData = data.adminGames;
 

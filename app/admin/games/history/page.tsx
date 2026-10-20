@@ -19,6 +19,7 @@ import { GameTabs } from "@/components/admin/GameTabs";
 import { Button } from "@/components/admin/Button";
 import { TeamBadge } from "@/components/admin/StatusBadge";
 import QueryBoundary from "@/components/admin/QueryBoundary";
+import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 import {
   END_REASON_LABEL,
   formatDate,
@@ -103,10 +104,12 @@ function HistoryResults({
   filtered: boolean;
   onReset: () => void;
 }) {
+  // 판이 끝날 때마다 기록이 늘어난다. 열어 둔 동안 뒤에서 새로 받는다(lib/admin/useLiveRefresh.ts)
+  const live = useLiveRefresh(60_000);
   const data = useLazyLoadQuery<AdminGameHistories>(
     AdminGameHistoriesQuery,
     variables,
-    { fetchKey, fetchPolicy: "store-or-network" }
+    { fetchKey: `${fetchKey}-${live}`, fetchPolicy: "store-and-network" }
   );
   const pageData = data.adminGameHistories;
 
