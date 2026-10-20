@@ -166,6 +166,12 @@ type Mutation {
   대상 인원을 먼저 확인하고 호출한다
   """
   resetTermsAgreement(types: [TermsType!]!): ResetTermsAgreementResult!
+
+  """
+  이벤트 게임 켜고 끄기 (BE #214, v2.38.0). 켜기는 WAITING·IN_PROGRESS, 끄기는 WAITING 에서만.
+  그 밖의 상태면 GAME_NOT_ACTIVE / GAME_NOT_WAITING 으로 실패한다
+  """
+  updateEventGame(gameId: ID!, isEventGame: Boolean!): AdminGame!
 }
 
 # ── 약관 재동의 ──

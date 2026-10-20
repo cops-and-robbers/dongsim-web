@@ -7,6 +7,7 @@ import {
   getUser,
   queryGames,
   getGame,
+  updateEventGame,
   type GameStatus,
   type SocialType,
 } from "./data";
@@ -287,6 +288,17 @@ export const handlers = [
         ),
       },
     });
+  }),
+
+  api.mutation("UpdateEventGame", async ({ variables }) => {
+    await delay(300);
+    const v = variables as { gameId: string; isEventGame: boolean };
+    try {
+      return HttpResponse.json({ data: { updateEventGame: updateEventGame(v.gameId, v.isEventGame) } });
+    } catch (e) {
+      // 백엔드처럼 data 없이 errors 만 돌려준다
+      return HttpResponse.json({ data: null, errors: [{ message: e instanceof Error ? e.message : String(e) }] });
+    }
   }),
 
   api.mutation("UpdateBugReportStatus", async ({ variables }) => {
