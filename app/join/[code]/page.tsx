@@ -3,7 +3,8 @@ import { headers } from "next/headers";
 import Container from "@/components/ui/Container";
 import RobberIcon from "@/components/characters/RobberIcon";
 import { AppleIcon, PlayIcon } from "@/components/ui/StoreIcons";
-import { APP_LINKS } from "@/lib/constants";
+import { APP_LINKS, APP_STORE_PROVIDER_TOKEN } from "@/lib/constants";
+import { storeLinksWithUtm } from "@/lib/download/campaign";
 import JoinBridge from "./JoinBridge";
 import InviteCode from "./InviteCode";
 
@@ -60,6 +61,7 @@ function StoreButton({
   kind: "apple" | "play";
   emphasis: "primary" | "secondary";
 }) {
+  // data-store 는 JoinBridge 가 눌린 스토어를 세는 데 쓴다(app_download_click)
   const base =
     "inline-flex w-full items-center justify-center gap-2.5 rounded-xl px-6 py-3.5 text-base font-bold shadow-sm transition-colors duration-200";
   const styles =
@@ -72,6 +74,7 @@ function StoreButton({
       href={href}
       target="_blank"
       rel="noreferrer"
+      data-store={kind === "apple" ? "appstore" : "googleplay"}
       className={`${base} ${styles}`}
       aria-label={kind === "apple" ? "App Store에서 다운로드" : "Google Play에서 다운로드"}
     >
@@ -90,10 +93,17 @@ export default async function JoinFallbackPage({
   searchParams,
 }: {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ ui?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { code } = await params;
-  const { ui } = await searchParams;
+  const query = await searchParams;
+  const ui = typeof query.ui === "string" ? query.ui : undefined;
+  // 행사 참가 QR 은 /join/<코드>?utm_... 로 온다. 앱이 없어 스토어로 갈 때 꼬리표를 이어 넘겨
+  // 어느 행사 QR 로 와서 설치했는지 센다(/download 와 같은 규칙, lib/download/campaign.ts)
+  const search = new URLSearchParams(
+    Object.entries(query).flatMap(([k, v]) => (typeof v === "string" && k.startsWith("utm_") ? [[k, v]] : [])),
+  ).toString();
+  const stores = storeLinksWithUtm(APP_LINKS, search ? `?${search}` : "", APP_STORE_PROVIDER_TOKEN);
   const preview =
     ui === "open" || ui === "guide" || ui === "store" ? ui : undefined;
   const safeCode = sanitizeCode(code);
@@ -102,7 +112,7 @@ export default async function JoinFallbackPage({
   const appStoreButton = (
     <StoreButton
       key="apple"
-      href={APP_LINKS.appStore}
+      href={stores.appStore}
       kind="apple"
       emphasis="secondary"
     />
@@ -110,7 +120,7 @@ export default async function JoinFallbackPage({
   const playStoreButton = (
     <StoreButton
       key="play"
-      href={APP_LINKS.googlePlay}
+      href={stores.googlePlay}
       kind="play"
       emphasis="secondary"
     />
@@ -147,8 +157,9 @@ export default async function JoinFallbackPage({
           <JoinBridge
             code={code}
             platform={platform}
-            appStore={APP_LINKS.appStore}
-            playStore={APP_LINKS.googlePlay}
+            appStore={stores.appStore}
+            playStore={stores.googlePlay}
+            campaign={stores.campaign}
             preview={preview}
           >
             {buttons}
