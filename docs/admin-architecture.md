@@ -49,7 +49,7 @@
 
 ## 폴더 지도
 
-- `lib/admin/gql/` - Relay 쿼리·뮤테이션 정의
+- `lib/admin/gql/` - Relay 쿼리·뮤테이션 정의 (`UpdateEventGame` 은 BE #214, 운영 서버 배포 전엔 화면이 "아직 기능이 없어요"로 알린다)
 - `lib/relay/environment.ts` - 네트워크 계층, 목/실서버 라우팅
 - `lib/admin/auth/` - 로그인·토큰·세션
 - `lib/admin/notices/api.ts` - 공지 REST 클라이언트

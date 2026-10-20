@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 const ANDROID_PACKAGE = "com.elipair.copsandrobbers";
 // 외부 브라우저로 빠져나갈 수단이 없는 인앱 브라우저 - 수동 안내로 유도한다
@@ -12,6 +13,7 @@ export default function JoinBridge({
   appStore,
   playStore,
   preview,
+  campaign = null,
   children,
 }: {
   code: string;
@@ -20,6 +22,8 @@ export default function JoinBridge({
   playStore: string;
   // ?ui= 로 특정 상태 UI를 미리보기(자동 핸드오프 비활성)
   preview?: "open" | "guide" | "store";
+  // 행사 참가 QR 의 꼬리표(App Store 캠페인 토큰 모양). 스토어로 넘긴 기록에 같이 남긴다
+  campaign?: string | null;
   children: ReactNode;
 }) {
   const [showEscapeGuide, setShowEscapeGuide] = useState(false);
@@ -65,10 +69,13 @@ export default function JoinBridge({
       window.location.href = `copsandrobbers://join/${encodedCode}`;
       window.setTimeout(() => {
         document.removeEventListener("visibilitychange", handleVisibilityChange);
-        if (!appOpened) window.location.href = appStore;
+        if (appOpened) return;
+        // 앱이 안 열려 스토어로 간다. /download 처럼 스토어로 넘긴 기록을 남긴다
+        trackEvent("app_download_click", { store: "appstore", placement: "join", campaign: campaign ?? undefined });
+        window.location.href = appStore;
       }, 1500);
     }
-  }, [code, platform, appStore, playStore]);
+  }, [code, platform, appStore, playStore, campaign]);
 
   // 진입 시 1회 자동 실행(데스크톱·코드 없음·프리뷰 제외). 폴백 UI를 먼저 그린 뒤 다음 틱에 시도
   useEffect(() => {
@@ -78,6 +85,11 @@ export default function JoinBridge({
     const timer = window.setTimeout(openApp, 0);
     return () => window.clearTimeout(timer);
   }, [openApp, platform, code, preview]);
+
+  const onStoreClick = (e: MouseEvent<HTMLDivElement>) => {
+    const store = (e.target as HTMLElement).closest<HTMLElement>("[data-store]")?.dataset.store;
+    if (store) trackEvent("app_download_click", { store, placement: "join", campaign: campaign ?? undefined });
+  };
 
   const showGuide = preview ? preview === "guide" : showEscapeGuide;
   const showOpenButton = preview
@@ -116,8 +128,8 @@ export default function JoinBridge({
         )
       )}
 
-      {/* 앱 미설치 폴백 - 조용한 보조 그룹 */}
-      <div className="flex w-full flex-col gap-2.5">
+      {/* 앱 미설치 폴백 - 조용한 보조 그룹. 스토어 버튼을 누르면 스토어로 넘긴 기록을 남긴다 */}
+      <div className="flex w-full flex-col gap-2.5" onClickCapture={onStoreClick}>
         <div className="flex items-center gap-3 text-xs font-medium text-slate-400 dark:text-slate-500">
           <span className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
           앱이 아직 없다면

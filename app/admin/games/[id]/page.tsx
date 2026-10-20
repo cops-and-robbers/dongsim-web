@@ -22,6 +22,8 @@ import {
 import { Avatar } from "@/components/admin/Avatar";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { GameAreaMap } from "@/components/admin/maps";
+import { FieldOpsCard } from "@/components/admin/games/FieldOpsCard";
+import { isActive } from "@/lib/admin/eventGame";
 import {
   END_REASON_LABEL,
   TEAM_LABEL,
@@ -81,6 +83,8 @@ function GameDetail({ id }: { id: string }) {
           </>
         }
       />
+
+      {isActive(game.status) && <FieldOpsCard game={game} />}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <SectionCard title="게임 설정">

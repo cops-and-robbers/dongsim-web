@@ -525,6 +525,16 @@ export function queryGames(args: {
   return paginate(summaries, page, size);
 }
 
+/** 목: 이벤트 게임 켜고 끄기. 백엔드와 같은 상태 규칙으로 막는다(BE #214) */
+export function updateEventGame(id: string, isEventGame: boolean) {
+  const game = games.find((g) => g.id === id);
+  if (!game) throw new Error("GAME_NOT_FOUND");
+  if (isEventGame && game.status !== "WAITING" && game.status !== "IN_PROGRESS") throw new Error("GAME_NOT_ACTIVE");
+  if (!isEventGame && game.status !== "WAITING") throw new Error("GAME_NOT_WAITING");
+  game.isEventGame = isEventGame;
+  return getGame(id);
+}
+
 export function getGame(id: string) {
   const game = games.find((g) => g.id === id);
   if (!game) return null;

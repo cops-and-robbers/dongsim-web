@@ -285,3 +285,58 @@ export function ThumbsDownIcon({ className }: IconProps) {
     </Line>
   );
 }
+
+// 게임 상세 현장 운영 카드(방 참가 QR). 모두 Lucide 원본 path 그대로.
+
+export function QrCodeIcon({ className }: IconProps) {
+  // Lucide 'qr-code'. 참가 QR 보기
+  return (
+    <Line className={className}>
+      <rect width="5" height="5" x="3" y="3" rx="1" />
+      <rect width="5" height="5" x="16" y="3" rx="1" />
+      <rect width="5" height="5" x="3" y="16" rx="1" />
+      <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+      <path d="M21 21v.01" />
+      <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+      <path d="M3 12h.01" />
+      <path d="M12 3h.01" />
+      <path d="M12 16v.01" />
+      <path d="M16 12h1" />
+      <path d="M21 12v.01" />
+      <path d="M12 21v-1" />
+    </Line>
+  );
+}
+
+export function MaximizeIcon({ className }: IconProps) {
+  // Lucide 'maximize'. 화면 가득 띄우기
+  return (
+    <Line className={className}>
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </Line>
+  );
+}
+
+export function DownloadIcon({ className }: IconProps) {
+  // Lucide 'download'. PNG 저장
+  return (
+    <Line className={className}>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M12 15V3" />
+    </Line>
+  );
+}
+
+export function CopyIcon({ className }: IconProps) {
+  // Lucide 'copy'. 주소 복사
+  return (
+    <Line className={className}>
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </Line>
+  );
+}
