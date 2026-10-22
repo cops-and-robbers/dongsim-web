@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<337e763885195b8aead9c5eddef19a00>>
+ * @generated SignedSource<<fd7d00b56d805bcc6f29b4cbe66e346f>>
  * @lightSyntaxTransform
  */
 
@@ -33,7 +33,7 @@ export type AdminGameHistories$data = {
         readonly nickname: string;
         readonly status: ParticipantStatus;
         readonly team: Team;
-        readonly userId: string;
+        readonly userId: string | null | undefined;
       }>;
       readonly totalArrestCount: number;
       readonly totalPoliceCount: number;

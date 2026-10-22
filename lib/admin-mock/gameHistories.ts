@@ -11,7 +11,8 @@ type Team = "POLICE" | "ROBBER";
 type ParticipantStatus = "WAITING" | "ALIVE" | "JAILED" | "POLICE_WAITING";
 
 export interface MockHistoryParticipant {
-  userId: string;
+  // 탈퇴한 참가자는 null, 닉네임은 "알수없음" (BE #223)
+  userId: string | null;
   nickname: string;
   team: Team;
   status: ParticipantStatus;
@@ -161,9 +162,11 @@ function buildParticipants(
   for (let i = 0; i < robberCount; i += 1) {
     const jailed = i < arrestedCount;
     // 재체포분은 첫 도둑에게 몰아 잡힌 수가 2 이상인 케이스를 만든다.
+    // 세 판에 한 번은 마지막 도둑을 탈퇴한 사람으로 둔다. 기록 상세에서 링크 없이 보이는지 확인하는 용도
+    const withdrawn = seq % 3 === 0 && i === robberCount - 1;
     out.push({
-      userId: String(200 + seq * 10 + i),
-      nickname: NICKS[(seq + i + 3) % NICKS.length],
+      userId: withdrawn ? null : String(200 + seq * 10 + i),
+      nickname: withdrawn ? "알수없음" : NICKS[(seq + i + 3) % NICKS.length],
       team: "ROBBER",
       status: jailed ? "JAILED" : "ALIVE",
       leftAt: null,
