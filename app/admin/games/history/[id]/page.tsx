@@ -174,15 +174,25 @@ function HistoryDetail({ id }: { id: string }) {
                 // 이벤트 게임은 나갔다 다시 들어올 수 있어 같은 사람이 두 줄이 된다. userId 만으로는 열쇠가 겹친다
                 <Tr key={`${p.userId}-${i}`} index={i}>
                   <Td>
-                    <Link
-                      href={`/admin/users/${p.userId}`}
-                      className="flex items-center gap-3"
-                    >
-                      <Avatar name={p.nickname} team={p.team} />
-                      <span className="font-semibold text-sd-fg transition hover:text-accent">
-                        {p.nickname}
+                    {p.userId != null ? (
+                      <Link
+                        href={`/admin/users/${p.userId}`}
+                        className="flex items-center gap-3"
+                      >
+                        <Avatar name={p.nickname} team={p.team} />
+                        <span className="font-semibold text-sd-fg transition hover:text-accent">
+                          {p.nickname}
+                        </span>
+                      </Link>
+                    ) : (
+                      // 탈퇴하면 회원 번호가 지워지고 닉네임이 "알수없음"이 된다(BE #223). 갈 회원 화면이 없어 링크를 빼고,
+                      // 원래 그런 닉네임과 헷갈리지 않게 탈퇴 표시를 붙인다
+                      <span className="flex items-center gap-3">
+                        <Avatar name={p.nickname} team={p.team} />
+                        <span className="font-semibold text-sd-fg-muted">{p.nickname}</span>
+                        <Pill tone="slate">탈퇴</Pill>
                       </span>
-                    </Link>
+                    )}
                   </Td>
                   <Td>
                     <TeamBadge team={p.team} />

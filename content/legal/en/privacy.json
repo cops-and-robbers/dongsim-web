@@ -1,10 +1,10 @@
 {
   "title": "Privacy Policy",
-  "effectiveDate": "October 23, 2026",
+  "effectiveDate": "October 30, 2026",
   "sections": [
     {
       "heading": "",
-      "content": "Cops and Robbers Privacy Policy\nEffective date: October 23, 2026\nLast updated: October 23, 2026",
+      "content": "Cops and Robbers Privacy Policy\nEffective date: October 30, 2026\nLast updated: October 30, 2026",
       "items": []
     },
     {
@@ -68,7 +68,7 @@
           "subItems": [
             "Data: state changes during the game (alive / arrested / in jail), team chat messages, game records (team in the game participated in, nickname at the start of the game, member number, state at the end of the game, number of arrests and captures, time of early departure, cumulative distance travelled, team MVP status, and the game's start and end times, duration, round, winning team, reason for ending, number of participants, location reveal interval, event game status, host's member number, locations of the play area and jail)",
             "Purpose: running the game and determining the outcome, supporting team communication, viewing the user's own game records after the game ends, determining team MVPs, reviewing game records by the operator to respond to user inquiries",
-            "Retention: state changes during the game and team chat messages are retained until the game session ends (the state at the end of the game is stored as part of game records). Game records are stored for the duration of service operation, and records including nicknames are not deleted even after withdrawal, to preserve the records of other users who participated in the same game (the retention period for route coordinates will be announced when the service begins)."
+            "Retention: state changes during the game and team chat messages are retained until the game session ends (the state at the end of the game is stored as part of game records). Game records are stored for the duration of service operation. On withdrawal, the withdrawing member's member number (including the host's member number) is deleted and their nickname is replaced with \"알수없음\" (\"unknown\"). The remaining records are kept to preserve the records of other users who participated in the same game (the retention period for route coordinates will be announced when the service begins)."
           ]
         },
         {
@@ -469,7 +469,7 @@
       "content": "Personal data is destroyed without delay once the purpose of collection and use has been achieved. Data held in electronic file form is deleted in a manner that makes it impossible to restore.",
       "items": [
         {
-          "text": "a. Account data (social account identifier, email address): deleted immediately on withdrawal (nicknames and member numbers remaining in game records are covered by Item 11)",
+          "text": "a. Account data (social account identifier, email address): deleted immediately on withdrawal (the handling of member numbers and nicknames in game records is covered by Item 11)",
           "subItems": []
         },
         {
@@ -509,7 +509,7 @@
           "subItems": []
         },
         {
-          "text": "k. Game records (game record items in 2-1 ④, and route coordinates after the service begins): stored for the duration of service operation, including nicknames even after withdrawal, to preserve the records of other users who participated in the same game (the retention period for route coordinates will be announced when the service begins)",
+          "text": "k. Game records (game record items in 2-1 ④, and route coordinates after the service begins): stored for the duration of service operation; on withdrawal, the member number (including the host's member number) is deleted and the nickname is replaced with \"알수없음\" (\"unknown\"), and the remaining records are kept to preserve the records of other users who participated in the same game (the retention period for route coordinates will be announced when the service begins)",
           "subItems": []
         },
         {
@@ -693,7 +693,7 @@
     },
     {
       "heading": "[Supplementary Provisions]",
-      "content": "This Privacy Policy takes effect on June 29, 2026.\n\nThis amended Policy (reflecting the processing of community activity data and related changes) takes effect on September 8, 2026.\n\nThis amended Policy (storage of cumulative distance travelled and team MVP selection in connection with game record retention, addition of a basis for route storage, and correction of the retention period for game activity data) takes effect on October 23, 2026.\n\nThe Korean text of this Policy is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
+      "content": "This Privacy Policy takes effect on June 29, 2026.\n\nThis amended Policy (reflecting the processing of community activity data and related changes) takes effect on September 8, 2026.\n\nThis amended Policy (storage of cumulative distance travelled and team MVP selection in connection with game record retention, addition of a basis for route storage, and correction of the retention period for game activity data) takes effect on October 23, 2026.\n\nThis amended Policy (deletion of member numbers and replacement of nicknames in game records on withdrawal) takes effect on October 30, 2026.\n\nThe Korean text of this Policy is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
       "items": []
     }
   ]

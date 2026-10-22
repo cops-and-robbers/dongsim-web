@@ -594,7 +594,10 @@ type AdminGameHistory {
 }
 
 type AdminGameHistoryParticipant {
-  userId: ID!
+  """
+  탈퇴한 참가자는 null 이고 nickname 은 "알수없음" 이다.
+  """
+  userId: ID
   nickname: String!
   team: Team!
   status: ParticipantStatus!
