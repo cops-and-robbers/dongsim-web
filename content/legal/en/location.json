@@ -1,10 +1,10 @@
 {
   "title": "Location Data Terms",
-  "effectiveDate": "October 23, 2026",
+  "effectiveDate": "October 30, 2026",
   "sections": [
     {
       "heading": "",
-      "content": "Cops and Robbers Location Data Terms\nEffective date: October 23, 2026",
+      "content": "Cops and Robbers Location Data Terms\nEffective date: October 30, 2026",
       "items": []
     },
     {
@@ -230,7 +230,7 @@
             "b. Location reveal records (footprints): deleted as soon as the game session ends.",
             "c. Route and statistics accumulated on the device during a game: held in device memory during the game, with route coordinates and arrest/capture locations also recorded as temporary files in the device's app-specific storage so they can be restored in the same game even if the app is forcibly closed. These coordinates are not transmitted to the server. Temporary files are deleted immediately when the game ends normally, or when the user joins the next game if the game ends while the app is closed. Information in device memory disappears when the user joins the next game or fully closes the app (items stored on the server are covered by Items 5 and 6 of this paragraph).",
             "d. Records confirming the collection, use and provision of location data: permanently deleted in an unrecoverable manner once the retention period has passed.",
-            "e. Cumulative distance travelled (game records): stored on the server for the duration of service operation together with game results (team joined, state at the end of the game, number of arrests and captures, time of early departure, MVP status). Records including nicknames are not deleted even after withdrawal, to preserve the records of other users who participated in the same game.",
+            "e. Cumulative distance travelled (game records): stored on the server for the duration of service operation together with game results (team joined, state at the end of the game, number of arrests and captures, time of early departure, MVP status). On withdrawal, the withdrawing member's member number (including the host's member number) is deleted and their nickname is replaced with \"알수없음\" (\"unknown\"). The remaining records are kept to preserve the records of other users who participated in the same game.",
             "f. Routes (GPS coordinates, after the service under Article 3, Paragraph 1, Item 9 begins): stored on the server together with game records. The retention period and disposal method will be announced through an in-app notice before the service begins, and routes will not be stored before the service begins."
           ]
         },
@@ -361,7 +361,7 @@
     },
     {
       "heading": "Supplementary Provisions",
-      "content": "These Terms take effect on May 19, 2026.\n\nThese amended Terms (adding the community location-based services, the new Article 4-2, and adjusting the compensation and disclaimer standards) take effect on September 8, 2026.\n\nThese amended Terms (adding the game record storage service and adjusting the retention standards for personal location data) take effect on October 23, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
+      "content": "These Terms take effect on May 19, 2026.\n\nThese amended Terms (adding the community location-based services, the new Article 4-2, and adjusting the compensation and disclaimer standards) take effect on September 8, 2026.\n\nThese amended Terms (adding the game record storage service and adjusting the retention standards for personal location data) take effect on October 23, 2026.\n\nThese amended Terms (deletion of member numbers and replacement of nicknames in game records on withdrawal) take effect on October 30, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
       "items": []
     }
   ]
