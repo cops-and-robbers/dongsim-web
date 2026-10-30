@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PolicyRenderer from "@/components/policy/PolicyRenderer";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import { getLegalDoc } from "@/lib/legal/documents";
+import { alternateLanguages } from "@/lib/i18n/config";
+import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "오픈소스 라이선스 및 데이터 출처",
@@ -14,7 +16,13 @@ export const metadata: Metadata = {
     "OpenStreetMap 출처",
     "Cops and Robbers Open Source Licenses",
   ],
-  alternates: { canonical: "/licenses" },
+  alternates: {
+    canonical: "/licenses",
+    languages: {
+      ...alternateLanguages(SITE_URL, "/licenses"),
+      "x-default": `${SITE_URL}/licenses`,
+    },
+  },
   openGraph: {
     title: "오픈소스 라이선스 및 데이터 출처 | 경찰과 도둑",
     description:

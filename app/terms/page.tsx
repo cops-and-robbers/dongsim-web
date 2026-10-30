@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PolicyRenderer from "@/components/policy/PolicyRenderer";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import { getLegalDoc } from "@/lib/legal/documents";
+import { alternateLanguages } from "@/lib/i18n/config";
+import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "서비스 이용약관",
@@ -14,7 +16,13 @@ export const metadata: Metadata = {
     "서비스 이용약관",
     "Cops and Robbers Terms",
   ],
-  alternates: { canonical: "/terms" },
+  alternates: {
+    canonical: "/terms",
+    languages: {
+      ...alternateLanguages(SITE_URL, "/terms"),
+      "x-default": `${SITE_URL}/terms`,
+    },
+  },
   openGraph: {
     title: "서비스 이용약관 | 경찰과 도둑",
     description:

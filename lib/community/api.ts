@@ -118,15 +118,16 @@ const EMPTY_PAGE: PostPage = {
   cursor: { nextCursor: null, hasNext: false },
 };
 
+/**
+ * 404 만 "없음"(null)이고, 그 밖의 실패(5xx, 네트워크)는 던진다(#188).
+ * 둘을 섞으면 백엔드가 잠깐 죽은 순간의 상세가 404 로 캐시돼 검색엔진에 나간다.
+ * 던지면 ISR 이 직전 정상 페이지를 계속 내보낸다.
+ */
 async function get<T>(path: string, ttl: number): Promise<T | null> {
-  try {
-    const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: ttl } });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    // 백엔드가 잠깐 죽어도 페이지는 떠야 한다. 빈 화면이 500 보다 낫다
-    return null;
-  }
+  const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: ttl } });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`모집글 API ${res.status}: ${path}`);
+  return (await res.json()) as T;
 }
 
 /**
@@ -137,17 +138,27 @@ async function get<T>(path: string, ttl: number): Promise<T | null> {
  */
 export type PostSort = "DEADLINE" | "LATEST";
 
-export async function listPosts({
+type ListParams = ListScope & {
+  size?: number;
+  cursor?: string;
+  sort?: PostSort;
+};
+
+/**
+ * 목록 화면용. 백엔드가 잠깐 죽어도 화면은 떠야 해서 실패는 빈 목록으로 삼킨다.
+ * 목록은 비어 보여도 주소가 사라지지 않고 1분이면 다시 만들어진다.
+ */
+export async function listPosts(params: ListParams): Promise<PostPage> {
+  return fetchList(params).catch(() => EMPTY_PAGE);
+}
+
+async function fetchList({
   countryCode,
   excludeCountryCodes,
   size = 24,
   cursor,
   sort = "DEADLINE",
-}: ListScope & {
-  size?: number;
-  cursor?: string;
-  sort?: PostSort;
-}): Promise<PostPage> {
+}: ListParams): Promise<PostPage> {
   if (USE_MOCK) return mockList(size, cursor, { countryCode, excludeCountryCodes });
 
   const query = new URLSearchParams({ size: String(size), sort });
@@ -162,6 +173,9 @@ export async function listPosts({
 }
 
 export async function getPost(postId: number): Promise<CommunityPost | null> {
+  // 숫자가 아닌 주소(/g/abc)는 백엔드가 404 가 아니라 401 을 준다. 묻기 전에 걸러야
+  // 없는 글이 500 으로 나가지 않는다
+  if (!Number.isInteger(postId) || postId <= 0) return null;
   if (USE_MOCK) return mockGet(postId);
   const post = await get<CommunityPost>(
     `/api/community-posts/${postId}`,
@@ -226,7 +240,8 @@ export async function allPostsByLatest(
   const posts: CommunityPost[] = [];
   let cursor: string | undefined;
   for (let i = 0; i < MAX_ALL_PAGES; i++) {
-    const page = await listPosts({
+    // 실패를 삼키지 않는다. 중간에 끊긴 목록으로 사이트맵을 만들면 글이 빠진 채 캐시된다
+    const page = await fetchList({
       ...scope,
       size: OPEN_PAGE_SIZE,
       cursor,

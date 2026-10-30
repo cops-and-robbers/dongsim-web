@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import BlogPost from "@/components/blog/BlogPost";
-import { getPosts } from "@/lib/blog/store";
+import { getPost, getPosts } from "@/lib/blog/store";
 import { getMessages } from "@/lib/i18n/messages";
 import { SITE_URL } from "@/lib/constants";
 
@@ -8,8 +8,9 @@ import { SITE_URL } from "@/lib/constants";
 // (이미지는 프록시가 자체 캐시하므로 페이지 캐시 수명과 무관하게 안전하다.)
 export const revalidate = 300;
 
+// DB 가 잠깐 죽었다고 배포가 실패하면 안 된다. 빠진 글은 첫 요청 때 만들어진다
 export async function generateStaticParams() {
-  const posts = await getPosts("ko");
+  const posts = await getPosts("ko").catch(() => []);
   return posts.map((post) => ({ slug: post.slug }));
 }
 
@@ -17,8 +18,9 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const posts = await getPosts("ko");
-  const post = posts.find((p) => p.slug === slug);
+  // 목록에서 찾지 않고 글 하나를 직접 묻는다. 조회가 실패하면 던져서,
+  // 공통 제목·홈 canonical 이 캐시되지 않고 직전 정상본이 남는다(#188)
+  const post = await getPost("ko", slug);
   const meta = getMessages("ko").blog.meta;
   if (!post) return { title: meta.title };
 
