@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PolicyRenderer from "@/components/policy/PolicyRenderer";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import { getLegalDoc } from "@/lib/legal/documents";
+import { alternateLanguages } from "@/lib/i18n/config";
+import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "마케팅 정보 수신 동의",
@@ -15,7 +17,13 @@ export const metadata: Metadata = {
     "동심지키미 마케팅",
     "수신 동의 철회",
   ],
-  alternates: { canonical: "/marketing" },
+  alternates: {
+    canonical: "/marketing",
+    languages: {
+      ...alternateLanguages(SITE_URL, "/marketing"),
+      "x-default": `${SITE_URL}/marketing`,
+    },
+  },
   openGraph: {
     title: "마케팅 정보 수신 동의 | 경찰과 도둑",
     description:

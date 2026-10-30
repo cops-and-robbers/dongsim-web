@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import PolicyRenderer from "@/components/policy/PolicyRenderer";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
 import { getLegalDoc } from "@/lib/legal/documents";
+import { alternateLanguages } from "@/lib/i18n/config";
+import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "개인정보 처리방침",
@@ -14,7 +16,13 @@ export const metadata: Metadata = {
     "개인정보 처리방침",
     "Cops and Robbers Privacy Policy",
   ],
-  alternates: { canonical: "/privacy" },
+  alternates: {
+    canonical: "/privacy",
+    languages: {
+      ...alternateLanguages(SITE_URL, "/privacy"),
+      "x-default": `${SITE_URL}/privacy`,
+    },
+  },
   robots: { index: true, follow: true },
   openGraph: {
     title: "개인정보 처리방침 | 경찰과 도둑",
