@@ -24,8 +24,12 @@
   검색엔진이 soft 404로 취급할 수 있다.
 - RSS(`/rss.xml`)는 한국어 글만 담는다.
 
-- env: `NOTION_TOKEN`, `NOTION_BLOG_DATABASE_ID` - 없거나 API가 죽으면 **빈 목록 폴백**
-  (빌드·사이트는 절대 깨지지 않는다). Vercel에도 같은 env 필요
+- env: `NOTION_TOKEN`, `NOTION_BLOG_DATABASE_ID`. Vercel에도 같은 env 필요
+- 화면이 읽는 Supabase(`lib/blog/store.ts`)는 **연결 설정이 없을 때(로컬)만 빈 목록**을 주고,
+  **조회 오류는 던진다(#188).** ISR 재생성 중에 던지면 Next가 직전 정상 페이지를 계속 내보낸다.
+  예전처럼 빈 목록으로 삼키면 글 페이지가 공통 제목·홈 canonical이나 404로 캐시돼
+  검색엔진에 나갔다. 글 메타데이터도 목록에서 찾지 않고 `getPost`로 직접 묻는다.
+  `generateStaticParams`만 오류를 삼킨다(DB가 잠깐 죽어도 배포는 된다, 빠진 글은 첫 요청 때 생성)
 - DB 속성 규약: 제목(title) · 슬러그 · 요약 · 작성자 · 날짜 · 태그 · 공개(checkbox) ·
   언어(select). 코드가 한/영 속성명을 모두 인식하지만 기준은 한국어
 - SDK v5 (API 2025-09 체계): `databases.query`가 아니라 `dataSources.query`를 쓴다.
