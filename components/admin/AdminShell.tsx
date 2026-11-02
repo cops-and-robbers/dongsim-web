@@ -16,17 +16,24 @@ import {
   BugIcon,
   TermsIcon,
   MetricsIcon,
+  SlidersIcon,
 } from "@/components/admin/icons";
 import { ToastProvider } from "@/components/admin/Toast";
 import CommandPalette from "@/components/admin/CommandPalette";
 import { ThemeSwitch } from "@/components/admin/ThemeSwitch";
 import { useAdminAuth } from "@/components/admin/AuthProvider";
+import { usePendingCounts } from "@/lib/admin/usePendingCounts";
+import { useMaintenanceOn } from "@/lib/admin/useMaintenanceOn";
 
 type NavItem = {
   href: string;
   label: string;
   Icon: (p: { className?: string }) => ReactNode;
   exact?: boolean;
+  /** 미처리 건수를 옆에 띄우는 메뉴. */
+  pending?: "reports" | "bugs";
+  /** 하단 탭에 넣지 않는 메뉴. 폰에서는 상단 헤더에서 들어간다. */
+  desktopOnly?: boolean;
 };
 
 type NavGroup = { label?: string; items: NavItem[] };
@@ -47,8 +54,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "처리",
     items: [
-      { href: "/admin/reports", label: "신고", Icon: ReportIcon },
-      { href: "/admin/bugs", label: "버그", Icon: BugIcon },
+      { href: "/admin/reports", label: "신고", Icon: ReportIcon, pending: "reports" },
+      { href: "/admin/bugs", label: "버그", Icon: BugIcon, pending: "bugs" },
       { href: "/admin/terms", label: "약관", Icon: TermsIcon },
     ],
   },
@@ -59,13 +66,32 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/blog", label: "블로그", Icon: BlogIcon },
     ],
   },
+  {
+    label: "운영",
+    items: [{ href: "/admin/app-config", label: "앱 설정", Icon: SlidersIcon, desktopOnly: true }],
+  },
 ];
 
+const APP_CONFIG_HREF = "/admin/app-config";
+
 // 모바일 하단 탭 + active 판정용 평면 목록
-const NAV: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
+const NAV: NavItem[] = NAV_GROUPS.flatMap((g) => g.items).filter((item) => !item.desktopOnly);
+
+const shortCount = (n: number) => (n > 99 ? "99+" : String(n));
+
+// 메뉴 옆 미처리 건수. 0건이면 그리지 않는다. 늘 보이는 자리라 배경 없이 숫자만 둔다(docs/admin-ui.md)
+function PendingCount({ count, className }: { count: number; className: string }) {
+  if (count <= 0) return null;
+  return (
+    <span className={`font-semibold tabular-nums text-sd-critical ${className}`}>
+      <span aria-hidden>{shortCount(count)}</span>
+      <span className="sr-only">미처리 {count}건</span>
+    </span>
+  );
+}
 
 // 데스크톱 사이드바 항목
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({ item, active, count, notice }: { item: NavItem; active: boolean; count: number; notice?: string }) {
   const { Icon } = item;
   return (
     <Link
@@ -86,12 +112,14 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       )}
       <Icon className="relative z-10 h-[18px] w-[18px] shrink-0" />
       <span className="relative z-10">{item.label}</span>
+      <PendingCount count={count} className="relative z-10 ml-auto text-[12px]" />
+      {notice && <span className="relative z-10 ml-auto text-[12px] font-semibold text-sd-critical">{notice}</span>}
     </Link>
   );
 }
 
 // 모바일 하단 탭 항목
-function BottomTab({ item, active }: { item: NavItem; active: boolean }) {
+function BottomTab({ item, active, count }: { item: NavItem; active: boolean; count: number }) {
   const { Icon } = item;
   return (
     <Link
@@ -110,6 +138,8 @@ function BottomTab({ item, active }: { item: NavItem; active: boolean }) {
       )}
       <Icon className="h-[22px] w-[22px]" />
       {item.label}
+      {/* 탭이 좁아(한 칸 약 42px) 글자 줄에 두지 않고 아이콘 오른쪽 위에 얹는다 */}
+      <PendingCount count={count} className="absolute left-1/2 top-1 ml-2.5 text-[10px] leading-none" />
     </Link>
   );
 }
@@ -139,6 +169,21 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href);
+
+  const counts = usePendingCounts();
+  const countOf = (item: NavItem) => (item.pending && counts ? counts[item.pending] : 0);
+  const pendingTotal = counts ? counts.reports + counts.bugs : 0;
+  // 점검을 켜 두고 잊으면 사용자 전체가 막힌다. 어느 화면에서나 보이게 한다
+  const maintenanceOn = useMaintenanceOn();
+
+  // 다른 탭에 있어도 처리할 게 있는지 보이게 탭 제목 앞에 건수를 붙인다. 어드민 제목은 layout 의 하나뿐이다
+  useEffect(() => {
+    const base = document.title.replace(/^\(\d+\+?\) /, "");
+    document.title = pendingTotal > 0 ? `(${shortCount(pendingTotal)}) ${base}` : base;
+    return () => {
+      document.title = base;
+    };
+  }, [pendingTotal]);
 
   // 어드민 셸은 공개 사이트 문서(머리, 바닥) 위에 fixed 로 덮여 있다. 폰에서 셸을 끌면 그 손가락
   // 움직임이 뒤 문서로 넘어가 주소창이 접히고 셸이 통째로 튕긴다(약관 탭에서 처음 보고됨).
@@ -177,7 +222,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               <div key={group.label ?? gi} className="flex flex-col gap-0.5">
                 {gi > 0 && <div className="mx-3 my-2 h-px bg-sd-hairline" />}
                 {group.items.map((item) => (
-                  <NavLink key={item.href} item={item} active={isActive(item)} />
+                  <NavLink
+                    key={item.href}
+                    item={item}
+                    active={isActive(item)}
+                    count={countOf(item)}
+                    notice={item.href === APP_CONFIG_HREF && maintenanceOn ? "점검 중" : undefined}
+                  />
                 ))}
               </div>
             ))}
@@ -206,6 +257,17 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             />
           </Link>
           <div className="flex items-center gap-2">
+            {/* 하단 탭이 이미 9칸이라 넣지 않는다(docs/admin-ui.md "모바일"). 밖에서 점검을 끄러 들어오는 길이라 헤더에 둔다 */}
+            <Link
+              href={APP_CONFIG_HREF}
+              aria-label={maintenanceOn ? "앱 설정, 점검 중" : "앱 설정"}
+              className={`relative rounded-lg p-1.5 transition hover:bg-sd-pressed ${
+                pathname.startsWith(APP_CONFIG_HREF) ? "text-accent" : "text-sd-fg-subtle"
+              }`}
+            >
+              <SlidersIcon className="h-[18px] w-[18px]" />
+              {maintenanceOn && <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-sd-critical" />}
+            </Link>
             <ThemeSwitch />
             <AccountRow compact />
           </div>
@@ -224,7 +286,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           {NAV.map((item) => (
-            <BottomTab key={item.href} item={item} active={isActive(item)} />
+            <BottomTab key={item.href} item={item} active={isActive(item)} count={countOf(item)} />
           ))}
         </nav>
       </div>

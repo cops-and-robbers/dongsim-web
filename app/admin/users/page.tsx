@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useLazyLoadQuery } from "react-relay";
 import type { AdminUsers } from "@/__generated__/AdminUsers.graphql";
@@ -14,14 +14,16 @@ import {
   TableSkeleton,
   ListPage,
 } from "@/components/admin/Parts";
-import { Table, Th, Tr, Td } from "@/components/admin/Table";
+import { SEEN_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
 import { RoleBadge, SocialBadge } from "@/components/admin/StatusBadge";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { Button } from "@/components/admin/Button";
 import { Dropdown } from "@/components/admin/Dropdown";
+import { RecentMenu } from "@/components/admin/RecentViewed";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { DeviceIcon } from "@/components/admin/icons";
 import { DEVICE_LABEL, formatDate, labelOf } from "@/lib/admin/format";
+import { useClampPage, useListParams, useListScroll } from "@/lib/admin/useListParams";
 
 type SocialType = "" | "KAKAO" | "GOOGLE" | "APPLE";
 type Sort = "LATEST" | "OLDEST";
@@ -33,26 +35,39 @@ const SORT_VARS: Record<Sort, { sortDirection: "ASC" | "DESC" }> = {
   OLDEST: { sortDirection: "ASC" },
 };
 
-export default function UsersPage() {
-  const [nicknameInput, setNicknameInput] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [social, setSocial] = useState<SocialType>("");
-  const [sort, setSort] = useState<Sort>("LATEST");
-  const [page, setPage] = useState(0);
-  const [fetchKey, setFetchKey] = useState(0);
-  const [isPending, startTransition] = useTransition();
+const PARAMS = {
+  nickname: "text",
+  social: ["", "KAKAO", "GOOGLE", "APPLE"],
+  sort: ["LATEST", "OLDEST"],
+} as const;
 
+export default function UsersPage() {
+  const { current, shown, dim, set } = useListParams(PARAMS);
+  const [fetchKey, setFetchKey] = useState(0);
+
+  const [nicknameInput, setNicknameInput] = useState(current.nickname);
+  const [written, setWritten] = useState(current.nickname);
+  const [lastUrlNickname, setLastUrlNickname] = useState(current.nickname);
+
+  // 메뉴를 눌러 주소가 비면 검색창도 따라 비운다. 내가 방금 쓴 값이면 그대로 둬서 치고 있는 글자를 덮지 않는다
+  if (current.nickname !== lastUrlNickname) {
+    setLastUrlNickname(current.nickname);
+    if (current.nickname !== written) {
+      setNicknameInput(current.nickname);
+      setWritten(current.nickname);
+    }
+  }
+
+  // 입력이 바뀌었을 때만 쓴다. 돌아와서 복원한 검색어를 다시 쓰면 첫 페이지로 돌아가 버린다
   useEffect(() => {
     const t = setTimeout(() => {
-      startTransition(() => {
-        setNickname(nicknameInput.trim());
-        setPage(0);
-      });
+      const trimmed = nicknameInput.trim();
+      if (trimmed === written) return;
+      setWritten(trimmed);
+      set({ nickname: trimmed });
     }, 300);
     return () => clearTimeout(t);
-  }, [nicknameInput]);
-
-  const update = (fn: () => void) => startTransition(fn);
+  }, [nicknameInput, written, set]);
 
   return (
     <ListPage>
@@ -68,13 +83,8 @@ export default function UsersPage() {
           placeholder="닉네임 검색"
         />
         <Dropdown<SocialType>
-          value={social}
-          onChange={(v) =>
-            update(() => {
-              setSocial(v);
-              setPage(0);
-            })
-          }
+          value={current.social}
+          onChange={(v) => set({ social: v })}
           options={[
             { label: "소셜 전체", value: "" },
             { label: "카카오", value: "KAKAO" },
@@ -83,18 +93,14 @@ export default function UsersPage() {
           ]}
         />
         <SegmentedControl<Sort>
-          value={sort}
-          onChange={(v) =>
-            update(() => {
-              setSort(v);
-              setPage(0);
-            })
-          }
+          value={current.sort}
+          onChange={(v) => set({ sort: v })}
           options={[
             { label: "최신순", value: "LATEST" },
             { label: "오래된순", value: "OLDEST" },
           ]}
         />
+        <RecentMenu group="user" />
       </div>
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -104,29 +110,25 @@ export default function UsersPage() {
         >
           <UsersResults
             variables={{
-              page,
+              page: shown.page,
               size: PAGE_SIZE,
-              nickname: nickname || undefined,
-              socialType: social || undefined,
-              ...SORT_VARS[sort],
+              nickname: shown.nickname || undefined,
+              socialType: shown.social || undefined,
+              ...SORT_VARS[shown.sort],
             }}
             fetchKey={fetchKey}
-            dim={isPending}
-            onPage={(p) => update(() => setPage(p))}
+            dim={dim}
+            onPage={(page) => set({ page })}
             emptyAction={
-              nickname !== "" || social !== "" ? (
+              shown.nickname !== "" || shown.social !== "" ? (
                 <Button
                   variant="neutral"
                   size="sm"
-                  onClick={() =>
-                    update(() => {
-                      setNicknameInput("");
-                      setNickname("");
-                      setSocial("");
-                      setSort("LATEST");
-                      setPage(0);
-                    })
-                  }
+                  onClick={() => {
+                    setNicknameInput("");
+                    setWritten("");
+                    set({ nickname: "", social: "", sort: "LATEST", page: 0 });
+                  }}
                 >
                   검색 초기화
                 </Button>
@@ -157,6 +159,10 @@ function UsersResults({
     fetchPolicy: "store-or-network",
   });
   const pageData = data.adminUsers;
+  const scrollRef = useListScroll();
+  const over = useClampPage(pageData, onPage);
+
+  if (over) return null;
 
   if (pageData.content.length === 0) {
     const filtered = variables.nickname != null || variables.socialType != null;
@@ -179,7 +185,7 @@ function UsersResults({
     <div
       className={`flex min-h-0 flex-1 flex-col transition-opacity ${dim ? "pointer-events-none opacity-50" : ""}`}
     >
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
       <Table
         sticky
         head={
@@ -198,7 +204,7 @@ function UsersResults({
               <Td>
                 <Link
                   href={`/admin/users/${u.id}`}
-                  className="font-semibold text-sd-fg transition hover:text-accent"
+                  className={`font-semibold text-sd-fg transition hover:text-accent ${SEEN_ROW_TITLE}`}
                 >
                   {u.nickname}
                 </Link>

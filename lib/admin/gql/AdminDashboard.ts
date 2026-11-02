@@ -21,5 +21,9 @@ export const AdminDashboardQuery = graphql`
         robberWinRate
       }
     }
+    # pendingReportCount 는 게임 채팅 신고만 세서, 메뉴 숫자와 같은 통합 신고 건수를 함께 받는다
+    adminAllReports(page: 0, size: 1, status: PENDING) {
+      totalElements
+    }
   }
 `;

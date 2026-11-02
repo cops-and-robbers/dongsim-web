@@ -13,7 +13,7 @@ import { AdminGamesQuery } from "@/lib/admin/gql/AdminGames";
 import { PageHeader, SectionCard, ScrollPage } from "@/components/admin/Parts";
 import { Donut } from "@/components/admin/charts";
 import { Stagger, StaggerItem, FadeIn } from "@/components/admin/motion";
-import { Table, Th, Tr, Td } from "@/components/admin/Table";
+import { SEEN_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
 import { GameStatusBadge } from "@/components/admin/StatusBadge";
 import { InviteCode } from "@/components/admin/InviteCode";
 import QueryBoundary from "@/components/admin/QueryBoundary";
@@ -49,7 +49,9 @@ function Overview() {
   // 진행중 게임, 처리 대기 수는 지금 상태라 열어 둔 동안 뒤에서 새로 받는다(lib/admin/useLiveRefresh.ts)
   const live = useLiveRefresh();
   const fresh = { fetchKey: live, fetchPolicy: "store-and-network" } as const;
-  const d = useLazyLoadQuery<AdminDashboard>(AdminDashboardQuery, {}, fresh).adminDashboard;
+  const dashboard = useLazyLoadQuery<AdminDashboard>(AdminDashboardQuery, {}, fresh);
+  const d = dashboard.adminDashboard;
+  const pendingReports = dashboard.adminAllReports.totalElements;
   const games = useLazyLoadQuery<AdminGames>(AdminGamesQuery, {
     page: 0, size: 6, sortDirection: "DESC",
   }, fresh);
@@ -63,7 +65,7 @@ function Overview() {
     color: REASON_COLOR[r.endReason] ?? "#868e96",
   }));
   const reasonTotal = d.endReasonDistribution.reduce((a, r) => a + r.count, 0);
-  const pending = d.pendingReportCount + d.pendingBugReportCount;
+  const pending = pendingReports + d.pendingBugReportCount;
 
   return (
     <>
@@ -73,7 +75,7 @@ function Overview() {
           <InfoIcon className="h-5 w-5 shrink-0 text-sd-critical" />
           <p className="text-[14px] font-medium text-sd-fg">
             처리를 기다리는 신고{" "}
-            <b className="font-bold text-sd-critical">{d.pendingReportCount}</b>건, 버그{" "}
+            <b className="font-bold text-sd-critical">{pendingReports}</b>건, 버그{" "}
             <b className="font-bold text-sd-critical">{d.pendingBugReportCount}</b>건이 있어요.
           </p>
         </div>
@@ -85,7 +87,7 @@ function Overview() {
           <ActionCard icon={<GamesIcon className="h-5 w-5" />} label="진행중 게임" value={d.inProgressGameCount} sub="실시간 플레이 중" accent href="/admin/games?status=IN_PROGRESS" />
         </StaggerItem>
         <StaggerItem className="h-full">
-          <ActionCard icon={<ReportIcon className="h-5 w-5" />} label="미처리 신고" value={d.pendingReportCount} href="/admin/reports?status=PENDING" warn />
+          <ActionCard icon={<ReportIcon className="h-5 w-5" />} label="미처리 신고" value={pendingReports} href="/admin/reports?status=PENDING" warn />
         </StaggerItem>
         <StaggerItem className="h-full">
           <ActionCard icon={<BugIcon className="h-5 w-5" />} label="미처리 버그" value={d.pendingBugReportCount} href="/admin/bugs?status=PENDING" warn />
@@ -159,7 +161,7 @@ function Overview() {
                   {users.adminUsers.content.map((u, i) => (
                     <Tr key={u.id} index={i} href={`/admin/users/${u.id}`}>
                       <Td>
-                        <Link href={`/admin/users/${u.id}`} className="font-semibold text-sd-fg transition hover:text-accent">
+                        <Link href={`/admin/users/${u.id}`} className={`font-semibold text-sd-fg transition hover:text-accent ${SEEN_ROW_TITLE}`}>
                           {u.nickname}
                         </Link>
                       </Td>

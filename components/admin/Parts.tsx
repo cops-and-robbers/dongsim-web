@@ -3,6 +3,7 @@
 import type { ReactNode, SelectHTMLAttributes } from "react";
 import Link from "next/link";
 import { Button } from "@/components/admin/Button";
+import { rememberedListHref } from "@/lib/admin/useListParams";
 import {
   SearchIcon,
   ChevronLeftIcon,
@@ -48,7 +49,7 @@ export function PageHeader({
     <div className="mb-6">
       {back && (
         <Link
-          href={back.href}
+          href={rememberedListHref(back.href)}
           className="mb-2.5 inline-flex items-center gap-1 text-[13px] font-semibold text-sd-fg-subtle transition hover:text-accent"
         >
           <ChevronLeftIcon className="h-4 w-4" />

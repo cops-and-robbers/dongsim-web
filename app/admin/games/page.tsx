@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useLazyLoadQuery } from "react-relay";
 import type { AdminGames } from "@/__generated__/AdminGames.graphql";
 import { AdminGamesQuery } from "@/lib/admin/gql/AdminGames";
@@ -16,32 +16,24 @@ import { Table, Th, Tr, Td } from "@/components/admin/Table";
 import { GameStatusBadge, Pill } from "@/components/admin/StatusBadge";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { GameTabs } from "@/components/admin/GameTabs";
+import { RecentMenu } from "@/components/admin/RecentViewed";
 import { Button } from "@/components/admin/Button";
 import { InviteCode } from "@/components/admin/InviteCode";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { formatDate } from "@/lib/admin/format";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
+import { useClampPage, useListParams, useListScroll } from "@/lib/admin/useListParams";
 
 // 게임은 끝나도 FINISHED로 남지 않고 다시 WAITING이 되며, 방이 비면 삭제된다.
 // 그래서 조회되는 상태는 대기중·진행중 둘뿐이다. 지난 게임은 '지난 게임' 화면에서 본다.
 type StatusFilter = "" | "WAITING" | "IN_PROGRESS";
 const PAGE_SIZE = 20;
 
-function initStatusFilter(): StatusFilter {
-  if (typeof window === "undefined") return "";
-  const s = new URLSearchParams(window.location.search).get("status");
-  return (["WAITING", "IN_PROGRESS"] as string[]).includes(s ?? "")
-    ? (s as StatusFilter)
-    : "";
-}
+const PARAMS = { status: ["", "WAITING", "IN_PROGRESS"], dir: ["DESC", "ASC"] } as const;
 
 export default function GamesPage() {
-  const [status, setStatus] = useState<StatusFilter>(initStatusFilter);
-  const [dir, setDir] = useState<"DESC" | "ASC">("DESC");
-  const [page, setPage] = useState(0);
+  const { current, shown, dim, set } = useListParams(PARAMS);
   const [fetchKey, setFetchKey] = useState(0);
-  const [isPending, startTransition] = useTransition();
-  const update = (fn: () => void) => startTransition(fn);
 
   return (
     <ListPage>
@@ -50,13 +42,8 @@ export default function GamesPage() {
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <GameTabs />
         <SegmentedControl<StatusFilter>
-          value={status}
-          onChange={(v) =>
-            update(() => {
-              setStatus(v);
-              setPage(0);
-            })
-          }
+          value={current.status}
+          onChange={(v) => set({ status: v })}
           options={[
             { label: "전체", value: "" },
             { label: "대기중", value: "WAITING" },
@@ -64,18 +51,14 @@ export default function GamesPage() {
           ]}
         />
         <SegmentedControl<"DESC" | "ASC">
-          value={dir}
-          onChange={(v) =>
-            update(() => {
-              setDir(v);
-              setPage(0);
-            })
-          }
+          value={current.dir}
+          onChange={(v) => set({ dir: v })}
           options={[
             { label: "최신순", value: "DESC" },
             { label: "오래된순", value: "ASC" },
           ]}
         />
+        <RecentMenu group="game" />
       </div>
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -85,26 +68,20 @@ export default function GamesPage() {
         >
           <GamesResults
             variables={{
-              page,
+              page: shown.page,
               size: PAGE_SIZE,
-              status: status || undefined,
-              sortDirection: dir,
+              status: shown.status || undefined,
+              sortDirection: shown.dir,
             }}
             fetchKey={fetchKey}
-            dim={isPending}
-            onPage={(p) => update(() => setPage(p))}
+            dim={dim}
+            onPage={(page) => set({ page })}
             emptyAction={
-              status !== "" ? (
+              shown.status !== "" ? (
                 <Button
                   variant="neutral"
                   size="sm"
-                  onClick={() =>
-                    update(() => {
-                      setStatus("");
-                      setDir("DESC");
-                      setPage(0);
-                    })
-                  }
+                  onClick={() => set({ status: "", dir: "DESC", page: 0 })}
                 >
                   필터 초기화
                 </Button>
@@ -137,6 +114,10 @@ function GamesResults({
     fetchPolicy: "store-and-network",
   });
   const pageData = data.adminGames;
+  const scrollRef = useListScroll();
+  const over = useClampPage(pageData, onPage);
+
+  if (over) return null;
 
   if (pageData.content.length === 0) {
     const filtered = variables.status != null;
@@ -159,7 +140,7 @@ function GamesResults({
     <div
       className={`flex min-h-0 flex-1 flex-col transition-opacity ${dim ? "pointer-events-none opacity-50" : ""}`}
     >
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
       <Table
         sticky
         head={
