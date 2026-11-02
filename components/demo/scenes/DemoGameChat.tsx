@@ -189,7 +189,11 @@ export function GameChatPanel({ chat, dark }: { chat: GameChat; dark: boolean })
         <input
           value={chat.input}
           onChange={(e) => chat.setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && chat.send()}
+          onKeyDown={(e) => {
+            // 한글 조합 중 Enter 는 신호가 두 번 와서 마지막 글자가 한 번 더 간다
+            if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+            if (e.key === "Enter") chat.send();
+          }}
           placeholder={chat.scope === "team" ? app.chatTeamHint : app.chatAllHint}
           className="select-text min-w-0 flex-1 rounded-[12px] px-[16px] py-[12px] text-[14px] outline-none placeholder:text-[#93A2B3]"
           style={{
