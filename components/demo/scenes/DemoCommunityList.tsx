@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { appColors } from "@/lib/app-tokens";
 import type { DemoCommunityPost } from "@/lib/demo/copy";
 import { useDemoCopy } from "../demo-copy";
@@ -11,8 +11,23 @@ import { DemoIconLabel, DemoStatusChip, demoShadowVer2 } from "./DemoCommunityPa
 // 스코프 토글 + 정렬 라벨 + 카드 목록 + 떠 있는 작성 버튼.
 // 스코프 토글은 실제로 움직이고, 우리 동네·내 모임은 앱처럼 준비 중이다.
 // 눌리는 모집글은 맨 위 하나 - 나머지는 코스 밖 구경거리다.
-export function DemoCommunityList({ onOpenPost }: { onOpenPost: () => void }) {
+const AD_INTERVAL = 5;
+
+export function DemoCommunityList({
+  onOpenPost,
+  adSlot,
+}: {
+  onOpenPost: () => void;
+  /** 어드민 앱 설정의 폰이 넣는 광고 자리. 앱처럼 모집 글 5개 뒤에 두고 그 자리까지 내려 보여 준다(community_ad_list.dart) */
+  adSlot?: ReactNode;
+}) {
   const { app, community } = useDemoCopy();
+  const listRef = useRef<HTMLDivElement>(null);
+  const hasAd = Boolean(adSlot);
+  useEffect(() => {
+    if (hasAd && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [hasAd]);
+  const posts = hasAd ? [...community.posts, community.posts[0]].slice(0, AD_INTERVAL) : community.posts;
   const [scope, setScope] = useState(0);
   const scopes = [app.scopeAll, app.scopeNearby, app.scopeMine];
 
@@ -65,7 +80,10 @@ export function DemoCommunityList({ onOpenPost }: { onOpenPost: () => void }) {
         </div>
 
         {scope === 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-[10px] overflow-hidden px-[16px] pt-[14px]">
+          <div
+            ref={listRef}
+            className={`flex min-h-0 flex-1 flex-col gap-[10px] px-[16px] pt-[14px] ${hasAd ? "overflow-y-auto pb-[70px] [scrollbar-width:none]" : "overflow-hidden"}`}
+          >
             {/* 정렬 라벨 (community_feed_list.dart: 우측 정렬, 12px black600) */}
             <div className="flex shrink-0 items-center justify-end gap-[4px] px-[8px]">
               <span className="text-[12px]" style={{ color: appColors.black600 }}>
@@ -73,9 +91,12 @@ export function DemoCommunityList({ onOpenPost }: { onOpenPost: () => void }) {
               </span>
               <Image src="/demo/icon_sort.svg" alt="" width={10} height={6} />
             </div>
-            {community.posts.map((post, i) => (
-              <PostCard key={post.title} post={post} onOpen={i === 0 ? onOpenPost : undefined} />
+            {posts.map((post, i) => (
+              <div key={i} className="shrink-0">
+                <PostCard post={post} onOpen={i === 0 ? onOpenPost : undefined} />
+              </div>
             ))}
+            {adSlot && <div className="shrink-0 p-[3px]">{adSlot}</div>}
           </div>
         ) : (
           // 우리 동네·내 모임은 앱과 같이 준비 중 안내다

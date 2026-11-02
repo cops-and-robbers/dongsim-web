@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Image from "next/image";
 import { appColors } from "@/lib/app-tokens";
 import { DEMO_NICKNAME } from "@/lib/demo/scenes";
@@ -15,12 +16,15 @@ export function DemoHome({
   profileIcon,
   onCreate,
   onJoin,
+  banner,
 }: {
   active: "create" | "join" | "none";
   /** 마이페이지에서 고른 프로필 아이콘 - 같은 사람이 이어져 보인다 (#88) */
   profileIcon: 1 | 2;
   onCreate: () => void;
   onJoin: () => void;
+  /** 버튼 아래 원격 배너 자리. 어드민 앱 설정의 폰이 넣는다(home_page.dart) */
+  banner?: ReactNode;
 }) {
   const { app } = useDemoCopy();
   const [welcomeLine1, welcomeLine2] = app.welcome.split("\n");
@@ -115,6 +119,7 @@ export function DemoHome({
             {app.joinRoom}
           </button>
         </div>
+        {banner}
         <div className="min-h-0 flex-1" />
       </div>
     </div>
