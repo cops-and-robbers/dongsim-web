@@ -14,6 +14,7 @@ import {
   type SocialPlatform,
 } from "@/lib/admin/auth/login";
 import { reissue, SESSION_EXPIRED_EVENT } from "@/lib/admin/auth/session";
+import { clearRecent } from "@/lib/admin/recentViewed";
 import {
   getAccessToken,
   getStoredProfile,
@@ -110,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await apiLogout();
     setStoredProfile(null);
+    clearRecent();
     setProfile(null);
     setStatus("unauthed");
   }, []);

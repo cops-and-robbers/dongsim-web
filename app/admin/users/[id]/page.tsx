@@ -21,6 +21,7 @@ import {
 } from "@/components/admin/StatusBadge";
 import { CheckIcon, DeviceIcon } from "@/components/admin/icons";
 import QueryBoundary from "@/components/admin/QueryBoundary";
+import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { StaffToggle } from "@/components/admin/metrics/StaffToggle";
 import { DEVICE_LABEL, formatDate, formatDateTime, labelOf } from "@/lib/admin/format";
 
@@ -66,6 +67,7 @@ function AgreeRow({ label, ok }: { label: string; ok: boolean }) {
 function UserDetail({ id }: { id: string }) {
   const data = useLazyLoadQuery<AdminUser>(AdminUserQuery, { id });
   const user = data.adminUser;
+  useRecordRecent("user", id, user ? { title: user.nickname, detail: `유저 ID ${user.id}` } : null);
 
   if (!user) {
     return (

@@ -21,6 +21,7 @@ import {
 } from "@/components/admin/StatusBadge";
 import { Avatar } from "@/components/admin/Avatar";
 import QueryBoundary from "@/components/admin/QueryBoundary";
+import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { GameAreaMap } from "@/components/admin/maps";
 import { FieldOpsCard } from "@/components/admin/games/FieldOpsCard";
 import { isActive } from "@/lib/admin/eventGame";
@@ -49,6 +50,7 @@ function GameDetail({ id }: { id: string }) {
   const live = useLiveRefresh();
   const data = useLazyLoadQuery<AdminGame>(AdminGameQuery, { id }, { fetchKey: live, fetchPolicy: "store-and-network" });
   const game = data.adminGame;
+  useRecordRecent("game", id, game ? { title: game.inviteCode, detail: `게임 ID ${game.id}` } : null);
 
   if (!game) {
     return (
