@@ -170,6 +170,8 @@ export default function CommandPalette() {
       e.preventDefault();
       moveTo(Math.max(sel - 1, 0));
     } else if (e.key === "Enter") {
+      // 한글 조합 중 Enter 는 신호가 두 번 와서 닫히는 동안 명령이 또 돌 수 있다
+      if (e.nativeEvent.isComposing || e.keyCode === 229) return;
       e.preventDefault();
       runAt(sel);
     }
