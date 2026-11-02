@@ -1,16 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { appColors } from "@/lib/app-tokens";
-import {
-  FakeMap,
-  ZoneCircle,
-  CollapsedChatSheet,
-  SheetHandle,
-  Bubble,
-  FakeQr,
-} from "@/components/game/mockups/parts";
+import { FakeMap, ZoneCircle, FakeQr } from "@/components/game/mockups/parts";
 import {
   ROBBER_PATH,
   ROBBER_POLICE_START_SECONDS,
@@ -19,6 +12,9 @@ import {
 } from "@/lib/demo/scenes";
 import { DemoParticipants } from "./DemoParticipants";
 import { DemoConfirmDialog } from "./DemoConfirmDialog";
+import { TintIcon } from "./DemoGameParts";
+import { GameChatButton, GameChatPanel, GameChatPreview, GameZoneGrid, useGameChat } from "./DemoGameChat";
+import { DemoGameStart, DispatchBanner } from "./DemoGameStart";
 import { useDemoCopy } from "../demo-copy";
 
 const LONG_PRESS_MS = 450;
@@ -35,7 +31,6 @@ const fmt = (s: number) =>
 
 type Point = { left: string; top: string };
 type Ping = Point & { kind: "found" | "suspect" };
-type ChatMessage = { mine: boolean; name?: string; text: string; time: string };
 
 // 체포 알림 배너 문구 - @icon_police·@icon_robber 토큰 자리에 진영 아이콘을
 // 끼운다 (gameEventArrestNotice가 실제로 이 형식이다).
@@ -73,6 +68,10 @@ export function DemoInGameRobber({
   onSurvive: () => void;
   onLeave: () => void;
 }) {
+  // 시작 장면(역할 배너, 설명 장면)이 끝나야 지도 각본이 돈다
+  const [started, setStarted] = useState(false);
+  const [gridOn, setGridOn] = useState(false);
+  const [dispatchDone, setDispatchDone] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [tapped, setTapped] = useState<number | null>(null);
   const [pingSelect, setPingSelect] = useState<Point | null>(null);
@@ -83,18 +82,26 @@ export function DemoInGameRobber({
   const [leaveOpen, setLeaveOpen] = useState(false);
   const copy = useDemoCopy();
   const { app } = copy;
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // 팀원의 정찰 보고는 경과 시간에서 파생된다 - 경찰이 안 보이는 도둑에게는 채팅이 눈이다
+  const chat = useGameChat({
+    elapsed,
+    openerAt: TEAMMATE_CHAT_AT,
+    teammate: TEAMMATE,
+    opener: copy.robberChatScript.opener,
+    reply: copy.robberChatScript.reply,
+    onSent: () => onTask("robber-chat"),
+  });
   const pressTimer = useRef<number | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const chatListRef = useRef<HTMLDivElement>(null);
+  const onStarted = useCallback(() => setStarted(true), []);
+  const hideDispatch = useCallback(() => setDispatchDone(true), []);
 
   // 각본은 전부 경과 시간에서 파생된다 - 타이머는 이 틱 하나뿐이다
   useEffect(() => {
+    if (!started) return;
     const t = window.setInterval(() => setElapsed((n) => n + 1), 1000);
     return () => window.clearInterval(t);
-  }, []);
+  }, [started]);
 
   const remaining = Math.max(0, ROBBER_ROUND_SECONDS - elapsed);
   // 위치 공개 횟수 = 남긴 발자국 수. 나는 항상 그 다음 지점에 있다
@@ -113,21 +120,6 @@ export function DemoInGameRobber({
     const t = window.setTimeout(onSurvive, 900);
     return () => window.clearTimeout(t);
   }, [remaining, onSurvive]);
-
-  // 팀원의 정찰 보고는 경과 시간에서 파생된다 - 경찰이 안 보이는 도둑에게는
-  // 채팅이 눈이다. 방문자가 보낸 메시지(state)는 그 뒤에 이어 붙는다.
-  const displayed: ChatMessage[] =
-    elapsed >= TEAMMATE_CHAT_AT
-      ? [
-          { mine: false, name: TEAMMATE, text: copy.robberChatScript.opener, time: "14:31" },
-          ...messages,
-        ]
-      : messages;
-
-  // 새 메시지가 오면 목록을 맨 아래로
-  useEffect(() => {
-    chatListRef.current?.scrollTo({ top: chatListRef.current.scrollHeight });
-  }, [displayed.length, chatOpen]);
 
   const startPress = (clientX: number, clientY: number) => {
     const el = mapRef.current;
@@ -154,20 +146,6 @@ export function DemoInGameRobber({
     onTask("robber-ping");
   };
 
-  const sendChat = () => {
-    const text = chatInput.trim();
-    if (!text) return;
-    setChatInput("");
-    setMessages((prev) => [...prev, { mine: true, text, time: "14:32" }]);
-    onTask("robber-chat");
-    window.setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { mine: false, name: TEAMMATE, text: copy.robberChatScript.reply, time: "14:32" },
-      ]);
-    }, 1200);
-  };
-
   // 다크 화면의 지도 위 버튼 공통 스타일 (svg_icon_button.dart: 배경 black)
   const darkButton = {
     backgroundColor: appColors.black,
@@ -181,30 +159,32 @@ export function DemoInGameRobber({
         className="relative flex h-[64px] shrink-0 flex-col items-center justify-center"
         style={{ backgroundColor: appColors.black900 }}
       >
-        <button
-          type="button"
-          onClick={() => setLeaveOpen(true)}
-          className="absolute left-[18px] top-1/2 -translate-y-1/2 transition-transform active:scale-90"
-        >
-          <Image
-            src="/demo/icon_exit.svg"
-            alt=""
-            width={24}
-            height={24}
-            className="brightness-0 invert"
-          />
-        </button>
+        {/* 채팅 중에는 나가기 자리가 지도로 돌아가는 버튼이 된다 */}
+        {chat.open ? (
+          <button
+            type="button"
+            aria-label={app.chatBackToMap}
+            onClick={() => chat.setOpen(false)}
+            className="absolute left-[18px] top-1/2 -translate-y-1/2 transition-transform active:scale-90"
+          >
+            <TintIcon src="/demo/icon_previous.svg" size={24} color={appColors.white} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setLeaveOpen(true)}
+            className="absolute left-[18px] top-1/2 -translate-y-1/2 transition-transform active:scale-90"
+          >
+            <TintIcon src="/demo/icon_gameout.svg" size={24} color={appColors.black200} />
+          </button>
+        )}
         <p className="text-[20px] font-bold leading-none text-white">{fmt(remaining)}</p>
         <p className="mt-[6px] text-[12px] leading-none" style={{ color: appColors.black400 }}>
           {app.revealCountdown(fmt(REVEAL_SECONDS - (elapsed % REVEAL_SECONDS)))}
         </p>
-        <Image
-          src="/demo/icon_info.svg"
-          alt=""
-          width={24}
-          height={24}
-          className="absolute right-[12px] top-1/2 -translate-y-1/2 brightness-0 invert"
-        />
+        <span className="absolute right-[12px] top-1/2 -translate-y-1/2">
+          <TintIcon src="/demo/icon_info.svg" size={24} color={appColors.black200} />
+        </span>
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
@@ -225,6 +205,7 @@ export function DemoInGameRobber({
           <FakeMap night />
           <ZoneCircle size={430} top="46%" filled={false} />
           <ZoneCircle size={90} left="38%" top="24%" filled={false} stroke={appColors.red500} />
+          {gridOn && <GameZoneGrid size={430} top="46%" dark />}
 
           {/* 공개된 내 발자국 - 경찰이 쫓는 바로 그 흔적이다 */}
           {ROBBER_PATH.slice(0, trail).map((print, i) => (
@@ -350,28 +331,39 @@ export function DemoInGameRobber({
           </div>
         )}
 
-        {/* 좌하단 내 위치 버튼 - 다크: 검정 배경 + 초록 아이콘 */}
+        {/* 좌하단: 좌표 격자 토글 위, 내 위치 아래 - 다크: 검정 배경 + 초록 아이콘.
+            버튼 bottom 은 앱의 38 + 세이프 영역 34 다 */}
         {!showParticipants && (
-          <button
-            type="button"
-            onClick={() => setLocFocused((v) => !v)}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="absolute bottom-[65px] left-[20px] flex size-[56px] items-center justify-center rounded-[16px] transition-transform active:scale-95"
-            style={darkButton}
-          >
-            <span
-              className="size-[32px]"
-              style={{
-                backgroundColor: locFocused ? appColors.green : appColors.green500,
-                WebkitMask: "url(/demo/mage_location-fill.svg) center / contain no-repeat",
-                mask: "url(/demo/mage_location-fill.svg) center / contain no-repeat",
-              }}
-            />
-          </button>
+          <div className="absolute bottom-[72px] left-[20px] flex flex-col gap-[8px]">
+            <button
+              type="button"
+              aria-label={app.gridToggle}
+              aria-pressed={gridOn}
+              onClick={() => setGridOn((v) => !v)}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="flex size-[56px] items-center justify-center rounded-[16px] transition-transform active:scale-95"
+              style={darkButton}
+            >
+              <TintIcon src="/demo/icon_grid.svg" size={32} color={gridOn ? appColors.green : appColors.green500} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setLocFocused((v) => !v)}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="flex size-[56px] items-center justify-center rounded-[16px] transition-transform active:scale-95"
+              style={darkButton}
+            >
+              <TintIcon
+                src="/demo/mage_location-fill.svg"
+                size={32}
+                color={locFocused ? appColors.green : appColors.green500}
+              />
+            </button>
+          </div>
         )}
 
-        {/* 우하단 액션 버튼 - 참가자 목록 토글 + 내 수배 QR 열기 */}
-        <div className="absolute bottom-[65px] right-[20px] flex flex-col gap-[8px]">
+        {/* 우하단 액션 버튼 - 참가자 목록 토글 + 내 수배 QR 열기 + 채팅 */}
+        <div className="absolute bottom-[72px] right-[20px] flex flex-col gap-[8px]">
           <button
             type="button"
             onPointerDown={(e) => e.stopPropagation()}
@@ -407,82 +399,10 @@ export function DemoInGameRobber({
               }}
             />
           </button>
+          <GameChatButton chat={chat} dark />
         </div>
-      </div>
-
-      {/* 채팅 시트 - 다크 (chat_overlay.dart: black900 시트, 초록 액센트) */}
-      <div className="relative z-10 -mt-[20px]">
-        {!chatOpen ? (
-          <button type="button" onClick={() => setChatOpen(true)} className="block w-full text-left">
-            <CollapsedChatSheet hint={app.chatHint} dark />
-          </button>
-        ) : (
-          <div
-            className="flex h-[340px] flex-col rounded-t-[20px] shadow-[0_-8px_24px_rgba(0,0,0,0.55)]"
-            style={{ backgroundColor: appColors.black900 }}
-          >
-            <button type="button" onClick={() => setChatOpen(false)} className="shrink-0">
-              <SheetHandle dark />
-            </button>
-            <div
-              ref={chatListRef}
-              className="flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto px-[16px] py-[4px]"
-            >
-              {displayed.map((message, i) => (
-                <Bubble
-                  key={i}
-                  side={message.mine ? "right" : "left"}
-                  name={message.mine ? undefined : message.name}
-                  time={message.time}
-                  dark
-                >
-                  {message.text}
-                </Bubble>
-              ))}
-            </div>
-            <div className="shrink-0 px-[20px] py-[8px]">
-              <div
-                className="flex min-h-[48px] items-center gap-[8px] rounded-[12px] py-[6px] pl-[20px] pr-[12px]"
-                style={{ backgroundColor: appColors.black }}
-              >
-                <input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendChat()}
-                  placeholder={app.chatHint}
-                  className="select-text min-w-0 flex-1 bg-transparent text-[16px] font-medium text-white outline-none"
-                  style={{ caretColor: appColors.green }}
-                />
-                <button
-                  type="button"
-                  onClick={sendChat}
-                  className="flex size-[32px] shrink-0 items-center justify-center rounded-full transition-colors"
-                  style={{
-                    backgroundColor: chatInput.trim() ? appColors.green : appColors.black900,
-                  }}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    className="-rotate-90"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4 12h13M12 5l7 7-7 7"
-                      stroke={chatInput.trim() ? appColors.black : appColors.black400}
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      fill="none"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="h-[16px] shrink-0" />
-          </div>
-        )}
+        <GameChatPreview chat={chat} dark />
+        <GameChatPanel chat={chat} dark />
       </div>
 
       {/* 게임 나가기 확인 - 다크 (gameLeaveConfirm 문구 그대로) */}
@@ -524,6 +444,10 @@ export function DemoInGameRobber({
           </div>
         </div>
       )}
+
+      <DemoGameStart team="robber" onStarted={onStarted} />
+      {/* 경찰 카운트다운이 끝나면 출동 배너가 지도 위로 지나간다 (터치는 막지 않는다) */}
+      {policeCountdown <= 0 && !dispatchDone && <DispatchBanner team="robber" onDone={hideDispatch} />}
     </>
   );
 }

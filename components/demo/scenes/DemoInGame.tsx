@@ -1,31 +1,28 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { appColors } from "@/lib/app-tokens";
-import {
-  FakeMap,
-  ZoneCircle,
-  CollapsedChatSheet,
-  SheetHandle,
-  Bubble,
-  FakeQr,
-} from "@/components/game/mockups/parts";
+import { FakeMap, ZoneCircle, FakeQr } from "@/components/game/mockups/parts";
 import { FOOTPRINT_SCRIPT, FOOTPRINT_INTERVAL_MS } from "@/lib/demo/scenes";
 import { DemoParticipants } from "./DemoParticipants";
 import { DemoConfirmDialog } from "./DemoConfirmDialog";
+import { TintIcon } from "./DemoGameParts";
+import { GameChatButton, GameChatPanel, GameChatPreview, GameZoneGrid, useGameChat } from "./DemoGameChat";
+import { DemoGameStart } from "./DemoGameStart";
 import { useDemoCopy } from "../demo-copy";
 
 const LONG_PRESS_MS = 450;
 // 라운드 남은 시간(초). 헤더 타이머가 여기서 1초씩 줄어든다
 const ROUND_REMAINING = 14 * 60 + 32;
+// 지도가 열린 뒤 팀원 첫 메시지가 도착하는 시점(초). 말풍선과 안 읽은 수를 보여 주는 각본이다
+const CHAT_OPENER_AT = 3;
 
 const fmt = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
 type Point = { left: string; top: string };
 type Ping = Point & { kind: "found" | "suspect" };
-type ChatMessage = { mine: boolean; name?: string; text: string; time: string };
 
 // 인게임 경찰 시점. 발자국은 각본대로 찍히고 탭·핑·채팅·체포는 방문자 몫이다.
 // 핑은 앱 그대로 길게 누르기 → 발견/의심 선택 카드 → 마커
@@ -41,6 +38,9 @@ export function DemoInGame({
   onVictory: () => void;
   onLeave: () => void;
 }) {
+  // 시작 장면(역할 배너, 대기 장면)이 끝나야 지도 각본이 돈다
+  const [started, setStarted] = useState(false);
+  const [gridOn, setGridOn] = useState(false);
   const [footprints, setFootprints] = useState(0);
   const [tapped, setTapped] = useState<number | null>(null);
   const [pingSelect, setPingSelect] = useState<Point | null>(null);
@@ -50,21 +50,25 @@ export function DemoInGame({
   const [caught, setCaught] = useState(false);
   const copy = useDemoCopy();
   const { app } = copy;
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [locFocused, setLocFocused] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { mine: false, name: "든든한보안관3402", text: copy.chatScript.opener, time: "14:31" },
-  ]);
+  const chat = useGameChat({
+    elapsed,
+    openerAt: CHAT_OPENER_AT,
+    teammate: "든든한보안관3402",
+    opener: copy.chatScript.opener,
+    reply: copy.chatScript.reply,
+    onSent: () => onTask("ingame-chat"),
+  });
   const pressTimer = useRef<number | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const chatListRef = useRef<HTMLDivElement>(null);
+  const onStarted = useCallback(() => setStarted(true), []);
 
   // 각본: 발자국을 주기마다 하나씩 찍고, 다 찍히면 도둑이 모습을 드러낸다
   useEffect(() => {
+    if (!started) return;
     if (footprints >= FOOTPRINT_SCRIPT.length) {
       const t = window.setTimeout(() => setRobberOut(true), 900);
       return () => window.clearTimeout(t);
@@ -74,7 +78,7 @@ export function DemoInGame({
       FOOTPRINT_INTERVAL_MS,
     );
     return () => window.clearTimeout(t);
-  }, [footprints]);
+  }, [started, footprints]);
 
   // 스캔 연출이 끝나면 체포 성공 표시를 잠깐 보여주고 승리로 넘어간다
   useEffect(() => {
@@ -87,16 +91,12 @@ export function DemoInGame({
     };
   }, [scanning, onVictory]);
 
-  // 새 메시지가 오면 목록을 맨 아래로
-  useEffect(() => {
-    chatListRef.current?.scrollTo({ top: chatListRef.current.scrollHeight });
-  }, [messages, chatOpen]);
-
   // 헤더 타이머 1초 틱
   useEffect(() => {
+    if (!started) return;
     const t = window.setInterval(() => setElapsed((n) => n + 1), 1000);
     return () => window.clearInterval(t);
-  }, []);
+  }, [started]);
 
   const startPress = (clientX: number, clientY: number) => {
     const el = mapRef.current;
@@ -123,25 +123,6 @@ export function DemoInGame({
     onTask("ingame-ping");
   };
 
-  const sendChat = () => {
-    const text = chatInput.trim();
-    if (!text) return;
-    setChatInput("");
-    setMessages((prev) => [...prev, { mine: true, text, time: "14:32" }]);
-    onTask("ingame-chat");
-    window.setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          mine: false,
-          name: "든든한보안관3402",
-          text: copy.chatScript.reply,
-          time: "14:32",
-        },
-      ]);
-    }, 1200);
-  };
-
   return (
     <>
       {/* 상단 앱바 (game_page.dart _buildAppBar): 나가기(좌 18)·info(우 12),
@@ -150,13 +131,25 @@ export function DemoInGame({
         className="relative flex h-[64px] shrink-0 flex-col items-center justify-center"
         style={{ backgroundColor: appColors.white }}
       >
-        <button
-          type="button"
-          onClick={() => setLeaveOpen(true)}
-          className="absolute left-[18px] top-1/2 -translate-y-1/2 transition-transform active:scale-90"
-        >
-          <Image src="/demo/icon_exit.svg" alt="" width={24} height={24} />
-        </button>
+        {/* 채팅 중에는 나가기 자리가 지도로 돌아가는 버튼이 된다 */}
+        {chat.open ? (
+          <button
+            type="button"
+            aria-label={app.chatBackToMap}
+            onClick={() => chat.setOpen(false)}
+            className="absolute left-[18px] top-1/2 -translate-y-1/2 transition-transform active:scale-90"
+          >
+            <Image src="/demo/icon_previous.svg" alt="" width={24} height={24} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setLeaveOpen(true)}
+            className="absolute left-[18px] top-1/2 -translate-y-1/2 transition-transform active:scale-90"
+          >
+            <TintIcon src="/demo/icon_gameout.svg" size={24} color={appColors.black500} />
+          </button>
+        )}
         <p
           className="text-[20px] font-bold leading-none"
           style={{ color: appColors.black }}
@@ -169,13 +162,9 @@ export function DemoInGame({
         >
           {app.revealCountdown(fmt(robberOut ? 0 : 2 - (elapsed % 2)))}
         </p>
-        <Image
-          src="/demo/icon_info.svg"
-          alt=""
-          width={24}
-          height={24}
-          className="absolute right-[12px] top-1/2 -translate-y-1/2"
-        />
+        <span className="absolute right-[12px] top-1/2 -translate-y-1/2">
+          <TintIcon src="/demo/icon_info.svg" size={24} color={appColors.black500} />
+        </span>
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
@@ -202,6 +191,7 @@ export function DemoInGame({
           filled={false}
           stroke={appColors.red500}
         />
+        {gridOn && <GameZoneGrid size={430} top="46%" dark={false} />}
 
         {FOOTPRINT_SCRIPT.slice(0, footprints).map((print, i) => (
           <button
@@ -313,30 +303,40 @@ export function DemoInGame({
         </div>
       )}
 
-      {/* 좌하단 내 위치 버튼 (my_location_button.dart: 포커스 시 blue, 아니면 blue500).
-          버튼 bottom = 채팅 시트 겹침 20 + 시트와의 간격 45 (game_page.dart) */}
+      {/* 좌하단: 좌표 격자 토글 위, 내 위치 아래 (my_location_button.dart: 포커스 시 blue, 아니면 blue500).
+          버튼 bottom 은 앱의 38 + 세이프 영역 34 다. 채팅 시트가 사라져 지도가 화면 끝까지 내려간다 */}
       {!showParticipants && (
-        <button
-          type="button"
-          onClick={() => setLocFocused((v) => !v)}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="absolute bottom-[65px] left-[20px] flex size-[56px] items-center justify-center rounded-[16px] shadow-[1px_1px_8px_rgba(8,10,12,0.1)] transition-transform active:scale-95"
-          style={{ backgroundColor: appColors.white }}
-        >
-          <span
-            className="size-[32px]"
-            style={{
-              backgroundColor: locFocused ? appColors.blue : appColors.blue500,
-              WebkitMask: "url(/demo/mage_location-fill.svg) center / contain no-repeat",
-              mask: "url(/demo/mage_location-fill.svg) center / contain no-repeat",
-            }}
-          />
-        </button>
+        <div className="absolute bottom-[72px] left-[20px] flex flex-col gap-[8px]">
+          <button
+            type="button"
+            aria-label={app.gridToggle}
+            aria-pressed={gridOn}
+            onClick={() => setGridOn((v) => !v)}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="flex size-[56px] items-center justify-center rounded-[16px] shadow-[1px_1px_8px_rgba(8,10,12,0.1)] transition-transform active:scale-95"
+            style={{ backgroundColor: appColors.white }}
+          >
+            <TintIcon src="/demo/icon_grid.svg" size={32} color={gridOn ? appColors.blue : appColors.blue500} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocFocused((v) => !v)}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="flex size-[56px] items-center justify-center rounded-[16px] shadow-[1px_1px_8px_rgba(8,10,12,0.1)] transition-transform active:scale-95"
+            style={{ backgroundColor: appColors.white }}
+          >
+            <TintIcon
+              src="/demo/mage_location-fill.svg"
+              size={32}
+              color={locFocused ? appColors.blue : appColors.blue500}
+            />
+          </button>
+        </div>
       )}
 
       {/* 우하단 액션 버튼 (svg_icon_button.dart: 56, radius 16, 아이콘 32) -
-          지도에서는 참가자 목록, 목록에서는 지도로 돌아가기 + QR */}
-      <div className="absolute bottom-[65px] right-[20px] flex flex-col gap-[8px]">
+          지도에서는 참가자 목록, 목록에서는 지도로 돌아가기 + QR + 채팅 */}
+      <div className="absolute bottom-[72px] right-[20px] flex flex-col gap-[8px]">
         <button
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
@@ -366,87 +366,10 @@ export function DemoInGame({
         >
           <Image src="/demo/icon_qr_scan.svg" alt="" width={32} height={32} />
         </button>
+        <GameChatButton chat={chat} dark={false} />
       </div>
-      </div>
-
-      {/* 채팅 시트 (chat_overlay.dart): 접힘 <-> 펼침, 핸들이나 입력바를 누르면 열린다 */}
-      <div className="relative z-10 -mt-[20px]">
-        {!chatOpen ? (
-          <button
-            type="button"
-            onClick={() => setChatOpen(true)}
-            className="block w-full text-left"
-          >
-            <CollapsedChatSheet hint={app.chatHint} dark={false} />
-          </button>
-        ) : (
-          <div
-            className="flex h-[340px] flex-col rounded-t-[20px] shadow-[0_-8px_24px_rgba(15,23,42,0.35)]"
-            style={{ backgroundColor: appColors.black100 }}
-          >
-            <button type="button" onClick={() => setChatOpen(false)} className="shrink-0">
-              <SheetHandle dark={false} />
-            </button>
-            <div
-              ref={chatListRef}
-              className="flex min-h-0 flex-1 flex-col gap-[10px] overflow-y-auto px-[16px] py-[4px]"
-            >
-              {messages.map((message, i) => (
-                <Bubble
-                  key={i}
-                  side={message.mine ? "right" : "left"}
-                  name={message.mine ? undefined : message.name}
-                  time={message.time}
-                >
-                  {message.text}
-                </Bubble>
-              ))}
-            </div>
-            <div className="shrink-0 px-[20px] py-[8px]">
-              <div
-                className="flex min-h-[48px] items-center gap-[8px] rounded-[12px] py-[6px] pl-[20px] pr-[12px]"
-                style={{ backgroundColor: appColors.white }}
-              >
-                <input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendChat()}
-                  placeholder={app.chatHint}
-                  className="select-text min-w-0 flex-1 bg-transparent text-[16px] font-medium outline-none placeholder:text-[#B4BFC6]"
-                  style={{ color: appColors.black }}
-                />
-                <button
-                  type="button"
-                  onClick={sendChat}
-                  className="flex size-[32px] shrink-0 items-center justify-center rounded-full transition-colors"
-                  style={{
-                    backgroundColor: chatInput.trim()
-                      ? appColors.blue
-                      : appColors.black200,
-                  }}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    className="-rotate-90"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4 12h13M12 5l7 7-7 7"
-                      stroke="#fff"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      fill="none"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="h-[16px] shrink-0" />
-          </div>
-        )}
+      <GameChatPreview chat={chat} dark={false} />
+      <GameChatPanel chat={chat} dark={false} />
       </div>
 
       {/* 게임 나가기 확인 (game_page.dart _confirmLeaveGame 문구 그대로) */}
@@ -502,6 +425,8 @@ export function DemoInGame({
           </div>
         </div>
       )}
+
+      <DemoGameStart team={myTeam} onStarted={onStarted} />
     </>
   );
 }
