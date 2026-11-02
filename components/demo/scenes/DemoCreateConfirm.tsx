@@ -113,7 +113,7 @@ export function DemoCreateConfirm({
         <button
           type="button"
           onClick={onCreate}
-          className="flex h-[56px] w-full items-center justify-center rounded-[12px] text-[16px] font-semibold text-white transition-transform active:scale-95"
+          className="flex h-[56px] w-full items-center justify-center rounded-[12px] text-[18px] font-semibold text-white transition-transform active:scale-95"
           style={{ backgroundColor: appColors.blue }}
         >
           {app.createRoom}

@@ -142,18 +142,20 @@ export function DemoApp({
     setTab(next);
   };
 
-  // 결과 화면은 지도가 상태바 뒤까지 깔리고, 인게임은 앱바 색이 상태바까지
+  // 결과 화면은 지도가 상태바 뒤까지 깔리고, 인게임과 대기실은 앱바 색이 상태바까지
   // 이어진다(앱의 SafeArea 배경과 동일) - 색 없이 두면 노치가 타이머를 가린다.
   // 나머지 화면은 흰 상태바다.
-  const inGameView = (flow === "ingame" || flow === "victory") && tab === "home";
+  const teamView =
+    tab === "home" &&
+    (flow === "ingame" || flow === "victory" || flow === "waiting" || flow === "hostWaiting");
+  // 도둑 시점은 상태바 뒤가 어두워 시계를 밝은 톤으로 뒤집는다
+  const darkStatus = teamView && myTeam === "robber";
   const statusBar =
     flow === "victory" && tab === "home"
       ? undefined
-      : inGameView && myTeam === "robber"
+      : darkStatus
         ? appColors.black900
         : appColors.white;
-  // 도둑 시점은 상태바 뒤가 어두워 시계를 밝은 톤으로 뒤집는다
-  const darkStatus = inGameView && myTeam === "robber";
 
   // 전체 화면 동안 뒤 페이지가 스크롤되지 않게 잠근다
   useEffect(() => {
@@ -240,6 +242,7 @@ export function DemoApp({
                   onJoin={() => {
                     markDone("join-code");
                     setJoinOpen(false);
+                    setMyTeam("robber");
                     setFlow("waiting");
                   }}
                 />
@@ -248,6 +251,8 @@ export function DemoApp({
           )}
           {tab === "home" && flow === "waiting" && (
             <DemoWaitingRoom
+              myTeam={myTeam}
+              onTeamChange={setMyTeam}
               onTeamMoved={() => markDone("waiting-team")}
               onReady={() =>
                 markDone(course === "robber" ? "waiting-robber-ready" : "waiting-ready")
@@ -302,6 +307,7 @@ export function DemoApp({
               onEditSettings={() => setFlow("createBasic")}
               onCreate={() => {
                 markDone("create-confirm");
+                setMyTeam("police");
                 setFlow("hostWaiting");
               }}
             />
@@ -309,6 +315,8 @@ export function DemoApp({
           {tab === "home" && flow === "hostWaiting" && (
             <DemoWaitingRoom
               host
+              myTeam={myTeam}
+              onTeamChange={setMyTeam}
               onTeamMoved={() => {}}
               onReady={() => {}}
               onStart={(team) => {
@@ -365,6 +373,7 @@ export function DemoApp({
               onJoinRoom={() => {
                 // 초대 코드가 곧 경찰 코스의 그 방이다 - 대기실로 합류한다
                 setTab("home");
+                setMyTeam("robber");
                 setFlow("waiting");
               }}
               onTask={markDone}

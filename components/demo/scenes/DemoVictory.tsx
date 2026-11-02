@@ -4,7 +4,10 @@ import Image from "next/image";
 import { useState } from "react";
 import { appColors } from "@/lib/app-tokens";
 import { FakeMap } from "@/components/game/mockups/parts";
+import { DEMO_MY_NAME } from "@/lib/demo/scenes";
 import { useDemoCopy } from "../demo-copy";
+import { DemoGameOver } from "./DemoGameOver";
+import { SegmentedToggle } from "./DemoGameParts";
 
 // 앱의 기록 날짜 형식 그대로 (record_format.dart: yyyy.MM.dd HH:mm)
 function formatRecordDate(dt: Date) {
@@ -14,7 +17,8 @@ function formatRecordDate(dt: Date) {
 
 // 게임 종료 결과 다이얼로그 (game_over_result_dialog.dart 실측).
 // 인게임 지도 위에 딤이 깔리고, 카드 뒤에서 승리한 캐릭터가 솟아올라
-// 팔로 카드를 잡는다. 카드 폭 320, 타이틀 + 날짜·거리·경로 지도 + 통계 3행 + 버튼 2개.
+// 팔로 카드를 잡는다. 카드 폭 320, 타이틀 + 전체/개인 탭 + 날짜·거리(MVP 왕관)·경로 지도
+// + 통계 3행 + 버튼 2개. 앞에 종료 인트로와 MVP 공개가 먼저 나온다(DemoGameOver).
 //
 // [team] 이 진영 승리 화면을 정한다 - 경찰은 체포 승리(흰 카드·파랑),
 // 도둑은 생존 승리(검정 카드·초록·Moneygraphy). 앱의 isDarkMode 분기 그대로다.
@@ -28,6 +32,8 @@ export function DemoVictory({
   onHome: () => void;
 }) {
   const { app } = useDemoCopy();
+  const [intro, setIntro] = useState(true);
+  const [tab, setTab] = useState(0);
   const robber = team === "robber";
   const accent = robber ? appColors.green : appColors.blue;
   // 통계 순서는 앱 시안 그대로: 진행 시간 → 체포 횟수 → 남은 도둑.
@@ -44,6 +50,18 @@ export function DemoVictory({
         { label: app.arrestCount, value: "1" },
         { label: app.remainingRobbers, value: "0" },
       ];
+  // 개인 탭. 각본의 체포는 모두 내가 했고, 도둑 코스의 나는 끝까지 잡히지 않았다
+  const mine = robber
+    ? [
+        { label: app.labelNickname, value: DEMO_MY_NAME },
+        { label: app.labelMyArrestedCount, value: "0" },
+        { label: app.labelFinalStatus, value: app.statusAlive },
+      ]
+    : [
+        { label: app.labelNickname, value: DEMO_MY_NAME },
+        { label: app.labelMyArrestCount, value: "1" },
+        { label: app.labelTeamArrestShare, value: "100%" },
+      ];
   // 게임이 끝난 시점 = 이 화면이 뜬 시점
   const [endedAt] = useState(() => formatRecordDate(new Date()));
 
@@ -51,6 +69,9 @@ export function DemoVictory({
     <div className="relative min-h-0 flex-1 overflow-hidden">
       {/* 게임이 끝난 지도 위에 그대로 뜨는 다이얼로그라 배경도 지도다 */}
       <FakeMap night={robber} />
+      {intro ? (
+        <DemoGameOver team={team} onDone={() => setIntro(false)} />
+      ) : (
       <div className="absolute inset-0 flex items-center justify-center bg-black/50">
         <div className="relative mt-[28px] w-[320px]">
           {/* 캐릭터 몸통 - 카드 뒤에서 솟아올라 머리만 보인다 (높이 118, 겹침 14) */}
@@ -87,6 +108,15 @@ export function DemoVictory({
               />
             </div>
 
+            <div className="mt-[12px]">
+              <SegmentedToggle
+                labels={[app.tabResultTeam, app.tabResultMine]}
+                selected={tab}
+                onSelect={setTab}
+                dark={robber}
+              />
+            </div>
+
             <div className="mt-[12px] px-[8px]">
               <p
                 className="px-[8px] text-[14px]"
@@ -94,17 +124,29 @@ export function DemoVictory({
               >
                 {endedAt}
               </p>
-              <p className="mt-[4px] leading-none">
-                <span
-                  className="text-[56px] font-semibold tracking-tight"
-                  style={{ color: accent }}
-                >
-                  {robber ? "2.05" : "1.24"}
+              <div className="mt-[4px] flex items-end justify-between">
+                <p className="leading-none">
+                  <span
+                    className="text-[56px] font-semibold tracking-tight"
+                    style={{ color: accent }}
+                  >
+                    {robber ? "2.05" : "1.24"}
+                  </span>
+                  <span className="ml-[6px] text-[24px] font-bold" style={{ color: accent }}>
+                    Km
+                  </span>
+                </p>
+                {/* 내가 MVP 면 거리 오른쪽에 왕관이 붙는다 */}
+                <span className="flex flex-col items-center pr-[4px]">
+                  <Image src="/demo/icon_crown.svg" alt="" width={52} height={52} />
+                  <span
+                    className="text-[12px] font-semibold leading-none"
+                    style={{ color: robber ? appColors.white : appColors.black }}
+                  >
+                    {app.labelMvp}
+                  </span>
                 </span>
-                <span className="ml-[6px] text-[24px] font-bold" style={{ color: accent }}>
-                  Km
-                </span>
-              </p>
+              </div>
 
               {/* 이동 경로 지도 (record_route_map.dart: 높이 172, radius 12) */}
               <div className="relative mt-[4px] h-[172px] overflow-hidden rounded-[12px]">
@@ -126,13 +168,13 @@ export function DemoVictory({
                 </svg>
               </div>
 
-              {/* 통계 3행 (진행 시간 → 체포 횟수 → 남은 도둑) */}
+              {/* 통계 3행. 전체는 진행 시간 → 체포 횟수 → 남은 도둑 */}
               <div className="mt-[16px] flex flex-col gap-[12px] px-[8px]">
-                {stats.map((stat) => (
+                {(tab === 0 ? stats : mine).map((stat) => (
                   <div key={stat.label} className="flex items-center justify-between">
                     <span
                       className="text-[16px] font-medium"
-                      style={{ color: robber ? appColors.black200 : appColors.black800 }}
+                      style={{ color: robber ? appColors.white : appColors.black800 }}
                     >
                       {stat.label}
                     </span>
@@ -154,7 +196,7 @@ export function DemoVictory({
                 className="flex h-[48px] flex-1 items-center justify-center rounded-[8px] text-[16px] font-semibold transition-transform active:scale-95"
                 style={
                   robber
-                    ? { backgroundColor: appColors.black800, color: appColors.black300 }
+                    ? { backgroundColor: appColors.black900, color: appColors.black400 }
                     : { backgroundColor: appColors.black100, color: appColors.black600 }
                 }
               >
@@ -192,6 +234,7 @@ export function DemoVictory({
           />
         </div>
       </div>
+      )}
     </div>
   );
 }

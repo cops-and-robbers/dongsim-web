@@ -139,5 +139,17 @@ export const ROBBER_REVEAL_INTERVAL_MS = 7000;
 /** 경찰이 한 걸음 다가오는 간격(ms) */
 export const POLICE_STEP_INTERVAL_MS = 6000;
 
-// 마이페이지의 앱 버전 표기 (#88). v3 데모이므로 v3 버전을 쓴다.
-export const DEMO_APP_VERSION = "3.0.0";
+// 마이페이지의 앱 버전 표기 (#88). 데모가 맞춘 앱 버전이다.
+export const DEMO_APP_VERSION = "3.2.7";
+
+// 방문자의 닉네임. 대기실, 참가자, MVP 공개가 같은 사람을 가리킨다
+export const DEMO_MY_NAME = "민첩한괴도5308";
+
+// 게임 시작 장면 (앱 start/chase_scene.dart). 앱은 경찰 대기가 방 설정 시간(최소 1분)만큼, 도둑 설명이 20초 지도를 덮는다.
+// 데모에서 그대로 두면 체험이 멈춰서 몇 초로 줄이고, 앱과 달리 경찰 대기도 눌러서 넘길 수 있게 한다.
+export const DEMO_POLICE_WAIT_SECONDS = 8;
+export const DEMO_EXPLAINER_SECONDS = 8;
+/** 규칙 줄이 바뀌는 간격(ms). 앱은 5초인데 장면이 짧아 한두 줄만 보이므로 줄였다 */
+export const DEMO_RULE_INTERVAL_MS = 3000;
+/** 규칙 문구에 들어가는 위치 공개 주기(분). 방 설정의 기본값이다 */
+export const DEMO_REVEAL_MINUTES = 5;

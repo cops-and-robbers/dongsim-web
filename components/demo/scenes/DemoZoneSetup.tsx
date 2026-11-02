@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { appColors } from "@/lib/app-tokens";
 import { FakeMap } from "@/components/game/mockups/parts";
+import { simplifyPath } from "@/lib/demo/simplifyPath";
 import { useDemoCopy } from "../demo-copy";
 import { DemoStepBar } from "./DemoCreateParts";
 
@@ -13,14 +14,17 @@ export type ZoneDraft = {
   /** circle: 중심(%)과 반경(m) */
   center: { x: number; y: number };
   radius: number;
-  /** polygon: 꼭짓점(%) 목록 */
+  /** polygon: 꼭짓점(%) 목록. 그린 순서가 곧 경계다 */
   pins: { x: number; y: number }[];
 };
 
 // 지도 1px = 몇 m 인지. 플레이그라운드 기본 500m 원이 화면에 알맞게 담기는 값.
 const M_PER_PX = 3.4;
 const MAP_H = 360;
-const MAX_PINS = 10;
+// 끌어 그린 궤적을 꼭짓점으로 줄이는 값 (pin_zone_setting_widget.dart _strokeTolerance,
+// GameConfig.maxPolygonVertexCount)
+const STROKE_TOLERANCE_PX = 6;
+const MAX_VERTICES = 40;
 
 export const defaultZone = (radius: number): ZoneDraft => ({
   mode: "circle",
@@ -36,17 +40,6 @@ const pxOf = (p: { x: number; y: number }) => ({
   x: (p.x / 100) * 393,
   y: (p.y / 100) * MAP_H,
 });
-
-// 꼭짓점을 무게중심 각도로 정렬 - 앱과 같은 방식으로 자기교차 없는
-// 단순 다각형 미리보기를 만든다 (pin_zone_setting_widget.dart)
-function sortByAngle(pins: { x: number; y: number }[]) {
-  if (pins.length < 3) return pins;
-  const cx = pins.reduce((s, p) => s + p.x, 0) / pins.length;
-  const cy = pins.reduce((s, p) => s + p.y, 0) / pins.length;
-  return [...pins].sort(
-    (a, b) => Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx),
-  );
-}
 
 // 점이 다각형 안에 있는지 (ray casting)
 function insidePolygon(p: { x: number; y: number }, poly: { x: number; y: number }[]) {
@@ -66,7 +59,7 @@ function insidePolygon(p: { x: number; y: number }, poly: { x: number; y: number
 
 // 다각형 넓이(m²) - shoelace. 확인 화면의 "면적" 값에 쓴다
 export function polygonAreaM2(pins: { x: number; y: number }[]) {
-  const pts = sortByAngle(pins).map(pxOf);
+  const pts = pins.map(pxOf);
   let sum = 0;
   for (let i = 0; i < pts.length; i++) {
     const a = pts[i];
@@ -111,6 +104,9 @@ export function DemoZoneSetup({
   const [center, setCenter] = useState(initial.center);
   const [radius, setRadius] = useState(initial.radius);
   const [pins, setPins] = useState(initial.pins);
+  // 끄는 중인 궤적과 옮기는 중인 손잡이
+  const [stroke, setStroke] = useState<{ x: number; y: number }[] | null>(null);
+  const [dragging, setDragging] = useState<number | null>(null);
 
   const theme = isJail
     ? { main: appColors.red, stroke: appColors.red800, track: appColors.red100 }
@@ -123,14 +119,14 @@ export function DemoZoneSetup({
     if (!isJail || !playground) return true;
     if (mode === "circle") {
       if (playground.mode === "polygon") {
-        const poly = sortByAngle(playground.pins);
+        const poly = playground.pins;
         return poly.length >= 3 && insidePolygon(center, poly);
       }
       const c = pxOf(center);
       const p = pxOf(playground.center);
       return Math.hypot(c.x - p.x, c.y - p.y) + toPx(radius) <= toPx(playground.radius);
     }
-    const poly = sortByAngle(playground.pins);
+    const poly = playground.pins;
     if (playground.mode === "circle") {
       const p = pxOf(playground.center);
       return pins.every((pin) => {
@@ -145,19 +141,48 @@ export function DemoZoneSetup({
     mode === "circle" ? jailInside : pins.length >= 3 && jailInside;
   const showJailWarning = isJail && !jailInside && (mode === "circle" || pins.length >= 3);
 
-  const onMapClick = (e: React.PointerEvent<HTMLDivElement>) => {
+  // 지도 위 % 좌표. 포인터를 붙잡고 지도 밖으로 끌어도 지도 안으로 자른다
+  const pointOf = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const p = {
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
+    return {
+      x: Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)),
+      y: Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100)),
     };
+  };
+
+  const onMapDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const p = pointOf(e);
     if (mode === "circle") {
       // 앱은 지도를 끌어 중심을 맞춘다 - 데모는 탭한 곳이 중심이 된다
       if (isJail) setCenter(p);
       return;
     }
-    if (pins.length >= MAX_PINS) return;
-    setPins((prev) => [...prev, p]);
+    // 앱은 꾹 누른 뒤 끌어 그린다(짧게 끌면 지도 이동). 데모 지도는 움직이지 않아 누르자마자 그린다.
+    // 다시 그리려면 앱처럼 전체 해제부터 한다
+    if (pins.length > 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setStroke([p]);
+  };
+
+  const onMapMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (dragging !== null) {
+      const p = pointOf(e);
+      setPins((prev) => prev.map((pin, i) => (i === dragging ? p : pin)));
+    } else if (stroke) {
+      const p = pointOf(e);
+      setStroke((prev) => prev && [...prev, p]);
+    }
+  };
+
+  const onMapUp = () => {
+    setDragging(null);
+    if (!stroke) return;
+    // 떼면 꼭짓점으로 줄인다 (path_simplifier.dart). 세 점이 안 되면 그리지 않은 것으로 친다
+    const vertices = simplifyPath(stroke.map(pxOf), STROKE_TOLERANCE_PX, MAX_VERTICES);
+    if (vertices.length >= 3) {
+      setPins(vertices.map((v) => ({ x: (v.x / 393) * 100, y: (v.y / MAP_H) * 100 })));
+    }
+    setStroke(null);
   };
 
   // 우하단 정보 칩 (info_radius_chip.dart: 높이 40, radius 12).
@@ -199,7 +224,7 @@ export function DemoZoneSetup({
     reference = false,
   ) => {
     if (points.length < 2) return null;
-    const sorted = sortByAngle(points).map(pxOf);
+    const sorted = points.map(pxOf);
     return (
       <svg
         viewBox={`0 0 393 ${MAP_H}`}
@@ -263,7 +288,13 @@ export function DemoZoneSetup({
       <div
         className="relative mt-[20px] shrink-0 touch-none overflow-hidden"
         style={{ height: MAP_H }}
-        onPointerDown={onMapClick}
+        onPointerDown={onMapDown}
+        onPointerMove={onMapMove}
+        onPointerUp={onMapUp}
+        onPointerCancel={() => {
+          setDragging(null);
+          setStroke(null);
+        }}
       >
         <FakeMap />
 
@@ -286,17 +317,46 @@ export function DemoZoneSetup({
         ) : (
           <>
             {drawPolygon(pins, theme)}
-            {/* 핀 - 탭하면 삭제 (앱과 동일) */}
+            {/* 끄는 중인 궤적 */}
+            {stroke && (
+              <svg
+                viewBox={`0 0 393 ${MAP_H}`}
+                className="pointer-events-none absolute inset-0 h-full w-full"
+                aria-hidden="true"
+              >
+                <polyline
+                  points={stroke.map(pxOf).map((p) => `${p.x},${p.y}`).join(" ")}
+                  fill="none"
+                  stroke={theme.stroke}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+            {/* 꼭짓점 손잡이 (zone_vertex_handle_icon.dart: 지름 14, 흰 원, 구역색 테두리 2) - 끌어서 옮긴다.
+                손가락으로 잡기 쉽게 누르는 자리만 넓혔다 */}
             {pins.map((pin, i) => (
-              <button
+              <span
                 key={i}
-                type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => setPins((prev) => prev.filter((_, j) => j !== i))}
-                className="absolute size-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white"
-                style={{ left: `${pin.x}%`, top: `${pin.y}%`, backgroundColor: theme.main }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  setDragging(i);
+                }}
+                className="absolute size-[14px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white before:absolute before:-inset-[10px]"
+                style={{ left: `${pin.x}%`, top: `${pin.y}%`, borderColor: theme.main }}
               />
             ))}
+            {/* 빈 상태 힌트 (pin_zone_setting_widget.dart: 상단 알약, blackAlpha60, 16/8, radius 12, 12 흰 글자) */}
+            {pins.length === 0 && !stroke && (
+              <span
+                className="pointer-events-none absolute left-1/2 top-[16px] -translate-x-1/2 whitespace-nowrap rounded-[12px] px-[16px] py-[8px] text-[12px] text-white"
+                style={{ backgroundColor: "rgba(8, 10, 12, 0.6)" }}
+              >
+                {app.zoneDrawHint}
+              </span>
+            )}
           </>
         )}
 
@@ -386,7 +446,7 @@ export function DemoZoneSetup({
           type="button"
           disabled={!canComplete}
           onClick={() => onDone({ mode, center, radius, pins })}
-          className="flex h-[56px] w-full items-center justify-center rounded-[12px] text-[16px] font-semibold text-white transition-transform active:scale-95"
+          className="flex h-[56px] w-full items-center justify-center rounded-[12px] text-[18px] font-semibold text-white transition-transform active:scale-95"
           style={{ backgroundColor: canComplete ? theme.main : appColors.black200 }}
         >
           {app.done}

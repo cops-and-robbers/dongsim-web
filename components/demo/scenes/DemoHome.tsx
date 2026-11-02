@@ -102,7 +102,7 @@ export function DemoHome({
             type="button"
             disabled={active !== "create"}
             onClick={onCreate}
-            className="flex h-[56px] w-[176px] items-center justify-center gap-[8px] rounded-[12px] text-[16px] font-semibold text-white shadow-md transition-transform active:scale-95"
+            className="flex h-[56px] w-[176px] items-center justify-center gap-[8px] rounded-[12px] text-[18px] font-semibold text-white shadow-md transition-transform active:scale-95"
             style={{ backgroundColor: appColors.blue }}
           >
             <Image src="/demo/icon_default_light.svg" alt="" width={20} height={20} style={{ height: 20, width: "auto" }} />
@@ -112,7 +112,7 @@ export function DemoHome({
             type="button"
             disabled={active !== "join"}
             onClick={onJoin}
-            className="flex h-[56px] w-[176px] items-center justify-center gap-[8px] rounded-[12px] text-[16px] font-semibold shadow-md transition-transform active:scale-95"
+            className="flex h-[56px] w-[176px] items-center justify-center gap-[8px] rounded-[12px] text-[18px] font-semibold shadow-md transition-transform active:scale-95"
             style={{ backgroundColor: appColors.white, color: appColors.black600 }}
           >
             <Image src="/demo/icon_joining_game.svg" alt="" width={20} height={20} style={{ height: 20, width: "auto" }} />

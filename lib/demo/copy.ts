@@ -27,9 +27,9 @@ export type DemoAppStrings = {
   teamPolice: string;
   teamRobber: string;
   personCount: (n: number) => string;
-  /** buttonReady / buttonReadyDone */
+  /** buttonReady / buttonCancelReady */
   ready: string;
-  readyDone: string;
+  cancelReady: string;
   /** dialogLeaveRoom* / gameLeaveConfirm* / buttonLeave */
   leaveRoomTitle: string;
   leaveRoomMessage: string;
@@ -42,8 +42,67 @@ export type DemoAppStrings = {
   navMy: string;
   /** gameLocationRevealCountdown */
   revealCountdown: (formatted: string) => string;
-  /** chatInputBarHint */
-  chatHint: string;
+  /** gameChatTeamInputHint / gameChatAllInputHint */
+  chatTeamHint: string;
+  chatAllHint: string;
+  /** chatScopeTeamTitle / chatScopeAllTitle */
+  chatScopeTeam: string;
+  chatScopeAll: string;
+  /** chatPreviewTagTeam */
+  chatPreviewTagTeam: string;
+  /** gameChatBackToMap / gameGridToggle */
+  chatBackToMap: string;
+  gridToggle: string;
+  /** startRoleLabel / gameRoleCopLabel / gameRoleRobberLabel / startMission* */
+  startRoleLabel: string;
+  roleCop: string;
+  roleRobber: string;
+  startMissionPolice: string;
+  startMissionRobber: string;
+  /** startWaitCountdownLabel / startWaitPoliceTitle / startWaitRobberTitle */
+  startWaitCountdownLabel: string;
+  startWaitPoliceTitle: string;
+  startWaitRobberTitle: string;
+  /** startRulesCounter / startRule* / startTapToMap */
+  startRulesCounter: (current: number, total: number) => string;
+  startRuleQrArrest: string;
+  startRulePing: string;
+  startRuleRobberReveal: (minutes: number) => string;
+  startRuleZoneLock: string;
+  startRuleQrCaught: string;
+  startRuleMyReveal: (minutes: number) => string;
+  startRuleJailbreak: string;
+  startTapToMap: string;
+  /** dispatchPolice* / dispatchRobber* */
+  dispatchPoliceLead: string;
+  dispatchPoliceMain: string;
+  dispatchRobberLead: string;
+  dispatchRobberMain: string;
+  /** gameOverBannerTitle / gameOverReasonAllArrested / gameOverReasonTimeUp */
+  gameOverTitle: string;
+  gameOverAllArrested: string;
+  gameOverTimeUp: string;
+  /** mvpRevealTease / labelPoliceTeamMvp / labelRobberTeamMvp / mvpRevealTapToContinue / labelMvp */
+  mvpTease: string;
+  mvpPolice: string;
+  mvpRobber: string;
+  mvpTapContinue: string;
+  labelMvp: string;
+  /** tabResultTeam / tabResultMine */
+  tabResultTeam: string;
+  tabResultMine: string;
+  /** labelNickname / labelMyArrestCount / labelTeamArrestShare / labelMyArrestedCount / labelFinalStatus / statusAlive */
+  labelNickname: string;
+  labelMyArrestCount: string;
+  labelTeamArrestShare: string;
+  labelMyArrestedCount: string;
+  labelFinalStatus: string;
+  statusAlive: string;
+  /** zoneDrawHint / communityChatRoomsEmpty */
+  zoneDrawHint: string;
+  chatRoomsEmpty: string;
+  /** settingsGuideAppIntro */
+  appIntro: string;
   /** pingFound / pingSuspect */
   pingFound: string;
   pingSuspect: string;
@@ -182,8 +241,6 @@ export type DemoAppStrings = {
   locationPermissionDesc: string;
   /** settingsAppVersionLabel / settingsGuide* */
   appVersionLabel: string;
-  tutorialRewatch: string;
-  tutorialReset: string;
   bugReport: string;
   openSourceLicenses: string;
   agreements: string;
@@ -265,7 +322,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       teamRobber: "도둑팀",
       personCount: (n) => `${n}명`,
       ready: "준비",
-      readyDone: "준비 완료",
+      cancelReady: "준비 취소",
       leaveRoomTitle: "방을 나갈까요?",
       leaveRoomMessage: "나가면 다시 초대코드를 입력해야 해요",
       leaveGameTitle: "게임에서 나갈까요?",
@@ -275,7 +332,53 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       navCommunity: "커뮤니티",
       navMy: "마이페이지",
       revealCountdown: (t) => `다음 도둑 위치 공개까지 ${t}`,
-      chatHint: "채팅을 입력하세요",
+      chatTeamHint: "팀원에게 메시지 보내기",
+      chatAllHint: "모두에게 메시지 보내기",
+      chatScopeTeam: "팀 채팅",
+      chatScopeAll: "전체 채팅",
+      chatPreviewTagTeam: "팀",
+      chatBackToMap: "지도 보기",
+      gridToggle: "좌표 격자",
+      startRoleLabel: "내 역할",
+      roleCop: "경찰",
+      roleRobber: "도둑",
+      startMissionPolice: "도둑을 찾아 QR로 모두 체포하세요",
+      startMissionRobber: "끝날 때까지 잡히지 말고 도망치세요",
+      startWaitCountdownLabel: "경찰 출동까지",
+      startWaitPoliceTitle: "도둑이 도망치는 중이에요",
+      startWaitRobberTitle: "경찰에게서 멀어지는 중이에요",
+      startRulesCounter: (current, total) => `게임 규칙 ${current}/${total}`,
+      startRuleQrArrest: "도둑의 QR을 스캔하면 체포돼요",
+      startRulePing: "지도를 길게 누르면 핑을 찍어 우리 팀에 알릴 수 있어요",
+      startRuleRobberReveal: (minutes) => `도둑 위치는 ${minutes}분마다 경찰에게 공개돼요`,
+      startRuleZoneLock: "구역 밖으로 나가면 화면이 잠겨요",
+      startRuleQrCaught: "경찰이 내 QR을 스캔하면 잡혀요",
+      startRuleMyReveal: (minutes) => `내 위치는 ${minutes}분마다 경찰에게 공개돼요`,
+      startRuleJailbreak: "잡히면 감옥에 들어갔다가 밖으로 나가 3초가 지나면 탈옥돼요",
+      startTapToMap: "탭하면 지도로 돌아가요",
+      dispatchPoliceLead: "시간이 됐어요",
+      dispatchPoliceMain: "출동!",
+      dispatchRobberLead: "경찰이 출동했어요",
+      dispatchRobberMain: "조심!",
+      gameOverTitle: "게임 종료!",
+      gameOverAllArrested: "도둑이 모두 체포됐어요!",
+      gameOverTimeUp: "제한 시간이 끝났어요!",
+      mvpTease: "MVP는 누굴까?!",
+      mvpPolice: "경찰 팀 MVP",
+      mvpRobber: "도둑 팀 MVP",
+      mvpTapContinue: "탭하면 넘어가요",
+      labelMvp: "MVP",
+      tabResultTeam: "전체",
+      tabResultMine: "개인",
+      labelNickname: "닉네임",
+      labelMyArrestCount: "내 체포 횟수",
+      labelTeamArrestShare: "팀 체포 기여도",
+      labelMyArrestedCount: "잡힌 횟수",
+      labelFinalStatus: "종료 시점 상태",
+      statusAlive: "생존",
+      zoneDrawHint: "지도를 꾹 누른 채 그려 주세요",
+      chatRoomsEmpty: "참여 중인 채팅방이 없어요",
+      appIntro: "앱 소개 다시 보기",
       pingFound: "발견",
       pingSuspect: "의심",
       qrScanTitle: "도둑의 수배 QR을 스캔하세요",
@@ -377,8 +480,6 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       locationPermission: "위치 권한 관리",
       locationPermissionDesc: "기기 설정에서 위치 권한을 변경할 수 있어요",
       appVersionLabel: "앱 버전",
-      tutorialRewatch: "튜토리얼 다시 보기",
-      tutorialReset: "튜토리얼 초기화",
       bugReport: "버그 제보",
       openSourceLicenses: "오픈소스 라이선스",
       agreements: "이용약관 및 정책",
@@ -671,7 +772,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       teamRobber: "Robber team",
       personCount: (n) => `${n} people`,
       ready: "Ready",
-      readyDone: "Ready",
+      cancelReady: "Cancel",
       leaveRoomTitle: "Would you like to leave the room?",
       leaveRoomMessage: "You will need to enter the invite code again to rejoin",
       leaveGameTitle: "Leave the game?",
@@ -681,7 +782,53 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       navCommunity: "Community",
       navMy: "My Page",
       revealCountdown: (t) => `Until next Robber location reveal: ${t}`,
-      chatHint: "Enter chat message",
+      chatTeamHint: "Message your team",
+      chatAllHint: "Message everyone",
+      chatScopeTeam: "Team chat",
+      chatScopeAll: "Global chat",
+      chatPreviewTagTeam: "Team",
+      chatBackToMap: "View map",
+      gridToggle: "Coordinate grid",
+      startRoleLabel: "Your role",
+      roleCop: "Cop",
+      roleRobber: "Robber",
+      startMissionPolice: "Find the Robbers and arrest them all by QR",
+      startMissionRobber: "Don't get caught until time runs out",
+      startWaitCountdownLabel: "Cops move out in",
+      startWaitPoliceTitle: "The Robbers are getting away",
+      startWaitRobberTitle: "You're getting away from the Cops",
+      startRulesCounter: (current, total) => `Game rules ${current}/${total}`,
+      startRuleQrArrest: "Scan a Robber's QR to arrest them",
+      startRulePing: "Long-press the map to drop a ping for your team",
+      startRuleRobberReveal: (minutes) => `Robber locations are revealed to the Cops every ${minutes} min`,
+      startRuleZoneLock: "Your screen locks if you leave the zone",
+      startRuleQrCaught: "You're caught when the Cops scan your QR",
+      startRuleMyReveal: (minutes) => `Your location is revealed to the Cops every ${minutes} min`,
+      startRuleJailbreak: "If caught, you go to Jail. Step outside for 3 seconds to escape",
+      startTapToMap: "Tap to return to the map",
+      dispatchPoliceLead: "Time's up",
+      dispatchPoliceMain: "Move out!",
+      dispatchRobberLead: "The Cops are moving",
+      dispatchRobberMain: "Watch out!",
+      gameOverTitle: "Game over!",
+      gameOverAllArrested: "All Robbers have been arrested!",
+      gameOverTimeUp: "The time limit has expired!",
+      mvpTease: "Who's the MVP?!",
+      mvpPolice: "Cops team MVP",
+      mvpRobber: "Robber team MVP",
+      mvpTapContinue: "Tap to continue",
+      labelMvp: "MVP",
+      tabResultTeam: "All",
+      tabResultMine: "Mine",
+      labelNickname: "Nickname",
+      labelMyArrestCount: "My arrests",
+      labelTeamArrestShare: "Team arrest share",
+      labelMyArrestedCount: "Times caught",
+      labelFinalStatus: "Final status",
+      statusAlive: "Alive",
+      zoneDrawHint: "Press and hold the map, then draw",
+      chatRoomsEmpty: "No chat rooms yet",
+      appIntro: "See the intro again",
       pingFound: "Found",
       pingSuspect: "Suspect",
       qrScanTitle: "Scan the Robber's wanted QR code",
@@ -784,8 +931,6 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       locationPermission: "Manage location permissions",
       locationPermissionDesc: "You can change location permissions in device settings",
       appVersionLabel: "App version",
-      tutorialRewatch: "Replay tutorial",
-      tutorialReset: "Reset tutorial",
       bugReport: "Bug report",
       openSourceLicenses: "Open source licenses",
       agreements: "Terms and policies",
@@ -1078,7 +1223,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       teamRobber: "泥棒チーム",
       personCount: (n) => `${n}人`,
       ready: "準備完了",
-      readyDone: "準備完了",
+      cancelReady: "準備取消",
       leaveRoomTitle: "待機室から退室しますか",
       leaveRoomMessage: "退室すると、再度招待コードを入力する必要があります",
       leaveGameTitle: "ゲームから退場しますか",
@@ -1088,7 +1233,53 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       navCommunity: "コミュニティ",
       navMy: "マイページ",
       revealCountdown: (t) => `次の泥棒の位置公開まで ${t}`,
-      chatHint: "チャットを入力してください",
+      chatTeamHint: "チームにメッセージを送る",
+      chatAllHint: "全員にメッセージを送る",
+      chatScopeTeam: "チームチャット",
+      chatScopeAll: "全体チャット",
+      chatPreviewTagTeam: "チーム",
+      chatBackToMap: "マップへ",
+      gridToggle: "座標グリッド",
+      startRoleLabel: "あなたの役割",
+      roleCop: "警察",
+      roleRobber: "泥棒",
+      startMissionPolice: "泥棒を見つけてQRで全員逮捕しましょう",
+      startMissionRobber: "終了まで捕まらずに逃げ切りましょう",
+      startWaitCountdownLabel: "警察出動まで",
+      startWaitPoliceTitle: "泥棒が逃げています",
+      startWaitRobberTitle: "警察から離れています",
+      startRulesCounter: (current, total) => `ゲームルール ${current}/${total}`,
+      startRuleQrArrest: "泥棒のQRをスキャンすると逮捕できます",
+      startRulePing: "地図を長押しするとピンで味方に知らせられます",
+      startRuleRobberReveal: (minutes) => `泥棒の位置は${minutes}分ごとに警察に公開されます`,
+      startRuleZoneLock: "エリア外に出ると画面がロックされます",
+      startRuleQrCaught: "警察にQRをスキャンされると捕まります",
+      startRuleMyReveal: (minutes) => `あなたの位置は${minutes}分ごとに警察に公開されます`,
+      startRuleJailbreak: "捕まると牢屋に入り、外に出て3秒たつと脱獄できます",
+      startTapToMap: "タップすると地図に戻ります",
+      dispatchPoliceLead: "時間です",
+      dispatchPoliceMain: "出動！",
+      dispatchRobberLead: "警察が出動しました",
+      dispatchRobberMain: "気をつけて！",
+      gameOverTitle: "ゲーム終了！",
+      gameOverAllArrested: "泥棒が全員逮捕されました！",
+      gameOverTimeUp: "制限時間が終了しました！",
+      mvpTease: "MVPは誰だ!?",
+      mvpPolice: "警察チームMVP",
+      mvpRobber: "泥棒チームMVP",
+      mvpTapContinue: "タップして次へ",
+      labelMvp: "MVP",
+      tabResultTeam: "全体",
+      tabResultMine: "個人",
+      labelNickname: "ニックネーム",
+      labelMyArrestCount: "私の逮捕回数",
+      labelTeamArrestShare: "チーム逮捕貢献度",
+      labelMyArrestedCount: "捕まった回数",
+      labelFinalStatus: "終了時の状態",
+      statusAlive: "生存",
+      zoneDrawHint: "地図を長押ししたまま描いてください",
+      chatRoomsEmpty: "参加中のチャットルームはありません",
+      appIntro: "アプリ紹介をもう一度見る",
       pingFound: "発見",
       pingSuspect: "疑い",
       qrScanTitle: "泥棒の指名手配QRをスキャンしてください",
@@ -1191,8 +1382,6 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       locationPermission: "位置情報の権限管理",
       locationPermissionDesc: "端末の設定で位置情報の権限を変更できます",
       appVersionLabel: "アプリバージョン",
-      tutorialRewatch: "チュートリアルをもう一度見る",
-      tutorialReset: "チュートリアル初期化",
       bugReport: "バグ報告",
       openSourceLicenses: "オープンソースライセンス",
       agreements: "利用規約とポリシー",
