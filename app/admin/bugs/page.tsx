@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useLazyLoadQuery, useMutation } from "react-relay";
 import type { AdminBugReports } from "@/__generated__/AdminBugReports.graphql";
 import { AdminBugReportsQuery } from "@/lib/admin/gql/AdminBugReports";
@@ -17,30 +17,24 @@ import { Table, Th, Tr, Td } from "@/components/admin/Table";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { Button } from "@/components/admin/Button";
 import { BugStatusBadge } from "@/components/admin/StatusBadge";
+import { UserLink } from "@/components/admin/UserLink";
 import { useToast } from "@/components/admin/Toast";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { formatDate, formatDateTime } from "@/lib/admin/format";
+import { useClampPage, useListParams, useListScroll } from "@/lib/admin/useListParams";
+import { refreshPendingCounts } from "@/lib/admin/usePendingCounts";
 
 type StatusFilter = "" | "PENDING" | "RESOLVED";
 const PAGE_SIZE = 20;
 
 type Bug = AdminBugReports["response"]["adminBugReports"]["content"][number];
 
-function initStatusFilter(): StatusFilter {
-  if (typeof window === "undefined") return "";
-  const s = new URLSearchParams(window.location.search).get("status");
-  return (["PENDING", "RESOLVED"] as string[]).includes(s ?? "")
-    ? (s as StatusFilter)
-    : "";
-}
+const PARAMS = { status: ["", "PENDING", "RESOLVED"] } as const;
 
 export default function BugsPage() {
-  const [status, setStatus] = useState<StatusFilter>(initStatusFilter);
-  const [page, setPage] = useState(0);
+  const { current, shown, dim, set } = useListParams(PARAMS);
   const [fetchKey, setFetchKey] = useState(0);
-  const [isPending, startTransition] = useTransition();
   const [selected, setSelected] = useState<Bug | null>(null);
-  const update = (fn: () => void) => startTransition(fn);
   const refetch = () => setFetchKey((k) => k + 1);
 
   return (
@@ -49,8 +43,8 @@ export default function BugsPage() {
 
       <div className="mb-5">
         <SegmentedControl<StatusFilter>
-          value={status}
-          onChange={(v) => update(() => { setStatus(v); setPage(0); })}
+          value={current.status}
+          onChange={(v) => set({ status: v })}
           options={[
             { label: "전체", value: "" },
             { label: "미처리", value: "PENDING" },
@@ -62,13 +56,13 @@ export default function BugsPage() {
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <QueryBoundary pending={<TableSkeleton />} onRetry={refetch}>
           <BugsResults
-            variables={{ page, size: PAGE_SIZE, status: status || undefined, sortDirection: "DESC" }}
+            variables={{ page: shown.page, size: PAGE_SIZE, status: shown.status || undefined, sortDirection: "DESC" }}
             fetchKey={fetchKey}
-            dim={isPending}
-            onPage={(p) => update(() => setPage(p))}
+            dim={dim}
+            onPage={(page) => set({ page })}
             onSelect={setSelected}
-            filtered={status !== ""}
-            onReset={() => update(() => { setStatus(""); setPage(0); })}
+            filtered={shown.status !== ""}
+            onReset={() => set({ status: "", page: 0 })}
           />
         </QueryBoundary>
       </Card>
@@ -77,7 +71,7 @@ export default function BugsPage() {
         <BugDetailModal
           bug={selected}
           onClose={() => setSelected(null)}
-          onUpdated={() => { setSelected(null); refetch(); }}
+          onUpdated={() => { setSelected(null); refetch(); refreshPendingCounts(); }}
         />
       )}
     </ListPage>
@@ -100,6 +94,10 @@ function BugsResults({
     fetchPolicy: "store-or-network",
   });
   const pageData = data.adminBugReports;
+  const scrollRef = useListScroll();
+  const over = useClampPage(pageData, onPage);
+
+  if (over) return null;
 
   if (pageData.content.length === 0) {
     return (
@@ -115,7 +113,7 @@ function BugsResults({
 
   return (
     <div className={`flex min-h-0 flex-1 flex-col transition-opacity ${dim ? "pointer-events-none opacity-50" : ""}`}>
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
         <Table sticky head={<><Th>내용</Th><Th>작성자</Th><Th>상태</Th><Th className="text-right">작성일</Th></>}>
           {pageData.content.map((b, i) => (
             <Tr key={b.id} index={i} onActivate={() => onSelect(b)}>
@@ -165,7 +163,7 @@ function BugDetailModal({ bug, onClose, onUpdated }: { bug: Bug; onClose: () => 
           <button type="button" onClick={onClose} className="text-[13px] font-semibold text-sd-fg-subtle transition hover:text-sd-fg">닫기</button>
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
-          <FieldRow label="작성자" value={bug.userNickname} />
+          <FieldRow label="작성자" value={<UserLink userId={bug.userId} nickname={bug.userNickname} />} />
           <FieldRow label="작성일" value={formatDateTime(bug.createdAt)} />
           <div>
             <p className="mb-1.5 text-[13px] font-semibold text-sd-fg-subtle">내용</p>
@@ -193,7 +191,7 @@ function BugDetailModal({ bug, onClose, onUpdated }: { bug: Bug; onClose: () => 
   );
 }
 
-function FieldRow({ label, value }: { label: string; value: string }) {
+function FieldRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-[13px] font-medium text-sd-fg-subtle">{label}</span>

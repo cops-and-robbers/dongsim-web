@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useLazyLoadQuery, useMutation } from "react-relay";
 import type { GraphQLTaggedNode } from "react-relay";
 import type { AdminReports } from "@/__generated__/AdminReports.graphql";
@@ -31,16 +31,21 @@ import {
   ReportSourceBadge,
 } from "@/components/admin/StatusBadge";
 import { InviteCode } from "@/components/admin/InviteCode";
+import { UserLink } from "@/components/admin/UserLink";
 import { useToast } from "@/components/admin/Toast";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { formatDate, formatDateTime } from "@/lib/admin/format";
+import { useClampPage, useListParams, useListScroll } from "@/lib/admin/useListParams";
+import { refreshPendingCounts } from "@/lib/admin/usePendingCounts";
 
 type StatusFilter = "" | "PENDING" | "RESOLVED" | "DISMISSED";
 type ReportStatus = "PENDING" | "RESOLVED" | "DISMISSED";
 type Source = "ALL" | "GAME_CHAT" | "COMMUNITY_POST" | "COMMUNITY_CHAT";
 const PAGE_SIZE = 20;
-const SOURCES: Source[] = ["ALL", "GAME_CHAT", "COMMUNITY_POST", "COMMUNITY_CHAT"];
-const STATUSES: StatusFilter[] = ["PENDING", "RESOLVED", "DISMISSED"];
+const PARAMS = {
+  source: ["ALL", "GAME_CHAT", "COMMUNITY_POST", "COMMUNITY_CHAT"],
+  status: ["", "PENDING", "RESOLVED", "DISMISSED"],
+} as const;
 
 /** 네 탭이 공유하는 목록 한 행. */
 type Row = {
@@ -62,7 +67,9 @@ type Row = {
 type Detail = {
   id: string;
   reportType: string;
+  reporterUserId: string;
   reporterNickname: string;
+  reportedUserId: string;
   reportedNickname: string;
   etcReason: string | null;
   status: string;
@@ -73,38 +80,24 @@ type Detail = {
   mutation: GraphQLTaggedNode;
 };
 
-function initFromQuery<T extends string>(key: string, allowed: T[], fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  const v = new URLSearchParams(window.location.search).get(key);
-  return (allowed as string[]).includes(v ?? "") ? (v as T) : fallback;
-}
-
 export default function ReportsPage() {
-  const [source, setSource] = useState<Source>(() =>
-    initFromQuery("source", SOURCES, "ALL")
-  );
-  const [status, setStatus] = useState<StatusFilter>(() =>
-    initFromQuery("status", STATUSES, "")
-  );
-  const [page, setPage] = useState(0);
+  const { current, shown, dim, set } = useListParams(PARAMS);
   const [fetchKey, setFetchKey] = useState(0);
-  const [isPending, startTransition] = useTransition();
   const [selected, setSelected] = useState<Detail | null>(null);
-  const update = (fn: () => void) => startTransition(fn);
   const refetch = () => setFetchKey((k) => k + 1);
 
   const shared = {
     variables: {
-      page,
+      page: shown.page,
       size: PAGE_SIZE,
-      status: status || undefined,
+      status: shown.status || undefined,
       sortDirection: "DESC" as const,
     },
     fetchKey,
-    dim: isPending,
-    onPage: (p: number) => update(() => setPage(p)),
-    filtered: status !== "",
-    onReset: () => update(() => { setStatus(""); setPage(0); }),
+    dim,
+    onPage: (page: number) => set({ page }),
+    filtered: shown.status !== "",
+    onReset: () => set({ status: "", page: 0 }),
   };
 
   return (
@@ -116,14 +109,11 @@ export default function ReportsPage() {
 
       <div className="mb-3">
         <SegmentedControl<Source>
-          value={source}
-          onChange={(v) =>
-            update(() => {
-              setSource(v);
-              setPage(0);
-              setSelected(null);
-            })
-          }
+          value={current.source}
+          onChange={(v) => {
+            set({ source: v });
+            setSelected(null);
+          }}
           options={[
             { label: "전체", value: "ALL" },
             { label: "게임 채팅", value: "GAME_CHAT" },
@@ -135,8 +125,8 @@ export default function ReportsPage() {
 
       <div className="mb-5">
         <SegmentedControl<StatusFilter>
-          value={status}
-          onChange={(v) => update(() => { setStatus(v); setPage(0); })}
+          value={current.status}
+          onChange={(v) => set({ status: v })}
           options={[
             { label: "전체", value: "" },
             { label: "미처리", value: "PENDING" },
@@ -147,20 +137,20 @@ export default function ReportsPage() {
       </div>
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <QueryBoundary key={source} pending={<TableSkeleton />} onRetry={refetch}>
-          {source === "ALL" && (
+        <QueryBoundary key={shown.source} pending={<TableSkeleton />} onRetry={refetch}>
+          {shown.source === "ALL" && (
             <AllResults
               {...shared}
-              onJump={(s) => update(() => { setSource(s); setPage(0); })}
+              onJump={(s) => set({ source: s })}
             />
           )}
-          {source === "GAME_CHAT" && (
+          {shown.source === "GAME_CHAT" && (
             <GameChatResults {...shared} onSelect={setSelected} />
           )}
-          {source === "COMMUNITY_POST" && (
+          {shown.source === "COMMUNITY_POST" && (
             <PostResults {...shared} onSelect={setSelected} />
           )}
-          {source === "COMMUNITY_CHAT" && (
+          {shown.source === "COMMUNITY_CHAT" && (
             <ChatResults {...shared} onSelect={setSelected} />
           )}
         </QueryBoundary>
@@ -170,7 +160,7 @@ export default function ReportsPage() {
         <ReportDetailModal
           detail={selected}
           onClose={() => setSelected(null)}
-          onUpdated={() => { setSelected(null); refetch(); }}
+          onUpdated={() => { setSelected(null); refetch(); refreshPendingCounts(); }}
         />
       )}
     </ListPage>
@@ -256,7 +246,13 @@ function GameChatResults({
           fields: [
             {
               label: "게임",
-              value: <InviteCode code={`게임 #${r.gameId}`} gameId={r.gameId} />,
+              value: (
+                <InviteCode
+                  code={`게임 #${r.gameId}`}
+                  gameId={r.gameId}
+                  newTabLabel={`게임 ${r.gameId}번 상세 (새 탭에서 열려요)`}
+                />
+              ),
             },
           ],
           bodies: [{ label: "신고된 메시지", text: r.messageContent }],
@@ -356,7 +352,9 @@ function ChatResults({
 function common(r: {
   id: string;
   reportType: string;
+  reporterUserId: string;
   reporterNickname: string;
+  reportedUserId: string;
   reportedNickname: string;
   etcReason?: string | null;
   status: string;
@@ -366,7 +364,9 @@ function common(r: {
   return {
     id: r.id,
     reportType: r.reportType,
+    reporterUserId: r.reporterUserId,
     reporterNickname: r.reporterNickname,
+    reportedUserId: r.reportedUserId,
     reportedNickname: r.reportedNickname,
     etcReason: r.etcReason ?? null,
     status: r.status,
@@ -400,6 +400,11 @@ function ReportTable({
   onReset: () => void;
   hint?: string;
 }) {
+  const scrollRef = useListScroll();
+  const over = useClampPage(page, onPage);
+
+  if (over) return null;
+
   if (rows.length === 0) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center">
@@ -431,7 +436,7 @@ function ReportTable({
           {hint}
         </p>
       )}
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
         <Table
           sticky
           head={
@@ -548,14 +553,14 @@ function ReportDetailModal({
             <div className="text-center">
               <p className="text-[12px] text-sd-fg-subtle">신고자</p>
               <p className="mt-0.5 text-[14px] font-semibold text-sd-fg">
-                {detail.reporterNickname}
+                <UserLink userId={detail.reporterUserId} nickname={detail.reporterNickname} />
               </p>
             </div>
             <span className="text-sd-fg-subtle">→</span>
             <div className="text-center">
               <p className="text-[12px] text-sd-fg-subtle">신고 대상</p>
               <p className="mt-0.5 text-[14px] font-bold text-sd-critical">
-                {detail.reportedNickname}
+                <UserLink userId={detail.reportedUserId} nickname={detail.reportedNickname} />
               </p>
             </div>
           </div>

@@ -19,6 +19,7 @@ import {
 } from "@/components/admin/StatusBadge";
 import { Avatar } from "@/components/admin/Avatar";
 import QueryBoundary from "@/components/admin/QueryBoundary";
+import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { GameAreaMap } from "@/components/admin/maps";
 import {
   END_REASON_LABEL,
@@ -42,6 +43,10 @@ export default function GameHistoryDetailPage() {
 function HistoryDetail({ id }: { id: string }) {
   const data = useLazyLoadQuery<AdminGameHistory>(AdminGameHistoryQuery, { id });
   const history = data.adminGameHistory;
+  useRecordRecent("history", id, {
+    title: `${labelOf(TEAM_LABEL, history.winnerTeam)} 승`,
+    detail: `지난 게임 · ${formatDateTime(history.createdAt)}`,
+  });
 
   const area = history.area;
   const forfeited =

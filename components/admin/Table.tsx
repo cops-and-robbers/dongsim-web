@@ -3,9 +3,14 @@
 import type { MouseEvent, ReactNode, ThHTMLAttributes, TdHTMLAttributes } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
+import { useSeenHref } from "@/lib/admin/useSeenHref";
 
 // 어드민 데이터 테이블. sticky 헤더 지원 + 얇은 행 구분선.
 // sticky=true 면 부모 스크롤 컨테이너 안에서 컬럼 헤더가 상단에 고정된다.
+
+/** 줄을 대표하는 링크(초대코드, 닉네임)에 붙인다. 이미 본 줄이면 메일함의 읽은 메일처럼 글자가 얇고 흐려진다. */
+export const SEEN_ROW_TITLE =
+  "group-data-[seen]/row:font-medium group-data-[seen]/row:text-sd-fg-muted group-data-[seen]/row:hover:text-accent";
 
 export function Table({
   head,
@@ -68,6 +73,7 @@ export function Tr({
 }) {
   const router = useRouter();
   const clickable = Boolean(href || onActivate);
+  const seen = useSeenHref(href);
 
   const handleClick = (event: MouseEvent<HTMLTableRowElement>) => {
     if (!clickable) return;
@@ -92,9 +98,10 @@ export function Tr({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.5) }}
       onClick={handleClick}
-      className={`group/row transition-colors hover:bg-sd-pressed active:bg-sd-selected ${
-        clickable ? "cursor-pointer" : ""
-      }`}
+      data-seen={seen || undefined}
+      className={`group/row transition-colors active:bg-sd-selected ${
+        seen ? "bg-sd-gray-200 hover:bg-sd-selected" : "hover:bg-sd-pressed"
+      } ${clickable ? "cursor-pointer" : ""}`}
     >
       {children}
     </motion.tr>

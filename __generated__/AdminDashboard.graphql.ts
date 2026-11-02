@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<a2490301556b3cc389f3483965e360b7>>
+ * @generated SignedSource<<43f255a4907373fe3f5ff165b3f9c41f>>
  * @lightSyntaxTransform
  */
 
@@ -11,6 +11,9 @@ import { ConcreteRequest } from 'relay-runtime';
 export type GameEndReason = "ALL_ARRESTED" | "POLICE_FORFEITED" | "ROBBER_FORFEITED" | "TIME_OVER" | "%future added value";
 export type AdminDashboard$variables = Record<PropertyKey, never>;
 export type AdminDashboard$data = {
+  readonly adminAllReports: {
+    readonly totalElements: number;
+  };
   readonly adminDashboard: {
     readonly averageGameDurationSeconds: number;
     readonly endReasonDistribution: ReadonlyArray<{
@@ -153,6 +156,40 @@ var v0 = [
       }
     ],
     "storageKey": null
+  },
+  {
+    "alias": null,
+    "args": [
+      {
+        "kind": "Literal",
+        "name": "page",
+        "value": 0
+      },
+      {
+        "kind": "Literal",
+        "name": "size",
+        "value": 1
+      },
+      {
+        "kind": "Literal",
+        "name": "status",
+        "value": "PENDING"
+      }
+    ],
+    "concreteType": "AdminAllReportPage",
+    "kind": "LinkedField",
+    "name": "adminAllReports",
+    "plural": false,
+    "selections": [
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
+        "name": "totalElements",
+        "storageKey": null
+      }
+    ],
+    "storageKey": "adminAllReports(page:0,size:1,status:\"PENDING\")"
   }
 ];
 return {
@@ -173,16 +210,16 @@ return {
     "selections": (v0/*:: as any*/)
   },
   "params": {
-    "cacheID": "d3dc89af9a586ace3d2309ab03d11604",
+    "cacheID": "cd779dd21c00421c11e8bde567d45259",
     "id": null,
     "metadata": {},
     "name": "AdminDashboard",
     "operationKind": "query",
-    "text": "query AdminDashboard {\n  adminDashboard {\n    todayGameCount\n    weeklyGameCount\n    inProgressGameCount\n    totalUserCount\n    todayNewUserCount\n    pendingReportCount\n    pendingBugReportCount\n    averageGameDurationSeconds\n    endReasonDistribution {\n      endReason\n      count\n    }\n    winRateByTeam {\n      policeWinRate\n      robberWinRate\n    }\n  }\n}\n"
+    "text": "query AdminDashboard {\n  adminDashboard {\n    todayGameCount\n    weeklyGameCount\n    inProgressGameCount\n    totalUserCount\n    todayNewUserCount\n    pendingReportCount\n    pendingBugReportCount\n    averageGameDurationSeconds\n    endReasonDistribution {\n      endReason\n      count\n    }\n    winRateByTeam {\n      policeWinRate\n      robberWinRate\n    }\n  }\n  adminAllReports(page: 0, size: 1, status: PENDING) {\n    totalElements\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "3ca9ea94f668bf46d981a9a1aa8d01e4";
+(node as any).hash = "d9485327fc247c47ce6ab70b65f5de6e";
 
 export default node;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useLazyLoadQuery } from "react-relay";
 import type { AdminGameHistories } from "@/__generated__/AdminGameHistories.graphql";
@@ -13,13 +13,15 @@ import {
   EmptyBlock,
   TableSkeleton,
 } from "@/components/admin/Parts";
-import { Table, Th, Tr, Td } from "@/components/admin/Table";
+import { SEEN_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { GameTabs } from "@/components/admin/GameTabs";
+import { RecentMenu } from "@/components/admin/RecentViewed";
 import { Button } from "@/components/admin/Button";
 import { TeamBadge } from "@/components/admin/StatusBadge";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
+import { useClampPage, useListParams, useListScroll } from "@/lib/admin/useListParams";
 import {
   END_REASON_LABEL,
   formatDate,
@@ -34,14 +36,14 @@ type ReasonFilter =
   | "POLICE_FORFEITED"
   | "ROBBER_FORFEITED";
 const PAGE_SIZE = 20;
+const PARAMS = {
+  reason: ["", "ALL_ARRESTED", "TIME_OVER", "POLICE_FORFEITED", "ROBBER_FORFEITED"],
+  dir: ["DESC", "ASC"],
+} as const;
 
 export default function GameHistoryPage() {
-  const [reason, setReason] = useState<ReasonFilter>("");
-  const [dir, setDir] = useState<"DESC" | "ASC">("DESC");
-  const [page, setPage] = useState(0);
+  const { current, shown, dim, set } = useListParams(PARAMS);
   const [fetchKey, setFetchKey] = useState(0);
-  const [isPending, startTransition] = useTransition();
-  const update = (fn: () => void) => startTransition(fn);
 
   return (
     <ListPage>
@@ -50,8 +52,8 @@ export default function GameHistoryPage() {
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <GameTabs />
         <SegmentedControl<ReasonFilter>
-          value={reason}
-          onChange={(v) => update(() => { setReason(v); setPage(0); })}
+          value={current.reason}
+          onChange={(v) => set({ reason: v })}
           options={[
             { label: "전체", value: "" },
             { label: "전원 체포", value: "ALL_ARRESTED" },
@@ -61,13 +63,14 @@ export default function GameHistoryPage() {
           ]}
         />
         <SegmentedControl<"DESC" | "ASC">
-          value={dir}
-          onChange={(v) => update(() => { setDir(v); setPage(0); })}
+          value={current.dir}
+          onChange={(v) => set({ dir: v })}
           options={[
             { label: "최신순", value: "DESC" },
             { label: "오래된순", value: "ASC" },
           ]}
         />
+        <RecentMenu group="game" />
       </div>
 
       <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -77,16 +80,16 @@ export default function GameHistoryPage() {
         >
           <HistoryResults
             variables={{
-              page,
+              page: shown.page,
               size: PAGE_SIZE,
-              endReason: reason || undefined,
-              sortDirection: dir,
+              endReason: shown.reason || undefined,
+              sortDirection: shown.dir,
             }}
             fetchKey={fetchKey}
-            dim={isPending}
-            onPage={(p) => update(() => setPage(p))}
-            filtered={reason !== ""}
-            onReset={() => update(() => { setReason(""); setPage(0); })}
+            dim={dim}
+            onPage={(page) => set({ page })}
+            filtered={shown.reason !== ""}
+            onReset={() => set({ reason: "", page: 0 })}
           />
         </QueryBoundary>
       </Card>
@@ -112,6 +115,10 @@ function HistoryResults({
     { fetchKey: `${fetchKey}-${live}`, fetchPolicy: "store-and-network" }
   );
   const pageData = data.adminGameHistories;
+  const scrollRef = useListScroll();
+  const over = useClampPage(pageData, onPage);
+
+  if (over) return null;
 
   if (pageData.content.length === 0) {
     return (
@@ -137,7 +144,7 @@ function HistoryResults({
 
   return (
     <div className={`flex min-h-0 flex-1 flex-col transition-opacity ${dim ? "pointer-events-none opacity-50" : ""}`}>
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
         <Table
           sticky
           head={
@@ -156,7 +163,7 @@ function HistoryResults({
               <Td>
                 <Link
                   href={`/admin/games/history/${h.id}`}
-                  className="font-semibold text-sd-fg transition hover:text-accent"
+                  className={`font-semibold text-sd-fg transition hover:text-accent ${SEEN_ROW_TITLE}`}
                 >
                   {labelOf(END_REASON_LABEL, h.endReason)}
                 </Link>

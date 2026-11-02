@@ -32,6 +32,7 @@ export function TimeSelect({
   label,
   placeholder,
   after,
+  allDay = false,
 }: {
   /** "14:00" 또는 "" */
   value: string;
@@ -41,6 +42,8 @@ export function TimeSelect({
   placeholder: string;
   /** 끝 시간이면 시작 시간. 그 뒤만 보여 주고 길이를 같이 적는다 */
   after?: string;
+  /** 새벽까지 고른다. 행사는 아침부터라 기본은 06:00 부터인데, 점검은 자정 넘어서도 끝난다 */
+  allDay?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -50,7 +53,7 @@ export function TimeSelect({
 
   const start = after ? minutesOf(after) : null;
   const slots: number[] = [];
-  for (let m = FIRST; m <= LAST; m += STEP) if (start === null || m > start) slots.push(m);
+  for (let m = allDay ? 0 : FIRST; m <= LAST; m += STEP) if (start === null || m > start) slots.push(m);
   // 30분 간격이 아닌 값(예전에 넣은 13:15)도 목록에 보이게 끼워 넣는다
   if (value && !slots.includes(minutesOf(value)) && (start === null || minutesOf(value) > start)) {
     slots.push(minutesOf(value));

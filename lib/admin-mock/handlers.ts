@@ -2,6 +2,7 @@
 // 인메모리 데이터셋(data.ts)에서 응답을 만든다.
 // delay()로 약간의 지연을 줘서 로딩 상태 UX를 실제처럼 다듬을 수 있게 한다.
 import { graphql, http, HttpResponse, delay } from "msw";
+import { mockAppConfig, mockApplyAppConfig, mockUploadBanner } from "./appConfig";
 import {
   queryUsers,
   getUser,
@@ -152,7 +153,22 @@ export const handlers = [
 
   api.query("AdminDashboard", async () => {
     await delay(450);
-    return HttpResponse.json({ data: { adminDashboard: getDashboard() } });
+    return HttpResponse.json({
+      data: {
+        adminDashboard: getDashboard(),
+        adminAllReports: { totalElements: queryAllReports({ page: 0, size: 1, status: "PENDING" }).totalElements },
+      },
+    });
+  }),
+
+  api.query("AdminPendingCounts", async () => {
+    await delay(200);
+    return HttpResponse.json({
+      data: {
+        adminAllReports: { totalElements: queryAllReports({ page: 0, size: 1, status: "PENDING" }).totalElements },
+        adminBugReports: { totalElements: queryBugReports({ page: 0, size: 1, status: "PENDING" }).totalElements },
+      },
+    });
   }),
 
   api.query("AdminReports", async ({ variables }) => {
@@ -320,6 +336,28 @@ export const handlers = [
   }),
 
   // ── 공지사항 REST (/api/notices) ──
+  // 앱 설정. 로컬에서는 실제 Firebase 에 닿지 않는다
+  http.get("/api/admin/app-config", async ({ request }) => {
+    await delay(300);
+    const state = mockAppConfig();
+    if (new URL(request.url).searchParams.get("only") === "maintenance") {
+      return HttpResponse.json({ maintenance: state.values.maintenance === "true" });
+    }
+    return HttpResponse.json(state);
+  }),
+
+  http.put("/api/admin/app-config", async ({ request }) => {
+    await delay(500);
+    const { etag, changes } = (await request.json()) as { etag: string; changes: Record<string, string> };
+    const { status, body } = mockApplyAppConfig(etag, changes);
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.post("/api/admin/app-config/banners", async () => {
+    await delay(800);
+    return HttpResponse.json(mockUploadBanner(), { status: 201 });
+  }),
+
   http.get("/api/notices", async ({ request }) => {
     await delay(300);
     const url = new URL(request.url);
