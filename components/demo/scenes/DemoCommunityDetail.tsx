@@ -189,7 +189,7 @@ export function DemoCommunityDetail({
               onTask("detail-join");
               onJoinChat();
             }}
-            className="mt-[16px] flex h-[56px] w-full items-center justify-center gap-[12px] rounded-[12px] text-[16px] font-semibold text-white shadow-md transition-transform active:scale-95"
+            className="mt-[16px] flex h-[56px] w-full items-center justify-center gap-[12px] rounded-[12px] text-[18px] font-semibold text-white shadow-md transition-transform active:scale-95"
             style={{ backgroundColor: appColors.blue }}
           >
             <Image

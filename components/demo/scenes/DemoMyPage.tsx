@@ -145,9 +145,7 @@ export function DemoMyPage({
           </span>
         </button>
         <ItemDivider />
-        <MenuRow text={app.tutorialRewatch} />
-        <ItemDivider />
-        <MenuRow text={app.tutorialReset} />
+        <MenuRow text={app.appIntro} />
         <ItemDivider />
         <MenuRow text={app.bugReport} />
         <ItemDivider />

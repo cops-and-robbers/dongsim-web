@@ -99,11 +99,12 @@ export function DemoCommunityList({
             {adSlot && <div className="shrink-0 p-[3px]">{adSlot}</div>}
           </div>
         ) : (
-          // 우리 동네·내 모임은 앱과 같이 준비 중 안내다
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[14px]">
-            <Image src="/characters/robber.svg" alt="" width={96} height={87} />
-            <p className="text-[15px] font-semibold" style={{ color: appColors.black600 }}>
-              {app.comingSoon}
+          // 빈 상태 (empty_state.dart: 아이콘 80, 간격 16, 14 black600).
+          // 내 모임은 참여 중인 채팅방 목록이라 방이 없다는 안내고, 우리 동네는 준비 중이다
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[16px] px-[24px]">
+            <Image src="/demo/icon_not_found.svg" alt="" width={80} height={80} style={{ height: "auto" }} />
+            <p className="text-center text-[14px]" style={{ color: appColors.black600 }}>
+              {scope === 2 ? app.chatRoomsEmpty : app.comingSoon}
             </p>
           </div>
         )}

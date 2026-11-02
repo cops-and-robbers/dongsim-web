@@ -3,8 +3,9 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { appColors } from "@/lib/app-tokens";
-import { DEMO_ROOM_CODE } from "@/lib/demo/scenes";
+import { DEMO_MY_NAME as ME, DEMO_ROOM_CODE } from "@/lib/demo/scenes";
 import { DemoConfirmDialog } from "./DemoConfirmDialog";
+import { TintIcon } from "./DemoGameParts";
 import { useDemoCopy } from "../demo-copy";
 
 // 대기실 (waiting_room_page.dart 실측). 앱바 초대코드(밑줄 2px),
@@ -14,7 +15,9 @@ import { useDemoCopy } from "../demo-copy";
 //
 // [host] 모드(방 만들기 코스)에서는 내가 방장이다. 참가자들이 각본대로
 // 입장·준비하고, 전원 준비되면 하단의 게임 시작 버튼이 켜진다.
-const ME = "민첩한괴도5308";
+//
+// 도둑 팀이면 화면 전체가 다크다 (waiting_room_page.dart, team_section, participant_card).
+// 팀은 상태바 색도 함께 바꾸므로 DemoApp 이 들고 있다.
 
 type Member = { name: string; host?: boolean; ready?: boolean };
 type Guest = { name: string; team: "police" | "robber"; ready: boolean };
@@ -32,21 +35,23 @@ const GUEST_SCRIPT: readonly {
 
 export function DemoWaitingRoom({
   host = false,
+  myTeam,
+  onTeamChange,
   onTeamMoved,
   onReady,
   onStart,
   onLeave,
 }: {
   host?: boolean;
+  myTeam: "police" | "robber";
+  onTeamChange: (team: "police" | "robber") => void;
   onTeamMoved: () => void;
   onReady: () => void;
   onStart: (myTeam: "police" | "robber") => void;
   onLeave: () => void;
 }) {
   const { app } = useDemoCopy();
-  const [myTeam, setMyTeam] = useState<"police" | "robber">(
-    host ? "police" : "robber",
-  );
+  const dark = myTeam === "robber";
   const [ready, setReady] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -124,7 +129,7 @@ export function DemoWaitingRoom({
           )}
           <span
             className={`truncate text-[10px] ${mine ? "font-bold" : ""}`}
-            style={{ color: mine ? appColors.black600 : appColors.black800 }}
+            style={{ color: dark ? appColors.black100 : mine ? appColors.black600 : appColors.black800 }}
           >
             {member.name}
           </span>
@@ -139,47 +144,48 @@ export function DemoWaitingRoom({
       type="button"
       onClick={() => {
         if (ready || myTeam === team) return;
-        setMyTeam(team);
+        onTeamChange(team);
         onTeamMoved();
       }}
       className="flex w-[72px] flex-col items-center"
     >
       <span
         className="flex h-[84px] w-[72px] items-center justify-center rounded-[8px] transition-transform active:scale-95"
-        style={{ backgroundColor: appColors.black100 }}
+        style={{ backgroundColor: dark ? appColors.black800 : appColors.black100 }}
       >
         <Image
           src="/demo/icon_change.svg"
           alt=""
           width={24}
           height={24}
-          className="opacity-50"
+          className={dark ? "opacity-50 brightness-0 invert" : "opacity-50"}
         />
       </span>
       <span className="mt-[4px] h-[13px]" />
     </button>
   );
 
-  const section = (
-    team: "police" | "robber",
-    label: string,
-    icon: string,
-    members: Member[],
-  ) => (
+  const section = (team: "police" | "robber", label: string, members: Member[]) => (
     <div>
       <div className="flex items-center px-[24px] py-[16px]">
-        <Image src={icon} alt="" width={28} height={28} />
+        <Image src={`/demo/icon_role_${team}_${dark ? "dark" : "light"}.svg`} alt="" width={28} height={28} />
         <span
-          className="ml-[8px] text-[16px] font-semibold"
-          style={{ color: appColors.black }}
+          className={`ml-[8px] text-[16px] ${dark ? "font-moneygraphy" : "font-semibold"}`}
+          style={{ color: dark ? appColors.white : appColors.black }}
         >
           {label}
         </span>
-        <span className="ml-[4px] text-[12px]" style={{ color: appColors.black600 }}>
+        <span className="ml-[4px] text-[12px]" style={{ color: dark ? appColors.black400 : appColors.black600 }}>
           {app.personCount(members.length)}
         </span>
         <span className="flex-1" />
-        <Image src="/demo/icon_down.svg" alt="" width={24} height={24} className="rotate-180 opacity-60" />
+        {dark ? (
+          <span className="rotate-180">
+            <TintIcon src="/demo/icon_down.svg" size={24} color={appColors.black400} />
+          </span>
+        ) : (
+          <Image src="/demo/icon_down.svg" alt="" width={24} height={24} className="rotate-180 opacity-60" />
+        )}
       </div>
       <div className="flex flex-wrap gap-[16px] pb-[20px] pl-[30px] pr-[24px]">
         {addSlot(team)}
@@ -191,7 +197,7 @@ export function DemoWaitingRoom({
   return (
     <div
       className="flex min-h-0 flex-1 flex-col"
-      style={{ backgroundColor: appColors.white }}
+      style={{ backgroundColor: dark ? appColors.black900 : appColors.white }}
     >
       {/* 앱바: 나가기 / 초대 코드(밑줄) / 규칙·설정 */}
       <div className="flex h-[56px] shrink-0 items-center justify-between pl-[18px] pr-[12px]">
@@ -200,30 +206,30 @@ export function DemoWaitingRoom({
           onClick={() => setLeaveOpen(true)}
           className="transition-transform active:scale-90"
         >
-          <Image src="/demo/icon_exit.svg" alt="" width={24} height={24} />
+          <TintIcon src="/demo/icon_gameout.svg" size={24} color={dark ? appColors.black200 : appColors.black500} />
         </button>
         <span className="flex flex-col items-center">
           <span
-            className="text-[20px] font-bold leading-none"
-            style={{ color: appColors.black }}
+            className={`text-[20px] leading-none ${dark ? "font-moneygraphy" : "font-bold"}`}
+            style={{ color: dark ? appColors.white : appColors.black }}
           >
             {DEMO_ROOM_CODE}
           </span>
           <span
             className="mt-[2px] h-[2px] w-full"
-            style={{ backgroundColor: appColors.black }}
+            style={{ backgroundColor: dark ? appColors.white : appColors.black }}
           />
         </span>
         <span className="flex items-center gap-[2px]">
-          <Image src="/demo/icon_info.svg" alt="" width={24} height={24} />
-          <Image src="/demo/icon_settiing_2.svg" alt="" width={24} height={24} />
+          <TintIcon src="/demo/icon_info.svg" size={24} color={dark ? appColors.black200 : appColors.black500} />
+          <TintIcon src="/demo/icon_settiing_2.svg" size={24} color={dark ? appColors.black200 : appColors.black500} />
         </span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-hidden">
-        {section("police", app.teamPolice, "/demo/icon_team_police.svg", police)}
-        <div className="mx-[20px] h-px" style={{ backgroundColor: appColors.black100 }} />
-        {section("robber", app.teamRobber, "/demo/icon_team_robber.svg", robber)}
+        {section("police", app.teamPolice, police)}
+        <div className="mx-[20px] h-px" style={{ backgroundColor: dark ? appColors.black800 : appColors.black100 }} />
+        {section("robber", app.teamRobber, robber)}
       </div>
 
       {/* 하단 버튼 (waiting_room_page.dart _buildBottomButton):
@@ -234,11 +240,15 @@ export function DemoWaitingRoom({
             type="button"
             disabled={!allReady}
             onClick={() => onStart(myTeam)}
-            className="flex h-[56px] w-full items-center justify-center rounded-[12px] text-[16px] font-semibold transition-transform active:scale-95"
+            className={`flex h-[56px] w-full items-center justify-center rounded-[12px] text-[18px] transition-transform active:scale-95 ${dark ? "font-moneygraphy" : "font-semibold"}`}
             style={
               allReady
-                ? { backgroundColor: appColors.blue, color: appColors.white }
-                : { backgroundColor: appColors.black200, color: appColors.black400 }
+                ? dark
+                  ? { backgroundColor: appColors.green, color: appColors.black }
+                  : { backgroundColor: appColors.blue, color: appColors.white }
+                : dark
+                  ? { backgroundColor: appColors.black800, color: appColors.black500 }
+                  : { backgroundColor: appColors.black200, color: appColors.black400 }
             }
           >
             {app.startGame}
@@ -246,19 +256,23 @@ export function DemoWaitingRoom({
         ) : (
           <button
             type="button"
-            disabled={ready}
             onClick={() => {
-              setReady(true);
-              onReady();
+              // 시작되기 전까지는 앱처럼 다시 눌러 준비를 취소한다
+              if (!ready) onReady();
+              setReady(!ready);
             }}
-            className="flex h-[56px] w-full items-center justify-center rounded-[12px] text-[16px] font-semibold transition-transform active:scale-95"
+            className={`flex h-[56px] w-full items-center justify-center rounded-[12px] text-[18px] transition-transform active:scale-95 ${dark ? "font-moneygraphy" : "font-semibold"}`}
             style={
               ready
-                ? { backgroundColor: appColors.blue100, color: appColors.blue }
-                : { backgroundColor: appColors.blue, color: appColors.white }
+                ? dark
+                  ? { backgroundColor: appColors.black800, color: appColors.green }
+                  : { backgroundColor: appColors.blue100, color: appColors.blue }
+                : dark
+                  ? { backgroundColor: appColors.green, color: appColors.black }
+                  : { backgroundColor: appColors.blue, color: appColors.white }
             }
           >
-            {ready ? app.readyDone : app.ready}
+            {ready ? app.cancelReady : app.ready}
           </button>
         )}
       </div>
@@ -266,6 +280,7 @@ export function DemoWaitingRoom({
       {/* 방 나가기 확인 (dialogLeaveRoom 문구 그대로) */}
       {leaveOpen && (
         <DemoConfirmDialog
+          dark={dark}
           title={app.leaveRoomTitle}
           message={app.leaveRoomMessage}
           confirmText={app.leave}

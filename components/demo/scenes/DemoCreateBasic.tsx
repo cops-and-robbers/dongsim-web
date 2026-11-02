@@ -169,7 +169,7 @@ export function DemoCreateBasic({
         type="button"
         disabled={!ctaEnabled}
         onClick={onCta}
-        className="flex h-[56px] w-full shrink-0 items-center justify-center text-[16px] font-semibold"
+        className="flex h-[56px] w-full shrink-0 items-center justify-center text-[18px] font-semibold"
         style={{
           backgroundColor: ctaEnabled ? appColors.blue : appColors.black200,
           color: ctaEnabled ? appColors.white : appColors.black400,
