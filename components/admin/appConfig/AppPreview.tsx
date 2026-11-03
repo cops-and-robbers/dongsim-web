@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { PhoneFrame } from "@/components/game/PhoneMockup";
 import { AppScreen } from "@/components/game/mockups/AppScreen";
@@ -8,13 +8,13 @@ import { DemoHome } from "@/components/demo/scenes/DemoHome";
 import { DemoCommunityList } from "@/components/demo/scenes/DemoCommunityList";
 import { DemoTabBar } from "@/components/demo/DemoTabBar";
 import { appColors } from "@/lib/app-tokens";
-import { appVersionOutcome, versionSamples, type AppConfigValues, type VersionOutcome } from "@/lib/admin/appConfig";
+import { appVersionOutcome, evidenceLayout, evidenceUrls, versionSamples, type AppConfigValues, type VersionOutcome } from "@/lib/admin/appConfig";
 
 // 앱 설정 옆의 폰. 고르는 값이 앱의 어느 화면, 어느 자리에 나오는지 실제 앱 화면으로 보여 준다.
 // 화면은 사이트 데모(components/demo)의 실측 장면을 그대로 쓰고, 없는 화면은 앱 코드를 옮겼다.
 // 저장 전 값으로 그리고, 안의 버튼을 눌러 사용자가 겪을 일을 따라가 볼 수 있다.
 
-export type PreviewScene = "maintenance" | "version" | "community-ad" | "game-end-ad" | "banner";
+export type PreviewScene = "maintenance" | "version" | "community-ad" | "game-end-ad" | "banner" | "evidence";
 
 // 고른 값이 나오는 자리 표시. 앱에는 없는 관리자용 테두리다
 const SPOT = "rounded-[14px] outline outline-[3px] outline-offset-[3px] outline-[#339DFF]";
@@ -26,11 +26,15 @@ export function AppPreview({ scene, values }: { scene: PreviewScene; values: App
   const [replay, setReplay] = useState(0);
   const [sampleIndex, setSampleIndex] = useState(0);
   const [tapNote, setTapNote] = useState<string | null>(null);
+  const [evidenceOpened, setEvidenceOpened] = useState<number | null>(null);
 
   const samples = versionSamples(values);
   // 값이 바뀌어 고르던 버전이 사라지면 첫 버전을 보여 준다
   const sample = samples[sampleIndex] ?? samples[0];
   const outcome = sample ? appVersionOutcome(values, sample.version) : "upToDate";
+
+  const evidenceCount = evidenceUrls(values).length || 2;
+  const opened = Math.min(evidenceOpened ?? evidenceCount, evidenceCount);
 
   const restart = () => {
     setReplay((n) => n + 1);
@@ -45,7 +49,7 @@ export function AppPreview({ scene, values }: { scene: PreviewScene; values: App
       <div className="mx-auto w-full max-w-[280px] lg:max-w-[clamp(200px,calc((100svh_-_208px)*9/19),280px)]">
         <PhoneFrame clock="9:41" unbounded>
           <AppScreen playing scrollRef={screenRef} statusBar={appColors.white} className="bg-white">
-            <Scene key={`${scene}-${sample?.version}-${outcome}-${replay}`} scene={scene} values={values} outcome={outcome} onTap={setTapNote} />
+            <Scene key={`${scene}-${sample?.version}-${outcome}-${replay}`} scene={scene} values={values} outcome={outcome} onTap={setTapNote} evidenceOpened={opened} />
           </AppScreen>
         </PhoneFrame>
       </div>
@@ -77,6 +81,27 @@ export function AppPreview({ scene, values }: { scene: PreviewScene; values: App
         </div>
       )}
 
+      {scene === "evidence" && (
+        <div className="mt-3 text-center">
+          <p className="mb-1.5 text-[12px] font-medium text-sd-fg-subtle">검거한 운영진 수</p>
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {Array.from({ length: evidenceCount + 1 }, (_, n) => (
+              <button
+                key={n}
+                type="button"
+                aria-pressed={n === opened}
+                onClick={() => setEvidenceOpened(n)}
+                className={`rounded-lg px-2.5 py-1 text-[12px] font-semibold tabular-nums outline-none transition focus-visible:ring-2 focus-visible:ring-accent ${
+                  n === opened ? "bg-accent-weak text-accent" : "bg-sd-gray-200 text-sd-fg-subtle hover:text-sd-fg-muted"
+                }`}
+              >
+                {n}명
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p aria-live="polite" className="mt-3 text-center text-[13px] leading-relaxed text-sd-fg-muted">
         {tapNote ?? captionOf(scene, values, outcome, sample?.version ?? "")}
       </p>
@@ -100,6 +125,8 @@ function captionOf(scene: PreviewScene, v: AppConfigValues, outcome: VersionOutc
     case "game-end-ad":
       if (!adsOn) return "전체 광고가 꺼져 있어 게임이 끝나도 광고가 나오지 않아요.";
       return v.game_end_ads_enabled === "true" ? "게임을 마치고 나갈 때 전면 광고가 떠요. 닫으면 다음 화면이 보여요." : "지금 설정이면 광고 없이 바로 넘어가요.";
+    case "evidence":
+      return "게임이 끝날 때와 검거 현황에서 이 보드가 보여요.";
     case "banner":
       if (v.banner_enabled !== "true" || !v.banner_image_url) return "지금 설정이면 홈에 배너가 보이지 않아요.";
       return v.banner_link_url ? "홈 화면 버튼 아래에 나와요. 눌러 보세요." : "홈 화면 버튼 아래에 나와요. 눌러도 이동하지 않아요.";
@@ -111,12 +138,15 @@ function Scene({
   values,
   outcome,
   onTap,
+  evidenceOpened,
 }: {
   scene: PreviewScene;
   values: AppConfigValues;
   outcome: VersionOutcome;
   onTap: (note: string) => void;
+  evidenceOpened: number;
 }) {
+  if (scene === "evidence") return <EvidenceBoard urls={evidenceUrls(values)} opened={evidenceOpened} />;
   if (scene === "maintenance") return <MaintenanceScreen message={values.maintenance_message} spot />;
   if (scene === "version") return <VersionScene values={values} outcome={outcome} onTap={onTap} />;
   if (scene === "community-ad") {
@@ -262,6 +292,85 @@ function UpdateDialog({ title, message, onLater, onUpdate }: { title: string; me
           <button type="button" onClick={onUpdate} className="h-[52px] flex-1 rounded-[12px] text-[16px] font-semibold text-white" style={{ backgroundColor: appColors.blue }}>
             업데이트
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 앱 event_result_board.dart 를 옮겼다. 앱에 든 사진은 이 저장소에 없어 자리만 그린다
+function EvidenceBoard({ urls, opened }: { urls: string[]; opened: number }) {
+  const [loaded, setLoaded] = useState<{ url: string; ratio: number } | null>(null);
+  const first = urls[0];
+  useEffect(() => {
+    if (!first) return;
+    const image = new window.Image();
+    image.onload = () => setLoaded({ url: first, ratio: image.naturalWidth / image.naturalHeight });
+    image.src = first;
+    return () => {
+      image.onload = null;
+    };
+  }, [first]);
+
+  const count = urls.length || 2;
+  const ratio = loaded && loaded.url === first ? loaded.ratio : 9 / 16;
+  const layout = evidenceLayout(ratio, count);
+  const fullWidthTilt = layout.arrangement === "single" || layout.arrangement === "stacked";
+  const tilt = fullWidthTilt ? 0.02 : 0.05;
+  const slot = (i: number) => (
+    <div
+      key={i}
+      className={`relative shrink-0 overflow-hidden rounded-[8px] ${SPOT}`}
+      style={{
+        width: layout.width,
+        height: layout.height,
+        transform: `rotate(${i === 0 ? -tilt : i === count - 1 ? tilt : 0}rad)`,
+        backgroundColor: appColors.black100,
+      }}
+    >
+      {i < opened &&
+        (urls[i] ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={urls[i]} alt={`증거 사진 ${i + 1}번`} className="h-full w-full object-contain" />
+        ) : (
+          <span className="flex h-full items-center justify-center text-[13px] font-semibold" style={{ color: appColors.black400 }}>
+            앱 사진 {i + 1}
+          </span>
+        ))}
+      {i >= opened && (
+        <span aria-hidden className="absolute inset-0 flex items-center justify-center">
+          <span className="flex rounded-full bg-white p-[6px]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={appColors.black400}>
+              <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+            </svg>
+          </span>
+        </span>
+      )}
+    </div>
+  );
+  const indexes = Array.from({ length: count }, (_, i) => i);
+
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 px-[36px]">
+      <div className="w-full rounded-[24px] bg-white p-[20px]">
+        <p className="text-center text-[20px] font-semibold" style={{ color: appColors.black }}>
+          수사 종료
+        </p>
+        <div className="my-[16px] flex flex-col items-center gap-[16px]">
+          {layout.arrangement === "stacked" && indexes.map(slot)}
+          {layout.arrangement === "twoOverOne" && (
+            <>
+              <div className="flex gap-[16px]">{indexes.slice(0, 2).map(slot)}</div>
+              {slot(2)}
+            </>
+          )}
+          {(layout.arrangement === "sideBySide" || layout.arrangement === "single") && <div className="flex gap-[16px]">{indexes.map(slot)}</div>}
+        </div>
+        <p className="text-center text-[20px] font-semibold" style={{ color: appColors.blue }}>
+          운영진 {opened}명 검거
+        </p>
+        <div className="mt-[20px] flex h-[48px] items-center justify-center rounded-[12px] text-[16px] font-semibold text-white" style={{ backgroundColor: appColors.blue }}>
+          홈으로
         </div>
       </div>
     </div>

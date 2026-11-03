@@ -9,14 +9,18 @@ import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { useToast } from "@/components/admin/Toast";
 import { AppPreview, type PreviewScene } from "@/components/admin/appConfig/AppPreview";
 import { BannerImagePicker } from "@/components/admin/appConfig/BannerImagePicker";
+import { EvidenceImagePicker } from "@/components/admin/appConfig/EvidenceImagePicker";
 import { HttpsUrlInput, VersionInput } from "@/components/admin/appConfig/fields";
 import { SingleDatePicker } from "@/components/admin/metrics/DateRangePicker";
 import { TimeSelect } from "@/components/admin/metrics/TimeSelect";
 import {
   describeChanges,
   diffAppConfig,
+  EVIDENCE_KEYS,
+  evidenceUrls,
   formatMaintenanceEnd,
   isFutureEnd,
+  isSameEvidenceRatio,
   kstToday,
   parseMaintenanceEnd,
   presetMaintenanceEnd,
@@ -38,9 +42,11 @@ import { addDays } from "@/lib/metrics/dates";
 // 설계와 근거는 docs/admin-ui.md "앱 설정"
 
 const TIMING = "앱을 새로 열 때 적용돼요. 최대 1시간 늦을 수 있어요.";
+// 앱은 게임마다 한 번 사진을 고정하지만 메모리에만 둔다(앱 event_evidence_provider.dart)
+const EVIDENCE_TIMING = "앱에 닿기까지 최대 1시간 걸릴 수 있어요. 게임 중에 바꾸면 앱을 다시 켠 사람만 새 사진을 볼 수 있으니 행사 전에 바꿔 주세요. 이 기능이 없는 옛 버전 앱에는 앱에 든 사진이 나와요.";
 const CONSOLE_HISTORY = `https://console.firebase.google.com/project/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/config/env/firebase/history`;
 
-const PARAMS = { tab: ["maintenance", "version", "ads", "banner"] } as const;
+const PARAMS = { tab: ["maintenance", "version", "ads", "banner", "evidence"] } as const;
 type Tab = (typeof PARAMS.tab)[number];
 type AdScene = "community-ad" | "game-end-ad";
 
@@ -104,6 +110,7 @@ export default function AppConfigPage() {
     version: draftFor("version"),
     ads: draftFor("ads"),
     banner: draftFor("banner"),
+    evidence: draftFor("evidence"),
   }));
 
   const tab = current.tab;
@@ -130,6 +137,7 @@ export default function AppConfigPage() {
               { label: "앱 버전", value: "version" },
               { label: "광고", value: "ads" },
               { label: "홈 배너", value: "banner" },
+              { label: "이벤트 게임", value: "evidence" },
             ]}
           />
 
@@ -141,7 +149,7 @@ export default function AppConfigPage() {
             <div className="self-start lg:sticky lg:top-0">
               <AppPreview
                 scene={scene}
-                values={{ ...state.values, ...drafts.maintenance, ...drafts.version, ...drafts.ads, ...drafts.banner }}
+                values={{ ...state.values, ...drafts.maintenance, ...drafts.version, ...drafts.ads, ...drafts.banner, ...drafts.evidence }}
               />
             </div>
           </div>
@@ -152,7 +160,7 @@ export default function AppConfigPage() {
 }
 
 // 값이 바뀌면(적용, 다른 사람의 변경) 쓰던 입력을 버리고 새 값에서 다시 시작한다. 낡은 값 위에 고치지 않게.
-// 탭을 옮겨도 쓰던 입력이 남도록 네 패널을 모두 그려 두고 보이는 것만 고른다
+// 탭을 옮겨도 쓰던 입력이 남도록 패널을 모두 그려 두고 보이는 것만 고른다
 function Panels({
   state,
   tab,
@@ -187,6 +195,9 @@ function Panels({
       </div>
       <div hidden={tab !== "banner"}>
         <BannerPanel {...shared} onDraft={onDrafts.banner} />
+      </div>
+      <div hidden={tab !== "evidence"}>
+        <EvidencePanel {...shared} onDraft={onDrafts.evidence} />
       </div>
     </>
   );
@@ -726,6 +737,121 @@ function BannerPanel({ values, canEdit, apply, onDraft }: Shared) {
           title="이대로 적용할까요?"
           items={describeChanges(values, changes)}
           note="홈 화면을 열어 둔 사용자에게도 바로 반영돼요."
+          pending={pending}
+          error={error}
+          onClose={() => setReviewing(false)}
+          onConfirm={() => run(changes, () => setReviewing(false))}
+        />
+      )}
+    </SectionCard>
+  );
+}
+
+// ── 이벤트 증거 사진 ─────────────────────────────────────
+
+type EvidenceForm = Pick<AppConfigValues, (typeof EVIDENCE_KEYS)[number]>;
+
+function EvidencePanel({ values, canEdit, apply, onDraft }: Shared) {
+  const saved: EvidenceForm = {
+    event_evidence_image_1_url: values.event_evidence_image_1_url,
+    event_evidence_image_2_url: values.event_evidence_image_2_url,
+    event_evidence_image_3_url: values.event_evidence_image_3_url,
+  };
+  const savedCount = evidenceUrls(saved).length;
+  const [form, setForm] = useState(saved);
+  const [count, setCount] = useState(savedCount);
+  const [ratios, setRatios] = useState<Record<string, number>>({});
+  const [reviewing, setReviewing] = useState(false);
+  const { pending, error, run, clear } = useApply(apply);
+  const editable = canEdit([...EVIDENCE_KEYS]);
+
+  // 줄인 칸의 사진은 저장할 때 지운다. 다시 늘려도 고르던 사진은 남아 있다
+  const after = Object.fromEntries(EVIDENCE_KEYS.map((key, i) => [key, i < count ? form[key] : ""])) as EvidenceForm;
+  const changes = diffAppConfig(values, after);
+  const dirty = Object.keys(changes).length > 0 || count !== savedCount;
+  const missing = EVIDENCE_KEYS.slice(0, count).some((key) => !form[key]);
+  const baseRatio = ratios[form.event_evidence_image_1_url];
+  const mismatch = (key: (typeof EVIDENCE_KEYS)[number]) => {
+    const ratio = ratios[form[key]];
+    return baseRatio !== undefined && ratio !== undefined && !isSameEvidenceRatio(baseRatio, ratio);
+  };
+  const hasMismatch = EVIDENCE_KEYS.slice(1, count).some(mismatch);
+  // 불러와서 비율을 확인한 사진만 적용할 수 있다. 깨진 사진은 앱에서 말없이 앱 사진으로 바뀐다
+  const unverified = EVIDENCE_KEYS.slice(0, count).some((key) => form[key] && ratios[form[key]] === undefined);
+
+  const afterJson = JSON.stringify(after);
+  useEffect(() => onDraft(JSON.parse(afterJson) as EvidenceForm), [onDraft, afterJson]);
+
+  return (
+    <SectionCard title="이벤트 증거 사진">
+      <div className="space-y-4">
+        <Intro>이벤트 게임에서 운영진을 잡으면 공개되는 사진을 바꿔요. 행사 전에 올려 두고 오른쪽 미리보기에서 확인해 주세요.</Intro>
+
+        <div>
+          <p className="mb-1.5 text-[13px] font-semibold text-sd-fg-subtle">사용할 사진</p>
+          <div className={editable ? "" : "pointer-events-none opacity-50"}>
+            <SegmentedControl<string>
+              value={String(count)}
+              onChange={(v) => setCount(Number(v))}
+              options={[
+                { label: "앱 기본 사진", value: "0" },
+                { label: "1장", value: "1" },
+                { label: "2장", value: "2" },
+                { label: "3장", value: "3" },
+              ]}
+            />
+          </div>
+        </div>
+
+        {count === 0 ? (
+          <p className="text-[13px] leading-relaxed text-sd-fg-subtle">앱에 들어 있는 사진 2장을 그대로 보여 줘요.</p>
+        ) : (
+          <>
+            <div className="space-y-3">
+              {EVIDENCE_KEYS.slice(0, count).map((key, i) => (
+                <EvidenceImagePicker
+                  key={key}
+                  label={`${i + 1}번 사진`}
+                  value={form[key]}
+                  onChange={(url) => setForm((f) => ({ ...f, [key]: url }))}
+                  onRatio={(url, ratio) => setRatios((r) => (r[url] === ratio ? r : { ...r, [url]: ratio }))}
+                  error={i > 0 && mismatch(key) ? "1번 사진과 비율이 달라요. 같은 비율로 올려 주세요." : undefined}
+                  disabled={!editable}
+                />
+              ))}
+            </div>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-xl bg-sd-fill px-4 py-3 text-[13px]">
+              <dt className="font-semibold text-sd-fg-subtle">권장 크기</dt>
+              <dd className="tabular-nums text-sd-fg-muted">세로 1080 × 1920px, 가로 1920 × 1080px</dd>
+              <dt className="font-semibold text-sd-fg-subtle">비율</dt>
+              <dd className="text-sd-fg-muted">9:16에서 16:9 사이, 모든 사진을 같은 비율로</dd>
+              <dt className="font-semibold text-sd-fg-subtle">파일</dt>
+              <dd className="text-sd-fg-muted">PNG, JPG, WEBP, 1MB까지</dd>
+            </dl>
+          </>
+        )}
+
+        <p className="text-[13px] leading-relaxed text-sd-fg-subtle">{EVIDENCE_TIMING}</p>
+
+        <SaveBar
+          dirty={dirty}
+          disabled={missing || hasMismatch || unverified || !editable || Object.keys(changes).length === 0}
+          onReset={() => {
+            setForm(saved);
+            setCount(savedCount);
+          }}
+          onReview={() => {
+            clear();
+            setReviewing(true);
+          }}
+        />
+      </div>
+
+      {reviewing && (
+        <ChangeDialog
+          title="이대로 적용할까요?"
+          items={describeChanges(values, changes)}
+          note={EVIDENCE_TIMING}
           pending={pending}
           error={error}
           onClose={() => setReviewing(false)}
