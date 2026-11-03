@@ -353,6 +353,11 @@ export const handlers = [
     return HttpResponse.json(body as Record<string, unknown>, { status });
   }),
 
+  http.post("/api/admin/app-config/evidence", async () => {
+    await delay(800);
+    return HttpResponse.json(mockUploadBanner(), { status: 201 });
+  }),
+
   http.post("/api/admin/app-config/banners", async () => {
     await delay(800);
     return HttpResponse.json(mockUploadBanner(), { status: 201 });
