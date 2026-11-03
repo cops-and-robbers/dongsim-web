@@ -120,10 +120,10 @@ const storageHeaders = async () => ({ Authorization: `Bearer ${await serviceAcco
 const EXTENSION: Record<BannerImageType, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
 /** 새 이름으로 올린다. 이름을 서버가 지어서 있던 파일을 덮어쓰지 않는다(지금 앱에 나가는 이미지가 바뀌면 안 된다). */
-export async function uploadBannerImage(bytes: Uint8Array, type: BannerImageType): Promise<BannerImage> {
+export async function uploadBannerImage(bytes: Uint8Array, type: BannerImageType, prefix: string = BANNER_PREFIX): Promise<BannerImage> {
   const bucket = storageBucket();
   const token = randomUUID();
-  const name = `${BANNER_PREFIX}${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}-${token.slice(0, 8)}.${EXTENSION[type]}`;
+  const name = `${prefix}${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}-${token.slice(0, 8)}.${EXTENSION[type]}`;
   const boundary = `banner-${token}`;
   const meta = JSON.stringify({ name, contentType: type, metadata: { firebaseStorageDownloadTokens: token } });
   const body = Buffer.concat([
@@ -137,7 +137,7 @@ export async function uploadBannerImage(bytes: Uint8Array, type: BannerImageType
     body,
     signal: AbortSignal.timeout(30_000),
   });
-  if (!res.ok) throw new Error(`배너를 올리지 못했어요 (${res.status})`);
+  if (!res.ok) throw new Error(`이미지를 올리지 못했어요 (${res.status})`);
   return { name, url: bannerImageUrl(bucket, name, token), updated: new Date().toISOString() };
 }
 

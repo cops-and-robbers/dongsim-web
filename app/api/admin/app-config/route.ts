@@ -14,7 +14,9 @@ import {
   describeForHistory,
   diffAppConfig,
   isAppConfigKey,
+  EVIDENCE_KEYS,
   isOurBannerUrl,
+  isOurEvidenceUrl,
   mergeTemplate,
   readAppConfig,
   validateChanges,
@@ -64,7 +66,7 @@ export async function PUT(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "요청을 읽지 못했어요." }, { status: 400 });
   }
 
-  // 정해 둔 11개 말고는 받지 않는다. 앱에 없는 값이나 콘솔에서 쓰는 다른 값을 이 경로로 바꿀 수 없다
+  // 정해 둔 14개 말고는 받지 않는다. 앱에 없는 값이나 콘솔에서 쓰는 다른 값을 이 경로로 바꿀 수 없다
   const requested: AppConfigChanges = {};
   for (const [key, value] of Object.entries(body.changes)) {
     if (!isAppConfigKey(key) || typeof value !== "string") {
@@ -87,6 +89,10 @@ export async function PUT(req: Request): Promise<NextResponse> {
 
     // 배너 이미지는 우리 폴더에 올린 것만 내보낸다. 빈 값(숨기기)은 괜찮다
     if (changes.banner_image_url && !isOurBannerUrl(changes.banner_image_url, storageBucket())) {
+      return NextResponse.json({ error: "이 이미지 주소는 쓸 수 없어요. 새로 올려 주세요." }, { status: 400 });
+    }
+
+    if (EVIDENCE_KEYS.some((key) => changes[key] && !isOurEvidenceUrl(changes[key], storageBucket()))) {
       return NextResponse.json({ error: "이 이미지 주소는 쓸 수 없어요. 새로 올려 주세요." }, { status: 400 });
     }
 

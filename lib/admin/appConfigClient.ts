@@ -43,6 +43,12 @@ export async function uploadBannerImage(file: File) {
   return read<BannerImage>(await call(`${URL}/banners`, { method: "POST", body: form }));
 }
 
+export async function uploadEvidenceImage(file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  return read<BannerImage>(await call(`${URL}/evidence`, { method: "POST", body: form }));
+}
+
 export const fetchMaintenance = async () => read<{ maintenance: boolean }>(await call(`${URL}?only=maintenance`));
 
 export async function applyAppConfig(etag: string, changes: AppConfigChanges) {
