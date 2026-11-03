@@ -14,12 +14,18 @@ export const APP_CONFIG_KEYS = [
   "banner_enabled",
   "banner_image_url",
   "banner_link_url",
+  "event_evidence_image_1_url",
+  "event_evidence_image_2_url",
+  "event_evidence_image_3_url",
 ] as const;
 
 export type AppConfigKey = (typeof APP_CONFIG_KEYS)[number];
 /** Remote Config 값은 true, false 까지 전부 글자로 오간다. */
 export type AppConfigValues = Record<AppConfigKey, string>;
 export type AppConfigChanges = Partial<AppConfigValues>;
+
+export const EVIDENCE_KEYS = ["event_evidence_image_1_url", "event_evidence_image_2_url", "event_evidence_image_3_url"] as const;
+const isEvidenceKey = (key: AppConfigKey) => (EVIDENCE_KEYS as readonly string[]).includes(key);
 
 const BOOLEAN_KEYS: AppConfigKey[] = ["maintenance", "force_update", "ads_enabled", "community_ads_enabled", "game_end_ads_enabled", "banner_enabled"];
 const isBooleanKey = (key: AppConfigKey) => BOOLEAN_KEYS.includes(key);
@@ -38,6 +44,9 @@ const APP_DEFAULTS: AppConfigValues = {
   banner_enabled: "false",
   banner_image_url: "",
   banner_link_url: "",
+  event_evidence_image_1_url: "",
+  event_evidence_image_2_url: "",
+  event_evidence_image_3_url: "",
 };
 
 const LABELS: Record<AppConfigKey, string> = {
@@ -52,6 +61,9 @@ const LABELS: Record<AppConfigKey, string> = {
   banner_enabled: "배너",
   banner_image_url: "배너 이미지",
   banner_link_url: "배너 링크",
+  event_evidence_image_1_url: "증거 사진 1번",
+  event_evidence_image_2_url: "증거 사진 2번",
+  event_evidence_image_3_url: "증거 사진 3번",
 };
 
 // 한 카드에서 함께 저장하는 묶음. 고친 묶음의 규칙만 본다. 콘솔에서 넣어 둔 다른 묶음의 값 때문에 저장이 막히면 안 된다
@@ -60,6 +72,7 @@ const GROUPS: AppConfigKey[][] = [
   ["latest_version", "minimum_version", "force_update"],
   ["ads_enabled", "community_ads_enabled", "game_end_ads_enabled"],
   ["banner_enabled", "banner_image_url", "banner_link_url"],
+  ["event_evidence_image_1_url", "event_evidence_image_2_url", "event_evidence_image_3_url"],
 ];
 
 type Parameter = {
@@ -79,7 +92,7 @@ export type RemoteConfigTemplate = {
 const appReadsTrue = (raw: string) => ["true", "1"].includes(raw.toLowerCase());
 
 /**
- * 템플릿에서 11개 값을 읽는다. 조건이 걸린 값(conditioned)은 사람마다 다르게 내려가서 한 값으로 보여 줄 수 없다.
+ * 템플릿에서 14개 값을 읽는다. 조건이 걸린 값(conditioned)은 사람마다 다르게 내려가서 한 값으로 보여 줄 수 없다.
  * 지금은 조건이 없지만, 콘솔에서 걸면 화면은 그 값을 잠근다.
  */
 export function readAppConfig(template: RemoteConfigTemplate) {
@@ -166,6 +179,13 @@ export function validateAppConfig(values: AppConfigValues): Partial<Record<AppCo
   else if (values.banner_enabled === "true" && !values.banner_image_url) errors.banner_image_url = "배너를 표시하려면 이미지를 올려 주세요.";
   if (values.banner_link_url && !isHttps(values.banner_link_url)) errors.banner_link_url = "주소를 다시 확인해 주세요.";
 
+  EVIDENCE_KEYS.forEach((key, i) => {
+    const previous = EVIDENCE_KEYS[i - 1];
+    if (values[key] && !isHttps(values[key])) errors[key] = "이 이미지 주소는 쓸 수 없어요. 새로 올려 주세요.";
+    // 앱은 앞에서부터 빈 값을 만나기 전까지만 사진으로 본다. 건너뛴 사진은 말없이 사라진다
+    else if (values[key] && previous && !values[previous]) errors[key] = `${i}번 사진을 먼저 올려 주세요.`;
+  });
+
   return errors;
 }
 
@@ -186,8 +206,10 @@ export function validateChanges(before: AppConfigValues, changes: AppConfigChang
   return Object.fromEntries(Object.entries(errors).filter(([key]) => touched.includes(key as AppConfigKey))) as Partial<Record<AppConfigKey, string>>;
 }
 
-const showValue = (key: AppConfigKey, value: string) => {
+const showValue = (key: AppConfigKey, value: string, side: "before" | "after") => {
   if (isBooleanKey(key)) return value === "true" ? "켜짐" : "꺼짐";
+  // 긴 저장소 주소는 읽어도 알 수 없다. 사진은 옆 폰에서 본다
+  if (isEvidenceKey(key)) return !value ? "없음" : side === "before" ? "지금 사진" : "새 사진";
   return value || "없음";
 };
 
@@ -196,8 +218,8 @@ export function describeChanges(before: AppConfigValues, changes: AppConfigChang
   return APP_CONFIG_KEYS.filter((key) => changes[key] !== undefined).map((key) => ({
     key,
     label: LABELS[key],
-    before: showValue(key, before[key]),
-    after: showValue(key, changes[key] as string),
+    before: showValue(key, before[key], "before"),
+    after: showValue(key, changes[key] as string, "after"),
   }));
 }
 
@@ -252,7 +274,7 @@ export function versionSamples(values: AppConfigValues) {
 
 /** Firebase 버전 설명에 남기는 한 줄. 콘솔의 변경 내역과 화면의 이력에 그대로 보인다. */
 export function describeForHistory(actor: string, before: AppConfigValues, changes: AppConfigChanges) {
-  const lines = describeChanges(before, changes).map((c) => (c.key === "banner_image_url" || c.key === "banner_link_url" ? `${c.label} 변경` : `${c.label} ${c.before}→${c.after}`));
+  const lines = describeChanges(before, changes).map((c) => (c.key === "banner_image_url" || c.key === "banner_link_url" || isEvidenceKey(c.key) ? `${c.label} 변경` : `${c.label} ${c.before}→${c.after}`));
   return `${actor}: ${lines.join(", ")}`.slice(0, 200);
 }
 
@@ -312,6 +334,79 @@ export const bannerImageUrl = (bucket: string, name: string, token: string) =>
 /** 우리 저장소의 banners 폴더 이미지인가. 서버가 다른 주소를 앱에 내보내지 않게 확인한다. */
 export const isOurBannerUrl = (url: string, bucket: string) =>
   url.startsWith(`https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(BANNER_PREFIX)}`);
+
+// ── 이벤트 증거 사진 ─────────────────────────────────────
+
+export const EVIDENCE_PREFIX = "evidence/";
+/** 앱은 디스크에 저장하지 않아 켤 때마다 다시 받는다. 현장 통신을 생각해 배너보다 작게 막는다. */
+export const MAX_EVIDENCE_BYTES = 1024 * 1024;
+/** 비율 범위와 배치 규칙은 앱의 lib/features/game/domain/event_evidence_layout.dart 와 같아야 한다. */
+export const EVIDENCE_MIN_RATIO = 9 / 16;
+export const EVIDENCE_MAX_RATIO = 16 / 9;
+const EVIDENCE_RATIO_TOLERANCE = 0.02;
+// 사진 영역이 가장 커지는 1장 배치에서도 흐려 보이지 않을 짧은 변
+const EVIDENCE_MIN_SHORT_SIDE = 600;
+// 앱은 원본 크기로 펼쳐 메모리에 둔다. 파일이 1MB 아래여도 해상도가 크면 게임 중에 메모리를 크게 쓴다
+const EVIDENCE_MAX_LONG_SIDE = 2400;
+
+/** 우리 저장소의 evidence 폴더 이미지인가. 서버가 다른 주소를 앱에 내보내지 않게 확인한다. */
+export const isOurEvidenceUrl = (url: string, bucket: string) =>
+  url.startsWith(`https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(EVIDENCE_PREFIX)}`);
+
+/** 비율이나 해상도가 범위를 벗어난 사진은 올리기 전에 막는다. 아니면 null. */
+export function checkEvidenceImage(width: number, height: number) {
+  const ratio = width / height;
+  if (ratio < EVIDENCE_MIN_RATIO * (1 - EVIDENCE_RATIO_TOLERANCE) || ratio > EVIDENCE_MAX_RATIO * (1 + EVIDENCE_RATIO_TOLERANCE)) {
+    return `이 사진은 ${width} × ${height}px라 너무 길어요. 비율을 9:16에서 16:9 사이로 맞춰 주세요.`;
+  }
+  if (Math.max(width, height) > EVIDENCE_MAX_LONG_SIDE) {
+    return `이 사진은 ${width} × ${height}px라 너무 커요. 긴 쪽을 ${EVIDENCE_MAX_LONG_SIDE}px 아래로 줄여 주세요.`;
+  }
+  return null;
+}
+
+/** 작아서 흐려 보일 수 있으면 까닭을 돌려준다. 올리는 걸 막지는 않는다. */
+export function checkEvidenceSharpness(width: number, height: number) {
+  if (Math.min(width, height) < EVIDENCE_MIN_SHORT_SIDE) return `이 사진은 ${width} × ${height}px라 흐려 보일 수 있어요.`;
+  return null;
+}
+
+/** 사진들은 비율이 같아야 칸이 맞는다. */
+export const isSameEvidenceRatio = (a: number, b: number) => Math.abs(a - b) / a <= EVIDENCE_RATIO_TOLERANCE;
+
+/** 앞에서부터 빈 값을 만나기 전까지가 사진이다. 앱의 eventEvidenceUrlsFrom 과 같다. */
+export function evidenceUrls(values: Pick<AppConfigValues, (typeof EVIDENCE_KEYS)[number]>) {
+  const urls: string[] = [];
+  for (const key of EVIDENCE_KEYS) {
+    if (!values[key]) break;
+    urls.push(values[key]);
+  }
+  return urls;
+}
+
+export type EvidenceArrangement = "single" | "sideBySide" | "stacked" | "twoOverOne";
+
+/**
+ * 결과 보드 배치. 앱과 같은 계산으로 옆 폰에 그린다. 한 보드의 칸은 모두 같은 크기다.
+ * 기본값은 393 x 852 기준의 사진 영역이다(폭 281 = 393 - 팝업 여백 112, 높이 383 = 852 의 45%).
+ */
+export function evidenceLayout(aspectRatio: number, count: number, maxWidth = 281, maxHeight = 383.4, gap = 16) {
+  const ratio = Math.min(Math.max(aspectRatio, EVIDENCE_MIN_RATIO), EVIDENCE_MAX_RATIO);
+  const size = (height: number) => ({ width: height * ratio, height });
+  if (count <= 1) {
+    const width = Math.min(maxWidth, maxHeight * ratio);
+    return { arrangement: "single" as EvidenceArrangement, ...size(width / ratio) };
+  }
+  if (ratio < 1) {
+    const width = (maxWidth - gap * (count - 1)) / count;
+    return { arrangement: "sideBySide" as EvidenceArrangement, ...size(Math.min(width / ratio, maxHeight)) };
+  }
+  const height = (count >= 3 ? (maxWidth - gap) / 2 / ratio : maxWidth / ratio);
+  return {
+    arrangement: (count >= 3 ? "twoOverOne" : "stacked") as EvidenceArrangement,
+    ...size(Math.min(height, (maxHeight - gap) / 2)),
+  };
+}
 
 /** 파일 앞부분으로 실제 이미지 종류를 가린다. 아니면 null. */
 export function sniffImageType(b: Uint8Array): BannerImageType | null {

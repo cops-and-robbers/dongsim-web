@@ -34,6 +34,9 @@ let template: RemoteConfigTemplate = {
     banner_enabled: value("true"),
     banner_image_url: value(banner("header-logo.svg").url),
     banner_link_url: value("https://www.instagram.com/dongsim_protector"),
+    event_evidence_image_1_url: value(""),
+    event_evidence_image_2_url: value(""),
+    event_evidence_image_3_url: value(""),
   },
 };
 const history: AppConfigHistoryItem[] = [
