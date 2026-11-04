@@ -165,7 +165,7 @@ const ko = {
         {
           title: "잡히면 감옥, 터치하면 탈옥",
           play: "잡힌 도둑은 감옥에서 기다려요. 아직 안 잡힌 동료가 몰래 와서 터치하면 다시 도망갈 수 있어요.",
-          app: "탈옥도 QR로 해요. 감옥이 어딘지는 지도에 항상 떠 있어요.",
+          app: "동료 도둑의 터치를 받으면 감옥 밖으로 나가요. 탈옥은 앱이 알아서 처리해요.",
         },
         {
           title: "이기는 법",
@@ -544,7 +544,7 @@ const en: Messages = {
         {
           title: "Jail and jailbreak",
           play: "Caught robbers wait in jail. A teammate can sneak in and tag them free.",
-          app: "Jailbreaks work by QR too. Everyone can see the jail on the map.",
+          app: "Once a fellow robber tags you, walk out of the jail. The app handles your escape.",
         },
         {
           title: "Win the game",
@@ -932,7 +932,7 @@ const ja: Messages = {
         {
           title: "牢屋と救出",
           play: "つかまった泥棒は牢屋で待ちます。仲間がこっそり近づいてタッチすれば復活、また逃げられます。",
-          app: "脱獄もQRで。牢屋の場所は地図でみんなが確認できます。",
+          app: "仲間の泥棒にタッチされたら、牢屋の外に出ましょう。脱獄の処理はアプリが自動で行います。",
         },
         {
           title: "勝負が決まる",
