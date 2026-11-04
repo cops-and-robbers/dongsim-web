@@ -113,7 +113,7 @@ function captionOf(scene: PreviewScene, v: AppConfigValues, outcome: VersionOutc
   const adsOn = v.ads_enabled === "true";
   switch (scene) {
     case "maintenance":
-      return "앱을 새로 열면 이 화면에서 멈춰요.";
+      return "점검으로 막히면 사용자에게 이 화면이 보여요.";
     case "version":
       if (outcome === "maintenance") return "점검 모드가 켜져 있어 앱을 새로 열면 버전과 상관없이 점검 화면이 보여요.";
       if (outcome === "forceUpdate") return `${version} 앱을 열면 이 화면에서 멈춰요. 업데이트해야 쓸 수 있어요.`;
