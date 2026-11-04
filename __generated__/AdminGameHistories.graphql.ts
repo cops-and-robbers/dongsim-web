@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<fd7d00b56d805bcc6f29b4cbe66e346f>>
+ * @generated SignedSource<<acf759ff93e060ea71146126a52c77dd>>
  * @lightSyntaxTransform
  */
 
@@ -27,6 +27,7 @@ export type AdminGameHistories$data = {
       readonly createdAt: string;
       readonly durationSeconds: number;
       readonly endReason: GameEndReason;
+      readonly endedAt: string | null | undefined;
       readonly gameId: string;
       readonly id: string;
       readonly participants: ReadonlyArray<{
@@ -190,6 +191,13 @@ v4 = [
           {
             "alias": null,
             "args": null,
+            "kind": "ScalarField",
+            "name": "endedAt",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
             "concreteType": "AdminGameHistoryParticipant",
             "kind": "LinkedField",
             "name": "participants",
@@ -289,16 +297,16 @@ return {
     "selections": (v4/*:: as any*/)
   },
   "params": {
-    "cacheID": "cf4bf187ce3bba947db3fd6c49391fa7",
+    "cacheID": "0a4f4526fe62f0d2404752faedf5da75",
     "id": null,
     "metadata": {},
     "name": "AdminGameHistories",
     "operationKind": "query",
-    "text": "query AdminGameHistories(\n  $page: Int\n  $size: Int\n  $endReason: GameEndReason\n  $sortDirection: SortDirection\n) {\n  adminGameHistories(page: $page, size: $size, endReason: $endReason, sortDirection: $sortDirection) {\n    content {\n      id\n      gameId\n      winnerTeam\n      endReason\n      totalPoliceCount\n      totalRobberCount\n      arrestedRobberCount\n      totalArrestCount\n      durationSeconds\n      areaType\n      createdAt\n      participants {\n        userId\n        nickname\n        team\n        status\n      }\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
+    "text": "query AdminGameHistories(\n  $page: Int\n  $size: Int\n  $endReason: GameEndReason\n  $sortDirection: SortDirection\n) {\n  adminGameHistories(page: $page, size: $size, endReason: $endReason, sortDirection: $sortDirection) {\n    content {\n      id\n      gameId\n      winnerTeam\n      endReason\n      totalPoliceCount\n      totalRobberCount\n      arrestedRobberCount\n      totalArrestCount\n      durationSeconds\n      areaType\n      createdAt\n      endedAt\n      participants {\n        userId\n        nickname\n        team\n        status\n      }\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "1eb265dcfb1b0e6899bdee7c17c0bb65";
+(node as any).hash = "409b9dc089d159c9cc562eead81a6331";
 
 export default node;

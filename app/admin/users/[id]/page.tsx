@@ -23,7 +23,9 @@ import { CheckIcon, DeviceIcon } from "@/components/admin/icons";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { StaffToggle } from "@/components/admin/metrics/StaffToggle";
+import { FinishedGamesCard } from "@/components/admin/users/FinishedGamesCard";
 import { DEVICE_LABEL, formatDate, formatDateTime, labelOf } from "@/lib/admin/format";
+import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -65,7 +67,9 @@ function AgreeRow({ label, ok }: { label: string; ok: boolean }) {
 }
 
 function UserDetail({ id }: { id: string }) {
-  const data = useLazyLoadQuery<AdminUser>(AdminUserQuery, { id });
+  // "지금" 들어가 있는 방을 보여 주는 화면이라 예전 값을 그대로 믿지 않고 뒤에서 새로 받는다(lib/admin/useLiveRefresh.ts)
+  const live = useLiveRefresh();
+  const data = useLazyLoadQuery<AdminUser>(AdminUserQuery, { id }, { fetchKey: live, fetchPolicy: "store-and-network" });
   const user = data.adminUser;
   useRecordRecent("user", id, user ? { title: user.nickname, detail: `유저 ID ${user.id}` } : null);
 
@@ -149,7 +153,7 @@ function UserDetail({ id }: { id: string }) {
 
       <div className="mt-5">
         <SectionCard
-          title="참여 게임 이력"
+          title="지금 들어가 있는 방"
           flush
           right={
             <span className="text-xs font-semibold text-sd-fg-subtle">
@@ -159,7 +163,7 @@ function UserDetail({ id }: { id: string }) {
         >
           {user.participations.length === 0 ? (
             <p className="py-8 text-center text-sm text-sd-fg-subtle">
-              참여한 게임이 없어요.
+              지금 들어가 있는 방이 없어요.
             </p>
           ) : (
             <Table
@@ -200,7 +204,16 @@ function UserDetail({ id }: { id: string }) {
               ))}
             </Table>
           )}
+          {user.participations.length > 0 && (
+            <p className="border-t border-sd-hairline px-5 py-3 text-[12px] leading-relaxed text-sd-fg-subtle">
+              판이 끝나도 방을 나가기 전까지 여기에 남아요.
+            </p>
+          )}
         </SectionCard>
+      </div>
+
+      <div className="mt-5">
+        <FinishedGamesCard key={user.id} userId={user.id} refreshKey={live} />
       </div>
     </>
   );

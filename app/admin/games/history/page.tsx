@@ -26,6 +26,7 @@ import {
   END_REASON_LABEL,
   formatDate,
   formatDuration,
+  gameEndedAt,
   labelOf,
 } from "@/lib/admin/format";
 
@@ -178,7 +179,7 @@ function HistoryResults({
               <Td className="tabular-nums text-sd-fg-subtle">
                 {formatDuration(h.durationSeconds)}
               </Td>
-              <Td className="text-right text-sd-fg-subtle">{formatDate(h.createdAt)}</Td>
+              <Td className="text-right text-sd-fg-subtle">{formatDate(gameEndedAt(h))}</Td>
             </Tr>
           ))}
         </Table>

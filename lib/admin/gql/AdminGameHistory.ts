@@ -17,6 +17,7 @@ export const AdminGameHistoryQuery = graphql`
       durationSeconds
       areaType
       createdAt
+      endedAt
       area {
         areaType
         playgroundCenterLat

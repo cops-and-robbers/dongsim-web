@@ -33,6 +33,7 @@ import {
 import {
   queryGameHistories,
   queryGameHistory,
+  queryUserGameHistories,
   type GameEndReason,
 } from "./gameHistories";
 import {
@@ -96,6 +97,23 @@ export const handlers = [
     await delay(400);
     return HttpResponse.json({
       data: { adminUser: getUser((variables as { id: string }).id) },
+    });
+  }),
+
+  api.query("AdminUserGameHistories", async ({ variables }) => {
+    await delay(400);
+    const { id, limit } = variables as { id: string; limit: number };
+    // 4번: 백엔드가 운영에 나가기 전, 5번: 불러오기 실패 (lib/admin-mock/gameHistories.ts 의 경우 목록)
+    if (id === "4") {
+      return HttpResponse.json({
+        errors: [{ message: "Validation error (FieldUndefined@[adminUser/gameHistories]) : Field 'gameHistories' in type 'AdminUser' is undefined" }],
+      });
+    }
+    if (id === "5") {
+      return HttpResponse.json({ data: null, errors: [{ message: "INTERNAL_ERROR" }] });
+    }
+    return HttpResponse.json({
+      data: { adminUser: { id, gameHistories: queryUserGameHistories(id, limit) } },
     });
   }),
 

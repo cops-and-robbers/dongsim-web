@@ -26,6 +26,7 @@ import {
   TEAM_LABEL,
   formatDateTime,
   formatDuration,
+  gameEndedAt,
   labelOf,
 } from "@/lib/admin/format";
 
@@ -43,9 +44,10 @@ export default function GameHistoryDetailPage() {
 function HistoryDetail({ id }: { id: string }) {
   const data = useLazyLoadQuery<AdminGameHistory>(AdminGameHistoryQuery, { id });
   const history = data.adminGameHistory;
+  const endedAt = formatDateTime(gameEndedAt(history));
   useRecordRecent("history", id, {
     title: `${labelOf(TEAM_LABEL, history.winnerTeam)} 승`,
-    detail: `지난 게임 · ${formatDateTime(history.createdAt)}`,
+    detail: `지난 게임 · ${endedAt}`,
   });
 
   const area = history.area;
@@ -98,7 +100,7 @@ function HistoryDetail({ id }: { id: string }) {
       <PageHeader
         back={{ href: "/admin/games/history", label: "지난 게임" }}
         title={`${labelOf(TEAM_LABEL, history.winnerTeam)} 승`}
-        description={formatDateTime(history.createdAt)}
+        description={endedAt}
         actions={
           <>
             <TeamBadge team={history.winnerTeam} />
@@ -124,7 +126,7 @@ function HistoryDetail({ id }: { id: string }) {
                 term: "진행 시간",
                 desc: formatDuration(history.durationSeconds),
               },
-              { term: "종료 시각", desc: formatDateTime(history.createdAt) },
+              { term: "종료 시각", desc: endedAt },
             ]}
           />
         </SectionCard>

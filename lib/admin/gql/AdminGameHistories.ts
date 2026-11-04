@@ -26,6 +26,7 @@ export const AdminGameHistoriesQuery = graphql`
         durationSeconds
         areaType
         createdAt
+        endedAt
         participants {
           userId
           nickname
