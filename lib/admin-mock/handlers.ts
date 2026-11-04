@@ -103,13 +103,13 @@ export const handlers = [
   api.query("AdminUserGameHistories", async ({ variables }) => {
     await delay(400);
     const { id, limit } = variables as { id: string; limit: number };
-    // 4번: 백엔드가 운영에 나가기 전, 5번: 불러오기 실패 (lib/admin-mock/gameHistories.ts 의 경우 목록)
+    // 4번: 백엔드가 운영에 나가기 전, 5번: 불러오기 실패, 6번: 펼치기만 실패 (lib/admin-mock/gameHistories.ts 의 경우 목록)
     if (id === "4") {
       return HttpResponse.json({
         errors: [{ message: "Validation error (FieldUndefined@[adminUser/gameHistories]) : Field 'gameHistories' in type 'AdminUser' is undefined" }],
       });
     }
-    if (id === "5") {
+    if (id === "5" || (id === "6" && limit > 21)) {
       return HttpResponse.json({ data: null, errors: [{ message: "INTERNAL_ERROR" }] });
     }
     return HttpResponse.json({

@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useLazyLoadQuery } from "react-relay";
+import { fetchQuery, useLazyLoadQuery, useRelayEnvironment } from "react-relay";
 import type { AdminUser } from "@/__generated__/AdminUser.graphql";
 import { AdminUserQuery } from "@/lib/admin/gql/AdminUser";
 import type { ReactNode } from "react";
 import {
+  CardNote,
   PageHeader,
   SectionCard,
   EmptyBlock,
@@ -29,10 +31,12 @@ import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
+  // Relay 가 실패를 기억해서, 열쇠를 바꿔야 다시 시도 버튼이 실제로 다시 읽는다
+  const [retry, setRetry] = useState(0);
   return (
     <ScrollPage>
-      <QueryBoundary pending={<DetailSkeleton />}>
-        <UserDetail id={id} />
+      <QueryBoundary pending={<DetailSkeleton />} onRetry={() => setRetry((n) => n + 1)}>
+        <UserDetail id={id} fetchKey={retry} />
       </QueryBoundary>
     </ScrollPage>
   );
@@ -66,10 +70,19 @@ function AgreeRow({ label, ok }: { label: string; ok: boolean }) {
   );
 }
 
-function UserDetail({ id }: { id: string }) {
-  // "지금" 들어가 있는 방을 보여 주는 화면이라 예전 값을 그대로 믿지 않고 뒤에서 새로 받는다(lib/admin/useLiveRefresh.ts)
+function UserDetail({ id, fetchKey }: { id: string; fetchKey: number }) {
+  const environment = useRelayEnvironment();
+  const data = useLazyLoadQuery<AdminUser>(AdminUserQuery, { id }, { fetchKey, fetchPolicy: "store-and-network" });
+  // "지금" 들어가 있는 방을 보여 주는 화면이라 주기적으로 새로 받아 스토어를 바꾼다(lib/admin/useLiveRefresh.ts).
+  // fetchKey 로 다시 읽으면 Relay 가 실패를 기억해 두었다가 다음 그릴 때 던져서, 잠깐의 실패로 화면 전체가 오류로 바뀐다.
+  // 여기서는 실패해도 보던 화면을 그대로 두고 다음 차례에 다시 읽는다
   const live = useLiveRefresh();
-  const data = useLazyLoadQuery<AdminUser>(AdminUserQuery, { id }, { fetchKey: live, fetchPolicy: "store-and-network" });
+  useEffect(() => {
+    if (live === 0) return;
+    fetchQuery<AdminUser>(environment, AdminUserQuery, { id }, { fetchPolicy: "network-only" })
+      .toPromise()
+      .catch(() => {});
+  }, [environment, id, live]);
   const user = data.adminUser;
   useRecordRecent("user", id, user ? { title: user.nickname, detail: `유저 ID ${user.id}` } : null);
 
@@ -205,15 +218,13 @@ function UserDetail({ id }: { id: string }) {
             </Table>
           )}
           {user.participations.length > 0 && (
-            <p className="border-t border-sd-hairline px-5 py-3 text-[12px] leading-relaxed text-sd-fg-subtle">
-              판이 끝나도 방을 나가기 전까지 여기에 남아요.
-            </p>
+            <CardNote>판이 끝나도 방을 나가기 전까지 여기에 남아요.</CardNote>
           )}
         </SectionCard>
       </div>
 
       <div className="mt-5">
-        <FinishedGamesCard key={user.id} userId={user.id} refreshKey={live} />
+        <FinishedGamesCard key={user.id} userId={user.id} />
       </div>
     </>
   );
