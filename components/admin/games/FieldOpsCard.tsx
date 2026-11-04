@@ -9,7 +9,8 @@ import { Button } from "@/components/admin/Button";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { QrCodeIcon } from "@/components/admin/icons";
 import { useToast } from "@/components/admin/Toast";
-import { eventGameFailure, eventGameSwitch } from "@/lib/admin/eventGame";
+import { eventGameSwitch } from "@/lib/admin/eventGame";
+import { isFieldNotDeployed } from "@/lib/admin/notDeployed";
 import { JoinHint } from "./JoinHint";
 import { JoinQrDialog } from "./JoinQrDialog";
 
@@ -52,7 +53,7 @@ export function FieldOpsCard({ game }: { game: Game }) {
   const rule = eventGameSwitch(game.status, game.isEventGame);
 
   const fail = (message: string) => {
-    if (eventGameFailure(message) === "not-deployed") {
+    if (isFieldNotDeployed(message, "updateEventGame")) {
       setError("운영 서버에 아직 이 기능이 없어요. 백엔드가 배포되면 다시 눌러 주세요.");
       return;
     }

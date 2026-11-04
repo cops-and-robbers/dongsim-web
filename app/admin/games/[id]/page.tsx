@@ -6,6 +6,7 @@ import { useLazyLoadQuery } from "react-relay";
 import type { AdminGame } from "@/__generated__/AdminGame.graphql";
 import { AdminGameQuery } from "@/lib/admin/gql/AdminGame";
 import {
+  CardNote,
   PageHeader,
   SectionCard,
   DescriptionList,
@@ -258,12 +259,12 @@ function GameDetail({ id }: { id: string }) {
           )}
           {/* 방 상세는 지금 방에 있는 사람만 준다(백엔드가 나가는 순간 참가자 행을 지운다).
               게임 중에 나간 사람은 그 판의 기록(game_result_participants)에 남고, 기록 목록은 끝난 판만 보여 준다 */}
-          <p className="border-t border-sd-hairline px-5 py-3 text-[12px] leading-relaxed text-sd-fg-subtle">
+          <CardNote>
             나간 사람은 표에서 바로 빠져요. 게임 중에 나간 사람은 그 판이 끝나면 지난 게임 기록에 중도 퇴장으로 남아요. 대기 중에 나간 사람은 기록에 남지 않아요.{" "}
             <Link href="/admin/games/history" className="font-semibold text-accent hover:underline">
               지난 게임 보기
             </Link>
-          </p>
+          </CardNote>
         </SectionCard>
       </div>
     </>

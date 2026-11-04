@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer } from "react";
 import Link from "next/link";
 import { fetchQuery, useRelayEnvironment } from "react-relay";
 import type {
@@ -9,26 +9,31 @@ import type {
 } from "@/__generated__/AdminUserGameHistories.graphql";
 import { AdminUserGameHistoriesQuery } from "@/lib/admin/gql/AdminUserGameHistories";
 import { Button } from "@/components/admin/Button";
-import { ErrorBlock, SectionCard, TableSkeleton } from "@/components/admin/Parts";
+import { CardNote, ErrorBlock, SectionCard, TableSkeleton } from "@/components/admin/Parts";
 import { Pill, TeamBadge } from "@/components/admin/StatusBadge";
 import { SEEN_ROW_TITLE, Table, Td, Th, Tr } from "@/components/admin/Table";
-import { isFieldNotDeployed } from "@/lib/admin/eventGame";
 import { END_REASON_LABEL, formatDateTime, formatDuration, labelOf } from "@/lib/admin/format";
-import { gameOutcome, limitFor, recordCounted, shownGames } from "@/lib/admin/userGames";
+import { isFieldNotDeployed } from "@/lib/admin/notDeployed";
+import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
+import {
+  finishedGamesReducer,
+  gameOutcome,
+  initialFinishedGames,
+  limitFor,
+  recordCounted,
+  shownGames,
+} from "@/lib/admin/userGames";
 
 type Game = NonNullable<AdminUserGameHistories$data["adminUser"]>["gameHistories"][number];
 
-const NOTE = "border-t border-sd-hairline px-5 py-3 text-[12px] leading-relaxed text-sd-fg-subtle";
-
 // 끝난 게임 카드. 운영 서버에 아직 필드가 없어도 유저 상세의 다른 카드는 그대로 보이게 따로 읽는다.
 // 빈 뼈대로 깜빡이지 않게 Suspense 대신 뒤에서 읽어, 펼치거나 새로 받는 동안 있던 줄을 그대로 둔다.
-export function FinishedGamesCard({ userId, refreshKey }: { userId: string; refreshKey: number }) {
+export function FinishedGamesCard({ userId }: { userId: string }) {
   const environment = useRelayEnvironment();
-  const [expanded, setExpanded] = useState(false);
-  const [attempt, setAttempt] = useState(0);
-  const [loaded, setLoaded] = useState<{ games: readonly Game[]; expanded: boolean } | null>(null);
-  const [failure, setFailure] = useState<"not-deployed" | "other" | "more" | null>(null);
-  const shownExpanded = useRef(false);
+  const [state, dispatch] = useReducer(finishedGamesReducer<Game>, initialFinishedGames);
+  const { expanded, attempt, loaded, failure } = state;
+  // 판이 끝날 때만 늘어나서 지난 게임 목록과 같은 간격이면 충분하다. 배포 전에도 이 간격으로 물어, 릴리즈되면 새로고침 없이 표가 나온다
+  const live = useLiveRefresh(60_000);
 
   useEffect(() => {
     let active = true;
@@ -40,28 +45,15 @@ export function FinishedGamesCard({ userId, refreshKey }: { userId: string; refr
     )
       .toPromise()
       .then((data) => {
-        if (!active) return;
-        shownExpanded.current = expanded;
-        setLoaded({ games: data?.adminUser?.gameHistories ?? [], expanded });
-        // 더 보기 실패 안내는 다시 누를 때까지 둔다. 접으면서 다시 읽은 결과로 지우지 않는다
-        setFailure((prev) => (prev === "more" ? prev : null));
+        if (active) dispatch({ type: "loaded", games: data?.adminUser?.gameHistories ?? [], expanded });
       })
       .catch((error: Error) => {
-        if (!active) return;
-        if (isFieldNotDeployed(error.message)) {
-          setFailure("not-deployed");
-        } else if (expanded && !shownExpanded.current) {
-          setExpanded(false);
-          setFailure("more");
-        } else {
-          // 있던 줄을 다시 받다 실패하면 그대로 둔다. 잠깐의 실패로 표를 지우지 않는다
-          setFailure((prev) => prev ?? "other");
-        }
+        if (active) dispatch({ type: "failed", notDeployed: isFieldNotDeployed(error.message, "gameHistories"), expanded });
       });
     return () => {
       active = false;
     };
-  }, [environment, userId, expanded, attempt, refreshKey]);
+  }, [environment, userId, expanded, attempt, live]);
 
   const view = loaded ? shownGames(loaded.games, loaded.expanded) : null;
 
@@ -81,12 +73,7 @@ export function FinishedGamesCard({ userId, refreshKey }: { userId: string; refr
         </p>
       ) : !view ? (
         failure === "other" ? (
-          <ErrorBlock
-            onRetry={() => {
-              setFailure(null);
-              setAttempt((n) => n + 1);
-            }}
-          />
+          <ErrorBlock onRetry={() => dispatch({ type: "retry" })} />
         ) : (
           <TableSkeleton rows={4} />
         )
@@ -124,17 +111,15 @@ export function FinishedGamesCard({ userId, refreshKey }: { userId: string; refr
                 variant="neutral"
                 size="sm"
                 disabled={expanded}
-                onClick={() => {
-                  setFailure(null);
-                  setExpanded(true);
-                }}
+                aria-busy={expanded}
+                onClick={() => dispatch({ type: "expand" })}
               >
-                100판까지 더 보기
+                {expanded ? "불러오는 중이에요" : "100판까지 더 보기"}
               </Button>
             </div>
           )}
-          {view.capped && <p className={NOTE}>최근 100판까지만 볼 수 있어요.</p>}
-          <p className={NOTE}>기록은 2026년 8월 14일 밤부터 쌓였어요. 그 전 게임은 나오지 않아요.</p>
+          {view.capped && <CardNote>최근 100판까지만 볼 수 있어요.</CardNote>}
+          <CardNote>기록은 2026년 8월 14일 밤부터 쌓였어요. 그 전 게임은 나오지 않아요.</CardNote>
         </>
       )}
     </SectionCard>

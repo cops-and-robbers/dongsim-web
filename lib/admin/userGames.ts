@@ -1,7 +1,7 @@
 /**
  * 유저 상세 "끝난 게임" 규칙(BE #227).
  *
- * 화면 문구는 컴포넌트(components/admin/users/)에 두고, 여기에는 판단만 둔다.
+ * 화면 문구는 컴포넌트(components/admin/users/)에 두고, 여기에는 판단과 상태 변화만 둔다.
  * node --test 로 바로 돌리므로 다른 모듈을 부르지 않는다.
  */
 
@@ -11,6 +11,52 @@ export const MAX_LIMIT = 100;
 
 /** 서버가 전체 개수를 주지 않아서, 더 있는지 알려고 처음엔 한 줄 더 묻는다 */
 export const limitFor = (expanded: boolean): number => (expanded ? MAX_LIMIT : FIRST_SHOWN + 1);
+
+/** 카드 상태. expanded 는 지금 읽으려는 크기, loaded.expanded 는 화면에 있는 줄을 읽은 크기다 */
+export type FinishedGamesState<T> = {
+  expanded: boolean;
+  attempt: number;
+  loaded: { games: readonly T[]; expanded: boolean } | null;
+  failure: "not-deployed" | "other" | "more" | null;
+};
+
+export type FinishedGamesAction<T> =
+  | { type: "loaded"; games: readonly T[]; expanded: boolean }
+  | { type: "failed"; notDeployed: boolean; expanded: boolean }
+  | { type: "expand" }
+  | { type: "retry" };
+
+export const initialFinishedGames: FinishedGamesState<never> = {
+  expanded: false,
+  attempt: 0,
+  loaded: null,
+  failure: null,
+};
+
+export function finishedGamesReducer<T>(
+  state: FinishedGamesState<T>,
+  action: FinishedGamesAction<T>
+): FinishedGamesState<T> {
+  switch (action.type) {
+    case "loaded":
+      return {
+        ...state,
+        loaded: { games: action.games, expanded: action.expanded },
+        // 더 보기 실패 안내는 다시 누를 때까지 둔다. 접으면서 다시 읽은 결과로 지우지 않는다
+        failure: state.failure === "more" ? "more" : null,
+      };
+    case "failed":
+      if (action.notDeployed) return { ...state, failure: "not-deployed" };
+      // 펼치다 실패하면 접어 두고 다시 누르게 한다
+      if (action.expanded && !state.loaded?.expanded) return { ...state, expanded: false, failure: "more" };
+      // 있던 줄을 다시 받다 실패하면 그대로 둔다. 잠깐의 실패로 표를 지우지 않는다
+      return state.loaded ? state : { ...state, failure: "other" };
+    case "expand":
+      return { ...state, expanded: true, failure: null };
+    case "retry":
+      return { ...state, attempt: state.attempt + 1, failure: null };
+  }
+}
 
 /**
  * 받아 온 줄에서 보여 줄 줄과 머리의 개수 글자.

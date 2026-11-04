@@ -232,10 +232,10 @@ const histories: MockGameHistory[] = Array.from({ length: HISTORY_COUNT }, (_, i
 /**
  * 유저 상세의 끝난 게임(BE #227). 목 유저 번호로 화면의 경우를 골라 볼 수 있다.
  * 1번: 더 보기(45판), 2번: 100판 제한(120판), 3번: 빈 목록, 그 밖: 5판.
- * 4번과 5번은 핸들러가 운영 배포 전, 불러오기 실패로 답한다.
+ * 4번과 5번은 핸들러가 운영 배포 전, 불러오기 실패로 답한다. 6번은 45판인데 펼치기만 실패한다.
  */
 export function queryUserGameHistories(userId: string, limit: number) {
-  const total = userId === "1" ? 45 : userId === "2" ? HISTORY_COUNT : userId === "3" ? 0 : 5;
+  const total = userId === "1" || userId === "6" ? 45 : userId === "2" ? HISTORY_COUNT : userId === "3" ? 0 : 5;
   return histories.slice(0, Math.min(total, limit)).map((h, i) => {
     const team: Team = i % 2 === 0 ? h.winnerTeam : h.winnerTeam === "POLICE" ? "ROBBER" : "POLICE";
     return {
