@@ -41,9 +41,11 @@ import { addDays } from "@/lib/metrics/dates";
 // 개발을 모르는 운영진도 쓰는 화면이라 값 이름 대신 하는 일로 나누고, 옆 폰에서 결과를 보면서 고친다.
 // 설계와 근거는 docs/admin-ui.md "앱 설정"
 
-const TIMING = "앱을 새로 열 때 적용돼요. 최대 1시간 늦을 수 있어요.";
+// 새 버전 앱은 게시 신호를 앱 전역에서 받고, 옛 버전 앱은 캐시 때문에 늦을 수 있다(앱 FE #666). 근거는 docs/admin-ui.md "언제 적용되나요"
+const VERSION_TIMING = "앱을 새로 열 때 적용돼요. 옛 버전 앱은 최대 1시간 늦을 수 있어요.";
+const END_TIME_TIMING = "새 버전 앱의 점검 화면에는 바로 보여요. 옛 버전 앱은 다시 열 때 바뀌고, 최대 1시간 늦을 수 있어요.";
 // 앱은 게임마다 한 번 사진을 고정하지만 메모리에만 둔다(앱 event_evidence_provider.dart)
-const EVIDENCE_TIMING = "앱에 닿기까지 최대 1시간 걸릴 수 있어요. 게임 중에 바꾸면 앱을 다시 켠 사람만 새 사진을 볼 수 있으니 행사 전에 바꿔 주세요. 이 기능이 없는 옛 버전 앱에는 앱에 든 사진이 나와요.";
+const EVIDENCE_TIMING = "새 버전 앱은 다음 게임부터 새 사진이 나와요. 게임 중에 바꾸면 앱을 다시 켠 사람만 새 사진을 볼 수 있으니 행사 전에 바꿔 주세요. 이 기능이 없는 옛 버전 앱에는 앱에 든 사진이 나와요.";
 const CONSOLE_HISTORY = `https://console.firebase.google.com/project/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/config/env/firebase/history`;
 
 const PARAMS = { tab: ["maintenance", "version", "ads", "banner", "evidence"] } as const;
@@ -345,15 +347,15 @@ function MaintenancePanel({ values, canEdit, apply, onDraft }: Shared) {
 
         {on ? (
           <Callout variant="danger" title="지금 점검 모드가 켜져 있어요">
-            적용되면 앱을 새로 여는 사용자는 들어올 수 없어요. 적용까지 최대 1시간 걸릴 수 있어요. 점검이 끝나면 꼭 꺼 주세요.
+            새 버전 앱을 쓰던 사용자는 바로 점검 화면으로 넘어가요. 게임 중이거나 글을 쓰는 중이면 그 화면에서 나올 때 막혀요. 옛 버전 앱은 다시 열 때 막히고, 최대 1시간 늦을 수 있어요. 시간이 돼도 저절로 풀리지 않으니 점검이 끝나면 꼭 꺼 주세요.
           </Callout>
         ) : (
           <Callout title="시작하면 이렇게 돼요">
             <ul className="mt-1 list-disc space-y-0.5 pl-4">
-              <li>앱을 새로 여는 사용자는 오른쪽 화면에서 멈춰요.</li>
-              <li>이미 앱을 쓰고 있는 사용자의 화면은 바뀌지 않아요. 앱을 다시 열 때 막혀요.</li>
-              <li>적용까지 최대 1시간 걸릴 수 있어요.</li>
-              <li>작업이 끝나면 여기로 돌아와 점검 끝내기를 눌러 주세요.</li>
+              <li>새 버전 앱을 쓰던 사용자는 바로 오른쪽 화면으로 넘어가요.</li>
+              <li>다만 게임 중이거나 글을 쓰는 중이면 그 화면에서 나올 때 막혀요.</li>
+              <li>옛 버전 앱은 다시 열 때 막히고, 최대 1시간 늦을 수 있어요.</li>
+              <li>끝나는 시각이 돼도 저절로 풀리지 않아요. 작업이 끝나면 여기로 돌아와 점검 끝내기를 눌러 주세요.</li>
             </ul>
           </Callout>
         )}
@@ -393,7 +395,7 @@ function MaintenancePanel({ values, canEdit, apply, onDraft }: Shared) {
       {dialog === "start" && (
         <ChangeDialog
           title="점검을 시작할까요?"
-          warnings={["적용되면 앱을 새로 여는 사용자는 들어올 수 없어요. 적용까지 최대 1시간 걸릴 수 있어요."]}
+          warnings={["새 버전 앱을 쓰던 사용자는 바로 막혀요. 게임 중이거나 글을 쓰는 중이면 그 화면에서 나올 때 막혀요. 옛 버전 앱은 다시 열 때 막히고, 최대 1시간 늦을 수 있어요."]}
           items={[{ key: "end", label: "끝나는 시각", before: "없음", after: text || "안 적기" }]}
           danger
           confirmText="점검 시작"
@@ -407,7 +409,7 @@ function MaintenancePanel({ values, canEdit, apply, onDraft }: Shared) {
         <ChangeDialog
           title="이대로 적용할까요?"
           items={describeChanges(values, { maintenance_message: text })}
-          note={TIMING}
+          note={END_TIME_TIMING}
           pending={pending}
           error={error}
           onClose={close}
@@ -428,7 +430,7 @@ function MaintenancePanel({ values, canEdit, apply, onDraft }: Shared) {
       {dialog === "end" && (
         <ChangeDialog
           title="점검을 끝낼까요?"
-          note="사용자가 다시 들어올 수 있어요. 끝나는 시각도 함께 지워요. 적용까지 최대 1시간 걸릴 수 있어요."
+          note="새 버전 앱은 다시 열지 않아도 바로 돌아와요. 옛 버전 앱은 다시 열 때 풀리고, 최대 1시간 늦을 수 있어요. 끝나는 시각도 함께 지워요."
           confirmText="점검 끝내기"
           pending={pending}
           error={error}
@@ -527,7 +529,7 @@ function VersionPanel({ values, appStoreVersion, canEdit, apply, onDraft }: Shar
           items={describeChanges(values, changes)}
           warnings={warnings}
           danger={warnings.length > 0}
-          note={TIMING}
+          note={VERSION_TIMING}
           pending={pending}
           error={error}
           onClose={() => setReviewing(false)}
@@ -610,7 +612,7 @@ function AdsPanel({ values, canEdit, apply, onDraft, adScene, onAdScene }: Share
           items={describeChanges(values, target)}
           warnings={warningsFor(values, target)}
           danger={warningsFor(values, target).length > 0}
-          note="앱을 열어 둔 사용자에게도 반영돼요. 최대 1시간 걸릴 수 있어요."
+          note="새 버전 앱은 앱을 쓰던 사용자에게도 바로 반영돼요. 옛 버전 앱은 최대 1시간 걸릴 수 있어요."
           pending={pending}
           error={error}
           onClose={() => setTarget(null)}
