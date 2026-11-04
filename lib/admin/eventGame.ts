@@ -30,7 +30,12 @@ export function eventGameSwitch(status: GameStatusLike, isEventGame: boolean): {
  * - other: 그사이 게임 상태가 바뀌었거나 그 밖의 실패. 최신 상태를 다시 불러와 보여 준다
  */
 export function eventGameFailure(message: string): "not-deployed" | "other" {
-  return /FieldUndefined|is undefined|Cannot query field|Unknown field|ValidationError/i.test(message) ? "not-deployed" : "other";
+  return isFieldNotDeployed(message) ? "not-deployed" : "other";
+}
+
+/** 운영 서버에 아직 없는 필드를 물었을 때 스키마 검사가 내는 오류인가. 쿼리는 Relay 가 메시지를 감싸서 준다 */
+export function isFieldNotDeployed(message: string): boolean {
+  return /FieldUndefined|is undefined|Cannot query field|Unknown field|ValidationError/i.test(message);
 }
 
 /** 방 참가 QR 이 가리키는 곳의 뒤에 붙는 구분값. 같은 행사 링크의 다운로드 QR 과 App Store 캠페인 토큰에서 갈린다 */

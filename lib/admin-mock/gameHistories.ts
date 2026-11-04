@@ -177,7 +177,15 @@ function buildParticipants(
   return out;
 }
 
-const histories: MockGameHistory[] = REASONS.map((endReason, i) => {
+// 목 시각. 번호가 작을수록 최근이라, 체포 횟수가 쌓이기 전 판까지 유저 상세에서 볼 수 있다
+const daysAgo = (i: number, hour: number, minute: number) =>
+  new Date(Date.UTC(2026, 10, 3 - i, hour - 9, minute)).toISOString();
+
+// 유저 상세의 100판 제한까지 볼 수 있게 넉넉히 만든다
+const HISTORY_COUNT = 120;
+
+const histories: MockGameHistory[] = Array.from({ length: HISTORY_COUNT }, (_, i) => {
+  const endReason = REASONS[i % REASONS.length];
   const seq = i + 1;
   // 기권 게임은 마지막 이탈자가 이미 삭제된 뒤에 스냅샷이 찍혀 인원이 0이 된다.
   // 백엔드도 totalCount를 같은 시점에 세므로 스냅샷과 값이 일치한다.
@@ -195,9 +203,7 @@ const histories: MockGameHistory[] = REASONS.map((endReason, i) => {
   // 세 번째마다 경찰 한 명이 중도 퇴장한 기록으로 둔다.
   // 인원 집계(totalPoliceCount)는 BE 처럼 종료 시점 잔존 인원만 센다.
   const leftPolice = policeCount > 1 && seq % 3 === 0 ? 1 : 0;
-  const leftPoliceAt = leftPolice
-    ? `2026-08-${String(1 + (i % 12)).padStart(2, "0")}T${String(13 + (i % 8)).padStart(2, "0")}:05:00+09:00`
-    : null;
+  const leftPoliceAt = leftPolice ? daysAgo(i, 13 + (i % 8), 5) : null;
 
   return {
     id: String(seq),
@@ -212,12 +218,39 @@ const histories: MockGameHistory[] = REASONS.map((endReason, i) => {
     areaType,
     // 7번째마다 좌표 없는 옛 기록, 그다음 두 건은 감옥 없는 기록으로 둔다.
     area: i % 7 === 6 ? null : buildArea(i, areaType, i % 7 < 4),
-    createdAt: `2026-08-${String(1 + (i % 12)).padStart(2, "0")}T${String(
-      13 + (i % 8)
-    ).padStart(2, "0")}:20:00+09:00`,
+    createdAt: daysAgo(i, 13 + (i % 8), 20),
     participants: buildParticipants(seq, policeCount, robberCount, arrestedCount, i % 2, leftPoliceAt),
   };
 });
+
+/**
+ * 유저 상세의 끝난 게임(BE #227). 목 유저 번호로 화면의 경우를 골라 볼 수 있다.
+ * 1번: 더 보기(45판), 2번: 100판 제한(120판), 3번: 빈 목록, 그 밖: 5판.
+ * 4번과 5번은 핸들러가 운영 배포 전, 불러오기 실패로 답한다.
+ */
+export function queryUserGameHistories(userId: string, limit: number) {
+  const total = userId === "1" ? 45 : userId === "2" ? HISTORY_COUNT : userId === "3" ? 0 : 5;
+  return histories.slice(0, Math.min(total, limit)).map((h, i) => {
+    const team: Team = i % 2 === 0 ? h.winnerTeam : h.winnerTeam === "POLICE" ? "ROBBER" : "POLICE";
+    return {
+      gameResultId: h.id,
+      gameId: h.gameId,
+      // 다섯 번째 줄은 종료 시각이 없는 옛 기록 모양을 보려고 비운다
+      endedAt: i === 4 ? null : new Date(Date.parse(h.createdAt) + h.durationSeconds * 1000).toISOString(),
+      team,
+      winnerTeam: h.winnerTeam,
+      endReason: h.endReason,
+      durationSeconds: h.durationSeconds,
+      arrestCount: team === "POLICE" ? i % 4 : 0,
+      arrestedCount: team === "ROBBER" ? i % 3 : 0,
+      isMvp: i % 4 === 0,
+      isHost: i % 6 === 1,
+      isEventGame: i % 7 === 1,
+      // 세 번째 줄부터 다섯 판에 한 번은 중도 퇴장이다
+      leftAt: i % 5 === 2 ? h.createdAt : null,
+    };
+  });
+}
 
 // 단건 조회. BE는 없는 id에 GAME_RESULT_NOT_FOUND 에러를 내므로 목도 null이 아닌 throw로 맞춘다.
 export function queryGameHistory(id: string): MockGameHistory {
