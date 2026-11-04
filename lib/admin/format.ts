@@ -35,6 +35,15 @@ export function formatDate(iso: string | null | undefined): string {
     .replace(/\.$/, "");
 }
 
+/**
+ * 지난 게임이 끝난 시각. createdAt 을 바로 쓰지 않는다.
+ * 백엔드가 게임을 시작할 때 기록을 만들어서(V260905) createdAt 은 시작 시각에 가깝다.
+ * ended_at 컬럼(V260902)이 생기기 전 기록은 endedAt 이 비어 있고, 그때는 끝날 때 기록을 만들어서 createdAt 이 끝난 시각이다.
+ */
+export function gameEndedAt(game: { endedAt?: string | null; createdAt: string }): string {
+  return game.endedAt ?? game.createdAt;
+}
+
 export function formatDuration(seconds: number | null | undefined): string {
   if (seconds == null) return "-";
   const total = Math.round(seconds); // BE 평균(AVG)은 소수라 먼저 정수 초로 반올림

@@ -33,7 +33,9 @@ export interface MockGameHistory {
   durationSeconds: number;
   areaType: "CIRCLE" | "POLYGON";
   area: MockArea | null;
+  // 게임을 시작할 때 만들어져 시작 시각에 가깝다(BE V260905)
   createdAt: string;
+  endedAt: string | null;
   participants: MockHistoryParticipant[];
 }
 
@@ -203,7 +205,9 @@ const histories: MockGameHistory[] = Array.from({ length: HISTORY_COUNT }, (_, i
   // 세 번째마다 경찰 한 명이 중도 퇴장한 기록으로 둔다.
   // 인원 집계(totalPoliceCount)는 BE 처럼 종료 시점 잔존 인원만 센다.
   const leftPolice = policeCount > 1 && seq % 3 === 0 ? 1 : 0;
-  const leftPoliceAt = leftPolice ? daysAgo(i, 13 + (i % 8), 5) : null;
+  const leftPoliceAt = leftPolice ? daysAgo(i, 13 + (i % 8), 25) : null;
+  const durationSeconds = 420 + i * 63;
+  const createdAt = daysAgo(i, 13 + (i % 8), 20);
 
   return {
     id: String(seq),
@@ -214,11 +218,13 @@ const histories: MockGameHistory[] = Array.from({ length: HISTORY_COUNT }, (_, i
     totalRobberCount: robberCount,
     arrestedRobberCount: arrestedCount,
     totalArrestCount: arrestedCount + (i % 2),
-    durationSeconds: 420 + i * 63,
+    durationSeconds,
     areaType,
     // 7번째마다 좌표 없는 옛 기록, 그다음 두 건은 감옥 없는 기록으로 둔다.
     area: i % 7 === 6 ? null : buildArea(i, areaType, i % 7 < 4),
-    createdAt: daysAgo(i, 13 + (i % 8), 20),
+    createdAt,
+    // 다섯 번째 판은 ended_at 컬럼이 생기기 전 기록처럼 비워 둔다. 그때는 createdAt 이 끝난 시각이다
+    endedAt: i === 4 ? null : new Date(Date.parse(createdAt) + durationSeconds * 1000).toISOString(),
     participants: buildParticipants(seq, policeCount, robberCount, arrestedCount, i % 2, leftPoliceAt),
   };
 });
@@ -235,8 +241,7 @@ export function queryUserGameHistories(userId: string, limit: number) {
     return {
       gameResultId: h.id,
       gameId: h.gameId,
-      // 다섯 번째 줄은 종료 시각이 없는 옛 기록 모양을 보려고 비운다
-      endedAt: i === 4 ? null : new Date(Date.parse(h.createdAt) + h.durationSeconds * 1000).toISOString(),
+      endedAt: h.endedAt,
       team,
       winnerTeam: h.winnerTeam,
       endReason: h.endReason,
