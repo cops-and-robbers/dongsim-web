@@ -107,6 +107,15 @@ export function SectionCard({
   );
 }
 
+// 카드 맨 아래 작은 안내. 위에 선을 긋고 붙는다. flush 카드에서 쓴다
+export function CardNote({ children }: { children: ReactNode }) {
+  return (
+    <p className="border-t border-sd-hairline px-5 py-3 text-[12px] leading-relaxed text-sd-fg-subtle">
+      {children}
+    </p>
+  );
+}
+
 export function DescriptionList({
   items,
 }: {
