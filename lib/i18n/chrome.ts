@@ -25,6 +25,7 @@ const ko: Chrome = {
   nav: [
     { path: "/game", label: "게임 소개" },
     { path: "/demo", label: "체험하기" },
+    { path: "/online", label: "온라인 게임" },
     { path: "/blog", label: "이야기" },
     { path: "/team", label: "팀 소개" },
   ],
