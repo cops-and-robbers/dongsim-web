@@ -3,14 +3,13 @@
 import type { MouseEvent, ReactNode, ThHTMLAttributes, TdHTMLAttributes } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { useSeenHref } from "@/lib/admin/useSeenHref";
+import { useLastViewed } from "@/lib/admin/useLastViewed";
 
 // 어드민 데이터 테이블. sticky 헤더 지원 + 얇은 행 구분선.
 // sticky=true 면 부모 스크롤 컨테이너 안에서 컬럼 헤더가 상단에 고정된다.
 
-/** 줄을 대표하는 링크(초대코드, 닉네임)에 붙인다. 이미 본 줄이면 메일함의 읽은 메일처럼 글자가 얇고 흐려진다. */
-export const SEEN_ROW_TITLE =
-  "group-data-[seen]/row:font-medium group-data-[seen]/row:text-sd-fg-muted group-data-[seen]/row:hover:text-accent";
+/** 줄을 대표하는 링크(초대코드, 닉네임)에 붙인다. 방금 보고 온 줄이면 강조색이 된다(docs/admin-ui.md "방금 보고 온 줄"). */
+export const LAST_ROW_TITLE = "group-data-[last]/row:text-accent";
 
 export function Table({
   head,
@@ -73,7 +72,8 @@ export function Tr({
 }) {
   const router = useRouter();
   const clickable = Boolean(href || onActivate);
-  const seen = useSeenHref(href);
+  // 상세를 보고 목록으로 돌아왔을 때 어디 있었는지 찾게, 마지막으로 연 줄 하나만 표시한다
+  const last = useLastViewed(href);
 
   const handleClick = (event: MouseEvent<HTMLTableRowElement>) => {
     if (!clickable) return;
@@ -98,9 +98,9 @@ export function Tr({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.03, 0.5) }}
       onClick={handleClick}
-      data-seen={seen || undefined}
+      data-last={last || undefined}
       className={`group/row transition-colors active:bg-sd-selected ${
-        seen ? "bg-sd-gray-200 hover:bg-sd-selected" : "hover:bg-sd-pressed"
+        last ? "bg-accent-weak [&>td:first-child]:shadow-[inset_3px_0_0_var(--color-accent)]" : "hover:bg-sd-pressed"
       } ${clickable ? "cursor-pointer" : ""}`}
     >
       {children}

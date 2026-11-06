@@ -1,5 +1,5 @@
 // 관리자가 최근에 열어 본 게임, 유저. 명령 팔레트, 목록의 시계 버튼(components/admin/RecentViewed.tsx),
-// 표의 "이미 본 줄" 표시(lib/admin/useSeenHref.ts)가 쓴다.
+// 표의 "방금 보고 온 줄" 표시(lib/admin/useLastViewed.ts)가 쓴다.
 //
 // 이 브라우저에만 저장한다. 새 탭으로 연 상세도 함께 쌓이게 탭마다 따로인 sessionStorage 대신 localStorage 를 쓴다.
 // 닉네임이 들어 있어 로그아웃할 때 지운다(AuthProvider).
@@ -17,8 +17,9 @@ export type RecentItem = {
 };
 
 const KEY = "admin-recent-viewed";
-// 시계 버튼은 앞의 몇 개만 보여 주지만, 표에서 이미 본 줄을 가리려면 그보다 오래 기억해야 한다
-const MAX_PER_GROUP = 300;
+// 시계 버튼은 앞의 10개, 명령 창은 5개를 보여 준다. 묶음 안에서 열린 방과 지난 게임이 섞여도 종류마다 마지막 하나가 남게 조금 넉넉히 둔다.
+// 닉네임이 들어 있어 필요 이상 쌓지 않는다(예전에는 이미 본 줄을 모두 가리느라 300개였다)
+const MAX_PER_GROUP = 30;
 
 export const groupOf = (kind: RecentKind): RecentGroup => (kind === "user" ? "user" : "game");
 

@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { H, THEMES, W, Z, type Theme } from "./scene";
 // 게임의 캐릭터 엔진과 캐릭터 코드를 그대로 쓴다(components/online/rig)
 import { drawChar, makeChar, startAction } from "./rig/chars";
 
 // 장면 무대. 게임 화면과 같은 층으로 쌓는다: 바닥(지도) → 건물, 나무, 수풀, 캐릭터(발밑 y 로 앞뒤 정렬) → 시야 안개 → 위치 공개와 감옥 고리 → 화면 위 표시.
+// 그리는 방식도 게임(shell.html #world, game.js drawFog)을 따른다. 지도는 GPU 층 하나로 한 번만 칠하고 카메라는 그 층을 옮기기만 한다.
+// 안개는 화면 크기 캔버스에 매 프레임 그린다. 지도 크기 SVG 마스크에 흐림을 걸어 매 프레임 다시 칠하던 때는 폰에서 칠하기가 밀려
+// 아직 칠하지 못한 칸이 하얗게 깜빡였다(docs/online-game.md "폰에서 깜빡임").
 // 캐릭터는 장면 대본(StageScript)이 정한 자리로 옮기고, 걸음걸이와 방향, 잡기, 갇힘, 탈옥 동작은 게임 코드가 그린다.
 // 대본이 끝나면 처음부터 다시 돈다. 화면에 보일 때만 돌고, 움직임을 줄이도록 설정한 사람에게는 한 순간에 멈춰 둔다.
 
@@ -35,7 +38,7 @@ function fogPoints(theme: Theme, x: number, y: number, face: number, blockers: n
     const k = Math.min(1, Math.max(0, (CONE + 0.14 - d) / 0.28));
     return NEAR + (R - NEAR) * k * k * (3 - 2 * k);
   };
-  const pts: string[] = [];
+  const pts: [number, number][] = [];
   for (let i = 0; i < 180; i++) {
     const a = -Math.PI + (i / 180) * Math.PI * 2, dx = Math.cos(a) || 1e-9, dy = Math.sin(a) || 1e-9;
     let t = reach(a);
@@ -44,9 +47,9 @@ function fogPoints(theme: Theme, x: number, y: number, face: number, blockers: n
       const tn = Math.max(Math.min(tx1, tx2), Math.min(ty1, ty2)), tf = Math.min(Math.max(tx1, tx2), Math.max(ty1, ty2));
       if (tf >= tn && tn > 0 && tn < t) t = tn;
     }
-    pts.push(`${(x + dx * t).toFixed(1)},${(y + dy * t).toFixed(1)}`);
+    pts.push([x + dx * t, y + dy * t]);
   }
-  return { pts: pts.join(" "), R };
+  return { pts, R };
 }
 
 /** 게임 sees: 시야 거리 안이고, 가깝거나 바라보는 쪽이며, 수풀 속이면 아주 가까울 때만 보인다 */
@@ -61,7 +64,7 @@ function sees(theme: Theme, me: Agent, a: Agent) {
 }
 
 const STAGE_CSS = `
-.og-stage .char { position:absolute; left:0; top:0; will-change:transform; transform-origin:0 0; }
+.og-stage .char { position:absolute; left:0; top:0; transform-origin:0 0; }
 .og-stage .char svg { position:absolute; left:0; bottom:0; display:none; overflow:visible; }
 .og-stage .char svg.on { display:block; }
 .og-stage .char .shadow { position:absolute; left:0; bottom:-14px; width:96px; height:26px; margin-left:-48px; border-radius:50%; background:rgba(29,35,43,.16); }
@@ -71,6 +74,9 @@ const STAGE_CSS = `
 .og-stage .tag.me.police { background:#2A9BEF; color:#fff; }
 .og-stage .tag.me.robber { background:#35C26B; color:#fff; }
 .og-stage .layer { position:absolute; overflow:visible; pointer-events:none; }
+.og-stage .plane { position:absolute; left:0; top:0; transform-origin:0 0; }
+.og-stage .screen { position:absolute; left:0; top:0; }
+.og-stage[data-live] .plane, .og-stage[data-live] .char, .og-stage[data-live] .screen { will-change:transform; }
 `;
 
 export default function GameStage({
@@ -103,13 +109,13 @@ export default function GameStage({
   const box = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
   const actors = useRef<HTMLDivElement>(null);
-  const fogSvg = useRef<SVGSVGElement>(null);
-  const fogPoly = useRef<SVGPolygonElement>(null);
-  const fogGrad = useRef<SVGRadialGradientElement>(null);
+  const over = useRef<HTMLDivElement>(null);
+  const fogCanvas = useRef<HTMLCanvasElement>(null);
+  // 캔버스 크기를 바꾸면 그림이 지워진다. 마지막 안개를 다시 그리는 함수(움직임을 줄인 사람은 다음 프레임이 없다)
+  const redrawFog = useRef<(() => void) | null>(null);
   const [scale, setScale] = useState(1);
   const [tick, setTick] = useState(0);
   const [snap, setSnap] = useState<Record<string, Agent>>({});
-  const id = `st${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 
   // 틀 폭에 맞춰 844x390 무대를 줄인다
   useEffect(() => {
@@ -120,8 +126,18 @@ export default function GameStage({
     return () => ro.disconnect();
   }, []);
 
+  // 안개 캔버스는 무대가 화면에 그려지는 실제 크기로 잡는다. 폰은 화면 배율이 3이라 2까지만 써서 칠할 양을 줄인다
   useEffect(() => {
-    const host = actors.current, wEl = world.current;
+    const c = fogCanvas.current;
+    if (!c) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = Math.round(W * scale * dpr);
+    c.height = Math.round(H * scale * dpr);
+    redrawFog.current?.();
+  }, [scale]);
+
+  useEffect(() => {
+    const host = actors.current, wEl = world.current, oEl = over.current;
     if (!host || !wEl) return;
     let chars = new Map<string, Char>(), agents = new Map<string, Agent>();
     let t = 0, last = 0, raf = 0, visible = false, hudT = 0;
@@ -175,14 +191,43 @@ export default function GameStage({
         const tx = mine.x + mine.vx * 0.22 - W / 2 / Z, ty = mine.y - 30 + mine.vy * 0.22 - H / 2 / Z, k = Math.min(1, dt * 6);
         cam = t < 0.05 ? [tx, ty] : [cam[0] + (tx - cam[0]) * k, cam[1] + (ty - cam[1]) * k];
       }
-      wEl.style.transform = `scale(${Z}) translate(${-cam[0]}px, ${-cam[1]}px)`;
-      if (fog && mine && fogPoly.current && fogGrad.current && fogSvg.current) {
-        const { pts, R } = fogPoints(theme, mine.x, mine.y, mine.faceA, blockers);
-        fogPoly.current.setAttribute("points", pts);
-        fogGrad.current.setAttribute("cx", String(mine.x)); fogGrad.current.setAttribute("cy", String(mine.y)); fogGrad.current.setAttribute("r", String(R));
+      const camT = `scale(${Z}) translate(${-cam[0]}px, ${-cam[1]}px)`;
+      wEl.style.transform = camT;
+      if (oEl) oEl.style.transform = camT;
+      if (fog && mine) {
+        const camNow: [number, number] = [cam[0], cam[1]];
+        redrawFog.current = () => drawFog(mine, camNow);
+        redrawFog.current();
       }
       hudT += dt;
       if (hudT > 1 / 15) { hudT = 0; setTick(t); setSnap(Object.fromEntries([...agents].map(([k, a]) => [k, { ...a }]))); }
+    };
+    // 게임 drawFog: 화면 전체에 안개를 깔고, 시야 다각형을 가운데는 진하게 끝은 흐리게 지운다(흐림은 되는 브라우저에서만)
+    const drawFog = (mine: Agent, camNow: [number, number]) => {
+      const c = fogCanvas.current, ctx = c?.getContext("2d");
+      if (!c || !ctx || !c.width) return;
+      const k = c.width / W;
+      const sx = (wx: number) => (wx - camNow[0]) * Z, sy = (wy: number) => (wy - camNow[1]) * Z;
+      ctx.setTransform(k, 0, 0, k, 0, 0);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.clearRect(0, 0, W, H);
+      const T = THEMES[theme];
+      ctx.fillStyle = `rgba(${T.fog},${T.fogA})`;
+      ctx.fillRect(0, 0, W, H);
+      const { pts, R } = fogPoints(theme, mine.x, mine.y, mine.faceA, blockers);
+      const cx = sx(mine.x), cy = sy(mine.y);
+      const g = ctx.createRadialGradient(cx, cy, R * Z * 0.72, cx, cy, R * Z);
+      g.addColorStop(0, "rgba(0,0,0,1)");
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = g;
+      ctx.filter = "blur(7px)";
+      ctx.beginPath();
+      pts.forEach(([px, py], i) => (i ? ctx.lineTo(sx(px), sy(py)) : ctx.moveTo(sx(px), sy(py))));
+      ctx.closePath();
+      ctx.fill();
+      ctx.filter = "none";
+      ctx.globalCompositeOperation = "source-over";
     };
     reset();
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -197,8 +242,10 @@ export default function GameStage({
       step(dt);
       raf = visible ? requestAnimationFrame(loop) : 0;
     };
+    // GPU 층은 화면에 보이는 장면만 쓴다. 다섯 장면이 늘 층을 잡고 있으면 폰(특히 아이폰)이 층 메모리 한도에 걸린다
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
+      box.current?.toggleAttribute("data-live", visible);
       if (visible && !raf) { last = 0; raf = requestAnimationFrame(loop); }
     });
     io.observe(box.current!);
@@ -208,7 +255,6 @@ export default function GameStage({
   }, []);
 
   const [bx, by, bw, bh] = bounds;
-  const T = THEMES[theme];
   const layer = (z: number, node: ReactNode, key?: string) => (
     <svg key={key} className="layer" style={{ left: bx, top: by, width: bw, height: bh, zIndex: z }} viewBox={`${bx} ${by} ${bw} ${bh}`}>
       {node}
@@ -218,31 +264,18 @@ export default function GameStage({
     <div ref={box} role="img" aria-label={label} className="og-stage relative h-full w-full select-none overflow-hidden" style={{ fontFamily: "Pretendard, 'Noto Sans KR', system-ui, sans-serif" }}>
       <style>{STAGE_CSS}</style>
       <div style={{ position: "absolute", left: 0, top: 0, width: W, height: H, transform: `scale(${scale})`, transformOrigin: "0 0" }} aria-hidden>
-        <div ref={world} style={{ position: "absolute", left: 0, top: 0, transformOrigin: "0 0" }}>
+        <div ref={world} className="plane">
           {layer(0, map)}
           {sprites.map((s, i) => layer(Math.round(s.y), s.node, `s${i}`))}
           <div ref={actors} style={{ position: "absolute", left: 0, top: 0 }} />
-          {fog && (
-            <svg ref={fogSvg} className="layer" style={{ left: bx, top: by, width: bw, height: bh, zIndex: 100000 }} viewBox={`${bx} ${by} ${bw} ${bh}`}>
-              <defs>
-                <radialGradient ref={fogGrad} id={`${id}-g`} cx={0} cy={0} r={VISION} gradientUnits="userSpaceOnUse">
-                  <stop offset={0.72} stopColor="#000" />
-                  <stop offset={1} stopColor="#fff" />
-                </radialGradient>
-                <filter id={`${id}-b`} x="-30%" y="-30%" width="160%" height="160%">
-                  <feGaussianBlur stdDeviation={7 / Z} />
-                </filter>
-                <mask id={`${id}-m`} maskUnits="userSpaceOnUse" x={bx} y={by} width={bw} height={bh}>
-                  <rect x={bx} y={by} width={bw} height={bh} fill="#fff" />
-                  <polygon ref={fogPoly} points="" fill={`url(#${id}-g)`} filter={`url(#${id}-b)`} />
-                </mask>
-              </defs>
-              <rect x={bx} y={by} width={bw} height={bh} fill={`rgba(${T.fog},${T.fogA})`} mask={`url(#${id}-m)`} />
-            </svg>
-          )}
-          {overlay && layer(100001, overlay(tick, snap))}
         </div>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ position: "absolute", inset: 0, width: W, height: H }}>
+        {fog && <canvas ref={fogCanvas} className="screen" style={{ width: W, height: H }} />}
+        {overlay && (
+          <div ref={over} className="plane">
+            {layer(0, overlay(tick, snap))}
+          </div>
+        )}
+        <svg viewBox={`0 0 ${W} ${H}`} className="screen" style={{ width: W, height: H }}>
           {hud(tick)}
         </svg>
       </div>

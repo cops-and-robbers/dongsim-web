@@ -14,7 +14,7 @@ import {
   TableSkeleton,
   ListPage,
 } from "@/components/admin/Parts";
-import { SEEN_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
+import { LAST_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
 import { RoleBadge, SocialBadge } from "@/components/admin/StatusBadge";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { Button } from "@/components/admin/Button";
@@ -204,7 +204,7 @@ function UsersResults({
               <Td>
                 <Link
                   href={`/admin/users/${u.id}`}
-                  className={`font-semibold text-sd-fg transition hover:text-accent ${SEEN_ROW_TITLE}`}
+                  className={`font-semibold text-sd-fg transition hover:text-accent ${LAST_ROW_TITLE}`}
                 >
                   {u.nickname}
                 </Link>

@@ -5,6 +5,9 @@ import type { WebgameChange, WebgameState } from "@/lib/admin/webgame";
 
 const URL = "/api/admin/webgame";
 
+/** 바꾼 뒤 사이드바의 "점검 중" 표시를 바로 다시 읽게 알린다(앱 설정의 APP_CONFIG_CHANGED_EVENT 와 같은 방식) */
+export const WEBGAME_CHANGED_EVENT = "admin-webgame-changed";
+
 async function call(init?: RequestInit): Promise<Response> {
   const send = () =>
     fetch(URL, {
@@ -25,5 +28,8 @@ async function read(res: Response): Promise<WebgameState> {
 
 export const fetchWebgame = async () => read(await call());
 
-export const applyWebgame = async (change: WebgameChange) =>
-  read(await call({ method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(change) }));
+export async function applyWebgame(change: WebgameChange) {
+  const next = await read(await call({ method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(change) }));
+  window.dispatchEvent(new Event(WEBGAME_CHANGED_EVENT));
+  return next;
+}
