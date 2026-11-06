@@ -60,6 +60,7 @@ export const usePetBoxed = () => useSyncExternalStore(subscribeBoxed, readBoxed,
 /**
  * 치즈가 다닐 수 있는 곳. 물어보기 패널(data-pet-avoid)을 가리지 않게 피한다.
  * 오른쪽 패널이면 그 왼쪽까지만(maxX), 아래에서 올라온 시트(휴대폰)면 그 윗변이 바닥(floor)이다.
+ * 휴대폰 하단 탭(data-pet-floor)이 보이면 그 윗변도 바닥이다. 없으면 치즈가 탭 위를 걸어 메뉴를 가렸다
  * right 는 보관함을 둘 오른쪽 여백(패널이 있으면 그 왼쪽에 둔다)
  */
 function petBounds(W: number) {
@@ -67,16 +68,18 @@ function petBounds(W: number) {
   let maxX = vw - W;
   let floor = 0;
   let right = 0;
+  const bar = document.querySelector<HTMLElement>("[data-pet-floor]")?.getBoundingClientRect();
+  if (bar && bar.height > 0) floor = Math.max(0, window.innerHeight - bar.top);
   const el = document.querySelector<HTMLElement>("[data-pet-avoid]");
   const r = el?.getBoundingClientRect();
   if (r && r.width > 0 && r.height > 0) {
-    if (r.left < W) floor = Math.max(0, window.innerHeight - r.top);
+    if (r.left < W) floor = Math.max(floor, window.innerHeight - r.top);
     else {
       maxX = Math.max(0, r.left - W);
       right = vw - r.left;
     }
   }
-  return { maxX, floor, right };
+  return { maxX, floor, right, panel: !!(r && r.width > 0 && r.height > 0) };
 }
 
 type Drag = { phase: "idle" | "press" | "drag" | "fall"; timer: ReturnType<typeof setTimeout> | null; sx: number; sy: number; lx: number; ly: number; over: boolean };
@@ -119,7 +122,7 @@ export function CheesePet({ onTap }: { onTap?: () => void } = {}) {
           hint = setTimeout(() => {
             // 물어보기 창이 이미 열려 있으면 알릴 필요가 없다. 다음에 닫혀 있을 때 알린다
             const b = petBounds(cw0);
-            if (b.maxX < window.innerWidth - cw0 || b.floor > 0) return;
+            if (b.panel) return;
             try {
               localStorage.setItem(HINT_KEY, "1");
             } catch {

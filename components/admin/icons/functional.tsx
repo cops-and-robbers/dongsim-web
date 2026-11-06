@@ -52,6 +52,29 @@ export function GamesIcon({ className }: IconProps) {
   );
 }
 
+export function WebgameIcon({ className }: IconProps) {
+  // Lucide 'globe'. 브라우저로 하는 온라인 게임. 앱 게임 기록(gamepad)과 헷갈리지 않게 따로 둔다. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+      <path d="M2 12h20" />
+    </Line>
+  );
+}
+
+export function LayoutGridIcon({ className }: IconProps) {
+  // Lucide 'layout-grid'. 폰 하단 탭의 "전체". 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <rect width="7" height="7" x="3" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="14" rx="1" />
+      <rect width="7" height="7" x="3" y="14" rx="1" />
+    </Line>
+  );
+}
+
 export function SearchIcon({ className }: IconProps) {
   return (
     <Line className={className}>
