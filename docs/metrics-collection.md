@@ -236,7 +236,7 @@ Supabase 가 서버 사이 시계 차이로 "JWT issued at future" 를 내며 �
 
 | 무엇 | 어디서 | 메모 |
 | --- | --- | --- |
-| 채널별 방문, 스토어로 간 방문 | `ga4_daily` session_campaign, download_source | `channels.ts channelOf` 로 인스타그램, 검색, 직접 입력과 QR, AI 서비스, 다른 SNS, 다른 사이트로 묶는다 |
+| 채널별 방문, 스토어로 간 방문 | `ga4_daily` session_campaign, download_source | `channels.ts channelOf` 로 인스타그램, 당근, 검색, 직접 입력과 QR, AI 서비스, 다른 SNS, 다른 사이트로 묶는다. 당근은 우리가 붙인 `utm_source=daangn`(키워드 광고, 비즈프로필 링크)과 당근 웹, 앱 안 화면 주소(#207) |
 | App Store 나라별 최초 다운로드 | `appstore_sales_daily` country | |
 | 인스타 팔로워 수 | `instagram_followers` (0004) | 하루 증감 지표는 팔로워 100명 미만이면 인스타가 안 줘서, 수집 때마다 지금 수를 찍고 차이로 증감을 센다 |
 | 일정(행사, 홍보, 출시, 테스트, 기타) | `metrics_events` (0004, 성격과 행사 시간은 0007), 행사 게임 `metrics_event_games` (0008) | 어드민 화면에서 넣고 고치고 지운다(`/api/admin/metrics/events`). 모든 차트에 성격별 색 마름모로 겹친다. 성격마다 하는 일은 `docs/metrics-events.md` |

@@ -6,10 +6,10 @@
  * 화면(브라우저)과 서버가 같이 쓰므로 아무것도 부르지 않는다.
  */
 
-export type Channel = "인스타그램" | "검색" | "직접 입력과 QR" | "AI 서비스" | "다른 SNS" | "다른 사이트" | "알 수 없음";
+export type Channel = "인스타그램" | "당근" | "검색" | "직접 입력과 QR" | "AI 서비스" | "다른 SNS" | "다른 사이트" | "알 수 없음";
 
 /** 화면에 늘어놓는 순서 */
-export const CHANNELS: Channel[] = ["인스타그램", "검색", "직접 입력과 QR", "AI 서비스", "다른 SNS", "다른 사이트", "알 수 없음"];
+export const CHANNELS: Channel[] = ["인스타그램", "당근", "검색", "직접 입력과 QR", "AI 서비스", "다른 SNS", "다른 사이트", "알 수 없음"];
 
 /**
  * 우리 팀이 개발하며 들어온 방문. 방문과 전환율을 부풀리니 모든 합계에서 뺀다.
@@ -40,6 +40,17 @@ export function fromInstagram(source: string): boolean {
   return s === "ig" || s.includes("instagram") || s === "linktr.ee";
 }
 
+/**
+ * 당근에서 온 방문인가 (#207).
+ * - daangn: 당근 키워드 광고(utm_medium=keyword)와 비즈프로필 홈페이지 링크(utm_medium=bizprofile)에 우리가 붙인 UTM
+ * - daangn.com, karrotmarket.com, karrotwebview.com: UTM 없이 당근 웹과 당근 앱 안 화면에서 넘어온 방문
+ * 예전엔 규칙이 없어 "다른 사이트"에 섞였다. 광고 보고서의 클릭과 맞춰 보려면 따로 봐야 한다
+ */
+export function fromDaangn(source: string): boolean {
+  const s = source.toLowerCase();
+  return s === "daangn" || /(^|\.)(daangn\.com|karrotmarket\.com|karrotwebview\.com)$/.test(s);
+}
+
 const SEARCH = /(^|\.)(google|naver|daum|bing|yahoo|duckduckgo|ecosia|baidu|yandex)(\.|$)/;
 const AI = /(chatgpt\.com|openai\.com|perplexity\.ai|gemini\.google\.com|claude\.ai|copilot\.microsoft\.com|wrtn\.ai)$/;
 const SOCIAL = /(^|\.)(facebook\.com|youtube\.com|youtu\.be|x\.com|t\.co|twitter\.com|threads\.net|tiktok\.com|kakao\.com|band\.us)$/;
@@ -49,6 +60,7 @@ export function channelOf(source: string, medium: string): Channel {
   const s = source.toLowerCase();
   const m = medium.toLowerCase();
   if (fromInstagram(s)) return "인스타그램";
+  if (fromDaangn(s)) return "당근";
   // 행사 링크 QR(/q/<코드>, #171)은 매체를 qr 로 붙인다. 출처는 행사마다 달라 "다른 사이트"로 새지 않게 먼저 본다
   if (s === "(direct)" || m === "qr") return "직접 입력과 QR";
   if (s === "(not set)" || s === "") return "알 수 없음";
