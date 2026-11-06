@@ -18,6 +18,7 @@
 | `/photobooth` | 네컷 포토부스 키오스크 | 날짜 게이트 (`components/photobooth/schedule.ts`) |
 | `/p` | 발급된 네컷 사진 받기 | 게이트 없음 (행사 후에도 접근 가능해야 함) |
 | `/play` | 부스 미니게임 + 리더보드 | Upstash Redis |
+| `/online` | 경찰과 도둑 온라인 게임 입구 | 게임 서버의 `/status` 로 버튼을 바꿈, 한국어 전용, `docs/online-game.md` |
 | `/terms` `/privacy` `/location` `/marketing` | 약관류 | `components/policy/` |
 
 ## API (`app/api/`)
@@ -26,6 +27,7 @@
 | --- | --- |
 | `/api/photobooth/upload` | Vercel Blob 업로드 토큰 발급 (운영 시간 게이트 포함) |
 | `/api/booth/scores` | 미니게임 리더보드 (Redis 정렬 집합, 닉네임별 최고점) |
+| `/api/admin/webgame` | 어드민 "온라인 게임": 게임 서버의 운영 상태를 비밀값으로 대신 읽고 바꿈 |
 
 `/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 다국어 라우팅용 `proxy.ts`도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/en/*`·`app/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
 

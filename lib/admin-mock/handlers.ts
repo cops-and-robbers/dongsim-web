@@ -3,6 +3,7 @@
 // delay()로 약간의 지연을 줘서 로딩 상태 UX를 실제처럼 다듬을 수 있게 한다.
 import { graphql, http, HttpResponse, delay } from "msw";
 import { mockAppConfig, mockApplyAppConfig, mockUploadBanner } from "./appConfig";
+import { mockApplyWebgame, mockWebgame } from "./webgame";
 import {
   queryUsers,
   getUser,
@@ -379,6 +380,18 @@ export const handlers = [
   http.post("/api/admin/app-config/banners", async () => {
     await delay(800);
     return HttpResponse.json(mockUploadBanner(), { status: 201 });
+  }),
+
+  // 온라인 게임 운영 상태. 로컬에서는 실제 게임 서버에 닿지 않는다
+  http.get("/api/admin/webgame", async () => {
+    await delay(300);
+    return HttpResponse.json(mockWebgame());
+  }),
+
+  http.put("/api/admin/webgame", async ({ request }) => {
+    await delay(500);
+    const { status, body } = mockApplyWebgame((await request.json()) as Parameters<typeof mockApplyWebgame>[0]);
+    return HttpResponse.json(body as Record<string, unknown>, { status });
   }),
 
   http.get("/api/notices", async ({ request }) => {
