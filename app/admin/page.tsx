@@ -13,7 +13,7 @@ import { AdminGamesQuery } from "@/lib/admin/gql/AdminGames";
 import { PageHeader, SectionCard, ScrollPage } from "@/components/admin/Parts";
 import { Donut } from "@/components/admin/charts";
 import { Stagger, StaggerItem, FadeIn } from "@/components/admin/motion";
-import { SEEN_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
+import { LAST_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
 import { GameStatusBadge } from "@/components/admin/StatusBadge";
 import { InviteCode } from "@/components/admin/InviteCode";
 import QueryBoundary from "@/components/admin/QueryBoundary";
@@ -161,7 +161,7 @@ function Overview() {
                   {users.adminUsers.content.map((u, i) => (
                     <Tr key={u.id} index={i} href={`/admin/users/${u.id}`}>
                       <Td>
-                        <Link href={`/admin/users/${u.id}`} className={`font-semibold text-sd-fg transition hover:text-accent ${SEEN_ROW_TITLE}`}>
+                        <Link href={`/admin/users/${u.id}`} className={`font-semibold text-sd-fg transition hover:text-accent ${LAST_ROW_TITLE}`}>
                           {u.nickname}
                         </Link>
                       </Td>

@@ -7,10 +7,17 @@ import { parseRecent, readRecentRaw, recentHref } from "@/lib/admin/recentViewed
 let cachedRaw: string | null = null;
 let cachedHrefs = new Set<string>();
 
-function seenHrefs(raw: string | null) {
+// 기록은 최근 것이 맨 앞이다. 종류(열린 방, 지난 게임, 유저)마다 맨 앞 하나만 고른다
+function lastHrefs(raw: string | null) {
   if (raw !== cachedRaw) {
     cachedRaw = raw;
-    cachedHrefs = new Set(parseRecent(raw).map(recentHref));
+    const kinds = new Set<string>();
+    cachedHrefs = new Set();
+    for (const item of parseRecent(raw)) {
+      if (kinds.has(item.kind)) continue;
+      kinds.add(item.kind);
+      cachedHrefs.add(recentHref(item));
+    }
   }
   return cachedHrefs;
 }
@@ -21,8 +28,8 @@ function subscribe(onChange: () => void) {
   return () => window.removeEventListener("storage", onChange);
 }
 
-/** 이 주소의 상세를 이미 봤는지. 게임, 지난 게임, 유저 상세가 아니면 늘 false 다. */
-export function useSeenHref(href?: string) {
+/** 이 주소가 그 종류에서 마지막으로 열어 본 상세인지. 게임, 지난 게임, 유저 상세가 아니면 늘 false 다. */
+export function useLastViewed(href?: string) {
   const raw = useSyncExternalStore(subscribe, readRecentRaw, () => null);
-  return href !== undefined && seenHrefs(raw).has(href);
+  return href !== undefined && lastHrefs(raw).has(href);
 }

@@ -11,7 +11,7 @@ import { AdminUserGameHistoriesQuery } from "@/lib/admin/gql/AdminUserGameHistor
 import { Button } from "@/components/admin/Button";
 import { CardNote, ErrorBlock, SectionCard, TableSkeleton } from "@/components/admin/Parts";
 import { Pill, TeamBadge } from "@/components/admin/StatusBadge";
-import { SEEN_ROW_TITLE, Table, Td, Th, Tr } from "@/components/admin/Table";
+import { LAST_ROW_TITLE, Table, Td, Th, Tr } from "@/components/admin/Table";
 import { END_REASON_LABEL, formatDateTime, formatDuration, labelOf } from "@/lib/admin/format";
 import { isFieldNotDeployed } from "@/lib/admin/notDeployed";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
@@ -132,7 +132,7 @@ function GameRow({ game, index }: { game: Game; index: number }) {
   return (
     <Tr index={index} href={href}>
       <Td className="whitespace-nowrap">
-        <Link href={href} className={`font-semibold text-sd-fg transition hover:text-accent ${SEEN_ROW_TITLE}`}>
+        <Link href={href} className={`font-semibold text-sd-fg transition hover:text-accent ${LAST_ROW_TITLE}`}>
           {game.endedAt ? formatDateTime(game.endedAt) : "기록 보기"}
         </Link>
       </Td>
