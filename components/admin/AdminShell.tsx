@@ -38,6 +38,8 @@ type NavItem = {
 
 type NavGroup = { label?: string; items: NavItem[] };
 
+const WEBGAME_HREF = "/admin/webgame";
+
 // 역할별 그룹. 개요(현황) → 데이터(조회) → 처리(액션 필요) → 콘텐츠(발행) 흐름.
 const NAV_GROUPS: NavGroup[] = [
   {
@@ -68,7 +70,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "운영",
-    items: [{ href: "/admin/app-config", label: "앱 설정", Icon: SlidersIcon, desktopOnly: true }],
+    items: [
+      { href: "/admin/app-config", label: "앱 설정", Icon: SlidersIcon, desktopOnly: true },
+      { href: WEBGAME_HREF, label: "온라인 게임", Icon: GamesIcon, desktopOnly: true },
+    ],
   },
 ];
 
@@ -267,6 +272,16 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             >
               <SlidersIcon className="h-[18px] w-[18px]" />
               {maintenanceOn && <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-sd-critical" />}
+            </Link>
+            {/* 온라인 게임도 장애 때 폰으로 막으러 들어오는 길이라 앱 설정 옆에 둔다 */}
+            <Link
+              href={WEBGAME_HREF}
+              aria-label="온라인 게임"
+              className={`rounded-lg p-1.5 transition hover:bg-sd-pressed ${
+                pathname.startsWith(WEBGAME_HREF) ? "text-accent" : "text-sd-fg-subtle"
+              }`}
+            >
+              <GamesIcon className="h-[18px] w-[18px]" />
             </Link>
             <ThemeSwitch />
             <AccountRow compact />
