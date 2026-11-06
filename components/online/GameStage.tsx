@@ -70,7 +70,7 @@ const STAGE_CSS = `
 .og-stage .char .shadow { position:absolute; left:0; bottom:-14px; width:96px; height:26px; margin-left:-48px; border-radius:50%; background:rgba(29,35,43,.16); }
 .og-stage .char.shade svg { filter:saturate(.55) contrast(.78) brightness(1.16); opacity:.92; transition:filter .28s ease-out, opacity .28s; }
 .og-stage .char svg { transition:filter .28s ease-out, opacity .28s; }
-.og-stage .tag { position:absolute; left:0; transform:translateX(-50%); white-space:nowrap; font-size:46px; font-weight:800; line-height:1.15; padding:4px 22px 6px; border-radius:999px; background:#fff; color:#1D232B; box-shadow:0 2px 0 rgba(29,35,43,.12); }
+.og-stage .tag { position:absolute; left:0; transform:translateX(-50%); white-space:nowrap; font-size:40px; font-weight:700; line-height:1.15; padding:4px 22px 6px; border-radius:999px; background:#fff; color:#1D232B; box-shadow:0 2px 0 rgba(29,35,43,.12); }
 .og-stage .tag.me.police { background:#2A9BEF; color:#fff; }
 .og-stage .tag.me.robber { background:#35C26B; color:#fff; }
 .og-stage .layer { position:absolute; overflow:visible; pointer-events:none; }

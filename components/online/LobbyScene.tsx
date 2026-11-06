@@ -108,19 +108,19 @@ function ChalkCharacter({ view, cx, foot, h, outline, seed, w0, h0 }: { view: st
   );
 }
 
-/** 대기실 이름표(.wtag): 30px, 패딩 4 14 6, 발밑에서 132 위. 나는 검은 바탕에 옅은 "방장 나", 칸을 고르면 편 색 */
+/** 대기실 이름표(.wtag): 26px 700(게임 #14 에서 30px 800 에서 줄임), 패딩 4 14 6, 발밑에서 132 위. 나는 검은 바탕에 옅은 "방장 나", 칸을 고르면 편 색 */
 function LobbyTag({ x, foot, name, extra = [], me = false, side }: { x: number; foot: number; name: string; extra?: string[]; me?: boolean; side?: "cop" | "rob" }) {
-  const tw = Array.from(name).length * 30 + extra.reduce((n, e) => n + Array.from(e).length * 20 + 7, 0) + 28;
+  const tw = Array.from(name).length * 26 + extra.reduce((n, e) => n + Array.from(e).length * 18 + 7, 0) + 28;
   const y = foot - 132;
   const bg = me ? (side === "cop" ? "#2A9BEF" : side === "rob" ? "#1F9A52" : INK) : "#fff";
   return (
     <g transform={`translate(${x - tw / 2} ${y})`}>
-      <rect y={3} width={tw} height={43} rx={21.5} fill="rgba(29,35,43,.14)" />
-      <rect width={tw} height={43} rx={21.5} fill={bg} />
-      <text x={14} y={32} fontSize={30} fontWeight={800} fill={me ? "#fff" : INK}>
+      <rect y={3} width={tw} height={39} rx={19.5} fill="rgba(29,35,43,.14)" />
+      <rect width={tw} height={39} rx={19.5} fill={bg} />
+      <text x={14} y={28} fontSize={26} fontWeight={700} fill={me ? "#fff" : INK}>
         {name}
         {extra.map((e) => (
-          <tspan key={e} dx={7} fontSize={20} fill={me ? (side ? "#fff" : "#C9CED6") : "#545E6E"}>
+          <tspan key={e} dx={7} fontSize={18} fill={me ? (side ? "#fff" : "#C9CED6") : "#545E6E"}>
             {e}
           </tspan>
         ))}
