@@ -276,6 +276,12 @@ body {
   will-change: opacity, transform;
 }
 
+/* 나타난 뒤에는 층 예약을 푼다. 애니메이션이 도는 동안은 브라우저가 알아서 층을 올린다.
+   예약이 남아 있으면 안에서 움직이는 것(온라인 게임 장면 등)이 바뀔 때마다 상자 전체를 다시 칠한다 */
+.scroll-animate.visible {
+  will-change: auto;
+}
+
 .scroll-animate.visible.anim-fadeInUp {
   animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
