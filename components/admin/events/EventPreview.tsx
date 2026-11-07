@@ -70,6 +70,8 @@ export function EventPreview({ settings, scene, spot, theme }: { settings: Event
           className={`event-preview relative overflow-hidden ${theme === "dark" ? "dark" : "force-light"}`}
           style={{ width: W, height: H, transform: `scale(${s})`, transformOrigin: "top left" }}
           aria-hidden
+          // 그림일 뿐이라 안의 버튼(팝업 닫기 등)에 Tab 이 들어가지 않게
+          inert
         >
           <SpotStyle />
           {scene === "popup" || scene === "home" ? (

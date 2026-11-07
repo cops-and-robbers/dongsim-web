@@ -553,12 +553,15 @@ function Preview({ draft, scene, onScene, spot }: { draft: EventSettings; scene:
       <div className="mb-2.5 flex flex-wrap items-center justify-center gap-2">
         <SegmentedControl options={scenes.map((s) => ({ value: s, label: SCENE_LABEL[s] }))} value={scene} onChange={onScene} />
       </div>
-      <button type="button" onClick={() => setBig(true)} aria-label="미리보기 크게 보기" className="group relative block w-full cursor-zoom-in rounded-xl text-left">
+      {/* 미리보기 안에 팝업의 버튼들이 있어 버튼으로 감싸지 않고, 위에 투명한 버튼을 덮는다(버튼 안 버튼은 HTML 에서 안 된다) */}
+      <div className="group relative">
         <EventPreview settings={draft} scene={scene} spot={shown} theme={theme} />
-        <span className="absolute right-2 top-2 rounded-md bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-          크게 보기
-        </span>
-      </button>
+        <button type="button" onClick={() => setBig(true)} aria-label="미리보기 크게 보기" className="absolute inset-0 cursor-zoom-in rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          <span className="absolute right-2 top-2 rounded-md bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+            크게 보기
+          </span>
+        </button>
+      </div>
       {big && (
         <div role="dialog" aria-modal="true" aria-label={`${SCENE_LABEL[scene]} 크게 보기`} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-6" onClick={() => setBig(false)}>
           <div className="w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
