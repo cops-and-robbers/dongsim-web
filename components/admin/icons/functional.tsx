@@ -75,6 +75,27 @@ export function LayoutGridIcon({ className }: IconProps) {
   );
 }
 
+export function RefreshIcon({ className }: IconProps) {
+  // Lucide 'rotate-cw'. 지금 다시 불러오기. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+    </Line>
+  );
+}
+
+export function AlertIcon({ className }: IconProps) {
+  // Lucide 'triangle-alert'. 살펴볼 것이 있다는 표시. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </Line>
+  );
+}
+
 export function SearchIcon({ className }: IconProps) {
   return (
     <Line className={className}>
