@@ -1,3 +1,5 @@
+import { DEFAULT_KIOSK, diffKiosk, normalizeKiosk, validateCopy, COPY, COPY_KEYS, type KioskConfig } from "./kiosk.ts";
+
 /**
  * 행사 설정 (#219). 지표 일정의 행사(성격 = 행사) 하나에 매달리는 값.
  *
@@ -34,6 +36,8 @@ export type EventSettings = {
   popupUrl: string;
   /** 행사 이야기 페이지(/event): 안 씀, 부스 시간에 본문 공개 */
   story: StoryMode;
+  /** 포토부스 방식, 흐름, 문구 (#221, lib/event/kiosk.ts) */
+  kiosk: KioskConfig;
 };
 
 /** 설정이 매달리는 일정. lib/metrics/events.ts 의 MetricsEvent 중 필요한 칸 */
@@ -139,6 +143,7 @@ export function defaultSettings(e: EventDay): EventSettings {
     popupUntil: null,
     popupUrl: "",
     story: "off",
+    kiosk: DEFAULT_KIOSK,
   };
 }
 
@@ -159,6 +164,7 @@ export const LEGACY_SETTINGS: EventSettings = {
   popupUntil: "2026-07-05T00:00",
   popupUrl: "https://seoulgametown.com/",
   story: "booth",
+  kiosk: DEFAULT_KIOSK,
 };
 
 // ── 검사 ──
@@ -167,7 +173,8 @@ const KST_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const isTime = (v: unknown): v is KstTime => typeof v === "string" && KST_TIME.test(v) && !Number.isNaN(toMs(v));
 const LONG_DASH = /[–—]/;
 
-export type Problems = Partial<Record<keyof EventSettings, string>>;
+/** 칸 이름 또는 "copy.<문구 자리>" 마다 쉬운 말 하나 */
+export type Problems = Partial<Record<keyof EventSettings | `copy.${string}`, string>>;
 
 /** 저장하면 안 되는 값. 칸마다 쉬운 말 하나 */
 export function validate(s: EventSettings): Problems {
@@ -191,6 +198,7 @@ export function validate(s: EventSettings): Problems {
   }
   if (s.popupUrl && !/^https:\/\/[^\s]+$/.test(s.popupUrl)) p.popupUrl = "https:// 로 시작하는 주소를 넣어 주세요.";
   else if (s.popupUrl.length > MAX.popupUrl) p.popupUrl = "주소가 너무 길어요.";
+  for (const [k, v] of Object.entries(validateCopy(s.kiosk.copy))) p[`copy.${k}`] = v;
   return p;
 }
 
@@ -212,6 +220,7 @@ export function normalize(raw: unknown, fallback: EventSettings): EventSettings 
     popupUntil: maybeTime("popupUntil"),
     popupUrl: str("popupUrl", MAX.popupUrl),
     story: r.story === "off" || r.story === "booth" ? r.story : fallback.story,
+    kiosk: normalizeKiosk(r.kiosk, fallback.kiosk),
   };
 }
 
@@ -304,7 +313,7 @@ export function momentsOn(day: string, e: EventDay, s: EventSettings, m: HomeMin
 
 // ── 준비 점검 ──
 
-export type Check = { id: string; level: "warn" | "todo" | "ok"; title: string; detail: string; tab: "info" | "home" };
+export type Check = { id: string; level: "warn" | "todo" | "ok"; title: string; detail: string; tab: "info" | "home" | "booth" };
 
 /** 저장된 값으로 할 수 있는 점검. 빠진 것, 의심스러운 것을 먼저 */
 export function readiness(e: EventDay, s: EventSettings): Check[] {
@@ -332,7 +341,18 @@ export function readiness(e: EventDay, s: EventSettings): Check[] {
   if (w && !s.popupUrl) {
     out.push({ id: "popupUrl", level: "todo", title: "홈 팝업에 행사 보기 주소가 없어요", detail: "주소가 없으면 팝업에 닫기 버튼만 있어요. 행사 공식 페이지가 있으면 넣어 주세요.", tab: "home" });
   }
+  const k = s.kiosk;
+  if (k.receive === "qr") {
+    const printy = COPY_KEYS.filter((key) => (k.copy[key] ?? COPY[key].text).includes("인쇄") && key !== "qr.print");
+    if (printy.length) {
+      out.push({ id: "qrPrintCopy", level: "warn", title: "QR로만 받는데 문구에 \"인쇄\"가 있어요", detail: `${printy.map((key) => COPY[key].text.slice(0, 12)).join(", ")} 줄을 봐 주세요. 프린터가 없으면 손님이 헷갈려요.`, tab: "booth" });
+    }
+  }
+  if (k.receive === "print" && !k.testPrinted) {
+    out.push({ id: "testPrint", level: "todo", title: "시험 인쇄", detail: `행사 프린터로 한 장 뽑아 가장자리가 잘리는지 봐요. 지금 보정 ${k.overscan}%. 뽑아 봤으면 "했어요"를 눌러요.`, tab: "booth" });
+  }
   if (out.every((c) => c.tab !== "info")) out.push({ id: "infoOk", level: "ok", title: "보이는 정보와 운영 시간", detail: `${s.name} · ${shortTime(s.boothFrom)} ~ ${shortTime(s.boothUntil)}`, tab: "info" });
+  if (out.every((c) => c.tab !== "booth")) out.push({ id: "boothOk", level: "ok", title: "포토부스", detail: k.receive === "print" ? `인쇄하고 QR도 · 시험 인쇄 ${shortTime(k.testPrinted ?? "")}` : "QR로만 받아요", tab: "booth" });
   if (out.every((c) => c.tab !== "home")) out.push({ id: "homeOk", level: "ok", title: "홈 팝업", detail: w ? `${shortTime(w.until)}까지 떠요` : "띄우지 않아요", tab: "home" });
   const rank = { warn: 0, todo: 1, ok: 2 } as const;
   return out.sort((a, b) => rank[a.level] - rank[b.level]);
@@ -353,6 +373,7 @@ export const WHERE: Record<keyof EventSettings, { label: string; places: string[
   popupUntil: { label: "홈 팝업 내리는 시각", places: ["사이트 홈"] },
   popupUrl: { label: "행사 보기 버튼 주소", places: ["홈 팝업 버튼"] },
   story: { label: "행사 페이지", places: ["/event"] },
+  kiosk: { label: "포토부스 방식과 문구", places: ["포토부스"] },
 };
 
 const POPUP_LABEL: Record<PopupMode, string> = { off: "안 띄우기", untilEnd: "행사 끝날 때까지", custom: "직접 고른 기간" };
@@ -368,7 +389,8 @@ function show(k: keyof EventSettings, s: EventSettings): string {
 }
 
 export function diff(before: EventSettings, after: EventSettings) {
-  return (Object.keys(WHERE) as (keyof EventSettings)[])
-    .filter((k) => before[k] !== after[k])
-    .map((k) => ({ key: k, label: `${WHERE[k].label} · ${WHERE[k].places.join(", ")}`, before: show(k, before), after: show(k, after) }));
+  const top = (Object.keys(WHERE) as (keyof EventSettings)[])
+    .filter((k) => k !== "kiosk" && before[k] !== after[k])
+    .map((k) => ({ key: k as string, label: `${WHERE[k].label} · ${WHERE[k].places.join(", ")}`, before: show(k, before), after: show(k, after) }));
+  return [...top, ...diffKiosk(before.kiosk, after.kiosk)];
 }
