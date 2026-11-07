@@ -43,8 +43,8 @@ export function AppPreview({ scene, values }: { scene: PreviewScene; values: App
 
   return (
     <div>
-      <p className="mb-2 text-center text-[13px] font-semibold text-sd-fg-subtle">사용자에게 이렇게 보여요</p>
-      {/* 폰 영역이 창보다 크면 영역 끝에 닿아, 왼쪽 저장 줄이 생길 때마다 폰이 같이 밀린다. 창 안에 들어오게 줄인다.
+      {/* 제목("사용자에게 이렇게 보여요")은 감싸는 PreviewPane 이 그린다.
+          폰 영역이 창보다 크면 영역 끝에 닿아, 왼쪽 저장 줄이 생길 때마다 폰이 같이 밀린다. 창 안에 들어오게 줄인다.
           208 = 스크롤 틀 위아래 여백 64 + 제목 28 + 버전 버튼 62 + 설명 두 줄 54. svh 인 까닭은 DemoApp 주석과 같다 */}
       <div className="mx-auto w-full max-w-[280px] lg:max-w-[clamp(200px,calc((100svh_-_208px)*9/19),280px)]">
         <PhoneFrame clock="9:41" unbounded>

@@ -8,6 +8,7 @@ import { ChangeDialog } from "@/components/admin/ChangeDialog";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { useToast } from "@/components/admin/Toast";
 import { AppPreview, type PreviewScene } from "@/components/admin/appConfig/AppPreview";
+import { PreviewPane } from "@/components/admin/ops/PreviewPane";
 import { BannerImagePicker } from "@/components/admin/appConfig/BannerImagePicker";
 import { EvidenceImagePicker } from "@/components/admin/appConfig/EvidenceImagePicker";
 import { HttpsUrlInput, VersionInput } from "@/components/admin/appConfig/fields";
@@ -148,12 +149,12 @@ export default function AppConfigPage() {
               <Panels key={state.etag} state={state} tab={tab} apply={apply} onDrafts={onDrafts} adScene={adScene} onAdScene={setAdScene} />
               <History state={state} />
             </div>
-            <div className="self-start lg:sticky lg:top-0">
+            <PreviewPane>
               <AppPreview
                 scene={scene}
                 values={{ ...state.values, ...drafts.maintenance, ...drafts.version, ...drafts.ads, ...drafts.banner, ...drafts.evidence }}
               />
-            </div>
+            </PreviewPane>
           </div>
         </div>
       )}
