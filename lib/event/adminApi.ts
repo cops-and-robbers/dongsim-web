@@ -5,6 +5,10 @@
 import { NextResponse } from "next/server";
 import { checkAdmin } from "@/lib/admin/server/checkAdmin";
 import type { EventDay, EventSettings, HomeMinigame } from "@/lib/event/settings";
+import type { Asset } from "@/lib/event/assets";
+
+/** 그림 보관함 목록(#224). usage 는 그림 키마다 쓰는 행사 이름 */
+export type AssetsList = { assets: Asset[]; usage: Record<string, string[]>; writable: boolean };
 
 export type EventsListItem = { event: EventDay; settings: EventSettings; configured: boolean };
 export type EventsList = { items: EventsListItem[]; minigame: HomeMinigame; writable: boolean };
@@ -43,6 +47,9 @@ export function storeError(e: unknown): NextResponse {
   console.error("[events]", message);
   if (/event_settings|site_settings/.test(message) && /does not exist|schema cache/.test(message)) {
     return NextResponse.json({ error: "행사 설정 표가 아직 없어요. supabase/migrations/0013_event_settings.sql 을 Supabase 에서 실행해 주세요." }, { status: 503 });
+  }
+  if (/photobooth_assets/.test(message) && /does not exist|schema cache/.test(message)) {
+    return NextResponse.json({ error: "그림 보관함 표가 아직 없어요. supabase/migrations/0014_photobooth_assets.sql 을 Supabase 에서 실행해 주세요." }, { status: 503 });
   }
   return NextResponse.json({ error: "행사 설정을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요." }, { status: 502 });
 }
