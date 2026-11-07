@@ -329,7 +329,7 @@ function EndField({ form, onChange, now, error, disabled }: { form: EndForm; onC
       {/* 사용자 절반이 해외라, 한국 시간만 보고 고르면 해외에서 한창 쓸 때 막을 수 있다 */}
       {at !== null && !error && (
         <div className="mt-3">
-          <WorldClock at={at} caption="이 시각은 나라마다 이렇게 돼요" />
+          <WorldClock at={at} from={now} />
         </div>
       )}
     </div>
