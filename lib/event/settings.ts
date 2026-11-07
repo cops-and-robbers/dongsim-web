@@ -105,12 +105,33 @@ export function defaultBoothWindow(e: Pick<EventDay, "day" | "startsAt" | "endsA
   return { boothFrom: from < `${e.day}T00:00` ? `${e.day}T00:00` : from, boothUntil: until };
 }
 
-/** 처음 여는 행사의 값. 이름과 날짜는 일정에서, 팝업은 행사 끝날 때까지, 이야기 페이지는 안 씀 */
+/**
+ * 일정 이름에서 화면에 보일 이름과 장소를 뗀다. 팀은 일정을 "노원 청소년축제 행방불명 부스 13~17시 (노원청소년센터)"처럼
+ * 시간과 장소까지 붙여 적는다. 그대로 쓰면 "OO에서 만나요"에 시간이 끼고 20자에서 잘린다
+ */
+export function splitLabel(label: string): { name: string; location: string } {
+  const place = label.match(/\(([^()]+)\)\s*$/);
+  const rest = label
+    .replace(/\(([^()]+)\)\s*$/, "")
+    .replace(/\d{1,2}(:\d{2})?\s*[~-]\s*\d{1,2}(:\d{2})?\s*시?/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[,·]$/, "");
+  let name = rest || label;
+  if (name.length > MAX.name) {
+    const cut = name.slice(0, MAX.name);
+    name = cut.includes(" ") ? cut.slice(0, cut.lastIndexOf(" ")) : cut;
+  }
+  return { name, location: (place?.[1] ?? "").trim().slice(0, MAX.location) };
+}
+
+/** 처음 여는 행사의 값. 이름, 장소, 날짜는 일정에서, 팝업은 행사 끝날 때까지, 이야기 페이지는 안 씀 */
 export function defaultSettings(e: EventDay): EventSettings {
+  const { name, location } = splitLabel(e.label);
   return {
-    name: e.label.slice(0, MAX.name),
+    name,
     dateLabel: dateLabelOf(e),
-    location: "",
+    location,
     ...defaultBoothWindow(e),
     boothClosed: false,
     popup: "untilEnd",
