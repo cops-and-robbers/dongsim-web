@@ -1,13 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import type { CopyKey, KioskConfig } from "@/lib/event/kiosk";
+import { charactersOf, type CopyKey, type KioskConfig } from "@/lib/event/kiosk";
 import { renderCopy } from "./copy";
 import Link from "next/link";
 import { useState } from "react";
 
 export default function PhotoResult({ imageUrl, kiosk, name }: { imageUrl: string | null; kiosk: KioskConfig; name: string }) {
   const t = (k: CopyKey) => renderCopy({ kiosk, name }, k);
+  const chars = charactersOf(kiosk);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -75,7 +76,10 @@ export default function PhotoResult({ imageUrl, kiosk, name }: { imageUrl: strin
   if (!imageUrl) {
     return (
       <section className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-6 text-center">
-        <img src="/photobooth/cop-search.svg" alt="" className="h-24 w-auto" />
+        <div className="flex items-end gap-2">
+          <img src={chars.cop} alt="" className="h-20 w-auto" />
+          <img src={chars.thief} alt="" className="h-20 w-auto" />
+        </div>
         <h1 className="mt-6 text-xl font-bold text-brand-ink dark:text-white">
           사진을 찾을 수 없어요
         </h1>
@@ -89,11 +93,11 @@ export default function PhotoResult({ imageUrl, kiosk, name }: { imageUrl: strin
   return (
     <section className="mx-auto flex w-full max-w-sm flex-col items-center px-5 py-6 text-center">
       <div className="flex items-center gap-2">
-        <img src="/photobooth/cop-professor.svg" alt="" className="h-9 w-auto" />
+        <img src={chars.cop} alt="" className="h-9 w-auto" />
         <h1 className="text-xl font-bold text-brand-ink dark:text-white">
           {t("result.title")}
         </h1>
-        <img src="/photobooth/thief-runaway.svg" alt="" className="h-9 w-auto" />
+        <img src={chars.thief} alt="" className="h-9 w-auto" />
       </div>
 
       <img

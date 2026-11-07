@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { KioskConfig } from "@/lib/event/kiosk";
 import Backdrop from "./Backdrop";
 import CaptureScreen from "./CaptureScreen";
-import { DEFAULT_FRAME, pickCount, type FrameDef } from "./frames";
+import { frameDefsOf, pickCount, type FrameDef } from "./frames";
 import { KioskProvider } from "./KioskContext";
 import IntroScreen from "./IntroScreen";
 import PreviewScreen, { type IssuedStrip } from "./PreviewScreen";
@@ -24,7 +24,8 @@ const REFRESH_MS = 30_000;
  */
 export default function Kiosk({ kiosk, name }: { kiosk: KioskConfig; name: string }) {
   const router = useRouter();
-  const [frame, setFrame] = useState<FrameDef>(DEFAULT_FRAME);
+  // 행사가 고른 첫 프레임으로 시작한다. 손님이 고르기 화면에서 바꿀 수 있다
+  const [frame, setFrame] = useState<FrameDef>(() => frameDefsOf(kiosk)[0]);
   const [phase, setPhase] = useState<Phase>("intro");
   const [shots, setShots] = useState<string[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
@@ -38,6 +39,8 @@ export default function Kiosk({ kiosk, name }: { kiosk: KioskConfig; name: strin
   }, [phase, router]);
 
   const reset = () => {
+    // 손님이 바뀌면 행사의 첫 프레임으로. 그사이 어드민에서 프레임을 바꿨으면 새 목록을 따른다
+    setFrame(frameDefsOf(kiosk)[0]);
     setShots([]);
     setSelected([]);
     setIssued(null);
@@ -112,6 +115,7 @@ export default function Kiosk({ kiosk, name }: { kiosk: KioskConfig; name: strin
         {phase === "qr" && issued && (
           <QrScreen
             issued={issued}
+            frame={frame}
             onRestart={() => {
               reset();
               setPhase("intro");

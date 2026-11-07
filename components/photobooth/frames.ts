@@ -7,6 +7,8 @@
 // FRAMES 에 항목을 추가/교체하면 끝이다. 2개 이상이 되면 선택 화면이 자동으로 돌아온다
 // (HAS_FRAME_CHOICE). 크기·창 좌표는 프레임마다 따로 들고 있어 디자인이 달라도 안전하다.
 
+import { frameSrc, type KioskConfig } from "@/lib/event/kiosk";
+
 export type FrameSlot = { x: number; y: number; w: number; h: number };
 
 export type FrameDef = {
@@ -62,4 +64,13 @@ export function pickCount(frame: FrameDef): number {
 /** 슬롯 가로:세로 비율 - 웹캠 프리뷰 크롭 비율을 맞출 때 사용. */
 export function slotRatio(frame: FrameDef): number {
   return frame.slots[0].w / frame.slots[0].h;
+}
+
+/**
+ * 행사가 고른 프레임(#224, 그림 보관함). 고른 게 없으면 기본 연두 하나.
+ * 보관함 프레임은 사이트 주소(/photobooth/asset/...)로 내려받아 합성 canvas 가 막히지 않는다
+ */
+export function frameDefsOf(kiosk: Pick<KioskConfig, "frames">): FrameDef[] {
+  if (!kiosk.frames.length) return [DEFAULT_FRAME];
+  return kiosk.frames.map((f) => ({ id: f.key, label: f.label, src: frameSrc(f), swatch: f.swatch, width: f.width, height: f.height, slots: f.slots }));
 }

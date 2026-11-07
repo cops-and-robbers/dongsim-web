@@ -44,7 +44,7 @@ export default function CaptureScreen({
 }) {
   const { videoRef, ready, error } = useCamera(!demo);
   // 찍는 장수와 카운트다운은 행사 설정(#221). 고르기를 끄면 프레임 칸 수만큼만 찍는다
-  const { kiosk } = useKiosk();
+  const { kiosk, chars } = useKiosk();
   const shotCount = kiosk.select ? kiosk.shots : pickCount(frame);
   const countdown = kiosk.countdown;
   const ratio = slotRatio(frame);
@@ -123,13 +123,13 @@ export default function CaptureScreen({
             <>
               <img
                 key={`cop-${taken}`}
-                src="/photobooth/cop-professor.svg"
+                src={chars.cop}
                 alt=""
                 className="pb-pop pointer-events-none absolute -bottom-2 left-2 z-30 h-24 w-auto origin-bottom drop-shadow-xl sm:left-6 sm:h-32"
               />
               <img
                 key={`thief-${taken}`}
-                src="/photobooth/thief-runaway.svg"
+                src={chars.thief}
                 alt=""
                 className="pb-pop pointer-events-none absolute -bottom-2 right-2 z-30 h-24 w-auto origin-bottom drop-shadow-xl sm:right-6 sm:h-32"
               />
