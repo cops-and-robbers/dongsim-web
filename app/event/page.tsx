@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
-import { EVENT, isEventOpen, isEventOver } from "@/components/event/schedule";
+import { storyNow } from "@/lib/event/server";
+import { withJosa } from "@/lib/event/settings";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import CaptionedFigure from "@/components/ui/CaptionedFigure";
@@ -18,13 +19,16 @@ export const metadata: Metadata = {
   alternates: { canonical: "/event" },
 };
 
-export default function EventPage() {
-  if (isEventOpen()) return <EventStory />;
-  return isEventOver() ? <EventThanks /> : <EventTeaser />;
+// 공개 창은 어드민 "행사"에서 이야기 페이지를 쓰는 행사의 부스 운영 시간을 따른다(#219).
+// 로컬 개발에선 늘 본문을 보여 준다(로컬 테스트가 막히지 않게)
+export default async function EventPage() {
+  const { settings, state } = await storyNow();
+  if (state === "open") return <EventStory />;
+  return state === "done" ? <EventThanks name={settings.name} /> : <EventTeaser name={settings.name} dateLabel={settings.dateLabel} />;
 }
 
 // 행사가 끝난 뒤 - 사건 종결 + 감사 인사.
-function EventThanks() {
+function EventThanks({ name }: { name: string }) {
   return (
     <main className="flex min-h-[75vh] flex-col items-center justify-center px-6 text-center">
       <CharacterDuo pose="search" size="lg" className="mb-8" />
@@ -33,7 +37,7 @@ function EventThanks() {
         도둥이, 검거 완료!
       </h1>
       <p className="mt-4 max-w-md text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-        {EVENT.venue}을 찾아주신 모든 시민 여러분,
+        {withJosa(name, "을/를")} 찾아주신 모든 시민 여러분,
         <br />
         덕분에 황금 치즈 레시피를 되찾았어요. 감사합니다.
       </p>
@@ -48,7 +52,7 @@ function EventThanks() {
 }
 
 // 행사 당일이 아닐 때 - "곧 공개" 티저.
-function EventTeaser() {
+function EventTeaser({ name, dateLabel }: { name: string; dateLabel: string }) {
   return (
     <main className="flex min-h-[75vh] flex-col items-center justify-center px-6 text-center">
       <CharacterDuo pose="search" size="lg" className="mb-8" />
@@ -57,11 +61,13 @@ function EventTeaser() {
         곧 공개됩니다
       </h1>
       <p className="mt-4 text-lg text-slate-600 dark:text-slate-300">
-        {EVENT.venue}에서 만나요
+        {name}에서 만나요
       </p>
-      <p className="mt-1 text-xl font-bold text-brand-blue dark:text-brand-green">
-        {EVENT.dateLabel}
-      </p>
+      {dateLabel && (
+        <p className="mt-1 text-xl font-bold text-brand-blue dark:text-brand-green">
+          {dateLabel}
+        </p>
+      )}
     </main>
   );
 }

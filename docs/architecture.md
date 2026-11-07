@@ -14,8 +14,8 @@
 | `/design` | UI 스타일가이드 | 내부용, 내비·sitemap 미노출 |
 | `/download` | 기기 인식 스토어 리다이렉트 | 부스 QR이 가리키는 곳 |
 | `/join/[code]` | 게임 방 초대 딥링크 | `.well-known` 설정은 `next.config.ts` |
-| `/event` | 행사 스토리 페이지 | 날짜 게이트 (`components/event/schedule.ts`) |
-| `/photobooth` | 네컷 포토부스 키오스크 | 날짜 게이트 (`components/photobooth/schedule.ts`) |
+| `/event` | 행사 스토리 페이지 | 어드민 "행사"가 정한 공개 시각 (`lib/event/server.ts`) |
+| `/photobooth` | 네컷 포토부스 키오스크 | 어드민 "행사"가 정한 운영 시간 (`lib/event/server.ts`, `components/photobooth/schedule.ts`) |
 | `/p` | 발급된 네컷 사진 받기 | 게이트 없음 (행사 후에도 접근 가능해야 함) |
 | `/play` | 부스 미니게임 + 리더보드 | Upstash Redis |
 | `/online` | 경찰과 도둑 온라인 게임 입구 | 게임 서버의 `/status` 로 버튼을 바꿈, 한국어 전용, `docs/online-game.md` |
@@ -40,7 +40,7 @@
 | `layout/` | Header, Footer, MobileMenu, LanguageSwitcher - 로케일 인식(내비·문구는 `lib/i18n/chrome.ts`) |
 | `i18n/` | LocaleProvider(`useLocale`), SkipLink |
 | `home/`, `game/`, `team/`, `event/` | 각 페이지 전용 섹션 |
-| `photobooth/` | 키오스크 단계별 화면 + `schedule.ts`(게이트) + `frames.ts`(프레임 좌표) |
+| `photobooth/` | 키오스크 단계별 화면 + `schedule.ts`(운영 시간 게이트) + `frames.ts`(프레임 좌표). 행사 값은 `lib/event/` |
 | `booth/` | 부스 미니게임 |
 | `characters/`, `icons/` | 캐릭터·아이콘 컴포넌트 |
 | `seo/` | JSON-LD (Breadcrumb, Article) |
