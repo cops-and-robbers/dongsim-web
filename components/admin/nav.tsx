@@ -11,6 +11,7 @@ import {
   MetricsIcon,
   SlidersIcon,
   WebgameIcon,
+  TicketIcon,
 } from "@/components/admin/icons";
 
 // 어드민 메뉴 정본. 데스크톱 사이드바(AdminShell)와 폰 하단 탭, 전체 메뉴(MobileNav)가 같은 목록을 쓴다
@@ -30,6 +31,7 @@ export type NavGroup = { label?: string; items: NavItem[] };
 
 export const APP_CONFIG_HREF = "/admin/app-config";
 export const WEBGAME_HREF = "/admin/webgame";
+export const EVENTS_HREF = "/admin/events";
 
 // 역할별 그룹. 개요(현황) → 데이터(조회) → 처리(쌓이는 일) → 콘텐츠(발행) → 운영(모든 사용자에게 바로 닿는 스위치).
 // 그룹 이름을 메뉴 위에 적어 훑어보게 한다(docs/admin-ui.md "내비게이션").
@@ -66,6 +68,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: APP_CONFIG_HREF, label: "앱 설정", Icon: SlidersIcon },
       { href: "/admin/terms", label: "약관 재동의", Icon: TermsIcon },
       { href: WEBGAME_HREF, label: "온라인 게임", Icon: WebgameIcon },
+      { href: EVENTS_HREF, label: "행사", Icon: TicketIcon },
     ],
   },
 ];

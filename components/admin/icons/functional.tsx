@@ -391,3 +391,15 @@ export function CopyIcon({ className }: IconProps) {
     </Line>
   );
 }
+
+export function TicketIcon({ className }: IconProps) {
+  // Lucide 'ticket'. 어드민 "행사"(부스, 팝업, 행사 페이지). 지표 일정 달력(calendar)과 헷갈리지 않게. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
+      <path d="M13 5v2" />
+      <path d="M13 17v2" />
+      <path d="M13 11v2" />
+    </Line>
+  );
+}

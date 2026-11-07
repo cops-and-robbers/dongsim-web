@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* .force-light 안은 다크 모드여도 밝게 그린다. 어드민 미리보기가 "사용자에게 밝은 화면은 이렇게"를 보일 때 쓴다(#219) */
+@custom-variant dark {
+  &:where(.dark, .dark *):not(:where(.force-light, .force-light *)) {
+    @slot;
+  }
+}
 
 /* Tailwind v4는 기본적으로 button에 pointer 커서를 주지 않는다. 클릭 가능한 요소에 손가락 커서 복원. */
 @layer base {
