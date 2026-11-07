@@ -138,7 +138,10 @@ export function presetMaintenanceEnd(nowMs: number, minutes: number): Maintenanc
   return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
 }
 
-export const isFutureEnd = ({ date, time }: MaintenanceEnd, nowMs: number) => Date.parse(`${date}T${time}:00+09:00`) > nowMs;
+/** 끝나는 시각(한국 시간)이 가리키는 순간 */
+export const maintenanceEndAt = ({ date, time }: MaintenanceEnd) => Date.parse(`${date}T${time}:00+09:00`);
+
+export const isFutureEnd = (end: MaintenanceEnd, nowMs: number) => maintenanceEndAt(end) > nowMs;
 
 /** a 가 b 보다 낮으면 음수. 앱의 AppVersionChecker 처럼 앞에서부터 세 자리를 숫자로 비교한다. */
 export function compareVersions(a: string, b: string) {

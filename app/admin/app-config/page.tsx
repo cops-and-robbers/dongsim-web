@@ -8,6 +8,8 @@ import { ChangeDialog } from "@/components/admin/ChangeDialog";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { useToast } from "@/components/admin/Toast";
 import { AppPreview, type PreviewScene } from "@/components/admin/appConfig/AppPreview";
+import { PreviewPane } from "@/components/admin/ops/PreviewPane";
+import { WorldClock } from "@/components/admin/ops/WorldClock";
 import { BannerImagePicker } from "@/components/admin/appConfig/BannerImagePicker";
 import { EvidenceImagePicker } from "@/components/admin/appConfig/EvidenceImagePicker";
 import { HttpsUrlInput, VersionInput } from "@/components/admin/appConfig/fields";
@@ -22,6 +24,7 @@ import {
   isFutureEnd,
   isSameEvidenceRatio,
   kstToday,
+  maintenanceEndAt,
   parseMaintenanceEnd,
   presetMaintenanceEnd,
   storeWarning,
@@ -148,12 +151,12 @@ export default function AppConfigPage() {
               <Panels key={state.etag} state={state} tab={tab} apply={apply} onDrafts={onDrafts} adScene={adScene} onAdScene={setAdScene} />
               <History state={state} />
             </div>
-            <div className="self-start lg:sticky lg:top-0">
+            <PreviewPane>
               <AppPreview
                 scene={scene}
                 values={{ ...state.values, ...drafts.maintenance, ...drafts.version, ...drafts.ads, ...drafts.banner, ...drafts.evidence }}
               />
-            </div>
+            </PreviewPane>
           </div>
         </div>
       )}
@@ -285,9 +288,18 @@ function readEnd(form: EndForm, now: number) {
   return { text: formatMaintenanceEnd(end), ready: true };
 }
 
+/** 고른 끝나는 시각이 가리키는 순간. 아직 다 고르지 않았으면 null */
+function endAt(form: EndForm, now: number): number | null {
+  if (form.mode === "none") return null;
+  const minutes = PRESET_MINUTES[form.mode];
+  const at = minutes ? maintenanceEndAt(presetMaintenanceEnd(now, minutes)) : form.time ? maintenanceEndAt({ date: form.date, time: form.time }) : NaN;
+  return Number.isNaN(at) ? null : at;
+}
+
 // 장애 중에도 빨리 고르게 자주 쓰는 길이를 먼저 두고, 달력은 예고된 점검에만 연다
 function EndField({ form, onChange, now, error, disabled }: { form: EndForm; onChange: (f: EndForm) => void; now: number; error?: string; disabled: boolean }) {
   const today = kstToday(now);
+  const at = endAt(form, now);
   return (
     <div className={disabled ? "pointer-events-none opacity-50" : ""}>
       <p className="mb-1.5 text-[13px] font-semibold text-sd-fg-subtle">끝나는 시각 (선택)</p>
@@ -313,6 +325,12 @@ function EndField({ form, onChange, now, error, disabled }: { form: EndForm; onC
         </p>
       ) : (
         <p className="mt-1.5 text-[13px] leading-relaxed text-sd-fg-subtle">한국 시간 기준이에요. 영어, 일본어 사용자에게도 같은 형식으로 보여요.</p>
+      )}
+      {/* 사용자 절반이 해외라, 한국 시간만 보고 고르면 해외에서 한창 쓸 때 막을 수 있다 */}
+      {at !== null && !error && (
+        <div className="mt-3">
+          <WorldClock at={at} from={now} />
+        </div>
       )}
     </div>
   );

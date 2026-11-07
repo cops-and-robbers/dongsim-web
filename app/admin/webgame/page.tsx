@@ -20,6 +20,7 @@ import {
 } from "@/lib/admin/webgame";
 import { applyWebgame, fetchWebgame } from "@/lib/admin/webgameClient";
 import { GamePreview } from "@/components/admin/webgame/GamePreview";
+import { PreviewPane } from "@/components/admin/ops/PreviewPane";
 
 // 온라인 게임: 브라우저에서 하는 경찰과 도둑 게임을 공개 전, 누구나, 점검 중으로 바꾼다.
 // 게임 서버가 정본이고 여기서는 바꾸기만 한다. 앱 설정처럼 왼쪽에서 고르고 오른쪽 가로 폰에서 실제 게임 화면을 본다.
@@ -138,13 +139,12 @@ function Editor({ state, onApplied }: { state: WebgameState; onApplied: (next: W
         <CurrentCard state={state} now={now} />
         <ChangeCard state={state} draft={draft} onDraft={setDraft} onApplied={onApplied} />
       </div>
-      <div className="self-start lg:sticky lg:top-0">
-        <p className="mb-2 text-center text-[13px] font-semibold text-sd-fg-subtle">사용자에게 이렇게 보여요</p>
+      <PreviewPane>
         <GamePreview mode={draft.mode} message={pause ? draft.message.trim() : ""} until={previewUntil} now={now} />
         <p aria-live="polite" className="mt-3 text-center text-[13px] leading-relaxed text-sd-fg-muted">
           {SITE_NOTE[draft.mode]}
         </p>
-      </div>
+      </PreviewPane>
     </div>
   );
 }
