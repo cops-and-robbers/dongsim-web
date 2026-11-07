@@ -4,6 +4,7 @@
 import { graphql, http, HttpResponse, delay } from "msw";
 import { mockAppConfig, mockApplyAppConfig, mockUploadBanner } from "./appConfig";
 import { mockApplyWebgame, mockWebgame } from "./webgame";
+import { mockEvent, mockEvents, mockSaveEvent, mockSaveMinigame } from "./events";
 import {
   queryUsers,
   getUser,
@@ -391,6 +392,30 @@ export const handlers = [
   http.put("/api/admin/webgame", async ({ request }) => {
     await delay(500);
     const { status, body } = mockApplyWebgame((await request.json()) as Parameters<typeof mockApplyWebgame>[0]);
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  // 행사 설정(#219). 로컬에서는 실제 부스와 홈이 읽는 저장소에 닿지 않는다. minigame 이 :id 보다 먼저 와야 한다
+  http.get("/api/admin/events", async () => {
+    await delay(300);
+    return HttpResponse.json(mockEvents());
+  }),
+
+  http.put("/api/admin/events/minigame", async ({ request }) => {
+    await delay(500);
+    const { value } = (await request.json()) as { value: Parameters<typeof mockSaveMinigame>[0] };
+    return HttpResponse.json(mockSaveMinigame(value));
+  }),
+
+  http.get("/api/admin/events/:id", async ({ params }) => {
+    await delay(300);
+    const { status, body } = mockEvent(Number(params.id));
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.put("/api/admin/events/:id", async ({ params, request }) => {
+    await delay(500);
+    const { status, body } = mockSaveEvent(Number(params.id), (await request.json()) as { settings?: unknown; version?: number });
     return HttpResponse.json(body as Record<string, unknown>, { status });
   }),
 
