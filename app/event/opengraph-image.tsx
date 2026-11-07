@@ -2,7 +2,7 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { EVENT } from "@/components/event/schedule";
+import { storyEvent } from "@/lib/event/server";
 
 // 이벤트(/event) 공유 OG - 이번에 추가한 지명수배 이미지(도둥이)를 주인공으로,
 // 루트 OG 톤(로고·그라데이션)에 사건 무드를 얹는다.
@@ -19,6 +19,7 @@ const dataUri = (buf: Buffer, mime: string) =>
   `data:${mime};base64,${buf.toString("base64")}`;
 
 export default async function Image() {
+  const { name, dateLabel } = (await storyEvent()).settings;
   const [bold, extraBold, logoBuf, wantedBuf] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
@@ -80,7 +81,7 @@ export default async function Image() {
               color: "#3f63d9",
             }}
           >
-            {`${EVENT.venue} · ${EVENT.dateLabel}`}
+            {[name, dateLabel].filter(Boolean).join(" · ")}
           </div>
         </div>
 

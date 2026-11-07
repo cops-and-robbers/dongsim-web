@@ -9,6 +9,7 @@ import CtaSection from "@/components/home/CtaSection";
 import { getMessages } from "@/lib/i18n/messages";
 import { alternateLanguages } from "@/lib/i18n/config";
 import EventModal from "@/components/home/EventModal";
+import { homePopup, showHomeMinigame } from "@/lib/event/server";
 import V3AnnouncementModal from "@/components/home/V3AnnouncementModal";
 import { isV3AnnouncementLive } from "@/lib/app-version";
 import WebsiteJsonLd from "@/components/seo/WebsiteJsonLd";
@@ -174,9 +175,12 @@ export const metadata: Metadata = {
   },
 };
 
+// 행사 팝업과 미니게임 칸은 어드민 "행사"에서 정한 기간에만 보인다(#219). 1분마다 다시 그려 기간을 따라간다
+export const revalidate = 60;
+
 export default async function HomePage() {
   const copy = getMessages("ko").home;
-  const v3Live = await isV3AnnouncementLive();
+  const [v3Live, popup, minigame] = await Promise.all([isV3AnnouncementLive(), homePopup(), showHomeMinigame()]);
   return (
     <>
       <WebsiteJsonLd locale="ko" />
@@ -186,7 +190,7 @@ export default async function HomePage() {
           __html: JSON.stringify(gameSchema),
         }}
       />
-      <EventModal />
+      <EventModal popup={popup} />
       <V3AnnouncementModal enabled={v3Live} />
       <HeroSection copy={copy.hero} locale="ko" />
       <section
@@ -244,7 +248,7 @@ export default async function HomePage() {
       <HowItWorksSection copy={copy.how} />
       <FeaturesSection copy={copy.features} />
       <OnlineGameTeaserSection />
-      <MinigameTeaserSection copy={copy.minigame} locale="ko" />
+      {minigame && <MinigameTeaserSection copy={copy.minigame} locale="ko" />}
       <CtaSection copy={copy.finalCta} locale="ko" />
     </>
   );

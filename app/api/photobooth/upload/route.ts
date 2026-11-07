@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { isBoothOpen } from "@/components/photobooth/schedule";
+import { boothEvent } from "@/lib/event/server";
 import { PHOTOBOOTH_PUBLIC_BASE } from "@/lib/photobooth/constants";
 import { presignUpload } from "@/lib/photobooth/r2";
 
@@ -8,7 +9,7 @@ import { presignUpload } from "@/lib/photobooth/r2";
 // 브라우저가 R2에 직접 올린다(Vercel 함수 본문 4.5MB 제한 회피).
 export async function POST(): Promise<NextResponse> {
   // 운영 시간 밖에는 URL을 발급하지 않아 업로드를 차단한다(API 직접 호출 포함).
-  if (!isBoothOpen()) {
+  if (!isBoothOpen((await boothEvent()).settings)) {
     return NextResponse.json(
       { error: "지금은 포토부스 운영 시간이 아니에요." },
       { status: 403 },

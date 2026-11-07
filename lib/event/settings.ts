@@ -75,6 +75,14 @@ export function shortTime(t: KstTime): string {
   return `${d.getUTCMonth() + 1}/${d.getUTCDate()} (${WEEKDAY[d.getUTCDay()]}) ${hourLabel(t.slice(11, 16))}`;
 }
 
+/** 받침에 맞는 조사를 붙인다. "서울 게임 타운을", "축제를" (이름이 행사마다 바뀌어 문장에 고정할 수 없다) */
+export function withJosa(word: string, pair: "을/를" | "은/는" | "이/가" | "과/와"): string {
+  const c = word.charCodeAt(word.length - 1) - 0xac00;
+  const hangul = c >= 0 && c <= 11171;
+  const [hasFinal, noFinal] = pair.split("/");
+  return word + (hangul && c % 28 !== 0 ? hasFinal : noFinal);
+}
+
 const addMinutes = (t: KstTime, min: number): KstTime => kstNow(toMs(t) + min * 60_000);
 
 // ── 기본값 ──

@@ -7,6 +7,7 @@
 import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/lib/metrics/db";
 import { EVENT_COLUMNS, toEvent } from "@/lib/metrics/events";
+import type { EventPopup } from "@/components/home/EventModal";
 import {
   LEGACY_EVENT,
   LEGACY_SETTINGS,
@@ -20,6 +21,11 @@ import {
   type EventSettings,
   type HomeMinigame,
   type KstTime,
+  type StoryState,
+  minigameOn,
+  popupWindow,
+  storyState,
+  toMs,
 } from "@/lib/event/settings";
 
 export const EVENT_TAG = "event-settings";
@@ -85,6 +91,28 @@ export async function homeMinigame(): Promise<HomeMinigame> {
     console.error("[event] 미니게임 기간을 읽지 못했어요", e);
     return null;
   }
+}
+
+// ── 화면이 바로 쓰는 값. 지금 시각은 여기서 읽는다(컴포넌트가 그리는 중에 시각을 읽지 않게) ──
+
+/** 홈에 띄울 팝업 카드 값. 없으면 null */
+export async function homePopup(): Promise<EventPopup | null> {
+  const c = await popupEvent(Date.now());
+  const w = c && popupWindow(c.event, c.settings);
+  if (!c || !w) return null;
+  const { name, dateLabel, location, popupUrl } = c.settings;
+  return { eventId: c.event.id, name, dateLabel, location, url: popupUrl, until: toMs(w.until) };
+}
+
+/** 지금 홈에 미니게임 칸을 보이는지 */
+export async function showHomeMinigame(): Promise<boolean> {
+  return minigameOn(await homeMinigame(), Date.now());
+}
+
+/** /event 가 지금 보일 화면. 로컬 개발에선 늘 본문(로컬 테스트가 막히지 않게) */
+export async function storyNow(): Promise<{ settings: EventSettings; state: StoryState }> {
+  const { settings } = await storyEvent();
+  return { settings, state: process.env.NODE_ENV !== "production" ? "open" : storyState(settings, Date.now()) };
 }
 
 // ── 어드민 ──
