@@ -64,6 +64,7 @@ export function dayLabel(day: string): string {
 export function hourLabel(hm: string): string {
   const h = Number(hm.slice(0, 2));
   const m = Number(hm.slice(3, 5));
+  if (h === 0) return m ? `0시 ${m}분` : "0시";
   const word = h < 12 ? "오전" : h === 12 ? "낮" : "오후";
   const h12 = h > 12 ? h - 12 : h;
   return `${word} ${h12}시${m ? ` ${m}분` : ""}`;
