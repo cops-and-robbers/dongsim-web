@@ -16,6 +16,6 @@ export const metadata: Metadata = {
 
 export default async function PhotoboothPage() {
   const { settings } = await boothEvent();
-  if (isBoothOpen(settings)) return <Kiosk />;
-  return <ClosedScreen name={settings.name} dateLabel={settings.dateLabel} location={settings.location} over={isBoothOver(settings)} />;
+  if (isBoothOpen(settings)) return <Kiosk kiosk={settings.kiosk} name={settings.name} />;
+  return <ClosedScreen name={settings.name} dateLabel={settings.dateLabel} location={settings.location} over={isBoothOver(settings)} kiosk={settings.kiosk} live />;
 }

@@ -8,13 +8,14 @@ export type CameraState = {
   error: string | null;
 };
 
-/** 전면 웹캠 스트림을 열어 videoRef에 연결. 언마운트 시 트랙 정리. */
-export function useCamera(): CameraState {
+/** 전면 웹캠 스트림을 열어 videoRef에 연결. 언마운트 시 트랙 정리. enabled 가 false 면 카메라를 열지 않는다(어드민 미리보기) */
+export function useCamera(enabled = true): CameraState {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     let stream: MediaStream | null = null;
     let cancelled = false;
 
@@ -59,7 +60,7 @@ export function useCamera(): CameraState {
       cancelled = true;
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, []);
+  }, [enabled]);
 
   return { videoRef, ready, error };
 }

@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import FramePreview from "./FramePreview";
+import { Copy } from "./KioskContext";
 import { FRAMES, HAS_FRAME_CHOICE, pickCount, type FrameDef } from "./frames";
 
 export default function SelectScreen({
@@ -46,7 +47,7 @@ export default function SelectScreen({
         />
         <div className="text-left">
           <h2 className="text-2xl font-extrabold text-brand-ink sm:text-3xl dark:text-white">
-            마음에 드는 {need}컷을 골라요
+            <Copy k="select.title" cuts={need} />
           </h2>
         </div>
       </div>
@@ -109,7 +110,7 @@ export default function SelectScreen({
           onClick={onRetake}
           className="rounded-full border border-slate-300 px-8 py-4 text-lg font-bold text-slate-600 transition active:scale-95 dark:border-app-black-800 dark:text-slate-300"
         >
-          다시 찍기
+          <Copy k="select.retake" />
         </button>
         <button
           onClick={() => onDone(selected)}
@@ -117,7 +118,7 @@ export default function SelectScreen({
           className="rounded-full bg-brand-blue px-10 py-4 text-lg font-bold text-white shadow-lg shadow-brand-blue/30 transition active:scale-95 disabled:opacity-40"
         >
           {done
-            ? "이걸로 할래요"
+            ? <Copy k="select.done" />
             : selected.length === 0
               ? `${need}컷을 골라주세요`
               : `${selected.length}/${need} 골랐어요`}

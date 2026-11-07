@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PhotoResult from "@/components/photobooth/PhotoResult";
+import { boothEvent } from "@/lib/event/server";
 import {
   PHOTOBOOTH_KEY_RE,
   PHOTOBOOTH_PUBLIC_BASE,
@@ -27,5 +28,7 @@ export default async function PhotoDownloadPage({
       ? `${PHOTOBOOTH_PUBLIC_BASE}/${raw}`
       : null;
 
-  return <PhotoResult imageUrl={imageUrl} />;
+  // 문구는 지금 행사 설정(#221). 손님이 며칠 뒤 열어도 그때의 행사 문구가 나온다(사진에는 행사가 적혀 있지 않다)
+  const { settings } = await boothEvent();
+  return <PhotoResult imageUrl={imageUrl} kiosk={settings.kiosk} name={settings.name} />;
 }
