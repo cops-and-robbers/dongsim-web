@@ -1,15 +1,18 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { SectionCard } from "@/components/admin/Parts";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { CheckIcon } from "@/components/admin/icons";
 import type { PreviewMessage } from "@/components/photobooth/BoothPreview";
+import { fetchAssets } from "@/lib/admin/assetsClient";
+import { BUILTIN_CHARACTERS, BUILTIN_FRAME, assetUrl, compatible, frameSrc, toFrameRef, type Asset, type FrameRef, type Side } from "@/lib/event/assets";
 import {
   COPY,
   COPY_KEYS,
   COUNTDOWN_CHOICES,
-  FRAME_SLOTS,
+  slotsOf,
   KIOSK_WHERE,
   METHODS,
   OVERSCAN_RANGE,
@@ -53,6 +56,7 @@ export function BoothTab({
   onScreen: (s: Screen) => void;
 }) {
   const k = draft.kiosk;
+  const library = useLibrary();
   const [spot, setSpot] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const set = (p: Partial<KioskConfig>) => onKiosk({ ...k, ...p });
@@ -135,7 +139,7 @@ export function BoothTab({
         </div>
 
         <div className="min-w-0 space-y-4" onFocusCapture={(e) => setSpot((e.target as HTMLElement).closest("[data-field]")?.getAttribute("data-field") ?? null)}>
-          <Panel screen={screen} k={k} set={set} problems={problems} disabled={disabled} saved={saved.kiosk} />
+          <Panel screen={screen} k={k} set={set} problems={problems} disabled={disabled} saved={saved.kiosk} library={library} />
         </div>
       </div>
     </div>
@@ -223,14 +227,14 @@ function PreviewFrame({ screen, settings, spot, theme }: { screen: Screen; setti
 
 // ── 오른쪽: 이 화면에서 바꿀 수 있는 것 ──
 
-function Panel({ screen, k, set, problems, disabled, saved }: { screen: Screen; k: KioskConfig; set: (p: Partial<KioskConfig>) => void; problems: Problems; disabled: boolean; saved: KioskConfig }) {
+function Panel({ screen, k, set, problems, disabled, saved, library }: { screen: Screen; k: KioskConfig; set: (p: Partial<KioskConfig>) => void; problems: Problems; disabled: boolean; saved: KioskConfig; library: Library }) {
   const copyKeys = COPY_OF(screen);
   const selectOff = screen === "select" && !k.select;
   return (
     <>
       {screen === "capture" && (
         <Card title="동작">
-          <Choice field="kiosk.shots" label="찍는 장수" hint={k.select ? "이 중에서 손님이 마음에 드는 칸 수만큼 골라요." : `고르기를 꺼서 프레임 칸 수(${FRAME_SLOTS}장)만큼만 찍어요.`}>
+          <Choice field="kiosk.shots" label="찍는 장수" hint={k.select ? "이 중에서 손님이 마음에 드는 칸 수만큼 골라요." : `고르기를 꺼서 프레임 칸 수(${slotsOf(k)}장)만큼만 찍어요.`}>
             <Seg value={String(k.shots)} disabled={disabled || !k.select} onChange={(v) => set({ shots: Number(v) })} options={SHOT_CHOICES.map((n) => [String(n), `${n}장`])} />
           </Choice>
           <Choice field="kiosk.countdown" label="한 장마다 기다리는 시간">
@@ -240,15 +244,19 @@ function Panel({ screen, k, set, problems, disabled, saved }: { screen: Screen; 
         </Card>
       )}
 
+      {screen === "intro" && <CharactersCard k={k} set={set} disabled={disabled} library={library} />}
+
+      {screen === "select" && <FramesCard k={k} set={set} disabled={disabled} library={library} />}
+
       {screen === "select" && (
         <Card title="동작">
           <Toggle
             field="kiosk.select"
             label="고르기 단계"
-            hint={k.select ? `${k.shots}장 중에서 ${FRAME_SLOTS}장을 골라요.` : `찍은 ${FRAME_SLOTS}장이 그대로 프레임에 들어가요. 줄이 길 때 빨라요.`}
+            hint={k.select ? `${k.shots}장 중에서 ${slotsOf(k)}장을 골라요.` : `찍은 ${slotsOf(k)}장이 그대로 프레임에 들어가요. 줄이 길 때 빨라요.`}
             on={k.select}
             disabled={disabled}
-            onChange={(v) => set({ select: v, shots: v ? Math.max(k.shots, 6) : FRAME_SLOTS })}
+            onChange={(v) => set({ select: v, shots: v ? Math.max(k.shots, 6) : slotsOf(k) })}
           />
         </Card>
       )}
@@ -471,5 +479,167 @@ function CopyField({ k, value, error, disabled, onChange }: { k: CopyKey; value:
         </div>
       )}
     </div>
+  );
+}
+
+// ── 그림 고르기 (#224) ──
+
+type Library = { assets: Asset[]; error: string | null; loading: boolean };
+
+/** 그림 보관함. 못 읽어도 탭은 그대로 쓰게 하고, 고르는 칸에만 알린다 */
+function useLibrary(): Library {
+  const [state, setState] = useState<Library>({ assets: [], error: null, loading: true });
+  useEffect(() => {
+    let alive = true;
+    fetchAssets()
+      .then((d) => alive && setState({ assets: d.assets.filter((a) => !a.archived), error: null, loading: false }))
+      .catch((e: Error) => alive && setState({ assets: [], error: e.message, loading: false }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return state;
+}
+
+function LibraryNote({ library, empty }: { library: Library; empty: string }) {
+  if (library.loading) return <p className="text-[12px] text-sd-fg-subtle">보관함을 불러오는 중이에요…</p>;
+  if (library.error) return <p className="text-[12px] text-sd-critical">보관함을 못 불러왔어요. {library.error}</p>;
+  return (
+    <p className="text-[12px] text-sd-fg-subtle">
+      {empty}{" "}
+      <a href="/admin/assets" className="font-semibold text-accent hover:underline">
+        그림 보관함
+      </a>
+      에 올려요.
+    </p>
+  );
+}
+
+/** 쓸 프레임과 순서. 2개 이상이면 손님이 고르기 화면에서 고른다 */
+function FramesCard({ k, set, disabled, library }: { k: KioskConfig; set: (p: Partial<KioskConfig>) => void; disabled: boolean; library: Library }) {
+  const chosen: FrameRef[] = k.frames.length ? k.frames : [BUILTIN_FRAME];
+  const options: FrameRef[] = [BUILTIN_FRAME, ...library.assets.map(toFrameRef).filter((f): f is FrameRef => f !== null)].filter((f) => !chosen.some((c) => c.key === f.key));
+  const setFrames = (frames: FrameRef[]) => {
+    // 기본 하나만 남으면 "고른 게 없음"으로 저장한다(기본 그림이 바뀌면 따라가게)
+    const next = frames.length === 1 && frames[0].key === BUILTIN_FRAME.key ? [] : frames;
+    // 칸 수가 바뀌면 찍는 장수가 칸 수보다 적지 않게
+    const slots = (next[0] ?? BUILTIN_FRAME).slots.length;
+    set({ frames: next, shots: k.select ? Math.max(k.shots, slots) : slots });
+  };
+  const move = (i: number, d: -1 | 1) => {
+    const next = [...chosen];
+    [next[i], next[i + d]] = [next[i + d], next[i]];
+    setFrames(next);
+  };
+  return (
+    <Card title="쓸 프레임">
+      <div data-field="kiosk.frames" className="space-y-3">
+        <ol className="space-y-2">
+          {chosen.map((f, i) => (
+            <li key={f.key} className="flex items-center gap-3 rounded-xl border border-sd-line p-2">
+              <img src={frameSrc(f)} alt="" className="h-16 w-auto rounded-sm ring-1 ring-sd-line" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-semibold text-sd-fg">
+                  {i + 1}. {f.label}
+                </p>
+                <p className="text-[12px] text-sd-fg-subtle">
+                  {f.slots.length}컷{i === 0 ? " · 손님에게 처음 보여요" : ""}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-0.5">
+                <IconBtn label="위로" disabled={disabled || i === 0} onClick={() => move(i, -1)}>
+                  ↑
+                </IconBtn>
+                <IconBtn label="아래로" disabled={disabled || i === chosen.length - 1} onClick={() => move(i, 1)}>
+                  ↓
+                </IconBtn>
+                <IconBtn label="빼기" disabled={disabled || chosen.length === 1} onClick={() => setFrames(chosen.filter((x) => x.key !== f.key))}>
+                  ✕
+                </IconBtn>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="text-[12px] leading-relaxed text-sd-fg-subtle">
+          {chosen.length > 1 ? `손님이 고르기 화면에서 ${chosen.length}개 중에 골라요.` : "하나면 고르는 칸 없이 이 프레임으로 찍어요."} 인쇄 가장자리는 손님이 고른 프레임 대표색으로 채워요.
+        </p>
+        {options.length > 0 && (
+          <div>
+            <p className="mb-1.5 text-[13px] font-semibold text-sd-fg-subtle">더하기</p>
+            <div className="grid grid-cols-3 gap-2">
+              {options.map((f) => {
+                const ok = compatible(chosen[0], f);
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    disabled={disabled || !ok}
+                    title={ok ? `${f.label} 더하기` : "칸 수나 칸 비율이 달라 같이 쓸 수 없어요"}
+                    onClick={() => setFrames([...chosen, f])}
+                    className="flex flex-col items-center gap-1 rounded-xl border border-sd-line p-2 text-center transition-colors hover:bg-sd-fill disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <img src={frameSrc(f)} alt="" className="h-20 w-auto rounded-sm" />
+                    <span className="w-full truncate text-[12px] font-semibold text-sd-fg-muted">{f.label}</span>
+                    {!ok && <span className="text-[11px] text-sd-fg-subtle">칸이 달라요</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        <LibraryNote library={library} empty="새 프레임은" />
+      </div>
+    </Card>
+  );
+}
+
+/** 부스 캐릭터 짝. 경찰 하나, 도둑 하나 */
+function CharactersCard({ k, set, disabled, library }: { k: KioskConfig; set: (p: Partial<KioskConfig>) => void; disabled: boolean; library: Library }) {
+  const pick = (side: Side, c: { key: string | null; label: string }) => set({ characters: { ...k.characters, [side]: c.key ? { key: c.key, label: c.label } : null } });
+  return (
+    <Card title="캐릭터 짝">
+      <div data-field="kiosk.characters" className="space-y-4">
+        {(["cop", "thief"] as const).map((side) => {
+          const items = [
+            { key: null as string | null, label: BUILTIN_CHARACTERS[side].label, src: BUILTIN_CHARACTERS[side].src },
+            ...library.assets.filter((a) => a.kind === "character" && a.meta.side === side).map((a) => ({ key: a.key as string | null, label: a.label, src: assetUrl(a.key) })),
+          ];
+          return (
+            <div key={side}>
+              <p className="mb-1.5 text-[13px] font-semibold text-sd-fg-subtle">{side === "cop" ? "경찰 쪽" : "도둑 쪽"}</p>
+              <div role="radiogroup" aria-label={side === "cop" ? "경찰 쪽 캐릭터" : "도둑 쪽 캐릭터"} className="flex flex-wrap gap-2">
+                {items.map((c) => {
+                  const on = (k.characters[side]?.key ?? null) === c.key;
+                  return (
+                    <button
+                      key={c.key ?? "builtin"}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      disabled={disabled}
+                      onClick={() => pick(side, c)}
+                      className={`flex w-[88px] flex-col items-center gap-1 rounded-xl border p-2 transition-colors disabled:opacity-50 ${on ? "border-accent bg-accent-weak" : "border-sd-line hover:bg-sd-fill"}`}
+                    >
+                      <img src={c.src} alt="" className="h-12 w-auto" />
+                      <span className={`w-full truncate text-[11px] font-semibold ${on ? "text-accent" : "text-sd-fg-muted"}`}>{c.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+        <p className="text-[12px] leading-relaxed text-sd-fg-subtle">시작, 찍기, 고르기, 미리보기, 받기 화면과 손님 폰에 늘 짝으로 나와요.</p>
+        <LibraryNote library={library} empty="새 캐릭터는" />
+      </div>
+    </Card>
+  );
+}
+
+function IconBtn({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" aria-label={label} title={label} disabled={disabled} onClick={onClick} className="flex h-7 w-7 items-center justify-center rounded-lg text-[13px] text-sd-fg-muted hover:bg-sd-gray-200 disabled:opacity-30">
+      {children}
+    </button>
   );
 }

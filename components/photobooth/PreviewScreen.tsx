@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { composeStrip } from "./compose";
 import { type FrameDef } from "./frames";
 import { loadImage } from "./image";
-import { Copy } from "./KioskContext";
+import { Copy, useKiosk } from "./KioskContext";
 import { uploadStrip, type UploadedStrip } from "./upload";
 
 /** 발급 결과 - QR 화면이 짧은 링크(key)와 인쇄 합성(blob)에 쓴다. */
@@ -24,6 +24,7 @@ export default function PreviewScreen({
   onRetake: () => void;
   onIssued: (issued: IssuedStrip) => void;
 }) {
+  const { chars } = useKiosk();
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -67,11 +68,11 @@ export default function PreviewScreen({
   return (
     <div className="flex flex-1 flex-col items-center px-4 py-6">
       <div className="flex items-center justify-center gap-2 pt-2">
-        <img src="/photobooth/cop-professor.svg" alt="" className="h-12 w-auto sm:h-14" />
+        <img src={chars.cop} alt="" className="h-12 w-auto sm:h-14" />
         <h2 className="text-2xl font-extrabold text-brand-ink sm:text-3xl dark:text-white">
           <Copy k="preview.title" />
         </h2>
-        <img src="/photobooth/thief-runaway.svg" alt="" className="h-12 w-auto sm:h-14" />
+        <img src={chars.thief} alt="" className="h-12 w-auto sm:h-14" />
       </div>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         <Copy k="preview.body" />

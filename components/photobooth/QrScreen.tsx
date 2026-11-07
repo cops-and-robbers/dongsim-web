@@ -5,23 +5,26 @@ import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { SITE_URL } from "@/lib/constants";
-import { DEFAULT_FRAME } from "./frames";
+import type { FrameDef } from "./frames";
 import { Copy, useKiosk } from "./KioskContext";
 import type { IssuedStrip } from "./PreviewScreen";
 
 export default function QrScreen({
   issued,
+  frame,
   onRestart,
   demo = false,
 }: {
   issued: IssuedStrip;
+  /** 인쇄 가장자리 띠를 이 프레임 대표색으로 채운다 */
+  frame: FrameDef;
   onRestart: () => void;
   /** 어드민 미리보기: 처음 화면으로 돌아가지도, 저절로 인쇄하지도 않는다 */
   demo?: boolean;
 }) {
   const [qr, setQr] = useState<string | null>(null);
   // 받는 방법, 용지, 보정, 돌아가는 시간은 행사 설정(#221). 프린터가 없는 행사는 인쇄 버튼을 빼요
-  const { kiosk } = useKiosk();
+  const { kiosk, chars } = useKiosk();
   const printing = kiosk.receive === "print";
   const paper = kiosk.paper;
   const overscanScale = kiosk.overscan / 100;
@@ -72,11 +75,11 @@ export default function QrScreen({
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
       <div className="mb-6 flex items-center justify-center gap-2">
-        <img src="/photobooth/cop-professor.svg" alt="" className="h-12 w-auto sm:h-14" />
+        <img src={chars.cop} alt="" className="h-12 w-auto sm:h-14" />
         <h2 className="text-2xl font-extrabold text-brand-ink sm:text-3xl dark:text-white">
           <Copy k="qr.title" />
         </h2>
-        <img src="/photobooth/thief-runaway.svg" alt="" className="h-12 w-auto sm:h-14" />
+        <img src={chars.thief} alt="" className="h-12 w-auto sm:h-14" />
       </div>
 
       <p className="mb-6 text-lg text-slate-500 dark:text-slate-400">
@@ -140,7 +143,7 @@ export default function QrScreen({
                   height: ${paper === "postcard-pair" ? "148mm" : "6in"};
                   /* SELPHY 보더리스 확대가 잡아먹을 가장자리 띠 - 흰색이면 티가 나서
                      프레임 배경색으로 채운다. 배경 인쇄를 지우는 브라우저 기본값도 끈다. */
-                  background: ${DEFAULT_FRAME.swatch};
+                  background: ${frame.swatch};
                   print-color-adjust: exact;
                   -webkit-print-color-adjust: exact;
                 }

@@ -1,21 +1,23 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { Copy } from "./KioskContext";
+import { Copy, useKiosk } from "./KioskContext";
 
 // 서대페 부스 <경찰과 도둑학개론> 컨셉 (#131) - 냥파 교수와 출튀범 도둥이.
 // 컨셉 카피는 이 화면에만 입힌다. 뒷 화면까지 세계관 대사를 채우면 과해진다.
 export default function IntroScreen({ onStart }: { onStart: () => void }) {
+  // 캐릭터 짝은 행사가 고른 그림(#224). 고른 게 없으면 냥파 교수와 도둥이
+  const { chars } = useKiosk();
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-      <div className="mb-10 flex items-end justify-center gap-6">
+      <div data-spot="characters" className="mb-10 flex items-end justify-center gap-6">
         <img
-          src="/photobooth/cop-professor.svg"
+          src={chars.cop}
           alt=""
           className="h-40 w-auto sm:h-48"
         />
         <img
-          src="/photobooth/thief-runaway.svg"
+          src={chars.thief}
           alt=""
           className="h-36 w-auto sm:h-44"
         />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Screen } from "@/lib/event/kiosk";
 import type { EventSettings } from "@/lib/event/settings";
 import Backdrop from "./Backdrop";
@@ -13,8 +13,9 @@ import QrScreen from "./QrScreen";
 import SelectScreen from "./SelectScreen";
 import { KioskProvider } from "./KioskContext";
 import { composeStrip } from "./compose";
-import { DEFAULT_FRAME, pickCount, slotRatio } from "./frames";
+import { frameDefsOf, pickCount, type FrameDef } from "./frames";
 import { loadImage } from "./image";
+import { useSamplePhotos } from "./samplePhotos";
 
 // 어드민 미리보기용 부스 화면(#221, app/photobooth/preview). 진짜 화면 컴포넌트를 그대로 그리고, 사진만 샘플을 쓴다.
 // 어드민이 보내는 값: 어느 화면인지, 고치는 중인 행사 설정, 짚을 자리(spot).
@@ -32,14 +33,18 @@ function selectorOf(spot: string): string | null {
     "kiosk.receive": '[data-copy="qr.print"]',
     "kiosk.autoPrint": '[data-copy="qr.print"]',
     "kiosk.restartSec": '[data-copy="qr.restart"]',
+    "kiosk.frames": '[data-spot="frames"]',
+    "kiosk.characters": '[data-spot="characters"]',
   };
   return map[spot] ?? null;
 }
 
 export default function BoothPreview() {
   const [msg, setMsg] = useState<PreviewMessage | null>(null);
-  const shots = useSamplePhotos(8);
-  const issued = useIssued(shots);
+  // 어드민이 값을 보낼 때마다 다시 만든다(그리는 중마다 새로 만들면 합성이 끝없이 다시 돈다)
+  const frame = useMemo(() => (msg ? frameDefsOf(msg.settings.kiosk)[0] : null), [msg]);
+  const shots = useSamplePhotos(8, frame);
+  const issued = useIssued(shots, frame);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -56,12 +61,12 @@ export default function BoothPreview() {
     if (msg) document.documentElement.classList.toggle("dark", msg.theme === "dark");
   }, [msg]);
 
-  if (!msg || shots.length === 0) return <div className="fixed inset-0 z-100 bg-white" />;
+  if (!msg || !frame || shots.length === 0) return <div className="fixed inset-0 z-100 bg-white" />;
   const { screen, settings } = msg;
   const sel = msg.spot && selectorOf(msg.spot);
   const spotCss = sel ? `${sel}{outline:6px solid #339DFF;outline-offset:8px;border-radius:10px;}` : "";
   const kiosk = settings.kiosk;
-  const need = pickCount(DEFAULT_FRAME);
+  const need = pickCount(frame);
   const shotCount = kiosk.select ? kiosk.shots : need;
 
   let body;
@@ -75,10 +80,10 @@ export default function BoothPreview() {
         <Backdrop />
         <div className="relative z-10 flex min-h-full flex-col">
           {screen === "intro" && <IntroScreen onStart={() => {}} />}
-          {screen === "capture" && <CaptureScreen frame={DEFAULT_FRAME} onDone={() => {}} demo={shots[2]} />}
-          {screen === "select" && <SelectScreen shots={shots.slice(0, shotCount)} frame={DEFAULT_FRAME} onFrameChange={() => {}} onDone={() => {}} onRetake={() => {}} />}
-          {screen === "preview" && <PreviewScreen shots={shots} selected={[0, 2, 3, 5].slice(0, need)} frame={DEFAULT_FRAME} onRetake={() => {}} onIssued={() => {}} />}
-          {screen === "qr" && issued && <QrScreen issued={issued} onRestart={() => {}} demo />}
+          {screen === "capture" && <CaptureScreen frame={frame} onDone={() => {}} demo={shots[2]} />}
+          {screen === "select" && <SelectScreen shots={shots.slice(0, shotCount)} frame={frame} onFrameChange={() => {}} onDone={() => {}} onRetake={() => {}} />}
+          {screen === "preview" && <PreviewScreen shots={shots} selected={[0, 2, 3, 5, 6, 7].slice(0, need)} frame={frame} onRetake={() => {}} onIssued={() => {}} />}
+          {screen === "qr" && issued && <QrScreen issued={issued} frame={frame} onRestart={() => {}} demo />}
         </div>
       </div>
     );
@@ -93,50 +98,15 @@ export default function BoothPreview() {
   );
 }
 
-/** 샘플 사진. 실제 촬영 대신 경찰과 도둑을 얹은 색 카드(두 진영이 같이 나오게) */
-function useSamplePhotos(count: number) {
-  const [photos, setPhotos] = useState<string[]>([]);
-  useEffect(() => {
-    let alive = true;
-    const ratio = slotRatio(DEFAULT_FRAME);
-    const tints = ["#dbe6ff", "#dff5e8", "#fff1d6", "#ffe3e3", "#e9e3ff", "#d9f3f7", "#f2f2f2", "#ffe9f4"];
-    Promise.all(["/photobooth/cop.svg", "/photobooth/thief.svg"].map(loadImage)).then(([cop, thief]) => {
-      const out: string[] = [];
-      for (let i = 0; i < count; i++) {
-        const c = document.createElement("canvas");
-        c.width = 900;
-        c.height = Math.round(900 / ratio);
-        const ctx = c.getContext("2d");
-        if (!ctx) continue;
-        const g = ctx.createLinearGradient(0, 0, 0, c.height);
-        g.addColorStop(0, tints[i % tints.length]);
-        g.addColorStop(1, "#ffffff");
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, c.width, c.height);
-        const h = c.height * 0.72;
-        ctx.drawImage(cop, 110 + (i % 3) * 30, c.height - h - 8, (cop.width / cop.height) * h, h);
-        const tw = (thief.width / thief.height) * h;
-        ctx.drawImage(thief, c.width - 110 - tw - (i % 2) * 30, c.height - h - 8, tw, h);
-        out.push(c.toDataURL("image/jpeg", 0.85));
-      }
-      if (alive) setPhotos(out);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [count]);
-  return photos;
-}
-
 /** 받기 화면과 손님 폰 화면에 쓸 합성 사진 */
-function useIssued(shots: string[]) {
+function useIssued(shots: string[], frame: FrameDef | null) {
   const [issued, setIssued] = useState<(IssuedStrip & { url: string }) | null>(null);
   useEffect(() => {
-    if (shots.length < 6) return;
+    if (!frame || shots.length < 8) return;
     let alive = true;
     let objectUrl = "";
-    Promise.all([0, 2, 3, 5].map((i) => loadImage(shots[i])))
-      .then((imgs) => composeStrip(imgs, DEFAULT_FRAME, { mirror: false }))
+    Promise.all([0, 2, 3, 5, 6, 7].slice(0, frame.slots.length).map((i) => loadImage(shots[i])))
+      .then((imgs) => composeStrip(imgs, frame, { mirror: false }))
       .then((blob) => {
         objectUrl = URL.createObjectURL(blob);
         if (alive) setIssued({ blob, key: "preview", url: objectUrl });
@@ -145,6 +115,6 @@ function useIssued(shots: string[]) {
       alive = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [shots]);
+  }, [shots, frame]);
   return issued;
 }

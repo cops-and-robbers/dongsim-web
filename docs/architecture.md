@@ -18,6 +18,7 @@
 | `/photobooth` | 네컷 포토부스 키오스크 | 어드민 "행사"가 정한 운영 시간 (`lib/event/server.ts`, `components/photobooth/schedule.ts`) |
 | `/p` | 발급된 네컷 사진 받기 | 게이트 없음 (행사 후에도 접근 가능해야 함) |
 | `/photobooth/preview` | 어드민 행사 화면이 iframe 으로 띄우는 부스 화면 미리보기 | 같은 주소에서 온 postMessage 로만 그림, 검색 제외 |
+| `/photobooth/asset/...` | 그림 보관함 그림을 사이트 주소로 내려줌(합성 canvas CORS) | 키 모양 검사, 오래 캐시 |
 | `/play` | 부스 미니게임 + 리더보드 | Upstash Redis |
 | `/online` | 경찰과 도둑 온라인 게임 입구 | 게임 서버의 `/status` 로 버튼을 바꿈, 한국어 전용, `docs/online-game.md` |
 | `/terms` `/privacy` `/location` `/marketing` | 약관류 | `components/policy/` |

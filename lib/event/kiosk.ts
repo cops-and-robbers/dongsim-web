@@ -6,7 +6,10 @@
  * 문구는 기본값과 다른 줄만 저장한다. 기본 문구가 바뀌면 고치지 않은 행사도 같이 따라간다.
  */
 
+import { BUILTIN_CHARACTERS, BUILTIN_FRAME, KEY_RE, assetUrl, frameSrc, normalizeFrameRef, type FrameRef, type Side } from "./assets.ts";
+
 export type Receive = "print" | "qr";
+export type CharacterRef = { key: string; label: string };
 export type Paper = "postcard-pair" | "strip-2x6";
 export type Method = "print" | "qr" | "quick";
 
@@ -30,6 +33,10 @@ export type KioskConfig = {
   testPrinted: string | null;
   /** 기본값과 다른 문구만 */
   copy: Partial<Record<CopyKey, string>>;
+  /** 쓸 프레임과 순서(#224). 비면 기본 연두. 2개 이상이면 손님이 고르는 칸이 생긴다. 칸 수와 비율이 모두 같아야 한다 */
+  frames: FrameRef[];
+  /** 부스 캐릭터 짝(#224, 그림 보관함). null 이면 기본(냥파 교수, 도둥이). 이름을 같이 적어 확인창에 보인다 */
+  characters: Record<Side, CharacterRef | null>;
 };
 
 export const SHOT_CHOICES = [4, 5, 6, 7, 8] as const;
@@ -37,8 +44,19 @@ export const COUNTDOWN_CHOICES = [3, 5, 10] as const;
 export const RESTART_CHOICES = [30, 45, 60, 120] as const;
 export const OVERSCAN_RANGE = { min: 90, max: 100 } as const;
 
-/** 지금 프레임의 사진 칸 수. 프레임을 행사마다 고르게 되면(다음 PR) 프레임에서 읽는다 */
-export const FRAME_SLOTS = 4;
+/** 기본 프레임의 사진 칸 수 */
+export const FRAME_SLOTS = BUILTIN_FRAME.slots.length;
+
+/** 행사가 쓰는 프레임. 고른 게 없으면 기본 연두 */
+export const framesOf = (k: Pick<KioskConfig, "frames">): FrameRef[] => (k.frames.length ? k.frames : [BUILTIN_FRAME]);
+/** 사진 칸 수. 같이 쓰는 프레임은 칸 수가 같다 */
+export const slotsOf = (k: Pick<KioskConfig, "frames">) => framesOf(k)[0].slots.length;
+/** 부스 캐릭터 짝의 그림 주소 */
+export const charactersOf = (k: Pick<KioskConfig, "characters">): Record<Side, string> => ({
+  cop: k.characters.cop ? assetUrl(k.characters.cop.key) : BUILTIN_CHARACTERS.cop.src,
+  thief: k.characters.thief ? assetUrl(k.characters.thief.key) : BUILTIN_CHARACTERS.thief.src,
+});
+export { frameSrc };
 
 /** 마지막으로 코드에 있던 값. 지금 부스와 똑같이 돈다 */
 export const DEFAULT_KIOSK: KioskConfig = {
@@ -54,6 +72,8 @@ export const DEFAULT_KIOSK: KioskConfig = {
   restartSec: 60,
   testPrinted: null,
   copy: {},
+  frames: [],
+  characters: { cop: null, thief: null },
 };
 
 /** 부스 방식을 고르면 채우는 시작값 */
@@ -64,9 +84,10 @@ export const METHODS: Record<Method, { name: string; desc: string; values: Parti
 };
 
 /** 방식이 정하는 흐름을 한 줄로. "6장 찍기 → 4장 고르기 → 인쇄하고 QR" */
-export function flowLine(k: Pick<KioskConfig, "shots" | "select" | "receive">): string {
-  const shots = k.select ? k.shots : FRAME_SLOTS;
-  return [`${shots}장 찍기`, k.select ? `${FRAME_SLOTS}장 고르기` : null, k.receive === "print" ? "인쇄하고 QR" : "QR로 받기"].filter(Boolean).join(" → ");
+export function flowLine(k: Pick<KioskConfig, "shots" | "select" | "receive"> & Partial<Pick<KioskConfig, "frames">>): string {
+  const slots = slotsOf({ frames: k.frames ?? [] });
+  const shots = k.select ? k.shots : slots;
+  return [`${shots}장 찍기`, k.select ? `${slots}장 고르기` : null, k.receive === "print" ? "인쇄하고 QR" : "QR로 받기"].filter(Boolean).join(" → ");
 }
 
 // ── 문구 ──
@@ -157,7 +178,20 @@ export function normalizeKiosk(raw: unknown, fallback: KioskConfig = DEFAULT_KIO
     restartSec: pick(r.restartSec, RESTART_CHOICES, fallback.restartSec as (typeof RESTART_CHOICES)[number]),
     testPrinted: typeof r.testPrinted === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(r.testPrinted) ? r.testPrinted : null,
     copy,
+    frames: Array.isArray(r.frames) ? r.frames.map(normalizeFrameRef).filter((f): f is FrameRef => f !== null).slice(0, 6) : fallback.frames,
+    characters: normalizeCharacters(r.characters, fallback.characters),
   };
+}
+
+function normalizeCharacters(raw: unknown, fallback: KioskConfig["characters"]): KioskConfig["characters"] {
+  if (!raw || typeof raw !== "object") return fallback;
+  const r = raw as Record<string, unknown>;
+  const one = (v: unknown): CharacterRef | null => {
+    const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+    const key = typeof o.key === "string" && KEY_RE.test(o.key) && o.key.startsWith("assets/character/") ? o.key : null;
+    return key ? { key, label: typeof o.label === "string" ? o.label.slice(0, 20) : "캐릭터" } : null;
+  };
+  return { cop: one(r.cop), thief: one(r.thief) };
 }
 
 /** 저장하면 안 되는 문구. 문구 자리마다 쉬운 말 하나 */
@@ -186,7 +220,7 @@ const RECEIVE_LABEL: Record<Receive, string> = { print: "인쇄하고 QR도", qr
 const PAPER_LABEL: Record<Paper, string> = { "postcard-pair": "엽서에 2장", "strip-2x6": "2x6 스트립" };
 
 /** 부스 설정 칸이 바꾸는 곳. 확인창과 칸 옆 표시가 같이 쓴다 */
-export const KIOSK_WHERE: Record<Exclude<keyof KioskConfig, "copy" | "testPrinted">, { label: string; places: string[]; show: (k: KioskConfig) => string }> = {
+export const KIOSK_WHERE: Record<Exclude<keyof KioskConfig, "copy" | "testPrinted" | "frames" | "characters">, { label: string; places: string[]; show: (k: KioskConfig) => string }> = {
   method: { label: "부스 방식", places: ["포토부스"], show: (k) => METHODS[k.method].name },
   receive: { label: "받는 방법", places: ["받기 화면", "인쇄"], show: (k) => RECEIVE_LABEL[k.receive] },
   paper: { label: "인쇄 용지", places: ["인쇄"], show: (k) => PAPER_LABEL[k.paper] },
@@ -205,6 +239,16 @@ export function diffKiosk(before: KioskConfig, after: KioskConfig) {
     if (before[k] !== after[k]) {
       const w = KIOSK_WHERE[k];
       out.push({ key: `kiosk.${k}`, label: `${w.label} · ${w.places.join(", ")}`, before: w.show(before), after: w.show(after) });
+    }
+  }
+  const names = (k: KioskConfig) => framesOf(k).map((f) => f.label).join(", ");
+  if (framesOf(before).map((f) => f.key).join() !== framesOf(after).map((f) => f.key).join()) {
+    out.push({ key: "kiosk.frames", label: "쓸 프레임 · 고르기 화면, 인쇄, 손님 사진", before: names(before), after: names(after) });
+  }
+  for (const side of ["cop", "thief"] as const) {
+    if (before.characters[side]?.key !== after.characters[side]?.key) {
+      const label = (v: CharacterRef | null) => v?.label ?? BUILTIN_CHARACTERS[side].label;
+      out.push({ key: `kiosk.characters.${side}`, label: `${side === "cop" ? "경찰" : "도둑"} 쪽 캐릭터 · 부스 화면, 손님 폰`, before: label(before.characters[side]), after: label(after.characters[side]) });
     }
   }
   if (before.testPrinted !== after.testPrinted) {
