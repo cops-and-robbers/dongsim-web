@@ -21,6 +21,7 @@ import {
 import { applyWebgame, fetchWebgame } from "@/lib/admin/webgameClient";
 import { GamePreview } from "@/components/admin/webgame/GamePreview";
 import { PreviewPane } from "@/components/admin/ops/PreviewPane";
+import { WebgameTabs } from "@/components/admin/webgame/WebgameTabs";
 
 // 온라인 게임: 브라우저에서 하는 경찰과 도둑 게임을 공개 전, 누구나, 점검 중으로 바꾼다.
 // 게임 서버가 정본이고 여기서는 바꾸기만 한다. 앱 설정처럼 왼쪽에서 고르고 오른쪽 가로 폰에서 실제 게임 화면을 본다.
@@ -81,6 +82,7 @@ export default function WebgamePage() {
         title="온라인 게임"
         description="브라우저에서 하는 경찰과 도둑 온라인 게임을 열고 닫아요. 바꾸면 몇 초 안에 게임에 반영돼요."
       />
+      <WebgameTabs />
 
       {!state && !loadError && <p className="py-14 text-center text-[14px] text-sd-fg-subtle">불러오는 중이에요</p>}
       {!state && loadError && <ErrorBlock message={loadError} onRetry={load} />}
