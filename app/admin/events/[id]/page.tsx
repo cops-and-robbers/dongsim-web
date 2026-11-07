@@ -13,6 +13,7 @@ import { useToast } from "@/components/admin/Toast";
 import { CheckIcon } from "@/components/admin/icons";
 import { PreviewPane } from "@/components/admin/ops/PreviewPane";
 import { HttpsUrlInput } from "@/components/admin/appConfig/fields";
+import { BoothTab } from "@/components/admin/events/BoothTab";
 import { EventCalendar } from "@/components/admin/events/EventCalendar";
 import { EventPreview, SCENE_LABEL, SCENE_OF, type PreviewScene } from "@/components/admin/events/EventPreview";
 import { DateTimeInput, Field, TextInput, type Key } from "@/components/admin/events/fields";
@@ -37,16 +38,19 @@ import {
   type HomeMinigame,
   type PopupMode,
   type StoryMode,
+  type Check,
 } from "@/lib/event/settings";
+import type { Screen } from "@/lib/event/kiosk";
 
 // 어드민 "행사" 하나 (#219, docs/admin-ui.md "행사").
 // 탭은 셋. 개요(지금 상태, 달력, 준비 점검), 정보와 시간(부스 화면에 나가는 글과 운영 시간), 홈과 행사 페이지.
 // 고친 값은 저장 전까지 이 화면에만 있고, 미리보기와 달력이 그 값으로 그려진다. 저장 전에 어디가 어떻게 바뀌는지 확인창을 연다.
 
-type Tab = "overview" | "info" | "home";
+type Tab = "overview" | "info" | "booth" | "home";
 const TABS: { value: Tab; label: string }[] = [
   { value: "overview", label: "개요" },
   { value: "info", label: "정보와 시간" },
+  { value: "booth", label: "포토부스" },
   { value: "home", label: "홈과 행사 페이지" },
 ];
 
@@ -63,7 +67,7 @@ const subscribe = (cb: () => void) => {
 function useTab(): [Tab, (t: Tab) => void] {
   const search = useSyncExternalStore(subscribe, () => window.location.search, () => "");
   const raw = new URLSearchParams(search).get("tab");
-  const tab: Tab = raw === "info" || raw === "home" ? raw : "overview";
+  const tab: Tab = raw === "info" || raw === "home" || raw === "booth" ? raw : "overview";
   const set = (t: Tab) => {
     const url = new URL(window.location.href);
     if (t === "overview") url.searchParams.delete("tab");
@@ -165,6 +169,7 @@ function Loaded({
   const [spot, setSpot] = useState<Key | null>(null);
   const [scene, setScene] = useState<PreviewScene>(tab === "home" ? "popup" : "booth-before");
   const [focusKey, setFocusKey] = useState<Key | null>(null);
+  const [boothScreen, setBoothScreen] = useState<Screen>("intro");
   // 탭마다 처음 보일 장면. 홈 탭은 팝업부터
   const setTab = (t: Tab) => {
     setTabRaw(t);
@@ -254,7 +259,7 @@ function Loaded({
         <div role="tablist" aria-label="행사 화면" className="inline-flex rounded-xl bg-sd-gray-200 p-1">
           {TABS.map((t) => {
             const on = t.value === tab;
-            const n = changes.filter((c) => TAB_OF[c.key as Key] === t.value).length;
+            const n = changes.filter((c) => tabOfChange(c.key) === t.value).length;
             return (
               <button
                 key={t.value}
@@ -283,7 +288,14 @@ function Loaded({
           writable={writable}
           saving={saving}
           onBooth={(closed) => save({ ...detail.settings, boothClosed: closed }, closed ? "부스를 닫았어요. 손님이 끝나면 닫힘 화면으로 바뀌어요." : "부스를 다시 열었어요.")}
-          onFix={(k) => {
+          onFix={(c) => {
+            // 포토부스 점검은 그 화면을 열어 둔다(시험 인쇄는 받기, 문구는 시작)
+            if (c.tab === "booth") {
+              setTab("booth");
+              setBoothScreen(c.id === "testPrint" ? "qr" : "intro");
+              return;
+            }
+            const k = FIX_KEY[c.id] ?? (c.tab === "home" ? "popup" : "name");
             setTab(TAB_OF[k]);
             setFocusKey(k);
           }}
@@ -294,7 +306,19 @@ function Loaded({
         />
       )}
 
-      {tab !== "overview" && (
+      {tab === "booth" && (
+        <BoothTab
+          draft={draft}
+          saved={detail.settings}
+          onKiosk={(kiosk) => patch({ kiosk })}
+          problems={problems}
+          disabled={!writable}
+          screen={boothScreen}
+          onScreen={setBoothScreen}
+        />
+      )}
+
+      {(tab === "info" || tab === "home") && (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
           <div className="min-w-0 space-y-5">
             {tab === "info" ? (
@@ -358,7 +382,11 @@ const TAB_OF: Record<Key, Tab> = {
   popupUntil: "home",
   popupUrl: "home",
   story: "home",
+  kiosk: "booth",
 };
+
+/** 확인창의 바뀐 것 하나가 어느 탭 칸인지. 포토부스 칸은 "kiosk.*", "copy.*" */
+const tabOfChange = (key: string): Tab => (key.startsWith("kiosk.") || key.startsWith("copy.") ? "booth" : TAB_OF[key as Key]);
 
 /** 행사가 지금 어느 때인지 */
 function phaseOf(event: EventDetail["event"], s: EventSettings, now: number) {
@@ -396,7 +424,7 @@ function Overview({
   writable: boolean;
   saving: boolean;
   onBooth: (closed: boolean) => void;
-  onFix: (k: Key) => void;
+  onFix: (c: Check) => void;
   onRestore: (s: EventSettings) => void;
 }) {
   const { event } = detail;
@@ -457,7 +485,7 @@ function Overview({
                   <p className="mt-0.5 text-[13px] leading-relaxed text-sd-fg-subtle">{c.detail}</p>
                 </div>
                 {c.level !== "ok" && (
-                  <Button size="sm" variant="neutral" className="shrink-0" onClick={() => onFix(FIX_KEY[c.id] ?? (c.tab === "home" ? "popup" : "name"))}>
+                  <Button size="sm" variant="neutral" className="shrink-0" onClick={() => onFix(c)}>
                     고치기
                   </Button>
                 )}

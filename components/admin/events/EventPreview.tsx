@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Backdrop from "@/components/photobooth/Backdrop";
 import ClosedScreen from "@/components/photobooth/ClosedScreen";
 import IntroScreen from "@/components/photobooth/IntroScreen";
+import { KioskProvider } from "@/components/photobooth/KioskContext";
 import { EventModalCard } from "@/components/home/EventModal";
 import type { EventSettings } from "@/lib/event/settings";
 
@@ -86,11 +87,13 @@ export function EventPreview({ settings, scene, spot, theme }: { settings: Event
             <div className="absolute inset-0 flex flex-col bg-linear-to-b from-brand-blue-bg via-white to-white dark:from-app-black-900 dark:via-app-black dark:to-app-black">
               <Backdrop />
               <div className="relative z-10 flex flex-1 flex-col">
-                <IntroScreen onStart={() => {}} />
+                <KioskProvider kiosk={settings.kiosk} name={settings.name}>
+                  <IntroScreen onStart={() => {}} />
+                </KioskProvider>
               </div>
             </div>
           ) : (
-            <ClosedScreen name={settings.name} dateLabel={settings.dateLabel} location={settings.location} over={scene === "booth-after"} />
+            <ClosedScreen name={settings.name} dateLabel={settings.dateLabel} location={settings.location} over={scene === "booth-after"} kiosk={settings.kiosk} />
           )}
         </div>
       )}

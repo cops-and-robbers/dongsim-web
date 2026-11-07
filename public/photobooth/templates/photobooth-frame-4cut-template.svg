@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="5400" viewBox="0 0 1800 5400">
+  <defs>
+    <pattern id="hatch" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="28" height="28" fill="#fff4f4"/><line x1="0" y1="0" x2="0" y2="28" stroke="#f3b9b9" stroke-width="8"/>
+    </pattern>
+  </defs>
+  <g id="배경-여기에-디자인">
+    <rect width="1800" height="5400" fill="#ffffff"/>
+  </g>
+  <g id="가이드-잘릴-수-있는-띠-지우고-내보내기" opacity="0.9">
+    <rect x="0" y="0" width="1800" height="110" fill="url(#hatch)"/>
+    <rect x="0" y="5290" width="1800" height="110" fill="url(#hatch)"/>
+    <rect x="0" y="0" width="80" height="5400" fill="url(#hatch)"/>
+    <rect x="1720" y="0" width="80" height="5400" fill="url(#hatch)"/>
+    <text x="900" y="74" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="40" text-anchor="middle" fill="#c0392b">위아래 110px · 좌우 80px: 인쇄 때 잘릴 수 있어요. 배경은 끝까지 채우고 글자, 로고는 안쪽에</text>
+    <text x="900" y="5360" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="40" text-anchor="middle" fill="#c0392b">인쇄물 1mm ≈ 38px · 글자는 100px 이상, 선은 6px 이상</text>
+  </g>
+  <g id="가이드-사진-칸-완전-투명으로">
+    
+    <rect x="106" y="147" width="1588" height="1117" rx="0" fill="#eef1f5" stroke="#8a93a3" stroke-width="6" stroke-dasharray="36 24"/>
+    <text x="900" y="675.5" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="96" text-anchor="middle" fill="#8a93a3" font-weight="700">사진 1</text>
+    <text x="900" y="765.5" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="48" text-anchor="middle" fill="#8a93a3">1588 x 1117px · 이 칸은 완전히 투명하게 비워 두세요</text>
+    <rect x="106" y="1388" width="1588" height="1117" rx="0" fill="#eef1f5" stroke="#8a93a3" stroke-width="6" stroke-dasharray="36 24"/>
+    <text x="900" y="1916.5" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="96" text-anchor="middle" fill="#8a93a3" font-weight="700">사진 2</text>
+    <text x="900" y="2006.5" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="48" text-anchor="middle" fill="#8a93a3">1588 x 1117px · 이 칸은 완전히 투명하게 비워 두세요</text>
+    <rect x="106" y="2629" width="1588" height="1117" rx="0" fill="#eef1f5" stroke="#8a93a3" stroke-width="6" stroke-dasharray="36 24"/>
+    <text x="900" y="3157.5" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="96" text-anchor="middle" fill="#8a93a3" font-weight="700">사진 3</text>
+    <text x="900" y="3247.5" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="48" text-anchor="middle" fill="#8a93a3">1588 x 1117px · 이 칸은 완전히 투명하게 비워 두세요</text>
+    <rect x="106" y="3871" width="1588" height="1117" rx="0" fill="#eef1f5" stroke="#8a93a3" stroke-width="6" stroke-dasharray="36 24"/>
+    <text x="900" y="4399.5" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="96" text-anchor="middle" fill="#8a93a3" font-weight="700">사진 4</text>
+    <text x="900" y="4489.5" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="48" text-anchor="middle" fill="#8a93a3">1588 x 1117px · 이 칸은 완전히 투명하게 비워 두세요</text>
+  </g>
+  <g id="가이드-로고-행사이름-자리">
+    <rect x="106" y="5028" width="1588" height="222" fill="none" stroke="#b7bdc8" stroke-width="5" stroke-dasharray="18 14"/>
+    <text x="900" y="5143" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="56" text-anchor="middle" fill="#8a93a3" font-weight="700">로고 · 캐릭터 · 행사 이름 자리</text>
+    <text x="900" y="5213" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="40" text-anchor="middle" fill="#8a93a3">1800 x 412px 띠 (잘릴 수 있는 띠 제외)</text>
+  </g>
+  <g id="가이드-칸-사이-124px">
+    <text x="900" y="1342" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif" font-size="36" text-anchor="middle" fill="#a0a7b4">칸 사이 124px · 장식은 칸 위로 살짝 걸쳐도 돼요(사진을 덜 가리게)</text>
+  </g>
+</svg>

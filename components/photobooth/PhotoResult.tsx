@@ -1,10 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { charactersOf, type CopyKey, type KioskConfig } from "@/lib/event/kiosk";
+import { renderCopy } from "./copy";
 import Link from "next/link";
 import { useState } from "react";
 
-export default function PhotoResult({ imageUrl }: { imageUrl: string | null }) {
+export default function PhotoResult({ imageUrl, kiosk, name }: { imageUrl: string | null; kiosk: KioskConfig; name: string }) {
+  const t = (k: CopyKey) => renderCopy({ kiosk, name }, k);
+  const chars = charactersOf(kiosk);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -72,7 +76,10 @@ export default function PhotoResult({ imageUrl }: { imageUrl: string | null }) {
   if (!imageUrl) {
     return (
       <section className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-6 text-center">
-        <img src="/photobooth/cop-search.svg" alt="" className="h-24 w-auto" />
+        <div className="flex items-end gap-2">
+          <img src={chars.cop} alt="" className="h-20 w-auto" />
+          <img src={chars.thief} alt="" className="h-20 w-auto" />
+        </div>
         <h1 className="mt-6 text-xl font-bold text-brand-ink dark:text-white">
           사진을 찾을 수 없어요
         </h1>
@@ -86,11 +93,11 @@ export default function PhotoResult({ imageUrl }: { imageUrl: string | null }) {
   return (
     <section className="mx-auto flex w-full max-w-sm flex-col items-center px-5 py-6 text-center">
       <div className="flex items-center gap-2">
-        <img src="/photobooth/cop-professor.svg" alt="" className="h-9 w-auto" />
+        <img src={chars.cop} alt="" className="h-9 w-auto" />
         <h1 className="text-xl font-bold text-brand-ink dark:text-white">
-          사진이 나왔어요
+          {t("result.title")}
         </h1>
-        <img src="/photobooth/thief-runaway.svg" alt="" className="h-9 w-auto" />
+        <img src={chars.thief} alt="" className="h-9 w-auto" />
       </div>
 
       <img
@@ -105,13 +112,13 @@ export default function PhotoResult({ imageUrl }: { imageUrl: string | null }) {
           disabled={busy}
           className="w-full rounded-full bg-brand-blue px-10 py-4 text-lg font-bold text-white shadow-lg shadow-brand-blue/30 transition active:scale-95 disabled:opacity-50"
         >
-          {busy ? "준비 중…" : "사진 저장하기"}
+          {busy ? "준비 중…" : t("result.save")}
         </button>
         <button
           onClick={shareLink}
           className="w-full rounded-full border-2 border-brand-blue px-10 py-3.5 text-lg font-bold text-brand-blue transition active:scale-95"
         >
-          {copied ? "링크가 복사됐어요" : "친구에게 공유하기"}
+          {copied ? "링크가 복사됐어요" : t("result.share")}
         </button>
       </div>
 
@@ -119,7 +126,7 @@ export default function PhotoResult({ imageUrl }: { imageUrl: string | null }) {
         href="/download"
         className="mt-8 text-base font-bold text-brand-blue underline-offset-4 hover:underline"
       >
-        경찰과 도둑, 친구들이랑 직접 해보기
+        {t("result.cta")}
       </Link>
     </section>
   );

@@ -3,7 +3,8 @@
 
 import { useState } from "react";
 import FramePreview from "./FramePreview";
-import { FRAMES, HAS_FRAME_CHOICE, pickCount, type FrameDef } from "./frames";
+import { Copy, useKiosk } from "./KioskContext";
+import { pickCount, type FrameDef } from "./frames";
 
 export default function SelectScreen({
   shots,
@@ -18,6 +19,7 @@ export default function SelectScreen({
   onDone: (selected: number[]) => void;
   onRetake: () => void;
 }) {
+  const { frames, chars } = useKiosk();
   const need = pickCount(frame);
   const [selected, setSelected] = useState<number[]>([]);
   const done = selected.length === need;
@@ -38,17 +40,15 @@ export default function SelectScreen({
 
   return (
     <div className="flex flex-1 flex-col items-center px-4 py-5">
+      {/* 두 진영을 같이(예전엔 경찰만 있었다). 행사가 고른 캐릭터 짝 */}
       <div className="flex items-center gap-3 pt-1">
-        <img
-          src="/photobooth/cop-search.svg"
-          alt=""
-          className="h-14 w-auto drop-shadow-md sm:h-16"
-        />
+        <img src={chars.cop} alt="" className="h-14 w-auto drop-shadow-md sm:h-16" />
         <div className="text-left">
           <h2 className="text-2xl font-extrabold text-brand-ink sm:text-3xl dark:text-white">
-            마음에 드는 {need}컷을 골라요
+            <Copy k="select.title" cuts={need} />
           </h2>
         </div>
+        <img src={chars.thief} alt="" className="h-14 w-auto drop-shadow-md sm:h-16" />
       </div>
 
       <div className="mt-5 flex w-full max-w-4xl flex-1 items-center justify-center gap-6">
@@ -58,21 +58,28 @@ export default function SelectScreen({
             slots={slotSrcs}
             className="h-[46vh] rounded-xl shadow-lg ring-1 ring-black/5 sm:h-[52vh]"
           />
-          {HAS_FRAME_CHOICE && (
-            <div className="flex items-center gap-2.5">
-              {FRAMES.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => onFrameChange(f)}
-                  aria-label={`${f.label} 프레임`}
-                  className={`h-9 w-9 rounded-full ring-2 ring-offset-2 transition ring-offset-white dark:ring-offset-app-black ${
-                    f.id === frame.id
-                      ? "scale-110 ring-brand-blue"
-                      : "ring-slate-300 hover:ring-brand-blue/50 dark:ring-app-black-800"
-                  }`}
-                  style={{ backgroundColor: f.swatch }}
-                />
-              ))}
+          {/* 행사가 프레임을 2개 이상 고르면 손님이 고른다. 색 점만으로는 비슷한 프레임을 못 가려 작은 그림으로 */}
+          {frames.length > 1 && (
+            <div data-spot="frames" className="flex items-end gap-3">
+              {frames.map((f) => {
+                const on = f.id === frame.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => onFrameChange(f)}
+                    aria-label={`${f.label} 프레임`}
+                    aria-pressed={on}
+                    className="flex flex-col items-center gap-1 transition active:scale-95"
+                  >
+                    <img
+                      src={f.src}
+                      alt=""
+                      className={`h-16 w-auto rounded-md ring-2 ring-offset-2 ring-offset-white dark:ring-offset-app-black ${on ? "ring-brand-blue" : "ring-slate-200 dark:ring-app-black-800"}`}
+                    />
+                    <span className={`text-xs font-semibold ${on ? "text-brand-blue" : "text-slate-500"}`}>{f.label}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -109,7 +116,7 @@ export default function SelectScreen({
           onClick={onRetake}
           className="rounded-full border border-slate-300 px-8 py-4 text-lg font-bold text-slate-600 transition active:scale-95 dark:border-app-black-800 dark:text-slate-300"
         >
-          다시 찍기
+          <Copy k="select.retake" />
         </button>
         <button
           onClick={() => onDone(selected)}
@@ -117,7 +124,7 @@ export default function SelectScreen({
           className="rounded-full bg-brand-blue px-10 py-4 text-lg font-bold text-white shadow-lg shadow-brand-blue/30 transition active:scale-95 disabled:opacity-40"
         >
           {done
-            ? "이걸로 할래요"
+            ? <Copy k="select.done" />
             : selected.length === 0
               ? `${need}컷을 골라주세요`
               : `${selected.length}/${need} 골랐어요`}

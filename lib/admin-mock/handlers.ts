@@ -5,6 +5,7 @@ import { graphql, http, HttpResponse, delay } from "msw";
 import { mockAppConfig, mockApplyAppConfig, mockUploadBanner } from "./appConfig";
 import { mockApplyWebgame, mockWebgame, mockWebgameMonitor } from "./webgame";
 import { mockEvent, mockEvents, mockSaveEvent, mockSaveMinigame } from "./events";
+import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
 import {
   queryUsers,
   getUser,
@@ -421,6 +422,24 @@ export const handlers = [
   http.put("/api/admin/events/:id", async ({ params, request }) => {
     await delay(500);
     const { status, body } = mockSaveEvent(Number(params.id), (await request.json()) as { settings?: unknown; version?: number });
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  // 그림 보관함(#224). 로컬에서는 실제 R2 와 Supabase 에 닿지 않는다
+  http.get("/api/admin/assets", async () => {
+    await delay(300);
+    return HttpResponse.json(mockAssets());
+  }),
+
+  http.post("/api/admin/assets", async ({ request }) => {
+    await delay(800);
+    const { status, body } = mockUploadAsset(await request.formData());
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.patch("/api/admin/assets/:id", async ({ params, request }) => {
+    await delay(300);
+    const { status, body } = mockPatchAsset(Number(params.id), (await request.json()) as { label?: string; archived?: boolean });
     return HttpResponse.json(body as Record<string, unknown>, { status });
   }),
 

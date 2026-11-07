@@ -84,6 +84,8 @@ function useScrollEdges() {
   return { ref, edges };
 }
 
+const WIDE = /^\/admin\/events\/[^/]+/;
+
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isActive = (item: NavItem) => isActiveItem(item, pathname);
@@ -200,7 +202,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
         {/* 콘텐츠 */}
         <main className="min-w-0 flex-1 overflow-hidden">
-          <div className="mx-auto flex h-full w-full max-w-5xl flex-col">
+          {/* 행사 하나는 실제 부스 화면을 옆에 띄우고 고쳐서 넓게 쓴다(#221). 작으면 문구가 넘치는지 판단할 수 없다 */}
+          <div className={`mx-auto flex h-full w-full flex-col ${WIDE.test(pathname) ? "max-w-7xl" : "max-w-5xl"}`}>
             {children}
           </div>
         </main>

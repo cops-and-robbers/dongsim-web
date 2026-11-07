@@ -86,3 +86,12 @@ export function presignUpload(key: string): string {
 
   return `https://${host}${path}?${canonicalQuery}&X-Amz-Signature=${signature}`;
 }
+
+/**
+ * 서버에서 R2 에 바로 올린다(#224, 그림 보관함). 그림은 4MB 아래라 Vercel 본문 한도 안이고,
+ * 브라우저에서 올리면 버킷 CORS 에 어드민 주소(admin.copsandrobbers.app)가 없어 막힌다. 서버끼리는 CORS 가 없다
+ */
+export async function putObject(key: string, body: ArrayBuffer, contentType: string): Promise<void> {
+  const res = await fetch(presignUpload(key), { method: "PUT", body, headers: { "Content-Type": contentType } });
+  if (!res.ok) throw new Error(`R2 에 올리지 못했어요 (${res.status})`);
+}

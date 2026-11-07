@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { composeStrip } from "./compose";
 import { type FrameDef } from "./frames";
 import { loadImage } from "./image";
+import { Copy, useKiosk } from "./KioskContext";
 import { uploadStrip, type UploadedStrip } from "./upload";
 
 /** 발급 결과 - QR 화면이 짧은 링크(key)와 인쇄 합성(blob)에 쓴다. */
@@ -23,6 +24,7 @@ export default function PreviewScreen({
   onRetake: () => void;
   onIssued: (issued: IssuedStrip) => void;
 }) {
+  const { chars } = useKiosk();
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -66,14 +68,14 @@ export default function PreviewScreen({
   return (
     <div className="flex flex-1 flex-col items-center px-4 py-6">
       <div className="flex items-center justify-center gap-2 pt-2">
-        <img src="/photobooth/cop-professor.svg" alt="" className="h-12 w-auto sm:h-14" />
+        <img src={chars.cop} alt="" className="h-12 w-auto sm:h-14" />
         <h2 className="text-2xl font-extrabold text-brand-ink sm:text-3xl dark:text-white">
-          이렇게 나왔어요
+          <Copy k="preview.title" />
         </h2>
-        <img src="/photobooth/thief-runaway.svg" alt="" className="h-12 w-auto sm:h-14" />
+        <img src={chars.thief} alt="" className="h-12 w-auto sm:h-14" />
       </div>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        괜찮으면 QR로 받아가세요
+        <Copy k="preview.body" />
       </p>
 
       <div className="flex w-full flex-1 items-center justify-center py-4">
@@ -96,14 +98,14 @@ export default function PreviewScreen({
           disabled={uploading}
           className="rounded-full border border-slate-300 px-8 py-4 text-lg font-bold text-slate-600 transition active:scale-95 disabled:opacity-40 dark:border-app-black-800 dark:text-slate-300"
         >
-          다시 찍기
+          <Copy k="select.retake" />
         </button>
         <button
           onClick={issue}
           disabled={!url || uploading}
           className="rounded-full bg-brand-blue px-12 py-4 text-lg font-bold text-white shadow-lg shadow-brand-blue/30 transition active:scale-95 disabled:opacity-40"
         >
-          {uploading ? "QR 만드는 중…" : "QR 만들기"}
+          {uploading ? "QR 만드는 중…" : <Copy k="preview.issue" />}
         </button>
       </div>
     </div>

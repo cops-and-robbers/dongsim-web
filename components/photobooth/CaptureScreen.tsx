@@ -2,8 +2,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { COUNTDOWN_SECONDS, SHOT_COUNT } from "./config";
-import { slotRatio, type FrameDef } from "./frames";
+import { pickCount, slotRatio, type FrameDef } from "./frames";
+import { Copy, useKiosk } from "./KioskContext";
 import { useCamera } from "./useCamera";
 import { playShutter } from "./shutter";
 
@@ -35,14 +35,21 @@ function captureFrame(video: HTMLVideoElement, ratio: number): string {
 export default function CaptureScreen({
   frame,
   onDone,
+  demo,
 }: {
   frame: FrameDef;
   onDone: (shots: string[]) => void;
+  /** 어드민 미리보기: 카메라를 열지 않고 이 사진을 띄운 채 두 장 찍은 모습으로 멈춰 둔다 */
+  demo?: string;
 }) {
-  const { videoRef, ready, error } = useCamera();
+  const { videoRef, ready, error } = useCamera(!demo);
+  // 찍는 장수와 카운트다운은 행사 설정(#221). 고르기를 끄면 프레임 칸 수만큼만 찍는다
+  const { kiosk, chars } = useKiosk();
+  const shotCount = kiosk.select ? kiosk.shots : pickCount(frame);
+  const countdown = kiosk.countdown;
   const ratio = slotRatio(frame);
   const [shots, setShots] = useState<string[]>([]);
-  const [count, setCount] = useState(COUNTDOWN_SECONDS);
+  const [count, setCount] = useState(countdown);
   const [flash, setFlash] = useState(false);
 
   // onDone을 ref로 잡아 인터벌 클로저의 stale 참조 방지.
@@ -60,25 +67,27 @@ export default function CaptureScreen({
     window.setTimeout(() => setFlash(false), 280);
     playShutter();
     // 업데이터는 순수하게 - 한 장만 추가(Strict Mode가 두 번 호출해도 1장).
-    setShots((prev) => (prev.length >= SHOT_COUNT ? prev : [...prev, img]));
-  }, [ratio, videoRef]);
+    setShots((prev) => (prev.length >= shotCount ? prev : [...prev, img]));
+  }, [ratio, videoRef, shotCount]);
 
-  const taken = shots.length;
-  const tappable = ready && !error;
+  const taken = demo ? 2 : shots.length;
+  // 미리보기는 고른 카운트다운 숫자를 멈춰 보여 준다
+  const shown = demo ? countdown : count;
+  const tappable = demo ? true : ready && !error;
 
   // 다 찍으면 상위로 전달.
   useEffect(() => {
-    if (shots.length >= SHOT_COUNT) onDoneRef.current(shots);
-  }, [shots]);
+    if (shots.length >= shotCount) onDoneRef.current(shots);
+  }, [shots, shotCount]);
 
   // 카운트다운: 컷 시작마다 리셋 후 1초마다 순수하게 감소(업데이터에 부작용 없음).
   useEffect(() => {
-    if (!tappable || shots.length >= SHOT_COUNT) return;
+    if (demo || !tappable || shots.length >= shotCount) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCount(COUNTDOWN_SECONDS);
+    setCount(countdown);
     const id = window.setInterval(() => setCount((c) => c - 1), 1000);
     return () => window.clearInterval(id);
-  }, [tappable, shots.length]);
+  }, [demo, tappable, shots.length, shotCount, countdown]);
 
   // count가 0이 되는 순간 한 번만 촬영(부작용을 업데이터 밖에서 → 중복 방지).
   useEffect(() => {
@@ -87,13 +96,13 @@ export default function CaptureScreen({
 
   return (
     <div
-      onClick={tappable ? doCapture : undefined}
+      onClick={tappable && kiosk.tapToShoot ? doCapture : undefined}
       className={`flex flex-1 select-none flex-col items-center px-4 py-6 ${
-        tappable ? "cursor-pointer" : ""
+        tappable && kiosk.tapToShoot ? "cursor-pointer" : ""
       }`}
     >
-      <div className="flex items-center gap-2.5 pt-2">
-        {Array.from({ length: SHOT_COUNT }).map((_, i) => (
+      <div data-spot="shots" className="flex items-center gap-2.5 pt-2">
+        {Array.from({ length: shotCount }).map((_, i) => (
           <span
             key={i}
             className={`h-3 w-3 rounded-full transition ${
@@ -114,13 +123,13 @@ export default function CaptureScreen({
             <>
               <img
                 key={`cop-${taken}`}
-                src="/photobooth/cop-professor.svg"
+                src={chars.cop}
                 alt=""
                 className="pb-pop pointer-events-none absolute -bottom-2 left-2 z-30 h-24 w-auto origin-bottom drop-shadow-xl sm:left-6 sm:h-32"
               />
               <img
                 key={`thief-${taken}`}
-                src="/photobooth/thief-runaway.svg"
+                src={chars.thief}
                 alt=""
                 className="pb-pop pointer-events-none absolute -bottom-2 right-2 z-30 h-24 w-auto origin-bottom drop-shadow-xl sm:right-6 sm:h-32"
               />
@@ -131,13 +140,17 @@ export default function CaptureScreen({
             className="relative w-full overflow-hidden rounded-3xl bg-black shadow-2xl"
             style={{ aspectRatio: ratio }}
           >
-            <video
-              ref={videoRef}
-              playsInline
-              muted
-              className="h-full w-full object-cover"
-              style={{ transform: "scaleX(-1)" }}
-            />
+            {demo ? (
+              <img src={demo} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <video
+                ref={videoRef}
+                playsInline
+                muted
+                className="h-full w-full object-cover"
+                style={{ transform: "scaleX(-1)" }}
+              />
+            )}
 
             {flash && <div className="pb-flash absolute inset-0 z-20 bg-white" />}
 
@@ -145,9 +158,10 @@ export default function CaptureScreen({
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <span
                   key={count}
+                  data-spot="countdown"
                   className="pb-count text-[8rem] font-black text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.55)]"
                 >
-                  {count > 0 ? count : ""}
+                  {shown > 0 ? shown : ""}
                 </span>
               </div>
             )}
@@ -164,7 +178,7 @@ export default function CaptureScreen({
       </div>
 
       <p className="h-6 text-center text-base font-medium text-slate-500 dark:text-slate-400">
-        {tappable ? "화면을 누르면 바로 찍혀요" : ""}
+        {tappable && kiosk.tapToShoot ? <Copy k="capture.hint" /> : ""}
       </p>
     </div>
   );
