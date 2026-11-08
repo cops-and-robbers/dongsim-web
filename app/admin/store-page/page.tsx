@@ -190,7 +190,7 @@ export default function StorePageScreen() {
     [valueOf, sideOf],
   );
 
-  const total = useMemo(() => (["ios", "android"] as Platform[]).reduce((sum, p) => sum + LANGS.reduce((s, l) => s + changedCount(p, l.id), 0), 0), [changedCount]);
+  const changedIn = (p: Platform) => LANGS.reduce((sum, l) => sum + changedCount(p, l.id) + changedImages(p, l.id), 0);
   const values: Values = useMemo(() => Object.fromEntries(FIELDS[platform].map((f) => [f.id, valueOf(platform, lang, f.id)])), [platform, lang, valueOf]);
   const page = data?.[platform];
   const ios = data?.ios;
@@ -204,11 +204,11 @@ export default function StorePageScreen() {
   const imageChanges = pageOk ? imageChangesOf(platform, pageOk.images, Object.values(imageDrafts)) : [];
   const blocked = pageOk ? [...blockers(platform, pageOk.langs, changes), ...imageBlockers(platform, pageOk.images, imageChanges)] : [];
   const toSend = changes.length + imageChanges.length;
-  const allChanged = total + (["ios", "android"] as Platform[]).reduce((sum, p) => sum + LANGS.reduce((s, l) => s + changedImages(p, l.id), 0), 0);
   const nextVersion = ios?.ok ? ios.nextVersion : null;
 
-  const sendBar = toSend > 0 && data?.writable && (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sd-line bg-sd-surface px-4 py-3">
+  const canSend = toSend > 0 && !!data?.writable;
+  const sendBar = (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sd-line bg-sd-surface px-4 py-3 shadow-lg">
       <p className="text-[13.5px] text-sd-fg">{blocked.length ? blocked[0] : `${toSend}칸을 스토어로 보낼 수 있어요.`}</p>
       <button type="button" disabled={blocked.length > 0 || saving > 0} onClick={() => setSending(true)} className="h-9 flex-none rounded-[10px] bg-accent px-3.5 text-[13.5px] font-semibold text-accent-fg transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">
         {platform === "ios" ? "App Store로 보내기" : "Google Play로 보내기"}
@@ -227,8 +227,8 @@ export default function StorePageScreen() {
                     if (p === "ios" && mode === "details") setMode("page");
                   }}
                   items={[
-                    { value: "ios", label: <span className="inline-flex items-center gap-1.5"><AppStoreMark className="size-4" />App Store</span> },
-                    { value: "android", label: <span className="inline-flex items-center gap-1.5"><GooglePlayMark className="size-4" />Google Play</span> },
+                    { value: "ios", label: <span className="inline-flex items-center gap-1.5"><AppStoreMark className="size-4" />App Store</span>, count: changedIn("ios") },
+                    { value: "android", label: <span className="inline-flex items-center gap-1.5"><GooglePlayMark className="size-4" />Google Play</span>, count: changedIn("android") },
                   ]}
                 />
                 <Tabs<Lang> label="언어" value={lang} onChange={setLang} items={LANGS.map((l) => ({ value: l.id, label: l.label, count: view === "images" ? changedImages(platform, l.id) : changedCount(platform, l.id) }))} />
@@ -260,10 +260,11 @@ export default function StorePageScreen() {
         </AnimatePresence>
         <PageHeader
           title="스토어 페이지"
-          description={allChanged > 0 ? `고친 칸이 ${allChanged}개 있어요. 보내기 전까지 스토어는 바뀌지 않아요.` : "문구를 고치면 스토어에서 어떻게 보일지 바로 볼 수 있어요. 보내기 전까지 스토어는 바뀌지 않아요."}
+          description="문구와 이미지를 고치면 스토어에서 어떻게 보일지 바로 볼 수 있어요. 보내기 전까지 스토어는 바뀌지 않아요."
           actions={
             <div className="flex items-center gap-2.5">
-              {status && <span className={`text-[12.5px] ${failed ? "text-sd-critical" : "text-sd-fg-subtle"}`}>{status}</span>}
+              {/* 글이 나타날 때 머리 줄이 접히지 않게 자리를 늘 잡아 둔다 */}
+              <span className={`text-[12.5px] ${failed ? "text-sd-critical" : "text-sd-fg-subtle"} ${status ? "" : "invisible"}`}>{status ?? "저장하는 중이에요"}</span>
               <button
                 type="button"
                 disabled={loading}
@@ -291,7 +292,6 @@ export default function StorePageScreen() {
             {storeTabs}
             {page?.ok ? (
               <>
-                {sendBar}
                 <p className="text-[13px] leading-relaxed text-sd-fg-muted">끌어서 순서를 바꿀 수 있어요. 규격에 맞는지는 올리기 전에 확인해요. 보내기 전까지 스토어는 바뀌지 않아요.</p>
                 <motion.div key={`${platform}-${lang}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }}>
                   <ImageBoard platform={platform} listOf={(s) => listOf(platform, lang, s)} liveOf={(s) => liveOf(platform, lang, s)} disabled={!data.writable} onChange={changeImages} />
@@ -312,7 +312,6 @@ export default function StorePageScreen() {
 
               {page?.ok ? (
                 <>
-                  {sendBar}
                   <p className="text-[13px] leading-relaxed text-sd-fg-muted">
                     {platform === "ios"
                       ? ios?.ok && ios.nextVersion
@@ -396,6 +395,21 @@ export default function StorePageScreen() {
               </PreviewPane>
             )}
           </div>
+        )}
+        {/* 줄이 나타나도 내용이 밀리지 않게 자리를 늘 비워 두고, 높이 없는 기준점 위에 띄운다 */}
+        {view !== "spec" && pageOk && (
+          <>
+            <div aria-hidden className="h-20" />
+            <div className="sticky bottom-4 z-20 h-0">
+              <AnimatePresence>
+                {canSend && (
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={{ duration: 0.16 }} className="absolute inset-x-0 bottom-0 mx-auto max-w-[720px]">
+                    {sendBar}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </>
         )}
       </ScrollPage>
     </MotionConfig>
