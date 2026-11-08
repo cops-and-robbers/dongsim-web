@@ -13,6 +13,7 @@ export function ChangeDialog({
   children,
   danger = false,
   confirmText = "앱에 적용",
+  pendingText = "적용하는 중...",
   confirmDisabled = false,
   pending,
   error,
@@ -26,6 +27,7 @@ export function ChangeDialog({
   children?: ReactNode;
   danger?: boolean;
   confirmText?: string;
+  pendingText?: string;
   confirmDisabled?: boolean;
   pending: boolean;
   error?: string;
@@ -90,7 +92,7 @@ export function ChangeDialog({
             취소
           </Button>
           <Button variant={danger ? "danger" : "brand"} onClick={onConfirm} disabled={pending || confirmDisabled}>
-            {pending ? "적용하는 중..." : confirmText}
+            {pending ? pendingText : confirmText}
           </Button>
         </div>
       </div>
