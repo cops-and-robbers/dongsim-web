@@ -265,11 +265,11 @@ export function androidOptions(raw: AndroidRaw): Option[] {
     out.push({
       platform: "android",
       id: "android.createRelease",
-      label: "프로덕션 출시 만들고 심사에 내기",
+      label: "심사에 내기",
       level: 2,
       confirmWord: String(code),
       expect: `candidate|${relSig(candidate)}`,
-      what: `프로덕션에 빌드 ${ro(String(code))} 새 출시를 만들고 구글 심사로 보내요. 승인되면 게시 개요에서 게시해야 사용자에게 나가요(관리형 게시).`,
+      what: `빌드 ${ro(String(code))} 새 출시를 만들어 구글 심사에 내요. 승인돼도 게시 개요에서 게시해야 사용자에게 나가요.`,
       undo: "심사 중에는 Play Console 에서 취소할 수 있어요.",
       reachesUsers: false,
       primary: true,
@@ -332,7 +332,7 @@ export function androidOptions(raw: AndroidRaw): Option[] {
   const rPct = rolling ? pct(rolling.fraction ?? 0) : "";
   const extra: Record<string, Extra> = {
     "android.createRelease": {
-      changes: [change("프로덕션", `${liveName} 나가 있음`, `빌드 ${candidate ? maxCodeOf(candidate) : ""} 구글 심사 기다림`)],
+      changes: [change("Google Play", `${liveName} 나가 있음`, `빌드 ${candidate ? maxCodeOf(candidate) : ""} 구글 심사 기다림`)],
       then: "구글이 승인하면 게시 개요에서 게시할 수 있어요. 게시하기 전까지 사용자는 지금 버전을 받아요.",
     },
     "android.halt": { changes: [change("단계적 출시", `${rPct} 진행 중`, `${rPct}에서 멈춤`)], then: "출시 화면에서 다시 이어 갈 수 있어요." },

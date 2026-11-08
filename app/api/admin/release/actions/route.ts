@@ -40,7 +40,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: e instanceof StoreError ? e.message : "스토어를 다시 읽지 못해 하지 않았어요. 잠시 뒤 다시 해 주세요." }, { status: 502 });
   }
   const option = options.find((o) => o.id === id && o.expect === body.expect);
-  if (!option) return NextResponse.json({ error: "화면을 연 뒤 스토어 상태가 바뀌어 하지 않았어요. 다시 읽고 확인해 주세요.", stale: true }, { status: 409 });
+  if (!option) return NextResponse.json({ error: "화면을 연 뒤 스토어 상태가 바뀌어 하지 않았어요. 새로 확인해 주세요.", stale: true }, { status: 409 });
 
   // 3. 입력 확인
   if (!dryRun && option.level === 2 && (body.confirm ?? "").trim() !== option.confirmWord)
@@ -69,10 +69,10 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   // 4. 기록
   if (!(await auditReady()))
-    return NextResponse.json({ error: "조작 기록 표가 아직 없어요. supabase/migrations/0016_release_actions.sql 을 Supabase 에서 실행해 주세요." }, { status: 503 });
+    return NextResponse.json({ error: "버튼을 쓸 준비가 아직 안 됐어요. 개발 담당자에게 알려 주세요." }, { status: 503 });
   let logId: number;
   try {
-    if (await isRepeat(id, option.expect)) return NextResponse.json({ error: "방금 같은 조작을 했어요. 다시 읽고 확인해 주세요." }, { status: 409 });
+    if (await isRepeat(id, option.expect)) return NextResponse.json({ error: "방금 같은 조작을 했어요. 새로 확인해 주세요." }, { status: 409 });
     logId = await startLog({ platform, action: id, version: option.confirmWord, expect: option.expect, params: { code: option.params.code, to: option.params.to, fraction: body.fraction ?? option.params.fraction ?? null, notes: notes ?? null }, actor: await actorName(checked.token) });
   } catch (e) {
     console.error("[release-action] log", e instanceof Error ? e.message : e);
@@ -87,7 +87,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json(result, noStore);
   } catch (e) {
     const message = e instanceof StoreError ? e.message : "스토어에 보내다 문제가 생겼어요.";
-    console.error("[release-action]", id, e instanceof Error ? e.message : e);
+    console.error("[release-action]", id, e instanceof StoreError ? (e.detail ?? e.message) : e instanceof Error ? e.message : e);
     await finishLog(logId, "failed", message).catch(() => undefined);
     refreshReleaseBoard(true);
     return NextResponse.json({ error: message }, { status: 502 });

@@ -12,8 +12,8 @@ import { historyFrom, readAndroid, readIos, readLookup, StoreError } from "./sto
 export const RELEASE_TAG = "release-board";
 
 const failed = (where: string) => (e: unknown) => {
-  console.error(`[release] ${where}`, e instanceof Error ? e.message : e);
-  return { error: e instanceof StoreError ? e.message : `${where}를 읽다가 문제가 생겼어요. 잠시 뒤 다시 읽어 주세요` };
+  console.error(`[release] ${where}`, e instanceof StoreError ? (e.detail ?? e.message) : e instanceof Error ? e.message : e);
+  return { error: e instanceof StoreError ? e.message : "지금은 상태를 가져오지 못했어요. 잠시 뒤 다시 확인해 주세요." };
 };
 
 async function readHistory() {
@@ -45,7 +45,7 @@ async function read(): Promise<ReleaseBoard> {
   board.actions = actions;
   board.writable = production && ready;
   if (!production) board.readOnlyReason = "스토어는 운영 어드민에서만 바꿀 수 있어요";
-  else if (!ready) board.readOnlyReason = "조작 기록 표가 아직 없어요. supabase/migrations/0016_release_actions.sql 을 실행하면 버튼이 켜져요";
+  else if (!ready) board.readOnlyReason = "버튼을 쓸 준비가 아직 안 됐어요. 개발 담당자에게 알려 주세요";
   return board;
 }
 
