@@ -7,6 +7,7 @@ import { db } from "@/lib/metrics/db";
 import { buildBoard, type ReleaseBoard } from "./board";
 import { auditReady, recentActions } from "./audit";
 import { androidOptions, iosOptions } from "./options";
+import { NotCached, retryOnce, unwrapNotCached } from "./reliable";
 import { historyFrom, readAndroid, readIos, readLookup, StoreError } from "./stores";
 
 export const RELEASE_TAG = "release-board";
@@ -30,7 +31,8 @@ async function readHistory() {
 async function read(): Promise<ReleaseBoard> {
   const now = new Date();
   const [ios, android, lookup, history, actions, ready] = await Promise.all([
-    readIos(now).catch(failed("App Store")),
+    // Android 는 출시 목록 한도가 있어 다시 부르지 않는다(stores.ts listPlan)
+    retryOnce(() => readIos(now)).catch(failed("App Store")),
     readAndroid().catch(failed("Google Play")),
     readLookup(),
     readHistory(),
@@ -49,7 +51,19 @@ async function read(): Promise<ReleaseBoard> {
   return board;
 }
 
-export const releaseBoard = unstable_cache(read, ["release-board-v1"], { tags: [RELEASE_TAG], revalidate: 60 });
+// 한쪽이라도 못 읽은 결과는 저장하지 않는다. 저장하면 스토어가 돌아와도 1분 동안 같은 실패를 보여 준다.
+// 던지면 unstable_cache 는 저장하지 않고, 저장된 값이 오래됐을 때는 그 값을 계속 내준다
+const cachedBoard = unstable_cache(
+  async () => {
+    const board = await read();
+    if (!board.ios.ok || !board.android.ok) throw new NotCached(board);
+    return board;
+  },
+  ["release-board-v1"],
+  { tags: [RELEASE_TAG], revalidate: 60 },
+);
+
+export const releaseBoard = () => unwrapNotCached<ReleaseBoard>(cachedBoard);
 
 /** 다시 읽기. 같은 서버에서 10초 안에 또 누르면 캐시를 그대로 쓴다(스토어 API 아끼기). 조작 뒤에는 force 로 늘 비운다 */
 let lastRefresh = 0;
