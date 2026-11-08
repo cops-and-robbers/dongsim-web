@@ -6,7 +6,7 @@
  * 문구는 기본값과 다른 줄만 저장한다. 기본 문구가 바뀌면 고치지 않은 행사도 같이 따라간다.
  */
 
-import { BUILTIN_CHARACTERS, BUILTIN_FRAME, KEY_RE, assetUrl, frameSrc, normalizeFrameRef, type FrameRef, type Side } from "./assets.ts";
+import { BUILTIN_CHARACTERS, BUILTIN_FRAME, KEY_RE, builtinCharacter, characterSrc, frameSrc, normalizeFrameRef, type FrameRef, type Side } from "./assets.ts";
 
 export type Receive = "print" | "qr";
 export type CharacterRef = { key: string; label: string };
@@ -53,8 +53,8 @@ export const framesOf = (k: Pick<KioskConfig, "frames">): FrameRef[] => (k.frame
 export const slotsOf = (k: Pick<KioskConfig, "frames">) => framesOf(k)[0].slots.length;
 /** 부스 캐릭터 짝의 그림 주소 */
 export const charactersOf = (k: Pick<KioskConfig, "characters">): Record<Side, string> => ({
-  cop: k.characters.cop ? assetUrl(k.characters.cop.key) : BUILTIN_CHARACTERS.cop.src,
-  thief: k.characters.thief ? assetUrl(k.characters.thief.key) : BUILTIN_CHARACTERS.thief.src,
+  cop: k.characters.cop ? characterSrc(k.characters.cop.key) : BUILTIN_CHARACTERS.cop.src,
+  thief: k.characters.thief ? characterSrc(k.characters.thief.key) : BUILTIN_CHARACTERS.thief.src,
 });
 export { frameSrc };
 
@@ -188,7 +188,9 @@ function normalizeCharacters(raw: unknown, fallback: KioskConfig["characters"]):
   const r = raw as Record<string, unknown>;
   const one = (v: unknown): CharacterRef | null => {
     const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
-    const key = typeof o.key === "string" && KEY_RE.test(o.key) && o.key.startsWith("assets/character/") ? o.key : null;
+    // 올린 그림(assets/character/...)이거나 코드에 든 그림(builtin/...)만
+    const ok = typeof o.key === "string" && ((KEY_RE.test(o.key) && o.key.startsWith("assets/character/")) || builtinCharacter(o.key));
+    const key = ok ? (o.key as string) : null;
     return key ? { key, label: typeof o.label === "string" ? o.label.slice(0, 20) : "캐릭터" } : null;
   };
   return { cop: one(r.cop), thief: one(r.thief) };

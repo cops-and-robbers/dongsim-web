@@ -12,7 +12,7 @@ import { CharacterUploader, FrameUploader, SlotOverlay } from "@/components/admi
 import { fetchAssets, patchAsset } from "@/lib/admin/assetsClient";
 import { formatDateTime } from "@/lib/admin/format";
 import type { AssetsList } from "@/lib/event/adminApi";
-import { BUILTIN_CHARACTERS, BUILTIN_FRAME, FRAME_SIZE, assetUrl, frameSrc, type Asset, type AssetKind } from "@/lib/event/assets";
+import { BUILTIN_CHARACTERS, BUILTIN_CHARACTER_SET, BUILTIN_FRAME, FRAME_SIZE, assetUrl, frameSrc, type Asset, type AssetKind } from "@/lib/event/assets";
 
 // 그림 보관함 (#224, docs/admin-ui.md "그림 보관함").
 // 디자이너가 프레임과 캐릭터를 올려 두면, 행사 포토부스 탭에서 골라 쓴다. 기본 그림은 늘 맨 앞에 있고 지울 수 없다.
@@ -99,9 +99,15 @@ export default function AssetsPage() {
           {kind === "frame" ? (
             <Card thumb={<img src={frameSrc(BUILTIN_FRAME)} alt="" className="h-56 w-auto" />} title={BUILTIN_FRAME.label} meta={`${BUILTIN_FRAME.slots.length}컷 · 코드에 든 기본 그림`} usage="고른 프레임이 없는 행사는 이 프레임" />
           ) : (
-            (["cop", "thief"] as const).map((s) => (
-              <Card key={s} thumb={<img src={BUILTIN_CHARACTERS[s].src} alt="" className="h-32 w-auto" />} title={BUILTIN_CHARACTERS[s].label} meta={`${s === "cop" ? "경찰" : "도둑"} 쪽 · 코드에 든 기본 그림`} usage="고른 캐릭터가 없는 행사는 이 그림" />
-            ))
+            // 코드에 든 냥파, 도둥이. 경찰 쪽을 먼저, 기본 짝을 맨 앞에
+            [
+              ...(["cop", "thief"] as const).map((s) => ({ key: `default-${s}`, side: s, label: BUILTIN_CHARACTERS[s].label, src: BUILTIN_CHARACTERS[s].src, usage: "고른 캐릭터가 없는 행사는 이 그림" })),
+              ...BUILTIN_CHARACTER_SET.map((c) => ({ ...c, usage: data.usage[c.key]?.length ? `${data.usage[c.key].join(", ")}에서 써요` : "쓰는 행사가 없어요" })),
+            ]
+              .sort((a, b) => (a.side === b.side ? 0 : a.side === "cop" ? -1 : 1))
+              .map((c) => (
+                <Card key={c.key} thumb={<img src={c.src} alt="" className="h-32 w-auto" />} title={c.label} meta={`${c.side === "cop" ? "경찰" : "도둑"} 쪽 · 코드에 든 그림`} usage={c.usage} />
+              ))
           )}
           {list.map((a) => {
             const users = data.usage[a.key] ?? [];

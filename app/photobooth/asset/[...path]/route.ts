@@ -21,11 +21,14 @@ export async function GET(_req: Request, ctx: Ctx): Promise<Response> {
   }
   const res = await fetch(`${PHOTOBOOTH_PUBLIC_BASE}/${key}`, { cache: "no-store" });
   if (!res.ok || !res.body) return new NextResponse("Not found", { status: 404 });
+  const svg = key.endsWith(".svg");
   return new Response(res.body, {
     headers: {
-      "Content-Type": key.endsWith(".webp") ? "image/webp" : "image/png",
+      "Content-Type": svg ? "image/svg+xml" : key.endsWith(".webp") ? "image/webp" : "image/png",
       "Cache-Control": "public, max-age=31536000, immutable",
       "X-Content-Type-Options": "nosniff",
+      // SVG 는 올릴 때 정리했지만 한 겹 더: 주소를 직접 열어도 스크립트가 돌지 않고, 다른 주소를 부르지 못한다
+      ...(svg ? { "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox" } : {}),
     },
   });
 }

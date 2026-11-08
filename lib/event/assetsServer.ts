@@ -42,7 +42,7 @@ export async function usage(): Promise<Record<string, string[]>> {
 
 /** 파일을 R2 에 올리고 줄을 만든다. 키는 올릴 때마다 새로 지어 같은 주소의 내용이 바뀌지 않는다(오래 캐시해도 된다) */
 export async function createAsset(input: { kind: AssetKind; label: string; meta: Asset["meta"]; body: ArrayBuffer; type: string; by: string }): Promise<Asset> {
-  const ext = input.type === "image/webp" ? "webp" : "png";
+  const ext = input.type === "image/webp" ? "webp" : input.type === "image/svg+xml" ? "svg" : "png";
   const key = `assets/${input.kind}/${Date.now()}-${randomBytes(4).toString("hex")}.${ext}`;
   await putObject(key, input.body, input.type);
   const res = await db()

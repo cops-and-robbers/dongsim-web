@@ -32,9 +32,11 @@ export type Asset = {
 export const FRAME_SIZE = { width: 1800, height: 5400 } as const;
 export const MAX_BYTES = { frame: 4 * 1024 * 1024, character: 1024 * 1024 } as const;
 export const FRAME_TYPES = ["image/png"] as const;
-export const CHARACTER_TYPES = ["image/png", "image/webp"] as const;
+/** 캐릭터는 SVG 도 받는다(#227). 서버가 그리는 데 필요한 것만 남겨 새로 짓고(lib/event/svgSafe.ts), 내줄 때 스크립트를 막는다 */
+export const CHARACTER_TYPES = ["image/png", "image/webp", "image/svg+xml"] as const;
 
-export const KEY_RE = /^assets\/(frame|character)\/[a-z0-9-]+\.(png|webp)$/;
+/** 프레임은 PNG 만(투명 칸을 재고 사진과 합성한다), 캐릭터는 PNG, WebP, SVG */
+export const KEY_RE = /^assets\/(frame\/[a-z0-9-]+\.png|character\/[a-z0-9-]+\.(png|webp|svg))$/;
 export const assetUrl = (key: string) => `/photobooth/${key.replace(/^assets\//, "asset/")}`;
 
 /** 기본으로 들어 있는 그림. 보관함에 늘 보이고 지울 수 없다 */
@@ -53,8 +55,32 @@ export const BUILTIN_FRAME: FrameRef = {
 };
 export const BUILTIN_CHARACTERS: Record<Side, { label: string; src: string }> = {
   cop: { label: "냥파 교수(기본)", src: "/photobooth/cop-professor.svg" },
-  thief: { label: "도둥이(기본)", src: "/photobooth/thief-runaway.svg" },
+  thief: { label: "책 든 도둥이(기본)", src: "/photobooth/thief-runaway.svg" },
 };
+
+export type BuiltinCharacter = { key: string; label: string; side: Side; src: string };
+
+/**
+ * 코드에 든 냥파(경찰)와 도둥이(도둑) 그림. 보관함에 늘 보이고 행사에서 골라 쓴다(올리지 않아도 된다).
+ * 사이트, 발표 자료, 앱 데모에 흩어져 있던 그림 중 자세가 다른 것만 모았다. 짝을 맞추기 쉽게 양쪽 자세를 비슷하게 둔다.
+ * 기본 짝(냥파 교수, 책 든 도둥이)은 "고른 게 없음"과 같아서 여기 넣지 않는다
+ */
+export const BUILTIN_CHARACTER_SET: BuiltinCharacter[] = [
+  { key: "builtin/cop-front", label: "냥파", side: "cop", src: "/characters/police.svg" },
+  { key: "builtin/cop-sparkle", label: "반짝 냥파", side: "cop", src: "/photobooth/cop.svg" },
+  { key: "builtin/cop-search", label: "돋보기 냥파", side: "cop", src: "/photobooth/cop-search.svg" },
+  { key: "builtin/cop-chase", label: "쫓는 냥파", side: "cop", src: "/characters/police-chase.svg" },
+  { key: "builtin/cop-wave", label: "손 흔드는 냥파", side: "cop", src: "/photobooth/police-wave.svg" },
+  { key: "builtin/thief-front", label: "도둥이", side: "thief", src: "/characters/robber.svg" },
+  { key: "builtin/thief-crouch", label: "웅크린 도둥이", side: "thief", src: "/photobooth/thief.svg" },
+  { key: "builtin/thief-flee", label: "치즈 든 도둥이", side: "thief", src: "/photobooth/thief-flee.svg" },
+  { key: "builtin/thief-jailed", label: "갇힌 도둥이", side: "thief", src: "/characters/robber-jailed.svg" },
+  { key: "builtin/thief-peace", label: "브이 하는 도둥이", side: "thief", src: "/photobooth/robber-peace.svg" },
+  { key: "builtin/thief-wave", label: "손 흔드는 도둥이", side: "thief", src: "/photobooth/robber-wave.svg" },
+];
+export const builtinCharacter = (key: string) => BUILTIN_CHARACTER_SET.find((c) => c.key === key);
+/** 캐릭터 그림 주소. 코드에 든 그림이면 그 경로, 올린 그림이면 사이트 주소로 */
+export const characterSrc = (key: string) => builtinCharacter(key)?.src ?? assetUrl(key);
 export const frameSrc = (f: FrameRef) => (f.key === BUILTIN_FRAME.key ? "/photobooth/frame-green.png" : assetUrl(f.key));
 
 // ── 프레임 재기 ──

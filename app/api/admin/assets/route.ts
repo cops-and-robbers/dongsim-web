@@ -3,6 +3,7 @@ import { actorName } from "@/lib/admin/server/remoteConfig";
 import { guard, isEventsWritable, noStore, storeError, type AssetsList } from "@/lib/event/adminApi";
 import { CHARACTER_TYPES, FRAME_SIZE, FRAME_TYPES, MAX_BYTES, checkFrame, type Asset, type Slot } from "@/lib/event/assets";
 import { createAsset, listAssets, pngSize, usage, webpSize } from "@/lib/event/assetsServer";
+import { sanitizeSvg } from "@/lib/event/svgSafe";
 
 /**
  * 어드민 그림 보관함 (#224).
@@ -10,7 +11,7 @@ import { createAsset, listAssets, pngSize, usage, webpSize } from "@/lib/event/a
  * GET                                   { assets, usage, writable }
  * POST multipart { file, kind, label, side?, slots?, swatch? }
  *   프레임: PNG 1800x5400, 4MB 이하. 칸은 화면이 재서 보내고, 여기서 크기와 칸 모양을 다시 검사한다
- *   캐릭터: PNG 또는 WebP, 1MB 이하, 경찰 쪽 또는 도둑 쪽
+ *   캐릭터: PNG, WebP, SVG, 1MB 이하, 경찰 쪽 또는 도둑 쪽. SVG 는 그리는 데 필요한 것만 남겨 새로 지은 파일을 올린다
  */
 export async function GET(req: Request): Promise<NextResponse> {
   const checked = await guard(req);
@@ -38,7 +39,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (!(file instanceof File)) return bad("파일을 골라 주세요.");
   if (kind !== "frame" && kind !== "character") return bad("종류가 올바르지 않아요.");
   if (!label || label.length > 20) return bad("이름은 1자에서 20자예요.");
-  const body = await file.arrayBuffer();
+  let body = await file.arrayBuffer();
 
   let meta: Asset["meta"];
   if (kind === "frame") {
@@ -58,10 +59,23 @@ export async function POST(req: Request): Promise<NextResponse> {
     const swatch = String(form?.get("swatch") ?? "");
     meta = { width: size.width, height: size.height, slots, swatch: /^#[0-9A-Fa-f]{6}$/.test(swatch) ? swatch.toUpperCase() : "#FFFFFF" };
   } else {
-    if (!(CHARACTER_TYPES as readonly string[]).includes(file.type)) return bad("캐릭터는 투명 배경 PNG 나 WebP 만 올릴 수 있어요.");
+    if (!(CHARACTER_TYPES as readonly string[]).includes(file.type)) return bad("캐릭터는 투명 배경 PNG, WebP, SVG 만 올릴 수 있어요.");
     if (body.byteLength > MAX_BYTES.character) return bad("1MB 아래로 줄여 주세요.");
-    const size = file.type === "image/png" ? pngSize(body) : webpSize(body);
-    if (!size || size.width < 200 || size.height < 200 || size.width > 3000 || size.height > 3000) return bad("크기는 가로세로 200px 에서 3000px 사이예요.");
+    let size: { width: number; height: number } | null;
+    if (file.type === "image/svg+xml") {
+      // 받은 파일을 그대로 두지 않고, 그리는 데 필요한 것만 남겨 새로 지은 파일을 올린다
+      try {
+        const safe = sanitizeSvg(new TextDecoder().decode(body));
+        body = new TextEncoder().encode(safe.svg).buffer as ArrayBuffer;
+        size = { width: safe.width, height: safe.height };
+      } catch (e) {
+        return bad((e as Error).message);
+      }
+    } else {
+      size = file.type === "image/png" ? pngSize(body) : webpSize(body);
+      if (!size || size.width < 200 || size.height < 200 || size.width > 3000 || size.height > 3000) return bad("크기는 가로세로 200px 에서 3000px 사이예요.");
+    }
+    if (!size) return bad("크기를 읽지 못했어요.");
     const side = form?.get("side");
     if (side !== "cop" && side !== "thief") return bad("경찰 쪽인지 도둑 쪽인지 골라 주세요.");
     meta = { width: size.width, height: size.height, side };
