@@ -19,6 +19,8 @@ const TIMEOUT = 15_000;
 
 /** 화면에 그대로 보여 줄 수 있는 오류 */
 export class StoreError extends Error {}
+/** 구글이 읽는 횟수를 막았을 때 */
+export class QuotaError extends StoreError {}
 
 // ---------- iOS ----------
 
@@ -36,23 +38,16 @@ async function asc(path: string, token: string): Promise<JsonApi> {
 }
 
 export async function readIos(now = new Date()): Promise<IosRaw> {
-  const key = releaseAscKey();
-  if (!key.keyId || !key.pem || !key.issuer) throw new StoreError("출시용 App Store 키가 없어요. Vercel 에 ASC_RELEASE_KEY_ID, ASC_RELEASE_PRIVATE_KEY 를 넣어 주세요");
-  let token: string;
-  try {
-    token = ascToken(now, key);
-  } catch {
-    throw new StoreError("출시용 App Store 키(.p8)를 읽지 못했어요. Vercel 의 ASC_RELEASE_PRIVATE_KEY 에 파일 내용 전체를 넣었는지 확인해 주세요");
-  }
+  const token = releaseAscToken(now);
   const app = APPSTORE_APP_ID;
   const [versions, builds, subs] = await Promise.all([
     asc(`/apps/${app}/appStoreVersions?filter[platform]=IOS&limit=6&include=build,appStoreVersionPhasedRelease&fields[appStoreVersions]=versionString,appVersionState,releaseType,createdDate,earliestReleaseDate,build,appStoreVersionPhasedRelease&fields[builds]=version,processingState,uploadedDate&fields[appStoreVersionPhasedReleases]=phasedReleaseState,currentDayNumber,startDate`, token),
     asc(`/builds?filter[app]=${app}&sort=-uploadedDate&limit=1&include=preReleaseVersion&fields[builds]=version,processingState,uploadedDate,preReleaseVersion&fields[preReleaseVersions]=version`, token),
-    asc(`/reviewSubmissions?filter[app]=${app}&filter[platform]=IOS&limit=5&fields[reviewSubmissions]=state,submittedDate`, token),
+    asc(`/reviewSubmissions?filter[app]=${app}&filter[platform]=IOS&limit=5&fields[reviewSubmissions]=state,submittedDate,items&include=items&fields[reviewSubmissionItems]=appStoreVersion`, token),
   ]);
   const inc = new Map((versions.included ?? []).map((i) => [`${i.type}:${i.id}`, i.attributes ?? {}]));
-  const toBuild = (a: Record<string, unknown> | undefined, version?: string): IosBuild | null =>
-    a ? { number: String(a.version ?? ""), state: String(a.processingState ?? ""), uploadedAt: String(a.uploadedDate ?? ""), ...(version ? { version } : {}) } : null;
+  const toBuild = (id: string, a: Record<string, unknown> | undefined, version?: string): IosBuild | null =>
+    a ? { id, number: String(a.version ?? ""), state: String(a.processingState ?? ""), uploadedAt: String(a.uploadedDate ?? ""), ...(version ? { version } : {}) } : null;
 
   const list: IosVersion[] = (versions.data ?? []).map((d) => {
     const a = d.attributes ?? {};
@@ -66,8 +61,8 @@ export async function readIos(now = new Date()): Promise<IosRaw> {
       createdAt: iso(a.createdDate),
       releaseType: a.releaseType ? String(a.releaseType) : null,
       earliestReleaseDate: a.earliestReleaseDate ? iso(a.earliestReleaseDate) : null,
-      build: b ? toBuild(inc.get(`${b.type}:${b.id}`)) : null,
-      phased: pa ? { state: String(pa.phasedReleaseState ?? ""), day: Number(pa.currentDayNumber ?? 0), startDate: pa.startDate ? iso(pa.startDate) : null } : null,
+      build: b ? toBuild(b.id, inc.get(`${b.type}:${b.id}`)) : null,
+      phased: p && pa ? { id: p.id, state: String(pa.phasedReleaseState ?? ""), day: Number(pa.currentDayNumber ?? 0), startDate: pa.startDate ? iso(pa.startDate) : null } : null,
     };
   });
   // 버전 칸은 만든 순서로(새 것 먼저). 애플 응답 순서에 기대지 않는다
@@ -76,10 +71,15 @@ export async function readIos(now = new Date()): Promise<IosRaw> {
   const latest = builds.data?.[0];
   const pre = latest?.relationships?.preReleaseVersion?.data;
   const preVersion = pre ? builds.included?.find((i) => i.id === pre.id)?.attributes?.version : undefined;
-  const latestBuild = latest ? toBuild({ ...latest.attributes, uploadedDate: iso(latest.attributes?.uploadedDate) }, preVersion ? String(preVersion) : undefined) : null;
+  const latestBuild = latest ? toBuild(latest.id, { ...latest.attributes, uploadedDate: iso(latest.attributes?.uploadedDate) }, preVersion ? String(preVersion) : undefined) : null;
 
   const submissions = (subs.data ?? [])
-    .map((d) => ({ state: String(d.attributes?.state ?? ""), submittedAt: d.attributes?.submittedDate ? iso(d.attributes.submittedDate) : null }))
+    .map((d) => {
+      // 제출 묶음에 든 버전(취소, 출시할 때 어느 묶음인지 알아야 한다)
+      const itemIds = new Set((d.relationships?.items as { data?: { id: string }[] } | undefined)?.data?.map((x) => x.id) ?? []);
+      const item = subs.included?.find((i) => i.type === "reviewSubmissionItems" && itemIds.has(i.id)) as { relationships?: { appStoreVersion?: { data?: { id: string } | null } } } | undefined;
+      return { id: d.id, state: String(d.attributes?.state ?? ""), submittedAt: d.attributes?.submittedDate ? iso(d.attributes.submittedDate) : null, versionId: item?.relationships?.appStoreVersion?.data?.id ?? null };
+    })
     .sort((x, y) => ((x.submittedAt ?? "") < (y.submittedAt ?? "") ? 1 : -1));
 
   return { versions: list.map((v) => ({ ...v, build: v.build ? { ...v.build, uploadedAt: iso(v.build.uploadedAt) } : null })), latestBuild, submissions };
@@ -93,37 +93,82 @@ function iso(v: unknown): string {
 
 // ---------- Android ----------
 
-const PLAY_API = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PLAY_PACKAGE}`;
+export const PLAY_API = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PLAY_PACKAGE}`;
 const LANGS: { language: string; hl: string; gl: string }[] = [
   { language: "en-US", hl: "en", gl: "US" },
   { language: "ko-KR", hl: "ko", gl: "KR" },
   { language: "ja-JP", hl: "ja", gl: "JP" },
 ];
 
-async function play(url: string, token: string, init: RequestInit = {}): Promise<Record<string, unknown>> {
-  const res = await fetch(url, { ...init, headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(TIMEOUT), cache: "no-store" });
+export async function play(url: string, token: string, init: RequestInit = {}): Promise<Record<string, unknown>> {
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}`, ...(init.body ? { "Content-Type": "application/json" } : {}) };
+  const res = await fetch(url, { ...init, headers, signal: AbortSignal.timeout(TIMEOUT), cache: "no-store" });
   const text = await res.text();
   const body = text ? (JSON.parse(text) as Record<string, unknown>) : {};
+  const message = (body.error as { message?: string } | undefined)?.message ?? "";
+  // 출시 목록 읽기는 문서에 없는 따로 된 한도가 있다(403 "Listing releases quota exceeded", 2026-11-08). 권한 문제와 구별한다
+  if (/quota/i.test(message)) throw new QuotaError("구글이 출시 목록을 너무 자주 읽었다고 잠시 막았어요. 몇 분 뒤 다시 읽어요");
   if (res.status === 401 || res.status === 403) throw new StoreError("Play 가 출시용 서비스 계정을 받지 않아요. Play Console 사용자 목록에 admin-release 계정이 경찰과 도둑 앱 권한으로 있는지 확인해 주세요");
-  if (!res.ok) throw new StoreError(`Play 가 오류를 돌려줬어요 (${res.status} ${(body.error as { message?: string } | undefined)?.message ?? ""})`.trim());
+  if (!res.ok) throw new StoreError(`Play 가 오류를 돌려줬어요 (${res.status} ${message})`.trim());
   return body;
 }
 
-type TrackRelease = { name?: string; versionCodes?: string[]; status?: string; userFraction?: number };
+type TrackRelease = { name?: string; versionCodes?: string[]; status?: string; userFraction?: number; releaseNotes?: { language: string; text: string }[] };
 
-export async function readAndroid(): Promise<AndroidRaw> {
-  let token: string;
+/** 출시용 Play 서비스 계정 토큰 */
+export async function playToken(): Promise<string> {
   try {
-    token = await serviceAccountToken(serviceAccountFromEnv("PLAY_RELEASE_SERVICE_ACCOUNT_JSON"), "https://www.googleapis.com/auth/androidpublisher");
+    return await serviceAccountToken(serviceAccountFromEnv("PLAY_RELEASE_SERVICE_ACCOUNT_JSON"), "https://www.googleapis.com/auth/androidpublisher");
   } catch (e) {
     const missing = e instanceof Error && /환경변수가 없어요/.test(e.message);
     throw new StoreError(missing ? "출시용 Play 키가 없어요. Vercel 에 PLAY_RELEASE_SERVICE_ACCOUNT_JSON 을 넣어 주세요" : "출시용 Play 키로 로그인하지 못했어요. Vercel 의 PLAY_RELEASE_SERVICE_ACCOUNT_JSON 에 JSON 파일 내용 전체를 넣었는지 확인해 주세요");
   }
+}
 
-  const lists = async (track: string) => ((await play(`${PLAY_API}/tracks/${track}/releases`, token)).releases ?? []) as { releaseName?: string; activeArtifacts?: { versionCode?: number }[]; releaseLifecycleState?: string }[];
-  const [production, internal, edit] = await Promise.all([lists("production"), lists("internal"), readEdit(token)]);
+/** 출시용 App Store 키 토큰 */
+export function releaseAscToken(now = new Date()): string {
+  const key = releaseAscKey();
+  if (!key.keyId || !key.pem || !key.issuer) throw new StoreError("출시용 App Store 키가 없어요. Vercel 에 ASC_RELEASE_KEY_ID, ASC_RELEASE_PRIVATE_KEY 를 넣어 주세요");
+  try {
+    return ascToken(now, key);
+  } catch {
+    throw new StoreError("출시용 App Store 키(.p8)를 읽지 못했어요. Vercel 의 ASC_RELEASE_PRIVATE_KEY 에 파일 내용 전체를 넣었는지 확인해 주세요");
+  }
+}
 
-  const merge = (rels: Awaited<ReturnType<typeof lists>>, track: string): PlayRelease[] =>
+type ListedRelease = { releaseName?: string; activeArtifacts?: { versionCode?: number }[]; releaseLifecycleState?: string };
+
+/**
+ * 출시 목록(심사 상태가 들어 있다)은 서버마다 마지막으로 읽은 값을 둔다.
+ * 구글이 이 호출에만 따로 한도를 걸어 1분마다 읽으면 막힌다. 심사 상태는 분 단위로 바뀌지 않으니 5분에 한 번만 새로 읽고,
+ * 막히면 마지막 값을 쓴다(언제 값인지 함께 돌려 화면이 "N분 전 값"이라고 말한다). 출시 조작은 fresh 로 늘 새로 읽고, 막히면 하지 않는다
+ */
+const LIST_MAX_AGE = 5 * 60_000;
+const lastLists = new Map<string, { at: number; data: ListedRelease[] }>();
+
+async function listReleases(track: string, token: string, fresh: boolean): Promise<{ data: ListedRelease[]; at: number }> {
+  const last = lastLists.get(track);
+  if (!fresh && last && Date.now() - last.at < LIST_MAX_AGE) return last;
+  try {
+    const data = ((await play(`${PLAY_API}/tracks/${track}/releases`, token)).releases ?? []) as ListedRelease[];
+    const got = { data, at: Date.now() };
+    lastLists.set(track, got);
+    return got;
+  } catch (e) {
+    if (!fresh && last && e instanceof QuotaError) return last;
+    throw e;
+  }
+}
+
+export async function readAndroid(opts: { fresh?: boolean } = {}): Promise<AndroidRaw> {
+  const token = await playToken();
+  const fresh = opts.fresh === true;
+  const [prodList, internalList, edit] = await Promise.all([listReleases("production", token, fresh), listReleases("internal", token, fresh), readEdit(token)]);
+  const production = prodList.data;
+  const internal = internalList.data;
+  const listedAt = new Date(Math.min(prodList.at, internalList.at)).toISOString();
+
+  const merge = (rels: ListedRelease[], track: string): PlayRelease[] =>
     rels.map((r) => {
       const codes = (r.activeArtifacts ?? []).map((a) => Number(a.versionCode)).filter(Number.isFinite);
       const t = edit.tracks.get(track)?.find((x) => (x.versionCodes ?? []).some((c) => codes.includes(Number(c))));
@@ -133,6 +178,7 @@ export async function readAndroid(): Promise<AndroidRaw> {
         lifecycle: (r.releaseLifecycleState ?? "").replace(/^RELEASE_LIFECYCLE_STATE_/, ""),
         ...(t?.status ? { status: t.status } : {}),
         ...(typeof t?.userFraction === "number" ? { fraction: t.userFraction } : {}),
+        ...(t?.releaseNotes?.length ? { notes: t.releaseNotes } : {}),
       };
     });
 
@@ -141,7 +187,7 @@ export async function readAndroid(): Promise<AndroidRaw> {
     const approved = edit.titles.get(l.language);
     return approved ? [{ language: l.language, approved, live: live[i] }] : [];
   });
-  return { production: merge(production, "production"), internal: merge(internal, "internal"), listing };
+  return { production: merge(production, "production"), internal: merge(internal, "internal"), listing, listedAt };
 }
 
 /** 편집을 열어 트랙(단계적 출시 비율)과 승인된 스토어 이름을 읽고, 커밋하지 않고 지운다 */

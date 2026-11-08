@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "motion/react";
 import { useEffect, type ReactNode } from "react";
 import { Button } from "@/components/admin/Button";
 
@@ -13,7 +14,9 @@ export function ChangeDialog({
   children,
   danger = false,
   confirmText = "앱에 적용",
+  pendingText = "적용하는 중...",
   confirmDisabled = false,
+  size = "md",
   pending,
   error,
   onConfirm,
@@ -26,7 +29,10 @@ export function ChangeDialog({
   children?: ReactNode;
   danger?: boolean;
   confirmText?: string;
+  pendingText?: string;
   confirmDisabled?: boolean;
+  /** md: 짧은 확인, lg: 설명이 긴 확인, xl: 입력이 많은 확인(넓은 화면에서 두 단) */
+  size?: "md" | "lg" | "xl";
   pending: boolean;
   error?: string;
   onConfirm: () => void;
@@ -42,14 +48,28 @@ export function ChangeDialog({
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
-      <button type="button" aria-label="닫기" onClick={() => !pending && onClose()} className="absolute inset-0 bg-black/50" />
-      <div
+      {/* 열고 닫을 때 바탕은 흐려지고 창은 살짝 떠오른다. 닫힘 움직임은 부모가 AnimatePresence 로 감쌌을 때만 */}
+      <motion.button
+        type="button"
+        aria-label="닫기"
+        onClick={() => !pending && onClose()}
+        className="absolute inset-0 bg-black/50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.8 }}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative max-h-[88vh] w-full max-w-md overflow-y-auto rounded-2xl border border-sd-line bg-sd-surface p-6"
+        className={`relative max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-sd-line bg-sd-surface p-6 ${size === "xl" ? "max-w-4xl sm:p-7" : size === "lg" ? "max-w-xl sm:p-7" : "max-w-md"}`}
       >
-        <h2 className="text-[16px] font-bold text-sd-fg">{title}</h2>
+        <h2 className={`${size === "md" ? "text-[16px]" : "text-[19px] tracking-tight"} font-bold text-sd-fg`}>{title}</h2>
 
         {warnings.map((w) => (
           <p key={w} className="mt-3 text-[14px] font-semibold leading-relaxed text-sd-critical">
@@ -90,10 +110,10 @@ export function ChangeDialog({
             취소
           </Button>
           <Button variant={danger ? "danger" : "brand"} onClick={onConfirm} disabled={pending || confirmDisabled}>
-            {pending ? "적용하는 중..." : confirmText}
+            {pending ? pendingText : confirmText}
           </Button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

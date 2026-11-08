@@ -1,11 +1,16 @@
 "use client";
 
+import { AnimatePresence, MotionConfig } from "motion/react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBlock, PageHeader, ScrollPage, SectionCard } from "@/components/admin/Parts";
 import { RefreshIcon } from "@/components/admin/icons";
 import { WorldClock } from "@/components/admin/ops/WorldClock";
-import { HistoryList, Notes, StatusPill, StoreCard } from "@/components/admin/release/Board";
+import { Stagger, StaggerItem } from "@/components/admin/motion";
+import { ActionDialog } from "@/components/admin/release/ActionDialog";
+import { ActionLogList, HistoryList, Notes, StatusPill, StoreCard, type ActControl } from "@/components/admin/release/Board";
+import { useToast } from "@/components/admin/Toast";
+import type { Option } from "@/lib/release/options";
 import { fetchReleaseBoard } from "@/lib/admin/releaseClient";
 import type { ReleaseBoard, Track } from "@/lib/release/board";
 import { ago } from "@/lib/release/time";
@@ -26,6 +31,8 @@ export default function ReleasePage() {
   const [scenario, setScenario] = useState("real");
   // 1분마다 읽기와 "다시 읽기"가 겹치면 늦게 온 옛 응답이 새 응답을 덮을 수 있어 마지막 요청만 받는다
   const seq = useRef(0);
+  const [picked, setPicked] = useState<Option | null>(null);
+  const toast = useToast();
 
   // 불러오는 동안 표시(loading)는 "다시 읽기"를 누를 때만 켠다. 처음에는 뼈대가, 1분마다는 조용히 바뀐다
   const load = useCallback(
@@ -62,8 +69,29 @@ export default function ReleasePage() {
     };
   }, [load]);
 
+  const act = (b: ReleaseBoard): ActControl => ({ writable: !!b.writable, readOnlyReason: b.readOnlyReason, onPick: setPicked });
+
   return (
+    // 움직임은 기기의 "동작 줄이기"를 따른다
+    <MotionConfig reducedMotion="user">
     <ScrollPage>
+      <AnimatePresence>
+      {picked && (
+        <ActionDialog
+          key={picked.id}
+          option={picked}
+          onClose={() => {
+            setPicked(null);
+            load(true);
+          }}
+          onDone={(message) => {
+            setPicked(null);
+            toast(message);
+            load(true);
+          }}
+        />
+      )}
+      </AnimatePresence>
       <PageHeader
         title="출시"
         description={board ? <Balls ios={board.ios} android={board.android} /> : "두 스토어가 어디까지 왔는지, 지금 무엇을 할 수 있는지 보여 줘요."}
@@ -100,14 +128,24 @@ export default function ReleasePage() {
           {error && <p className="rounded-xl bg-sd-critical-weak px-4 py-2.5 text-[13px] text-sd-fg">다시 읽지 못해 {ago(board.readAt, now)}에 읽은 값을 보여 줘요. {error}</p>}
           <Notes notes={board.notes} />
 
-          <div className="grid items-stretch gap-5 lg:grid-cols-2">
-            <StoreCard track={board.ios} reach={board.reach} now={now} />
-            <StoreCard track={board.android} reach={board.reach} now={now} />
-          </div>
+          <Stagger className="grid items-stretch gap-5 lg:grid-cols-2" gap={0.08}>
+            <StaggerItem className="flex">
+              <StoreCard track={board.ios} reach={board.reach} now={now} act={act(board)} />
+            </StaggerItem>
+            <StaggerItem className="flex">
+              <StoreCard track={board.android} reach={board.reach} now={now} act={act(board)} />
+            </StaggerItem>
+          </Stagger>
 
           <SectionCard title="지금 내면">
             <WorldClock at={now} />
           </SectionCard>
+
+          {board.actions && board.actions.length > 0 && (
+            <SectionCard title="최근 조작" flush>
+              <ActionLogList items={board.actions} now={now} />
+            </SectionCard>
+          )}
 
           {board.history.length > 0 && (
             <SectionCard title="최근 출시" flush>
@@ -116,11 +154,12 @@ export default function ReleasePage() {
           )}
 
           <p className="pb-2 text-[12px] leading-relaxed text-sd-fg-subtle">
-            이 화면은 읽기만 하고 스토어에 아무것도 바꾸지 않아요. 열어 둔 동안 1분마다 다시 읽어요. 최근 출시는 지표 일정의 출시 기록이에요.
+            버튼은 누르기 전에 무엇이 바뀌는지 보여 주고, 누르는 순간 스토어를 다시 읽어 상태가 그대로일 때만 해요. 열어 둔 동안 1분마다 다시 읽어요. 최근 출시는 지표 일정의 출시 기록이에요.
           </p>
         </div>
       )}
     </ScrollPage>
+    </MotionConfig>
   );
 }
 

@@ -5,6 +5,8 @@
 import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/lib/metrics/db";
 import { buildBoard, type ReleaseBoard } from "./board";
+import { auditReady, recentActions } from "./audit";
+import { androidOptions, iosOptions } from "./options";
 import { historyFrom, readAndroid, readIos, readLookup, StoreError } from "./stores";
 
 export const RELEASE_TAG = "release-board";
@@ -27,16 +29,32 @@ async function readHistory() {
 
 async function read(): Promise<ReleaseBoard> {
   const now = new Date();
-  const [ios, android, lookup, history] = await Promise.all([readIos(now).catch(failed("App Store")), readAndroid().catch(failed("Google Play")), readLookup(), readHistory()]);
-  return buildBoard({ now: now.toISOString(), ios, android, lookup, history });
+  const [ios, android, lookup, history, actions, ready] = await Promise.all([
+    readIos(now).catch(failed("App Store")),
+    readAndroid().catch(failed("Google Play")),
+    readLookup(),
+    readHistory(),
+    recentActions(),
+    auditReady(),
+  ]);
+  const board = buildBoard({ now: now.toISOString(), ios, android, lookup, history });
+  // 할 수 있는 조작은 스토어에서 읽은 값 그대로로 고른다(서버가 누를 때 다시 읽어 같은지 본다)
+  if (board.ios.ok && !("error" in ios)) board.ios.options = iosOptions(ios);
+  if (board.android.ok && !("error" in android)) board.android.options = androidOptions(android);
+  const production = process.env.VERCEL_ENV === "production";
+  board.actions = actions;
+  board.writable = production && ready;
+  if (!production) board.readOnlyReason = "스토어는 운영 어드민에서만 바꿀 수 있어요";
+  else if (!ready) board.readOnlyReason = "조작 기록 표가 아직 없어요. supabase/migrations/0016_release_actions.sql 을 실행하면 버튼이 켜져요";
+  return board;
 }
 
 export const releaseBoard = unstable_cache(read, ["release-board-v1"], { tags: [RELEASE_TAG], revalidate: 60 });
 
-/** 다시 읽기. 같은 서버에서 10초 안에 또 누르면 캐시를 그대로 쓴다(스토어 API 아끼기) */
+/** 다시 읽기. 같은 서버에서 10초 안에 또 누르면 캐시를 그대로 쓴다(스토어 API 아끼기). 조작 뒤에는 force 로 늘 비운다 */
 let lastRefresh = 0;
-export function refreshReleaseBoard(): void {
-  if (Date.now() - lastRefresh < 10_000) return;
+export function refreshReleaseBoard(force = false): void {
+  if (!force && Date.now() - lastRefresh < 10_000) return;
   lastRefresh = Date.now();
   revalidateTag(RELEASE_TAG, { expire: 0 });
 }
