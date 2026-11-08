@@ -598,6 +598,23 @@ App Store Connect 와 Play Console 을 오가며 맞춰 보던 출시 상태를 
 
 `supabase/migrations/0019_store_reviews.sql` 을 SQL Editor 에서 실행해요. 키는 출시 조작에 쓰는 `ASC_RELEASE_*`, `PLAY_RELEASE_SERVICE_ACCOUNT_JSON` 을 그대로 써요. Google Play 답글에는 서비스 계정에 "리뷰에 답글 달기" 권한이 있어야 해요.
 
+## 스토어 점검 (`app/admin/store-check`)
+
+콘솔마다 흩어진 경고와 기한을 지금 할 일부터 보여 줘요. 스토어에는 쓰지 않아요.
+
+| 정한 것 | 이유 |
+| --- | --- |
+| 지금 할 일, 지켜볼 것, 문제없는 것(접음) 순서 | 다 괜찮은 항목까지 펼쳐 두면 할 일이 묻혀요 |
+| 판매 나라는 `territoryAvailabilities` 의 `contentStatuses` 로 읽어요. `available` 만 보면 안 돼요 | 판매가 막힌 나라도 `available` 은 true 로 와요(2026-11-08, AFG, MAR) |
+| 다음 버전은 빌드, 새로운 기능, iPhone 스크린샷, 심사 연락처를 봐요 | 빠지면 심사에 낼 수 없는 것들이에요 |
+| Google Play 안정성은 구글 공개 기준(비정상 종료 1.09%, 응답 없음 0.47%)과 견줘요. 숫자가 없으면 문제없음 | 사용자가 적으면 구글이 값을 주지 않아요 |
+| API 로 못 읽는 일(약관 동의, 판매자 신고, 타깃 API, iPhone Duo)은 기한과 함께 사람이 "끝냈어요"를 눌러요. 90일 안이면 할 일로 올라와요 | 콘솔의 띠 경고는 API 로 읽을 수 없어요. 코드의 `MANUAL` 목록에 있어요 |
+| 안정성과 판매 나라는 5분, 문구와 이미지는 스토어 페이지의 값을 같이 써요 | Google Play 는 새 편집을 열면 이전 편집을 지워서 읽는 곳을 늘리지 않아요 |
+
+### 처음 연결하기
+
+`supabase/migrations/0020_store_check_done.sql` 을 SQL Editor 에서 실행해요. 실행 전에도 화면은 보이고 "끝냈어요"만 꺼져 있어요. Google Play 안정성은 `PLAY_RELEASE_SERVICE_ACCOUNT_JSON` 계정의 앱 품질 보기 권한으로 읽어요.
+
 ## 게임 화면은 늘 지금 상태로 (#182)
 
 게임 상태는 앱에서 바뀌어요. 방장이 시작하면 진행 중, 판이 끝나면 다시 대기 중(FINISHED 로 남지 않아요), 방이 비면 사라져요. 어드민은 Relay 스토어를 세션 내내 하나로 써서, 한 번 읽은 목록을 다시 묻지 않으면 연 뒤에 시작한 방이 계속 "대기중"으로 보여요.

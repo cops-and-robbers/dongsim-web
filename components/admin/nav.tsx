@@ -16,6 +16,7 @@ import {
   RocketIcon,
   StoreIcon,
   StarIcon,
+  ClipboardCheckIcon,
 } from "@/components/admin/icons";
 
 // 어드민 메뉴 정본. 데스크톱 사이드바(AdminShell)와 폰 하단 탭, 전체 메뉴(MobileNav)가 같은 목록을 쓴다
@@ -75,6 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: RELEASE_HREF, label: "출시", Icon: RocketIcon },
       { href: STORE_PAGE_HREF, label: "스토어 페이지", Icon: StoreIcon },
+      { href: "/admin/store-check", label: "스토어 점검", Icon: ClipboardCheckIcon },
       { href: APP_CONFIG_HREF, label: "앱 설정", Icon: SlidersIcon },
       { href: "/admin/terms", label: "약관 재동의", Icon: TermsIcon },
       { href: WEBGAME_HREF, label: "온라인 게임", Icon: WebgameIcon },
