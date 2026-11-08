@@ -1,7 +1,13 @@
 import { useId } from "react";
+import { DongsimSymbol } from "@/components/icons/DongsimLogo";
 
 // 브랜드 마크 아이콘. 색이 의미를 가지므로(구글·카카오) 선 스타일과 별도로 둔다.
 // 애플·안드로이드는 currentColor로 테마 상속.
+
+// 동심지키미 심볼. 어드민 메뉴의 "동심지키미 소개"에 쓴다. 다른 메뉴 아이콘처럼 선택과 다크 모드의 글자색을 따라간다. 가로로 긴 모양이라 같은 칸에서 작아 보여 키운다
+export function DongsimSymbolIcon({ className }: { className?: string }) {
+  return <DongsimSymbol className={`scale-125 ${className ?? ""}`} />;
+}
 
 export function SocialIcon({
   type,

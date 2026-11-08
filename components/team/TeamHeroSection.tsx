@@ -1,10 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
+import { DongsimLockup, DongsimSymbol } from "@/components/icons/DongsimLogo";
+import type { Locale } from "@/lib/i18n/config";
 import type { Messages } from "@/lib/i18n/messages";
 
 // 회사 소개 - 왼쪽 인트로 + 오른쪽 회사 정보 카드. 문구는 로케일 사전에서 받는다.
-export default function TeamHeroSection({ copy }: { copy: Messages["team"] }) {
+export default function TeamHeroSection({ copy, locale }: { copy: Messages["team"]; locale: Locale }) {
   // 회사 정보 카드 위 캐릭터 - 모달과 동일한 등장 애니메이션(scaleIn, 같은 속도·이징).
   const pop = {
     animation: "scaleIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both",
@@ -51,7 +53,15 @@ export default function TeamHeroSection({ copy }: { copy: Messages["team"] }) {
               </div>
 
               <div className="relative z-10 w-full rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-white/10 dark:bg-app-black-900">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-blue dark:text-brand-green">
+                {/* 명함처럼 맨 위에 로고. 세로형에는 한글이 있어 영어, 일본어 페이지는 심볼만 둔다 */}
+                <div className="flex justify-center border-b border-slate-100 pb-6 text-slate-900 dark:border-white/10 dark:text-white">
+                  {locale === "ko" ? (
+                    <DongsimLockup label={copy.hero.eyebrow} className="h-20 w-auto" />
+                  ) : (
+                    <DongsimSymbol label={copy.hero.eyebrow} className="h-11 w-auto" />
+                  )}
+                </div>
+                <p className="mt-6 text-xs font-bold uppercase tracking-[0.16em] text-brand-blue dark:text-brand-green">
                   {copy.company.label}
                 </p>
                 <dl className="mt-4">

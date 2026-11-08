@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { BRAND } from "@/lib/constants";
-import { BRAND_NAME, localizedPath } from "@/lib/i18n/config";
+import { COMPANY_NAME, localizedPath } from "@/lib/i18n/config";
 import { CHROME } from "@/lib/i18n/chrome";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { DongsimSymbol, DongsimWordmark } from "@/components/icons/DongsimLogo";
 import LanguageSwitcher from "./LanguageSwitcher";
 
 function InstagramIcon() {
@@ -64,7 +64,7 @@ function TikTokIcon() {
 export default function Footer() {
   const locale = useLocale();
   const copy = CHROME[locale].footer;
-  const brand = locale === "ko" ? BRAND.fullName : BRAND_NAME[locale];
+  const brand = COMPANY_NAME[locale];
   const year = new Date().getFullYear();
 
   return (
@@ -72,18 +72,14 @@ export default function Footer() {
       <div className="mx-auto w-full max-w-6xl px-6 pb-8 pt-14">
         <div className="grid gap-10 md:grid-cols-3 md:gap-12">
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Image
-                src="/brand/dongsim-logo.svg"
-                alt=""
-                width={32}
-                height={32}
-                unoptimized
-                className="h-8 w-8 rounded-lg"
-              />
-              <p className="text-base font-bold text-slate-900 dark:text-white">
-                {brand}
-              </p>
+            {/* 글자 로고는 한글이라 영어, 일본어는 심볼 옆에 이름을 글로 둔다 */}
+            <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
+              <DongsimSymbol className="h-6 w-auto" />
+              {locale === "ko" ? (
+                <DongsimWordmark label={brand} className="h-[18px] w-auto" />
+              ) : (
+                <p className="text-base font-bold">{brand}</p>
+              )}
             </div>
             <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
               {copy.tagline}
