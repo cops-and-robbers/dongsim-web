@@ -92,11 +92,12 @@ function StoreSpecs({ platform }: { platform: Platform }) {
             </span>
             <span className="min-w-0 flex-1 text-[13px] leading-relaxed text-sd-fg-muted">
               {r.rule}
-              {!r.seen && <span className="text-sd-fg-subtle"> 넘칠 때는 아직 못 봤어요.</span>}
+              {r.basis === "web" && <span className="text-sd-fg-subtle"> (웹 스토어 기준)</span>}
+              {r.basis === "none" && <span className="text-sd-fg-subtle"> 넘칠 때는 아직 못 봤어요.</span>}
             </span>
           </li>
         ))}
-        <li className="pt-1.5 text-[12px] leading-relaxed text-sd-fg-subtle">실제 스토어 앱 캡처로 잰 값이에요(iPhone, Galaxy, 2026-11-07). 글자 수 한도를 넘으면 스토어에 저장되지 않아요.</li>
+        <li className="pt-1.5 text-[12px] leading-relaxed text-sd-fg-subtle">실제 스토어 앱 캡처로 잰 값이에요(iPhone, Galaxy, 2026-11-07 ~ 08). 앱 캡처에 예가 없는 App Store 칸은 웹 스토어에서 본 동작이에요. 글자 수 한도를 넘으면 스토어에 저장되지 않아요.</li>
       </ul>
 
       <h3 className="border-t border-sd-hairline px-5 pt-4 text-[12.5px] font-semibold text-sd-fg-subtle">이미지와 영상</h3>

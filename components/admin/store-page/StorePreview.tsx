@@ -41,7 +41,7 @@ function Text({ platform, field, surface, value, spot, color }: { platform: Plat
       <div ref={ref} data-spot={on ? "on" : undefined} data-slot={`${field}-${surface}`} style={{ ...slotStyle(slot), color, ...(on ? SPOT : {}) }}>
         {value}
       </div>
-      {cut && <span style={{ position: "absolute", right: 0, bottom: 0, paddingLeft: 24, background: "linear-gradient(90deg,transparent,#fff 18px)", color: IOS.blue, fontSize: slot.fontSize, lineHeight: `${slot.lineHeight}px` }}>더 보기</span>}
+      {cut && slot.more && <span style={{ position: "absolute", right: 0, bottom: 0, paddingLeft: 24, background: "linear-gradient(90deg,transparent,#fff 18px)", color: IOS.blue, fontSize: slot.fontSize, lineHeight: `${slot.lineHeight}px` }}>더 보기</span>}
     </div>
   );
 }
@@ -234,10 +234,51 @@ function PlayStat({ center, children }: { center: number; children: ReactNode })
   return <div style={{ position: "absolute", left: center, top: 0, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", whiteSpace: "nowrap" }}>{children}</div>;
 }
 
-function PlayPage({ v, art, spot, go }: ScreenProps) {
+/** 이름이 한 줄을 넘는지. 넘으면 앱이 화면 구성을 바꾼다 */
+function useWraps(value: string): { wraps: boolean; probe: ReactNode } {
+  const slot = slotOf("android", "title", "page")!;
+  const ref = useRef<HTMLDivElement>(null);
+  const [wraps, setWraps] = useState(false);
+  useLayoutEffect(() => {
+    if (ref.current) setWraps(ref.current.offsetHeight > slot.lineHeight * 1.5);
+  }, [value, slot]);
+  return { wraps, probe: <div ref={ref} aria-hidden style={{ ...slotStyle(slot), position: "absolute", visibility: "hidden", pointerEvents: "none" }}>{value || " "}</div> };
+}
+
+/** 이름이 길 때의 머리. 개발자 이름, 큰 이름, 아이콘과 숫자 줄 순서다(캡처) */
+function PlayLongHead({ v, art, spot }: Pick<ScreenProps, "v" | "art" | "spot">) {
+  const stat = (top: ReactNode, bottom: string) => (
+    <div style={{ flex: "none", width: 83, color: PLAY.gray, fontSize: 10.9, lineHeight: "20px" }}>
+      <div style={{ fontWeight: 700, fontSize: 13, color: PLAY.text }}>{top}</div>
+      {bottom}
+    </div>
+  );
   return (
-    <div style={{ background: "#fff", paddingBottom: 130 }}>
+    <>
+      <p style={{ padding: "0 24px", fontSize: 15.7, lineHeight: "22px", fontWeight: 500, color: PLAY.blue }}>{art.developer}</p>
+      <div style={{ padding: "8px 24px 0" }}>
+        <Text platform="android" field="title" surface="pageLong" value={v.title ?? ""} spot={spot} color={PLAY.text} />
+      </div>
+      <div style={{ display: "flex", alignItems: "center", padding: "14px 0 0 24px", gap: 12 }}>
+        <Img src={art.icon} style={{ width: 48, height: 48, borderRadius: 11, flex: "none", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+        {stat(<span style={{ color: "#f29900", fontWeight: 600 }}>⑫</span>, "12세 이상")}
+        {stat(<Icon d={PATH.download} size={14} color={PLAY.text} />, PLAY_SIZE)}
+        {stat(art.downloads ?? "-", "다운로드")}
+      </div>
+    </>
+  );
+}
+
+function PlayPage({ v, art, spot, go }: ScreenProps) {
+  const { wraps, probe } = useWraps(v.title ?? "");
+  return (
+    <div style={{ background: "#fff", paddingBottom: 130, position: "relative" }}>
+      {probe}
       <PlayBar />
+      {wraps ? (
+        <PlayLongHead v={v} art={art} spot={spot} />
+      ) : (
+        <>
       <div style={{ display: "flex", gap: 25.6, padding: "4px 24px 0" }}>
         <Img src={art.icon} style={{ width: 72, height: 72, borderRadius: 16, flex: "none", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
         <div>
@@ -261,7 +302,9 @@ function PlayPage({ v, art, spot, go }: ScreenProps) {
           <div>다운로드</div>
         </PlayStat>
       </div>
-      <div style={{ margin: "32px 24px 0", height: 40, borderRadius: 20, background: PLAY.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 500 }}>설치</div>
+        </>
+      )}
+      <div style={{ margin: wraps ? "16px 24px 0" : "32px 24px 0", height: 40, borderRadius: 20, background: PLAY.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 500 }}>설치</div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "28px 24px 0" }}>
         <p style={{ fontSize: 16.3, lineHeight: "24px", fontWeight: 500, color: PLAY.text }}>앱 정보</p>
         <button type="button" aria-label="세부정보 보기" onClick={() => go("details")} style={{ width: 28, height: 32, borderRadius: 16, border: 0, cursor: "pointer", background: PLAY.tint, display: "flex", alignItems: "center", justifyContent: "center" }}>

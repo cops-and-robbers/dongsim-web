@@ -198,7 +198,7 @@ export function FieldEditor({
       )}
       {value.trim() && SLOTS[platform][field.id] && (
         <div className="relative mt-2 flex flex-wrap gap-1 overflow-hidden">
-          {SLOTS[platform][field.id]!.map((s) => (
+          {SLOTS[platform][field.id]!.filter((s) => s.surface !== "pageLong").map((s) => (
             <FitChip key={s.surface} slot={s} value={value} />
           ))}
         </div>
