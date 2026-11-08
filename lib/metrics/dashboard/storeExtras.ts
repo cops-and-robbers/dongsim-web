@@ -11,7 +11,9 @@ export function playLanguages(rows: PlayRow[], w: Week, shift: (day: string) => 
   const by = new Map<string, { installs: number; rating: number | null; ratedOn: string }>();
   for (const r of rows) {
     if (r.dim !== "language" || !r.key) continue;
-    const o = by.get(r.key) ?? { installs: 0, rating: null, ratedOn: "" };
+    // 설치 파일은 ko_KR, 평점 파일은 ko 로 온다(2026-11-08). 스토어 페이지가 언어 단위라 앞부분으로 묶는다
+    const language = r.key.split(/[_-]/)[0];
+    const o = by.get(language) ?? { installs: 0, rating: null, ratedOn: "" };
     const day = shift(r.day);
     if (r.metric === "user_installs" && day >= w.start && day <= w.end) o.installs += r.value;
     // 누적 평균이라 더하지 않고 마지막 날 값을 쓴다
@@ -19,7 +21,7 @@ export function playLanguages(rows: PlayRow[], w: Week, shift: (day: string) => 
       o.rating = r.value;
       o.ratedOn = r.day;
     }
-    by.set(r.key, o);
+    by.set(language, o);
   }
   return [...by.entries()]
     .filter(([, o]) => o.installs > 0 || o.rating !== null)
