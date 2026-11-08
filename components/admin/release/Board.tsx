@@ -35,9 +35,10 @@ const TONE: Record<Tone, { text: string; weak: string; solid: string; ring: stri
   idle: { text: "text-sd-fg-subtle", weak: "bg-sd-fill", solid: "bg-sd-gray-400", ring: "ring-sd-gray-400" },
 };
 
-export const STORE: Record<Platform, { name: string; os: string; console: string; Mark: (p: { className?: string }) => ReactNode }> = {
-  ios: { name: "App Store", os: "iOS", console: "App Store Connect", Mark: AppStoreMark },
-  android: { name: "Google Play", os: "Android", console: "Play Console", Mark: GooglePlayMark },
+export const STORE: Record<Platform, { name: string; os: string; console: string; Mark: (p: { className?: string }) => ReactNode; markSize: string }> = {
+  // App Store 로고는 그 자체가 타일이라 칸을 채우고, Google Play 로고는 칸 안에 놓는다
+  ios: { name: "App Store", os: "iOS", console: "App Store Connect", Mark: AppStoreMark, markSize: "size-10" },
+  android: { name: "Google Play", os: "Android", console: "Play Console", Mark: GooglePlayMark, markSize: "size-5" },
 };
 
 /** 스토어 콘솔로 나가는 링크. 새 탭으로 연다(보드를 열어 둔 채 콘솔에서 일하고 돌아온다) */
@@ -80,8 +81,8 @@ export function StoreCard({ track, reach, now, act }: { track: Track; reach: Rea
   return (
     <section aria-label={store.name} className="flex w-full flex-col overflow-hidden rounded-2xl border border-sd-line bg-sd-surface">
       <header className="flex items-center gap-3 px-5 pb-1 pt-5">
-        <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-sd-fill text-sd-fg">
-          <store.Mark className="size-5" />
+        <span className="flex size-10 flex-none items-center justify-center overflow-hidden rounded-xl bg-sd-fill">
+          <store.Mark className={store.markSize} />
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="text-[16px] font-bold leading-tight text-sd-fg">{store.name}</h2>
@@ -512,7 +513,7 @@ export function ActionLogList({ items, now }: { items: NonNullable<ReleaseBoard[
         const tone = a.status === "done" ? "text-sd-positive" : a.status === "failed" ? "text-sd-critical" : "text-sd-info";
         return (
           <li key={a.id} className="flex gap-3 px-5 py-3">
-            <Mark className="mt-0.5 size-4 flex-none text-sd-fg-muted" />
+            <Mark className="mt-0.5 size-4 flex-none" />
             <div className="min-w-0 flex-1">
               <p className="text-[13.5px] text-sd-fg">
                 <b className="font-semibold">{ACTION_NAME[a.action] ?? a.action}</b> <span className="tabular-nums text-sd-fg-muted">{a.version}</span>{" "}
