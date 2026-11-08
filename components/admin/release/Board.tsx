@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import { useState, type ReactNode } from "react";
 import { AlertIcon, AppStoreMark, CheckIcon, ClockIcon, DeviceIcon, ExternalLinkIcon, GooglePlayMark } from "@/components/admin/icons";
 import { consoleLinks } from "@/lib/release/links";
@@ -79,7 +80,7 @@ export type ActControl = { writable: boolean; readOnlyReason?: string; onPick: (
 export function StoreCard({ track, reach, now, act }: { track: Track; reach: Reach; now: number; act: ActControl }) {
   const store = STORE[track.platform];
   return (
-    <section aria-label={store.name} className="flex flex-col overflow-hidden rounded-2xl border border-sd-line bg-sd-surface">
+    <section aria-label={store.name} className="flex w-full flex-col overflow-hidden rounded-2xl border border-sd-line bg-sd-surface">
       <header className="flex items-center gap-3 px-5 pb-1 pt-5">
         <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-sd-fill text-sd-fg">
           <store.Mark className="size-5" />
@@ -91,7 +92,13 @@ export function StoreCard({ track, reach, now, act }: { track: Track; reach: Rea
             {store.os}
           </p>
         </div>
-        {track.ok && <StatusPill tone={track.status.tone} label={track.status.label} />}
+        {track.ok && (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span key={track.status.label} initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.92 }} transition={{ duration: 0.18 }}>
+              <StatusPill tone={track.status.tone} label={track.status.label} />
+            </motion.span>
+          </AnimatePresence>
+        )}
       </header>
 
       {!track.ok ? (
@@ -188,7 +195,7 @@ function OptionButton({ option, act, primary = false }: { option: Option; act: A
       type="button"
       disabled={!act.writable}
       onClick={() => act.onPick(option)}
-      className={`inline-flex h-9 flex-none items-center justify-center whitespace-nowrap rounded-[10px] px-3.5 text-[13.5px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`inline-flex h-9 flex-none items-center justify-center whitespace-nowrap rounded-[10px] px-3.5 text-[13.5px] font-semibold transition duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${
         primary ? "bg-sd-inverted-bg text-sd-inverted-fg hover:opacity-90 active:opacity-80" : "bg-sd-surface text-sd-fg ring-1 ring-inset ring-sd-line hover:bg-sd-fill"
       }`}
     >
@@ -213,7 +220,7 @@ function Node({ step, current }: { step: Step; current: boolean }) {
   const t = TONE[step.tone];
   if (step.tone === "done")
     return (
-      <span className="relative z-[1] flex size-6 flex-none items-center justify-center rounded-full bg-sd-positive text-white">
+      <span className="relative z-[1] flex size-6 flex-none items-center justify-center rounded-full bg-sd-positive text-white transition-colors duration-300">
         <CheckIcon className="size-3.5" />
       </span>
     );
@@ -261,7 +268,7 @@ function Flow({ track, reach, now }: { track: Extract<Track, { ok: true }>; reac
       </div>
     );
   return (
-    <div className="px-5 pb-5 pt-5">
+    <motion.div className="px-5 pb-5 pt-5" initial={allDone ? { opacity: 0, height: 0 } : false} animate={{ opacity: 1, height: "auto" }} transition={{ type: "spring", stiffness: 380, damping: 36 }}>
       <ol aria-label={`${STORE[track.platform].name} 출시 흐름`}>
         {track.steps.map((s, i) => {
           const current = i === track.current;
@@ -269,7 +276,7 @@ function Flow({ track, reach, now }: { track: Extract<Track, { ok: true }>; reac
           const last = i === track.steps.length - 1;
           return (
             <li key={s.key} className="relative flex gap-3 pb-4 last:pb-0" aria-current={current ? "step" : undefined}>
-              {!last && <span aria-hidden className={`absolute left-[11px] top-6 h-[calc(100%-24px)] w-[2px] ${s.tone === "done" ? "bg-sd-positive" : "bg-sd-gray-300"}`} />}
+              {!last && <span aria-hidden className={`absolute left-[11px] top-6 h-[calc(100%-24px)] w-[2px] transition-colors duration-500 ${s.tone === "done" ? "bg-sd-positive" : "bg-sd-gray-300"}`} />}
               <Node step={s} current={current} />
               <div className="min-w-0 flex-1 pt-[1px]">
                 <div className="flex items-center gap-2">
@@ -290,7 +297,7 @@ function Flow({ track, reach, now }: { track: Extract<Track, { ok: true }>; reac
         })}
       </ol>
       <StoreNotes track={track} reach={reach} />
-    </div>
+    </motion.div>
   );
 }
 
@@ -319,7 +326,7 @@ function PhasedBar({ rollout }: { rollout: Rollout }) {
       <div className="grid grid-cols-7 gap-1">
         {PHASED_PERCENT.map((p, i) => (
           <div key={p} className="min-w-0">
-            <div className={`h-1.5 rounded-full ${i < day ? (rollout.paused ? "bg-sd-warning" : rollout.percent >= 100 ? "bg-sd-positive" : "bg-sd-info") : "bg-sd-gray-300"}`} />
+            <div className={`h-1.5 rounded-full transition-colors duration-500 ${i < day ? (rollout.paused ? "bg-sd-warning" : rollout.percent >= 100 ? "bg-sd-positive" : "bg-sd-info") : "bg-sd-gray-300"}`} />
             <p className={`mt-1 text-center text-[10.5px] tabular-nums ${i === day - 1 ? "font-semibold text-sd-fg" : "text-sd-fg-subtle"}`}>{p}%</p>
           </div>
         ))}
@@ -334,7 +341,7 @@ function PercentBar({ rollout }: { rollout: Rollout }) {
     <div className="mt-2">
       <div className="h-1.5 overflow-hidden rounded-full bg-sd-gray-300">
         <div
-          className={`h-full rounded-full ${rollout.percent >= 100 ? "bg-sd-positive" : rollout.paused ? "bg-sd-warning" : "bg-sd-info"}`}
+          className={`h-full rounded-full transition-[width,background-color] duration-700 ease-out ${rollout.percent >= 100 ? "bg-sd-positive" : rollout.paused ? "bg-sd-warning" : "bg-sd-info"}`}
           style={{ width: `${Math.min(rollout.percent, 100)}%` }}
         />
       </div>

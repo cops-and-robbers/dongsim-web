@@ -1,10 +1,12 @@
 "use client";
 
+import { AnimatePresence, MotionConfig } from "motion/react";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBlock, PageHeader, ScrollPage, SectionCard } from "@/components/admin/Parts";
 import { RefreshIcon } from "@/components/admin/icons";
 import { WorldClock } from "@/components/admin/ops/WorldClock";
+import { Stagger, StaggerItem } from "@/components/admin/motion";
 import { ActionDialog } from "@/components/admin/release/ActionDialog";
 import { ActionLogList, HistoryList, Notes, StatusPill, StoreCard, type ActControl } from "@/components/admin/release/Board";
 import { useToast } from "@/components/admin/Toast";
@@ -70,9 +72,13 @@ export default function ReleasePage() {
   const act = (b: ReleaseBoard): ActControl => ({ writable: !!b.writable, readOnlyReason: b.readOnlyReason, onPick: setPicked });
 
   return (
+    // 움직임은 기기의 "동작 줄이기"를 따른다
+    <MotionConfig reducedMotion="user">
     <ScrollPage>
+      <AnimatePresence>
       {picked && (
         <ActionDialog
+          key={picked.id}
           option={picked}
           onClose={() => {
             setPicked(null);
@@ -85,6 +91,7 @@ export default function ReleasePage() {
           }}
         />
       )}
+      </AnimatePresence>
       <PageHeader
         title="출시"
         description={board ? <Balls ios={board.ios} android={board.android} /> : "두 스토어가 어디까지 왔는지, 지금 무엇을 할 수 있는지 보여 줘요."}
@@ -121,10 +128,14 @@ export default function ReleasePage() {
           {error && <p className="rounded-xl bg-sd-critical-weak px-4 py-2.5 text-[13px] text-sd-fg">다시 읽지 못해 {ago(board.readAt, now)}에 읽은 값을 보여 줘요. {error}</p>}
           <Notes notes={board.notes} />
 
-          <div className="grid items-stretch gap-5 lg:grid-cols-2">
-            <StoreCard track={board.ios} reach={board.reach} now={now} act={act(board)} />
-            <StoreCard track={board.android} reach={board.reach} now={now} act={act(board)} />
-          </div>
+          <Stagger className="grid items-stretch gap-5 lg:grid-cols-2" gap={0.08}>
+            <StaggerItem className="flex">
+              <StoreCard track={board.ios} reach={board.reach} now={now} act={act(board)} />
+            </StaggerItem>
+            <StaggerItem className="flex">
+              <StoreCard track={board.android} reach={board.reach} now={now} act={act(board)} />
+            </StaggerItem>
+          </Stagger>
 
           <SectionCard title="지금 내면">
             <WorldClock at={now} />
@@ -148,6 +159,7 @@ export default function ReleasePage() {
         </div>
       )}
     </ScrollPage>
+    </MotionConfig>
   );
 }
 

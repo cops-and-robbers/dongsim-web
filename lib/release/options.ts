@@ -68,7 +68,14 @@ export type Option = {
   /** 버튼을 강조할지(그 스토어에서 가장 자연스러운 다음 조작) */
   primary: boolean;
   params: OptionParams;
+  /** 확인창에 보여 줄 전/후. 비율처럼 창에서 고르는 값은 창이 채운다 */
+  changes?: { key: string; label: string; before: string; after: string }[];
+  /** 누른 다음에 무슨 일이 이어지나 */
+  then?: string;
 };
+
+type Extra = Pick<Option, "changes" | "then">;
+const change = (label: string, before: string, after: string) => ({ key: label, label, before, after });
 
 // ---------- iOS ----------
 
@@ -91,7 +98,7 @@ export function iosOptions(raw: IosRaw): Option[] {
         label: `칸 이름을 ${ro(b.version)} 바꾸기`,
         level: 1,
         expect: sig(`|${b.number}`),
-        what: `App Store Connect 의 버전 칸 이름이 ${v.version}에서 ${ro(b.version)} 바뀌어요. 그러면 ${obj(`빌드 ${b.number}`)} 붙일 수 있어요. 사용자에게는 아무 일도 없어요.`,
+        what: `App Store Connect 의 버전 칸 이름이 ${v.version}에서 ${ro(b.version)} 바뀌어요.`,
         undo: "다시 바꿀 수 있어요.",
         reachesUsers: false,
         primary: true,
@@ -104,7 +111,7 @@ export function iosOptions(raw: IosRaw): Option[] {
         label: `빌드 ${b.number} 붙이기`,
         level: 1,
         expect: sig(`|${b.number}`),
-        what: `${obj(`빌드 ${b.number}`)} ${v.version} 칸에 붙여요. 사용자에게는 아무 일도 없어요.`,
+        what: `${obj(`빌드 ${b.number}`)} ${v.version} 칸에 붙여요.`,
         undo: "다른 빌드로 바꿀 수 있어요.",
         reachesUsers: false,
         primary: true,
@@ -206,7 +213,20 @@ export function iosOptions(raw: IosRaw): Option[] {
       params: { phasedId: p.id },
     });
   }
-  return out;
+
+  const pct = p ? `${[1, 2, 5, 10, 20, 50, 100][Math.min(Math.max(p.day, 1), 7) - 1]}%` : "";
+  const b = raw.latestBuild;
+  const extra: Record<string, Extra> = {
+    "ios.renameVersion": { changes: [change("버전 칸 이름", v.version, b?.version ?? "")], then: `${obj(`빌드 ${b?.number ?? ""}`)} 이 칸에 붙일 수 있게 돼요.` },
+    "ios.attachBuild": { changes: [change(`${v.version} 칸의 빌드`, "없음", `빌드 ${b?.number ?? ""}`)], then: "문구를 확인한 뒤 심사에 낼 수 있어요." },
+    "ios.submit": { changes: [change("상태", "제출 전", "애플 심사 기다림")], then: "심사가 끝나면 출시 화면에 결과가 떠요. 우리는 수동 출시라 승인돼도 바로 나가지 않아요." },
+    "ios.cancelSubmission": { changes: [change("상태", v.state === "IN_REVIEW" ? "심사 중" : "심사 기다림", "제출 전")], then: "고친 뒤 다시 낼 수 있어요." },
+    "ios.release": { changes: [change("App Store 버전", live?.version ?? "-", v.version)], then: "나라마다 최대 24시간 안에 보여요. 출시 화면에서 나라별로 확인할 수 있어요." },
+    "ios.phasedPause": { changes: [change("단계적 출시", `${pct} 진행 중`, `${pct}에서 멈춤`)], then: "멈춘 동안은 날짜가 가지 않아요." },
+    "ios.phasedResume": { changes: [change("단계적 출시", `${pct}에서 멈춤`, `${pct}부터 다시 진행`)], then: "남은 날 동안 1, 2, 5, 10, 20, 50, 100% 순서로 넓어져요." },
+    "ios.phasedComplete": { changes: [change("자동 업데이트", pct, "100%")], then: "출시 화면의 나라별 반영에서 확인할 수 있어요." },
+  };
+  return out.map((o) => ({ ...o, ...extra[o.id] }));
 }
 
 // ---------- Android ----------
@@ -288,7 +308,20 @@ export function androidOptions(raw: AndroidRaw): Option[] {
       primary: false,
     });
   }
-  return out;
+
+  const liveName = liveRel ? `${playVersionName(liveRel.name)} (${maxCodeOf(liveRel)})` : "-";
+  const rPct = rolling ? pct(rolling.fraction ?? 0) : "";
+  const extra: Record<string, Extra> = {
+    "android.createRelease": {
+      changes: [change("프로덕션", `${liveName} 나가 있음`, `빌드 ${candidate ? maxCodeOf(candidate) : ""} 구글 심사 기다림`)],
+      then: "구글이 승인하면 게시 개요에서 게시할 수 있어요. 게시하기 전까지 사용자는 지금 버전을 받아요.",
+    },
+    "android.halt": { changes: [change("단계적 출시", `${rPct} 진행 중`, `${rPct}에서 멈춤`)], then: "출시 화면에서 다시 이어 갈 수 있어요." },
+    "android.resume": { changes: [change("단계적 출시", `${rPct}에서 멈춤`, `${rPct}로 다시 진행`)], then: "출시 화면에서 비율을 올리거나 바로 모두에게 낼 수 있어요." },
+    "android.complete": { changes: [change("받는 사람", rPct || "일부", "모두(100%)")], then: "이전 버전 출시는 새 버전으로 바뀌어요." },
+    "android.rolloutSet": { then: "출시 화면에서 더 올리거나 바로 모두에게 낼 수 있어요." },
+  };
+  return out.map((o) => ({ ...o, ...extra[o.id] }));
 }
 
 export const optionsFor = (platform: Platform, raw: IosRaw | AndroidRaw): Option[] => (platform === "ios" ? iosOptions(raw as IosRaw) : androidOptions(raw as AndroidRaw));
