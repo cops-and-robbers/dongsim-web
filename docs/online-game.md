@@ -54,7 +54,7 @@
 | "곧 열려요" 대신 "만들고 있어요" | 날짜가 없으면 약속하는 말을 쓰지 않고, 정해지면 날짜와 시각을 적어요(GOV.UK 서비스 중단 페이지 패턴). 팀도 "곧"이 어색하다고 했어요 |
 | 버튼은 숨기지 않고 누를 수 없게, 바로 아래 까닭 | 언젠가 누를 수 있는 버튼은 비활성으로 두고 까닭을 알려요(NN/g 비활성 버튼, Smart Interface Design Patterns). 키보드 초점은 닿게 `aria-disabled` 로 둬요(W3C APG) |
 | 아래에 오프라인 경찰과 도둑 하나 | 막다른 화면이 되지 않게 대신 할 수 있는 길을 하나만 둬요(GOV.UK). "그동안 앱에서 하라"가 아니라 오프라인도 눈여겨봐 달라는 팀 의견을 따랐어요 |
-| 공개 전에는 검색에 내보내지 않아요(`noindex`), 사이트맵에도 없어요 | 열리지 않은 게임 페이지가 검색에 먼저 걸리지 않게요. 열면 둘 다 바꿔요 |
+| 검색에 내보내고 사이트맵에도 넣어요 | 공개 전에는 막아 뒀다가 게임을 열면서 풀었어요(2026-11-08) |
 | 점검 예정 시각이 지나면 숨겨요 | 지난 시각을 그대로 두지 않아요(Atlassian Statuspage 점검 예약) |
 
 출처: https://design-system.service.gov.uk/patterns/service-unavailable-pages/ , https://www.nngroup.com/videos/why-disabled-buttons-hurt-ux-and-how-to-fix-them/ , https://smart-interface-design-patterns.com/articles/hidden-vs-disabled/ , https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/ , https://www.nngroup.com/articles/confirmation-dialog/ , https://primer.style/product/components/confirmation-dialog/guidelines , https://support.atlassian.com/statuspage/docs/schedule-maintenance/

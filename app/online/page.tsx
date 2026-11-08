@@ -19,8 +19,16 @@ export const metadata: Metadata = {
   title: "경찰과 도둑 온라인 게임",
   description: "친구에게 링크를 보내 폰이나 컴퓨터에서 같이 하는 경찰과 도둑 온라인 게임이에요. 최대 8명, 한 판 3분이에요.",
   alternates: { canonical: "/online" },
-  // 공개 전에는 검색에 내보내지 않는다. 열면 이 줄을 지우고 사이트맵에 넣는다
-  robots: { index: false, follow: true },
+  openGraph: {
+    title: "경찰과 도둑 온라인 게임",
+    description: "친구에게 링크를 보내 폰이나 컴퓨터에서 같이 하는 경찰과 도둑 온라인 게임이에요. 최대 8명, 한 판 3분이에요.",
+    url: "/online",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "경찰과 도둑 온라인 게임",
+    description: "친구에게 링크를 보내 폰이나 컴퓨터에서 같이 하는 경찰과 도둑 온라인 게임이에요. 최대 8명, 한 판 3분이에요.",
+  },
 };
 
 const FEATURES = [
