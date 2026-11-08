@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { PhoneFrame } from "@/components/game/PhoneMockup";
 import { PREVIEW_FONT, slotOf, STAGE_WIDTH, type Slot, type Surface } from "@/lib/store-page/display";
-import type { Art, FieldId, Platform, Values } from "@/lib/store-page/fields";
+import { videoThumb, type Art, type FieldId, type Platform, type Values } from "@/lib/store-page/fields";
 
 // 스토어 페이지 화면 오른쪽의 폰 (docs/admin-ui.md "스토어 페이지"). 운영진만 보는 미리보기다.
 // 실제 스토어 앱 캡처(iPhone App Store, Galaxy Google Play, 2026-11-07)를 픽셀로 잰 값으로 앱 화면과 같게 그리고,
@@ -52,10 +52,11 @@ function Img({ src, style }: { src: string | null | undefined; style: CSSPropert
   return src ? <img src={src} alt="" style={style} /> : <span style={{ display: "block", background: "#e5e7eb", ...style }} />;
 }
 
-function Shots({ art, width, height, gap, left, radius }: { art: Art; width: number; height: number; gap: number; left: number; radius: number }) {
+function Shots({ art, width, height, gap, left, radius, first }: { art: Art; width: number; height: number; gap: number; left: number; radius: number; first?: ReactNode }) {
   const urls: (string | null)[] = art.screenshots.length ? art.screenshots : [null, null, null];
   return (
     <div style={{ display: "flex", gap, paddingLeft: left, overflow: "hidden" }}>
+      {first}
       {urls.map((u, i) => (
         <Img key={u ?? i} src={u} style={{ width, height, flex: "none", objectFit: "cover", borderRadius: radius }} />
       ))}
@@ -207,6 +208,22 @@ function PlayBar({ title }: { title?: string }) {
   );
 }
 
+/** Play 앱 상세의 첫 칸. 등록한 YouTube 영상의 썸네일 위에 재생 버튼이 있다 */
+function PlayVideo({ url, on }: { url: string | undefined; on: boolean }) {
+  const thumb = videoThumb(url);
+  if (!thumb) return null;
+  return (
+    <div data-spot={on ? "on" : undefined} style={{ position: "relative", width: 294.8, height: 165.7, flex: "none", ...(on ? SPOT : {}) }}>
+      <Img src={thumb} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8, boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+      <span style={{ position: "absolute", left: "50%", top: "50%", width: 56, height: 56, marginLeft: -28, marginTop: -28, borderRadius: 28, background: "rgba(60,64,67,.8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg viewBox="0 0 24 24" width={30} height={30} fill="#fff" aria-hidden>
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      </span>
+    </div>
+  );
+}
+
 function PlayPage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
   return (
     <div style={{ background: "#fff", paddingBottom: 130 }}>
@@ -241,7 +258,7 @@ function PlayPage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null 
       </div>
       {art.category && <span style={{ display: "inline-block", margin: "32px 24px 0", padding: "0 16px", height: 32, lineHeight: "30px", border: `1px solid ${PLAY.line}`, borderRadius: 9, fontSize: 13, color: PLAY.gray }}>{art.category}</span>}
       <div style={{ marginTop: 22 }}>
-        <Shots art={art} width={93} height={165.7} gap={13} left={24} radius={8} />
+        <Shots art={art} width={93} height={165.7} gap={13} left={24} radius={8} first={<PlayVideo url={v.video} on={spot === "video"} />} />
       </div>
     </div>
   );

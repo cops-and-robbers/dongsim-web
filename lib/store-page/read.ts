@@ -57,7 +57,7 @@ export async function readIosPage(now = new Date()): Promise<IosPage> {
   return { ok: true, langs, art, liveVersion: (liveVersion?.attributes?.versionString as string) ?? null, nextVersion: (nextVersion?.attributes?.versionString as string) ?? null };
 }
 
-type PlayListing = { language: string; title?: string; shortDescription?: string; fullDescription?: string };
+type PlayListing = { language: string; title?: string; shortDescription?: string; fullDescription?: string; video?: string };
 
 export async function readAndroidPage(): Promise<AndroidPage> {
   const token = await playToken();
@@ -74,7 +74,7 @@ export async function readAndroidPage(): Promise<AndroidPage> {
   const langs = emptyLangs();
   LANGS.forEach((l, i) => {
     const row = byLang.get(l.android);
-    const saved: Values = row ? { title: row.title ?? "", shortDescription: row.shortDescription ?? "", fullDescription: row.fullDescription ?? "" } : {};
+    const saved: Values = row ? { title: row.title ?? "", shortDescription: row.shortDescription ?? "", fullDescription: row.fullDescription ?? "", video: row.video ?? "" } : {};
     // 관리형 게시라 승인돼도 게시 전까지 스토어에는 옛 문구가 보인다. 이름과 자세한 설명은 공개 페이지와 견줄 수 있다
     const live: Values = { ...saved, title: shown[i]?.title || saved.title, fullDescription: shown[i]?.fullDescription || saved.fullDescription };
     const same = (a?: string, b?: string) => squash(a) === squash(b);

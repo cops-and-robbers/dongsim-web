@@ -6,7 +6,7 @@
 
 export type Platform = "ios" | "android";
 export type Lang = "ko" | "en" | "ja";
-export type FieldId = "name" | "subtitle" | "promotionalText" | "description" | "keywords" | "whatsNew" | "title" | "shortDescription" | "fullDescription";
+export type FieldId = "name" | "subtitle" | "promotionalText" | "description" | "keywords" | "whatsNew" | "title" | "shortDescription" | "fullDescription" | "video";
 export type Values = Partial<Record<FieldId, string>>;
 
 /** live 는 지금 사용자에게 보이는 값, pending 은 스토어에 저장돼 다음에 나갈 값(없으면 null) */
@@ -44,7 +44,7 @@ export const LINKS = {
 export type When = "next" | "now" | "review";
 export const WHEN_LABEL: Record<When, string> = { next: "다음 버전과 함께 나가요", now: "심사 없이 바로 바뀌어요", review: "심사 후 게시하면 나가요" };
 
-export type Field = { id: FieldId; label: string; max: number; min?: number; multiline: boolean; when: When; tip: string; link: string };
+export type Field = { id: FieldId; label: string; max: number; min?: number; multiline: boolean; when: When; tip: string; link: string; url?: boolean };
 
 export const FIELDS: Record<Platform, Field[]> = {
   ios: [
@@ -59,7 +59,19 @@ export const FIELDS: Record<Platform, Field[]> = {
     { id: "title", label: "앱 이름", max: 30, multiline: false, when: "review", tip: "Google Play 어디서나 보여요.", link: LINKS.playSetup },
     { id: "shortDescription", label: "간단한 설명", max: 80, multiline: true, when: "review", tip: "상세 페이지 첫 문구예요. 금방 낡을 기간 한정 문구는 피하세요.", link: LINKS.playAssets },
     { id: "fullDescription", label: "자세한 설명", max: 4000, multiline: true, when: "review", tip: "첫 문장에 핵심을 쓰고, 사용자가 쓰는 말로 쓰세요. 단어만 늘어놓으면 앱이 정지될 수 있어요.", link: LINKS.playSetup },
+    { id: "video", label: "동영상", max: 300, multiline: false, when: "review", url: true, tip: "YouTube 주소를 넣어요. 앱 정보의 첫 칸에 보여요. 공개 또는 일부 공개로 두고, 광고는 끄고, 연령 제한이 없어야 해요.", link: LINKS.playAssets },
   ],
+};
+
+/** YouTube 영상 주소에서 영상 id 를 꺼낸다. 채널이나 재생목록 주소는 null */
+export function youtubeId(url: string): string | null {
+  const m = url.trim().match(/^https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/)|youtu\.be\/)([\w-]{11})(?:[?&#].*)?$/);
+  return m?.[1] ?? null;
+}
+
+export const videoThumb = (url: string | undefined) => {
+  const id = url ? youtubeId(url) : null;
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
 };
 
 /** 저장할 수 있는 초안의 최대 글자 수. 한도를 조금 넘긴 채 고치는 중일 수 있어 칸 한도보다 넉넉하다 */
@@ -167,6 +179,7 @@ function androidIssues(f: FieldId, v: string, ctx: Values): Issue[] {
 /** 한 칸의 점검 결과. ctx 는 같은 스토어, 같은 언어의 다른 칸 값이다 */
 export function checkField(platform: Platform, field: Field, value: string, ctx: Values): Issue[] {
   if (!value.trim()) return field.min || field.id === "name" || field.id === "title" ? [{ level: "block", text: "비워 둘 수 없어요." }] : [];
+  if (field.url) return youtubeId(value) ? [] : [{ level: "block", text: "YouTube 영상 주소를 넣어 주세요. 채널이나 재생목록 주소는 쓸 수 없어요.", link: field.link }];
   const n = countOf(value);
   const out: Issue[] = [];
   if (n > field.max) out.push({ level: "block", text: `${field.max}자까지 쓸 수 있어요. ${n - field.max}자 줄여 주세요.`, link: field.link });

@@ -182,9 +182,11 @@ export function FieldEditor({
           <input id={id} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)} className={input} />
         )}
       </div>
-      <div className="mt-2">
-        <Meter n={n} max={field.max} />
-      </div>
+      {!field.url && (
+        <div className="mt-2">
+          <Meter n={n} max={field.max} />
+        </div>
+      )}
       {value.trim() && SLOTS[platform][field.id] && (
         <div className="relative mt-2 flex flex-wrap gap-1 overflow-hidden">
           {SLOTS[platform][field.id]!.map((s) => (

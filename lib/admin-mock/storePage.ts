@@ -31,7 +31,7 @@ const iosJa: Side = {
 };
 
 const android = (title: string, shortDescription: string, fullDescription: string, shown?: string): Side => {
-  const saved = { title, shortDescription, fullDescription };
+  const saved = { title, shortDescription, fullDescription, video: "https://youtu.be/4nLEws5Sk8A?si=n5QFkdBA-FRttmXL" };
   return shown ? { live: { ...saved, title: shown }, pending: saved } : { live: saved, pending: null };
 };
 
