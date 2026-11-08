@@ -1,0 +1,372 @@
+"use client";
+
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { PhoneFrame } from "@/components/game/PhoneMockup";
+import { PREVIEW_FONT, slotOf, STAGE_WIDTH, type Slot, type Surface } from "@/lib/store-page/display";
+import type { Art, FieldId, Platform, Values } from "@/lib/store-page/fields";
+
+// 스토어 페이지 화면 오른쪽의 폰 (docs/admin-ui.md "스토어 페이지"). 운영진만 보는 미리보기다.
+// 실제 스토어 앱 캡처(iPhone App Store, Galaxy Google Play, 2026-11-07)를 픽셀로 잰 값으로 앱 화면과 같게 그리고,
+// 폰 크기에 맞춰 통째로 줄인다. 그래서 줄바꿈과 잘리는 자리가 앱과 같다. 스토어 화면은 늘 밝은 화면으로 그린다.
+
+const IOS = { text: "#000", gray: "#8a8a8e", blue: "#007aff", line: "#e5e5ea" };
+const PLAY = { text: "#1f1f1f", gray: "#444746", blue: "#0b57d0", line: "#c4c7c5", tint: "#e9eef6" };
+
+const SPOT: CSSProperties = { outline: "3px solid #339DFF", outlineOffset: 3, borderRadius: 6 };
+
+function slotStyle(slot: Slot): CSSProperties {
+  return {
+    width: slot.width,
+    fontSize: slot.fontSize,
+    lineHeight: `${slot.lineHeight}px`,
+    fontWeight: slot.fontWeight,
+    wordBreak: "keep-all",
+    overflowWrap: "break-word",
+    whiteSpace: slot.preLine ? "pre-line" : "normal",
+    ...(slot.maxLines === null ? {} : { display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: slot.maxLines, overflow: "hidden" }),
+  };
+}
+
+function Text({ platform, field, surface, value, spot, color }: { platform: Platform; field: FieldId; surface: Surface; value: string; spot: FieldId | null; color: string }) {
+  const slot = slotOf(platform, field, surface);
+  const ref = useRef<HTMLDivElement>(null);
+  const [cut, setCut] = useState(false);
+  useLayoutEffect(() => {
+    if (ref.current) setCut(ref.current.scrollHeight > ref.current.clientHeight + 1);
+  }, [value, slot]);
+  if (!slot) return null;
+  const on = spot === field;
+  return (
+    <div style={{ position: "relative", width: slot.width }}>
+      <div ref={ref} data-spot={on ? "on" : undefined} data-slot={`${field}-${surface}`} style={{ ...slotStyle(slot), color, ...(on ? SPOT : {}) }}>
+        {value}
+      </div>
+      {cut && <span style={{ position: "absolute", right: 0, bottom: 0, paddingLeft: 24, background: "linear-gradient(90deg,transparent,#fff 18px)", color: IOS.blue, fontSize: slot.fontSize, lineHeight: `${slot.lineHeight}px` }}>더 보기</span>}
+    </div>
+  );
+}
+
+function Img({ src, style }: { src: string | null | undefined; style: CSSProperties }) {
+  // 스토어 이미지는 외부 주소 그대로 쓴다
+  // eslint-disable-next-line @next/next/no-img-element
+  return src ? <img src={src} alt="" style={style} /> : <span style={{ display: "block", background: "#e5e7eb", ...style }} />;
+}
+
+function Shots({ art, width, height, gap, left, radius }: { art: Art; width: number; height: number; gap: number; left: number; radius: number }) {
+  const urls: (string | null)[] = art.screenshots.length ? art.screenshots : [null, null, null];
+  return (
+    <div style={{ display: "flex", gap, paddingLeft: left, overflow: "hidden" }}>
+      {urls.map((u, i) => (
+        <Img key={u ?? i} src={u} style={{ width, height, flex: "none", objectFit: "cover", borderRadius: radius }} />
+      ))}
+    </div>
+  );
+}
+
+const Icon = ({ d, size = 24, color = "currentColor", width = 2 }: { d: string; size?: number; color?: string; width?: number }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d={d} />
+  </svg>
+);
+
+const PATH = {
+  back: "M15 5l-7 7 7 7",
+  share: "M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7",
+  chevron: "M9 5l7 7-7 7",
+  arrowBack: "M20 12H5M11 5l-7 7 7 7",
+  arrow: "M4 12h15M13 5l7 7-7 7",
+  down: "M6 9l6 6 6-6",
+  search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3",
+  close: "M6 6l12 12M18 6L6 18",
+  today: "M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8 8h8M8 12h8",
+  rocket: "M5 19c1-3 2-4 4-5l1 1c-1 2-2 3-5 4zM9 12c1-5 5-9 11-9 0 6-4 10-9 11z",
+  layers: "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5",
+  arcade: "M12 11V5M9 3.5a3 3 0 1 0 6 0M4 15l8-4 8 4-8 4z",
+  game: "M7 7h10a5 5 0 0 1 5 5v3a3 3 0 0 1-5.5 1.6L15 14H9l-1.5 2.6A3 3 0 0 1 2 15v-3a5 5 0 0 1 5-5z",
+  apps: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
+  book: "M6 3h12v18l-6-4-6 4z",
+  user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
+};
+
+function Stars({ size }: { size: number }) {
+  return <span style={{ color: IOS.gray, fontSize: size, letterSpacing: -0.5 }}>★★★★★</span>;
+}
+
+function GetButton() {
+  return <span style={{ flex: "none", background: "#eef0f5", color: IOS.blue, borderRadius: 999, padding: "6px 22px", fontSize: 15, fontWeight: 700 }}>받기</span>;
+}
+
+function AppStorePage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
+  const circle: CSSProperties = { width: 44, height: 44, borderRadius: 22, background: "rgba(255,255,255,.9)", boxShadow: "0 1px 6px rgba(0,0,0,.12)", display: "flex", alignItems: "center", justifyContent: "center" };
+  const stat = (label: string, big: ReactNode, small: ReactNode, last = false) => (
+    <div style={{ width: 105, flex: "none", textAlign: "center", borderRight: last ? "none" : `1px solid ${IOS.line}` }}>
+      <p style={{ fontSize: 10, lineHeight: "14px", color: IOS.gray }}>{label}</p>
+      <div style={{ fontSize: 20, lineHeight: "30px", fontWeight: 700, color: IOS.gray }}>{big}</div>
+      <div style={{ fontSize: 10.5, lineHeight: "14px", color: IOS.gray }}>{small}</div>
+    </div>
+  );
+  return (
+    <div style={{ background: "#fff", paddingBottom: 110 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "0 16px", height: 44 }}>
+        <span style={circle}>
+          <Icon d={PATH.back} size={22} color="#000" />
+        </span>
+        <span style={circle}>
+          <Icon d={PATH.share} size={20} color="#000" />
+        </span>
+      </div>
+      <div style={{ display: "flex", gap: 16, padding: "20px 20px 0" }}>
+        <Img src={art.icon} style={{ width: 118, height: 118, borderRadius: 27, flex: "none", border: "1px solid rgba(0,0,0,.06)" }} />
+        <div style={{ display: "flex", flexDirection: "column", minHeight: 118 }}>
+          <Text platform="ios" field="name" surface="page" value={v.name ?? ""} spot={spot} color={IOS.text} />
+          <p style={{ marginTop: 6, fontSize: 14, lineHeight: "18px", color: IOS.gray }}>{art.developer}</p>
+          <div style={{ marginTop: "auto" }}>
+            <GetButton />
+          </div>
+        </div>
+      </div>
+      <div style={{ margin: "20px 20px 0", borderTop: `1px solid ${IOS.line}`, borderBottom: `1px solid ${IOS.line}`, padding: "14px 0", overflow: "hidden" }}>
+        <div style={{ display: "flex" }}>
+          {stat(`${art.ratingCount ?? 0}개의 평가`, art.rating?.toFixed(1) ?? "-", <Stars size={11} />)}
+          {stat("연령 등급", art.age ?? "-", "앱 내 제어")}
+          {stat("카테고리", "⚽", art.category ?? "")}
+          {stat("개발자", "◉", art.developer ?? "", true)}
+        </div>
+      </div>
+      <div style={{ padding: "14px 20px 0" }}>
+        <p style={{ fontSize: 18.9, lineHeight: "24px", fontWeight: 700, color: IOS.text }}>새로운 소식 ›</p>
+        <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", fontSize: 13.2, lineHeight: "18px", color: IOS.gray }}>
+          <span>버전 3.2.8</span>
+          <span>오늘</span>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <Text platform="ios" field="whatsNew" surface="page" value={v.whatsNew ?? ""} spot={spot} color={IOS.text} />
+        </div>
+      </div>
+      <p style={{ padding: "26px 20px 0", fontSize: 18.9, lineHeight: "24px", fontWeight: 700, color: IOS.text }}>미리 보기</p>
+      <div style={{ marginTop: 16 }}>
+        <Shots art={art} width={227.5} height={495} gap={10.6} left={20} radius={28} />
+      </div>
+      <p style={{ margin: "12px 20px 0", paddingBottom: 14, borderBottom: `1px solid ${IOS.line}`, fontSize: 13.2, lineHeight: "18px", fontWeight: 600, color: IOS.gray }}>iPhone</p>
+      {v.promotionalText && (
+        <div data-spot={spot === "promotionalText" ? "on" : undefined} style={{ margin: "20px 20px 0", fontSize: 13.2, lineHeight: "24px", color: IOS.text, wordBreak: "keep-all", whiteSpace: "pre-line", ...(spot === "promotionalText" ? SPOT : {}) }}>
+          {v.promotionalText}
+        </div>
+      )}
+      <div style={{ padding: "20px 20px 0" }}>
+        <Text platform="ios" field="description" surface="page" value={v.description ?? ""} spot={spot} color={IOS.text} />
+      </div>
+    </div>
+  );
+}
+
+function AppStoreSearch({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
+  return (
+    <div style={{ background: "#fff", minHeight: "100%", paddingBottom: 110 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 20px 0" }}>
+        <div style={{ flex: 1, height: 40, borderRadius: 20, background: "#f2f2f4", display: "flex", alignItems: "center", gap: 8, padding: "0 14px", fontSize: 15, color: "#000" }}>
+          <Icon d={PATH.search} size={18} color="#000" />
+          경찰과 도둑
+        </div>
+        <span style={{ width: 40, height: 40, borderRadius: 20, background: "#f2f2f4", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon d={PATH.close} size={18} color="#000" />
+        </span>
+      </div>
+      <div style={{ padding: "24px 20px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Img src={art.icon} style={{ width: 60, height: 60, borderRadius: 13, flex: "none", border: "1px solid rgba(0,0,0,.06)" }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Text platform="ios" field="name" surface="search" value={v.name ?? ""} spot={spot} color={IOS.text} />
+            <Text platform="ios" field="subtitle" surface="search" value={v.subtitle ?? ""} spot={spot} color={IOS.gray} />
+          </div>
+          <GetButton />
+        </div>
+        <div style={{ marginTop: 15, display: "flex", justifyContent: "space-between", fontSize: 11, lineHeight: "14px", fontWeight: 600, color: IOS.gray }}>
+          <span>
+            <Stars size={11} />
+            {art.ratingCount ?? 0}
+          </span>
+          <span>{art.developer}</span>
+          <span>{art.category}</span>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <Shots art={art} width={111} height={241} gap={9.5} left={0} radius={14} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlayBar({ title }: { title?: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", height: 56, padding: "0 20px", gap: 20, color: PLAY.text }}>
+      <Icon d={PATH.arrowBack} size={24} color={PLAY.text} />
+      {title && <span style={{ fontSize: 16 }}>{title}</span>}
+      <span style={{ marginLeft: "auto", fontSize: 22, lineHeight: "22px" }}>⋮</span>
+    </div>
+  );
+}
+
+function PlayPage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
+  return (
+    <div style={{ background: "#fff", paddingBottom: 130 }}>
+      <PlayBar />
+      <div style={{ display: "flex", gap: 25.6, padding: "4px 24px 0" }}>
+        <Img src={art.icon} style={{ width: 72, height: 72, borderRadius: 16, flex: "none", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+        <div>
+          <Text platform="android" field="title" surface="page" value={v.title ?? ""} spot={spot} color={PLAY.text} />
+          <p style={{ marginTop: 6, fontSize: 12.7, lineHeight: "18px", fontWeight: 500, color: PLAY.blue }}>{art.developer}</p>
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-around", margin: "22px 24px 0", textAlign: "center", color: PLAY.gray, fontSize: 12.5, lineHeight: "20px" }}>
+        <div>
+          <div style={{ fontWeight: 600, color: "#f29900" }}>⑫</div>
+          <div>12세 이상</div>
+        </div>
+        <div style={{ width: 1, background: PLAY.line, margin: "6px 0" }} />
+        <div>
+          <div style={{ fontWeight: 700, color: PLAY.text }}>{art.downloads ?? "-"}</div>
+          <div>다운로드</div>
+        </div>
+      </div>
+      <div style={{ margin: "32px 24px 0", height: 40, borderRadius: 20, background: PLAY.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 500 }}>설치</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "28px 24px 0" }}>
+        <p style={{ fontSize: 16.3, lineHeight: "24px", fontWeight: 500, color: PLAY.text }}>앱 정보</p>
+        <span style={{ width: 28, height: 32, borderRadius: 16, background: PLAY.tint, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon d={PATH.arrow} size={16} color={PLAY.text} />
+        </span>
+      </div>
+      <div style={{ padding: "26px 24px 0" }}>
+        <Text platform="android" field="shortDescription" surface="page" value={v.shortDescription ?? ""} spot={spot} color={PLAY.gray} />
+      </div>
+      {art.category && <span style={{ display: "inline-block", margin: "32px 24px 0", padding: "0 16px", height: 32, lineHeight: "30px", border: `1px solid ${PLAY.line}`, borderRadius: 9, fontSize: 13, color: PLAY.gray }}>{art.category}</span>}
+      <div style={{ marginTop: 22 }}>
+        <Shots art={art} width={93} height={165.7} gap={13} left={24} radius={8} />
+      </div>
+    </div>
+  );
+}
+
+function PlaySearch({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
+  const chip: CSSProperties = { flex: "none", height: 32, lineHeight: "30px", padding: "0 14px", border: `1px solid ${PLAY.line}`, borderRadius: 9, fontSize: 13, color: PLAY.gray };
+  return (
+    <div style={{ background: "#fff", minHeight: "100%", paddingBottom: 130 }}>
+      <PlayBar title="경찰과 도둑" />
+      <div style={{ display: "flex", gap: 8, padding: "8px 24px 0", overflow: "hidden" }}>
+        {["평점", "가족", "프리미엄", "New", "게임패스"].map((c) => (
+          <span key={c} style={chip}>
+            {c}
+          </span>
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 16.7, padding: "28px 24px 0" }}>
+        <Img src={art.icon} style={{ width: 56, height: 56, borderRadius: 12, flex: "none", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Text platform="android" field="title" surface="search" value={v.title ?? ""} spot={spot} color={PLAY.text} />
+          <p style={{ fontSize: 11.5, lineHeight: "18px", color: PLAY.gray }}>
+            {art.developer}
+            {art.category ? ` • ${art.category}` : ""}
+          </p>
+        </div>
+        <span style={{ width: 28, height: 32, borderRadius: 16, background: PLAY.tint, flex: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon d={PATH.down} size={16} color={PLAY.text} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function IosTabs() {
+  const items = [
+    ["투데이", PATH.today],
+    ["게임", PATH.rocket],
+    ["앱", PATH.layers],
+    ["Arcade", PATH.arcade],
+    ["검색", PATH.search],
+  ] as const;
+  return (
+    <div style={{ margin: "0 21px 22px", height: 61, borderRadius: 31, background: "rgba(250,250,252,.95)", boxShadow: "0 2px 12px rgba(0,0,0,.14)", display: "flex", alignItems: "center", padding: "0 4px" }}>
+      {items.map(([label, d], i) => (
+        <div key={label} style={{ flex: 1, height: 53, borderRadius: 27, background: i === 4 ? "#e3e3e8" : "transparent", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: i === 4 ? IOS.blue : "#000", fontSize: 10, fontWeight: 600 }}>
+          <Icon d={d} size={23} color={i === 4 ? IOS.blue : "#000"} />
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PlayTabs() {
+  const items = [
+    ["게임", PATH.game],
+    ["앱", PATH.apps],
+    ["검색", PATH.search],
+    ["도서", PATH.book],
+    ["내 페이지", PATH.user],
+  ] as const;
+  return (
+    <div style={{ background: "#eff1f7", height: 112, display: "flex", padding: "6px 0 0" }}>
+      {items.map(([label, d], i) => (
+        <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", fontSize: 12, lineHeight: "20px", color: i === 2 ? PLAY.blue : PLAY.gray, fontWeight: i === 2 ? 600 : 500 }}>
+          <span style={{ width: 56, height: 32, borderRadius: 16, background: i === 2 ? "#c2e7ff" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon d={d} size={22} color={i === 2 ? PLAY.blue : PLAY.gray} />
+          </span>
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** 앱 폭의 무대를 폰 폭에 맞춰 통째로 줄인다. 고치는 칸이 보이도록 알아서 스크롤한다. 아래 탭은 앱처럼 화면에 붙어 있다 */
+function Stage({ width, spot, watch, tabs, children }: { width: number; spot: FieldId | null; watch: string; tabs: ReactNode; children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.68);
+
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const measure = () => setScale(el.clientWidth / width);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [width]);
+
+  useEffect(() => {
+    const el = box.current;
+    const on = inner.current?.querySelector<HTMLElement>('[data-spot="on"]');
+    if (!el || !inner.current) return;
+    const top = on ? on.getBoundingClientRect().top - inner.current.getBoundingClientRect().top : 0;
+    el.scrollTo({ top: Math.max(top - el.clientHeight / 3, 0), behavior: "smooth" });
+  }, [spot, watch]);
+
+  return (
+    <>
+      <div ref={box} className="absolute inset-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none]">
+        <div ref={inner} style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+          {children}
+        </div>
+      </div>
+      <div aria-hidden className="pointer-events-none absolute bottom-0 left-0" style={{ width, transform: `scale(${scale})`, transformOrigin: "bottom left" }}>
+        {tabs}
+      </div>
+    </>
+  );
+}
+
+export function StorePreview({ platform, mode, values, art, spot }: { platform: Platform; mode: Surface; values: Values; art: Art; spot: FieldId | null }) {
+  const Screen = platform === "ios" ? (mode === "page" ? AppStorePage : AppStoreSearch) : mode === "page" ? PlayPage : PlaySearch;
+  return (
+    <div className="mx-auto w-full max-w-[300px] lg:max-w-[clamp(220px,calc((100svh_-_250px)*9/19),300px)]">
+      <PhoneFrame clock="9:41" unbounded>
+        <div className="relative h-full" style={{ fontFamily: PREVIEW_FONT }}>
+          <Stage width={STAGE_WIDTH[platform]} spot={spot} watch={`${platform}-${mode}`} tabs={platform === "ios" ? <IosTabs /> : <PlayTabs />}>
+            <Screen v={values} art={art} spot={spot} />
+          </Stage>
+        </div>
+      </PhoneFrame>
+    </div>
+  );
+}

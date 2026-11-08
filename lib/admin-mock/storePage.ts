@@ -1,0 +1,67 @@
+// 로컬에서 스토어 페이지를 보는 가짜 값. 실제 스토어와 Supabase 에 닿지 않는다.
+import type { Art, Draft, FieldId, Lang, Platform, Side, StorePage } from "@/lib/store-page/fields";
+
+const langs = (ko: Side, en: Side, ja: Side): Record<Lang, Side> => ({ ko, en, ja });
+
+const iosKo: Side = {
+  live: {
+    name: "경찰과도둑",
+    subtitle: "친구들과 밖에서 노는 GPS 술래잡기",
+    promotionalText: "",
+    description: "어릴 때 뛰놀던 경도, 이제 앱과 함께 다시 뛰어요.\n\n경찰 팀과 도둑 팀으로 나뉘어 실제로 뛰어요. 구역과 감옥, 시간은 앱이 챙겨요.",
+    keywords: "경도,추격전,야외놀이,달리기,숨바꼭질,얼음땡,감옥,탈옥",
+    whatsNew: "목록을 당겨서 새로고침할 때 사이렌 효과가 나타나요.",
+  },
+  pending: {
+    name: "경찰과도둑",
+    subtitle: "친구들과 밖에서 노는 GPS 술래잡기, 경도",
+    promotionalText: "",
+    description: "어릴 때 뛰놀던 경도, 이제 앱과 함께 다시 뛰어요.\n\n경찰 팀과 도둑 팀으로 나뉘어 실제로 뛰어요. 구역과 감옥, 시간은 앱이 챙겨요. 친구들과 동네에서 바로 시작해 보세요.",
+    keywords: "숨바꼭질,추격,추격전,얼음땡,꼬리잡기,야외게임,단체게임,팀게임,오프라인게임,위치공유,실시간,모임",
+    whatsNew: "",
+  },
+};
+const iosEn: Side = {
+  live: { name: "Cops and Robbers:Hide and Seek", subtitle: "Real-Life GPS Tag Game", promotionalText: "", description: "The chase you grew up with, now on your phone.", keywords: "multiplayer,team,radar,escape,arrest,running", whatsNew: "Pulling down to refresh now shows a siren." },
+  pending: { name: "Cops and Robbers: Real Chase", subtitle: "Outdoor GPS Tag with Friends", promotionalText: "", description: "The chase you grew up with, now on your phone.\n\nCops and Robbers is a real-world outdoor chase game.", keywords: "manhunt,chase,irl,outdoor,friends,group,party,team", whatsNew: "" },
+};
+const iosJa: Side = {
+  live: { name: "ケイドロ", subtitle: "外で遊ぶGPS鬼ごっこ", promotionalText: "", description: "子どもの頃に夢中になったケイドロを、今度はスマホと一緒に。", keywords: "ケイドロ,どろけい,けいどろ,追いかけっこ", whatsNew: "" },
+  pending: { name: "ケイドロ", subtitle: "友達と外で遊ぶGPS鬼ごっこ", promotionalText: "", description: "子どもの頃に夢中になったケイドロを、今度はスマホと一緒に。", keywords: "ドロケイ,けいどろ,どろけい,かくれんぼ,おにごっこ", whatsNew: "" },
+};
+
+const android = (title: string, shortDescription: string, fullDescription: string, shown?: string): Side => {
+  const saved = { title, shortDescription, fullDescription };
+  return shown ? { live: { ...saved, title: shown }, pending: saved } : { live: saved, pending: null };
+};
+
+const art: Art = { icon: "/brand/app-icon.png", screenshots: [], rating: 5, ratingCount: 7, age: "12+", developer: "동심지키미", category: "스포츠", downloads: "100회 이상" };
+
+const base: Omit<StorePage, "readAt" | "drafts"> = {
+  ios: { ok: true, langs: langs(iosKo, iosEn, iosJa), art, liveVersion: "3.2.7", nextVersion: "3.2.8" },
+  android: {
+    ok: true,
+    art,
+    langs: langs(
+      android("경찰과도둑", "친구들과 밖에서 노는 GPS 술래잡기, 경도. 숨바꼭질·추격전을 진짜로 즐겨요", "경찰과도둑, 친구들과 밖에서 노는 GPS 술래잡기예요.\n\n어릴 때 하던 경도, 숨바꼭질, 추격전을 이제 진짜로 해 보세요."),
+      android("Cops and Robbers:Hide and Seek", "Real-Life GPS Tag Game: play manhunt and hide and seek outdoors with friends", "Play manhunt and hide and seek outdoors with friends.", "Cops and Robbers"),
+      android("ケイドロ", "外で遊ぶGPS鬼ごっこ。ケイドロ・ドロケイ・かくれんぼを友達とリアルに楽しもう", "子どもの頃に遊んだケイドロを、スマホでもう一度。"),
+    ),
+  },
+  writable: true,
+};
+
+let drafts: Draft[] = [{ platform: "ios", lang: "ko", field: "promotionalText", value: "이번 주말 노원 축제에서 경찰과 도둑을 직접 해 보세요.", updatedBy: "마케터", updatedAt: "2026-11-08T05:00:00.000Z" }];
+
+export function mockStorePage(): StorePage {
+  return { ...base, readAt: new Date().toISOString(), drafts };
+}
+
+export function mockSaveDraft(body: { platform: Platform; lang: Lang; field: FieldId; value: string | null }): { draft: Draft | null } {
+  const same = (d: Draft) => d.platform === body.platform && d.lang === body.lang && d.field === body.field;
+  drafts = drafts.filter((d) => !same(d));
+  if (body.value === null) return { draft: null };
+  const draft: Draft = { platform: body.platform, lang: body.lang, field: body.field, value: body.value, updatedBy: "로컬 관리자", updatedAt: new Date().toISOString() };
+  drafts.push(draft);
+  return { draft };
+}
