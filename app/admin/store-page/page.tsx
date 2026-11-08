@@ -209,7 +209,7 @@ export default function StorePageScreen() {
   const canSend = toSend > 0 && !!data?.writable;
   const sendBar = (
     <div className="flex items-center gap-3 rounded-2xl border border-sd-line bg-sd-surface py-2 pl-4 pr-2 shadow-lg">
-      <p className={`text-[13px] ${blocked.length ? "line-clamp-2 max-w-[240px] text-sd-critical" : "whitespace-nowrap font-semibold text-sd-fg"}`}>{blocked.length ? blocked[0] : `고친 칸 ${toSend}개`}</p>
+      <p className={`text-[13px] ${blocked.length ? "line-clamp-2 max-w-[240px] text-sd-critical" : "whitespace-nowrap font-semibold text-sd-fg"}`}>{blocked.length ? blocked[0] : [changes.length && `문구 ${changes.length}칸`, imageChanges.length && `이미지 ${imageChanges.length}칸`].filter(Boolean).join(" · ")}</p>
       <button type="button" disabled={blocked.length > 0 || saving > 0} onClick={() => setSending(true)} className="h-9 flex-none rounded-[10px] bg-accent px-3.5 text-[13.5px] font-semibold text-accent-fg transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">
         {platform === "ios" ? "App Store로 보내기" : "Google Play로 보내기"}
       </button>
@@ -282,7 +282,7 @@ export default function StorePageScreen() {
         />
 
         <div className="mb-5">
-          <SegmentedControl<View> value={view} onChange={setView} options={[{ value: "edit", label: "문구 고치기" }, { value: "images", label: "이미지와 영상" }, { value: "spec", label: "규격과 안내" }]} />
+          <Tabs<View> label="화면" value={view} onChange={setView} items={[{ value: "edit", label: "문구 고치기", count: LANGS.reduce((n, l) => n + changedCount(platform, l.id), 0) }, { value: "images", label: "이미지와 영상", count: LANGS.reduce((n, l) => n + changedImages(platform, l.id), 0) }, { value: "spec", label: "규격과 안내" }]} />
         </div>
 
         {view === "spec" ? (
