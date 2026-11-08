@@ -84,7 +84,7 @@ function useScrollEdges() {
   return { ref, edges };
 }
 
-const WIDE = /^\/admin\/events\/[^/]+/;
+const WIDE = /^\/admin\/(events\/[^/]+|company)/;
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();

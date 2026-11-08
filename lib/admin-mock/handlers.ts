@@ -5,6 +5,7 @@ import { graphql, http, HttpResponse, delay } from "msw";
 import { mockAppConfig, mockApplyAppConfig, mockUploadBanner } from "./appConfig";
 import { mockApplyWebgame, mockWebgame, mockWebgameMonitor } from "./webgame";
 import { mockEvent, mockEvents, mockSaveEvent, mockSaveMinigame } from "./events";
+import { mockCompany, mockRemovePerson, mockRemoveRecord, mockSavePerson, mockSaveRecord, mockSkipEvent } from "./company";
 import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
 import { mockRelease, mockRunAction } from "./release";
 import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockSend, mockStorePage } from "./storePage";
@@ -426,6 +427,41 @@ export const handlers = [
   http.put("/api/admin/events/:id", async ({ params, request }) => {
     await delay(500);
     const { status, body } = mockSaveEvent(Number(params.id), (await request.json()) as { settings?: unknown; version?: number });
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  // 회사 소개(#250). 로컬에서는 실제 소개 페이지가 읽는 저장소에 닿지 않는다
+  http.get("/api/admin/company", async () => {
+    await delay(300);
+    return HttpResponse.json(mockCompany());
+  }),
+
+  ...(["records", "people"] as const).flatMap((kind) => {
+    const url = `/api/admin/company/${kind}`;
+    const idOf = (request: Request) => Number(new URL(request.url).searchParams.get("id")) || null;
+    const save = async ({ request }: { request: Request }) => {
+      await delay(400);
+      const body = await request.json();
+      const { status, body: out } = kind === "records" ? mockSaveRecord(idOf(request), body as Parameters<typeof mockSaveRecord>[1]) : mockSavePerson(idOf(request), body as Parameters<typeof mockSavePerson>[1]);
+      return HttpResponse.json(out as Record<string, unknown>, { status });
+    };
+    return [
+      http.post(url, save),
+      http.put(url, save),
+      http.delete(url, async ({ request }) => {
+        await delay(400);
+        const id = idOf(request) ?? 0;
+        const version = Number(new URL(request.url).searchParams.get("version"));
+        const { status, body } = kind === "records" ? mockRemoveRecord(id, version) : mockRemovePerson(id, version);
+        return HttpResponse.json(body as Record<string, unknown>, { status });
+      }),
+    ];
+  }),
+
+  http.post("/api/admin/company/skips", async ({ request }) => {
+    await delay(300);
+    const { eventId } = (await request.json()) as { eventId: number };
+    const { status, body } = mockSkipEvent(eventId);
     return HttpResponse.json(body as Record<string, unknown>, { status });
   }),
 

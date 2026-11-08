@@ -5,6 +5,7 @@ import {
   GamesIcon,
   NoticeIcon,
   BlogIcon,
+  DongsimSymbolIcon,
   ReportIcon,
   BugIcon,
   TermsIcon,
@@ -40,6 +41,7 @@ export const EVENTS_HREF = "/admin/events";
 export const ASSETS_HREF = "/admin/assets";
 export const RELEASE_HREF = "/admin/release";
 export const STORE_PAGE_HREF = "/admin/store-page";
+export const COMPANY_HREF = "/admin/company";
 
 // 역할별 그룹. 개요(현황) → 데이터(조회) → 처리(쌓이는 일) → 콘텐츠(발행) → 운영(모든 사용자에게 바로 닿는 스위치).
 // 그룹 이름을 메뉴 위에 적어 훑어보게 한다(docs/admin-ui.md "내비게이션").
@@ -69,6 +71,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/notices", label: "공지", Icon: NoticeIcon },
       { href: "/admin/blog", label: "블로그", Icon: BlogIcon },
+      { href: COMPANY_HREF, label: "동심지키미 소개", Icon: DongsimSymbolIcon },
     ],
   },
   {
