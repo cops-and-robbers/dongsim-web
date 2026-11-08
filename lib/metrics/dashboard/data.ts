@@ -20,6 +20,7 @@ import { addDays, ymdRange } from "../dates.ts";
 import { splitKey } from "../ga4/run.ts";
 import { funnelData, type FunnelData } from "../funnel.ts";
 import { quickDeletes, sourceGroup, sourceTotals, type AnalyticsDayRow, type SourceGroup } from "./appstoreSources.ts";
+import { iosUsage, playLanguages, type IosUsage, type LanguageRow } from "./storeExtras.ts";
 import { fromInstagram, playWindow, shiftPt, weeklyNumbers, type Week, type WeeklyInput, type WeeklyNumbers } from "../weekly/numbers.ts";
 
 export type DailyPoint = {
@@ -152,7 +153,11 @@ export type Dashboard = {
     previous: WeeklyNumbers["play"];
     /** 이 기간 비정상 종료가 난 버전(코드)과 횟수, 많은 순 */
     crashVersions: { code: string; crashes: number }[];
+    /** 언어별 설치와 평점. 아직 없으면 빈 목록 */
+    languages: LanguageRow[];
   };
+  /** iOS 세션과 비정상 종료 */
+  iosUsage: { current: IosUsage; previous: IosUsage };
   /** 인스타 팔로워 수. 0004 마이그레이션 전이거나 아직 기록이 없으면 null */
   followers: { now: number; nowDay: string; change: number | null; changeFrom: string | null } | null;
   /** 차트에 겹쳐 그릴 일정(행사, 홍보, 출시, 테스트, 기타). 0004 마이그레이션 전이면 null */
@@ -484,6 +489,18 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
     edge("appstore_analytics_daily", { report: "engagement" }, true),
   ]);
 
+  // 스토어 탭에 더한 숫자. 전에 없던 축이라 줄이 없어도 화면은 그대로다
+  const languageRows = await optional(() =>
+    selectAll<PlayRow>(
+      (a, b) => client.from("play_daily").select("report, dim, key, day, metric, value").eq("dim", "language").in("metric", ["user_installs", "rating_total"]).lte("day", to).order("day").order("report").order("key").order("metric").range(a, b),
+      "Play 언어별 읽기",
+    ),
+  );
+  const usageRows = await selectAll<{ report: string; day: string; counts: number | null }>(
+    (a, b) => client.from("appstore_analytics_daily").select("report, day, counts").in("report", ["sessions", "crashes"]).gte("day", from).lte("day", to).order("report").order("day").order("dims_key").range(a, b),
+    "App Store 세션 읽기",
+  );
+
   const media = igMedia as { id: string; posted_at: string; product_type: string; caption: string | null; permalink: string }[];
   const input: WeeklyInput = {
     instagramDays: (igDays as { day: string; views: number | null; profile_views: number | null; website_clicks: number | null }[]).map((r) => ({
@@ -629,7 +646,9 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
       current: playOf(pw?.current, sw?.current, range),
       previous: playOf(pw?.previous, sw?.previous, previous),
       crashVersions: crashVersions(playRows ?? [], range),
+      languages: playLanguages(languageRows ?? [], range, shiftPt),
     },
+    iosUsage: { current: iosUsage(usageRows, range), previous: iosUsage(usageRows, previous) },
     followers: followerSummary(followerRows, range),
     events: eventRows,
     games: null,

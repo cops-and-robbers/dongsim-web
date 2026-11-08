@@ -15,11 +15,11 @@
 export const PLAY_REPORTS = [
   // 버전 축(app_version)은 받지 않는다. 기존 사용자의 업데이트(Daily Device Upgrades)가 늘 0 이라 새로 깐 사람만 보여서,
   // 출시일을 찾으려 하면 행사 날(설치가 몰린 날)이 출시일로 잡힌다(2026-10-07 실측, docs "Android 출시 일정")
-  { report: "installs", folder: "installs", file: "installs", dims: ["overview", "country"] },
+  { report: "installs", folder: "installs", file: "installs", dims: ["overview", "country", "language"] },
   // 스토어 등록정보 방문자와 획득. overview 파일이 없어 나라 축(합이 전체와 같다)을 전체로 쓴다
   { report: "store", folder: "store_performance", file: "store_performance", dims: ["country", "traffic_source"] },
   { report: "crashes", folder: "crashes", file: "crashes", dims: ["overview", "app_version"] },
-  { report: "ratings", folder: "ratings", file: "ratings", dims: ["overview"] },
+  { report: "ratings", folder: "ratings", file: "ratings", dims: ["overview", "language"] },
 ] as const;
 
 export type PlayReport = (typeof PLAY_REPORTS)[number]["report"];
@@ -53,6 +53,7 @@ const KEY_COLUMNS: Record<string, string[]> = {
   overview: [],
   country: ["Country", "Country / region"],
   app_version: ["App Version Code"],
+  language: ["Language"],
   traffic_source: ["Traffic source", "Search term", "UTM source", "UTM campaign"],
 };
 

@@ -54,6 +54,16 @@ import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
  * 근거는 docs/admin-ui.md "지표 화면", 숫자 규칙은 docs/metrics-collection.md.
  */
 
+const LANGUAGE = new Intl.DisplayNames(["ko"], { type: "language" });
+/** 구글 파일의 언어 코드를 한국어 이름으로. 코드가 아니면 그대로 */
+function languageName(code: string) {
+  try {
+    return LANGUAGE.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 // 4주, 13주는 기간마다 요일 수가 같아 주말에 몰리는 숫자도 이전 기간과 공평하게 비교한다
 type Days = "7" | "28" | "91";
 const PERIODS: { label: string; value: Days }[] = [
@@ -975,6 +985,20 @@ function MetricsBody({
                 </Cells>
                 <Note>애플에 분석 정보 공유를 허락한 사람만 세서 실제 설치의 절반쯤이에요. 그래서 개수 대신 비율로만 봐요.</Note>
               </Group>
+
+              <Group title="앱 사용과 안정성 (iOS)" note="새 버전을 낸 날이나 행사 날에 늘었는지 봐요.">
+                {d.iosUsage.current.until ? (
+                  <>
+                    <Cells cols={2}>
+                      <Step label="세션" now={d.iosUsage.current.sessions} before={d.iosUsage.previous.sessions} noPrev={!d.iosUsage.previous.until} />
+                      <Step label="비정상 종료" now={d.iosUsage.current.crashes} before={d.iosUsage.previous.crashes} unit="회" good="down" noPrev={!d.iosUsage.previous.until} />
+                    </Cells>
+                    <Note>애플에 분석 정보 공유를 허락한 사람만 세고, 5명이 안 되는 칸은 애플이 주지 않아요. {md(d.iosUsage.current.until)}까지 들어왔어요.</Note>
+                  </>
+                ) : (
+                  <Note>이 기간 숫자는 아직 없어요. 애플은 5명이 안 되는 칸을 주지 않고, 며칠 늦게 채워요.</Note>
+                )}
+              </Group>
             </>
           )}
 
@@ -1031,6 +1055,21 @@ function MetricsBody({
                     진단 정보 보내기를 켠 기기만 세서 실제보다 적어요.
                   </Note>
                 </Group>
+
+                {pl.languages.length > 0 && (
+                  <Group title="언어별 설치와 평점" note="기기 언어 기준이에요. 영어, 일본어 페이지가 힘을 내는지 봐요.">
+                    <ul className={`divide-y divide-sd-hairline ${SURFACE}`}>
+                      {pl.languages.slice(0, 8).map((l) => (
+                        <li key={l.language} className="flex items-center justify-between gap-3 px-5 py-3 text-[14px]">
+                          <span className="font-semibold text-sd-fg">{languageName(l.language)}</span>
+                          <span className="tabular-nums text-sd-fg-muted">
+                            설치 {fmt(l.installs)}명 · 평점 {l.rating === null ? "-" : l.rating.toFixed(1)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Group>
+                )}
               </>
             ))}
         </>

@@ -22,6 +22,8 @@ export const WANTED_REPORTS: Record<string, string> = {
   "App Downloads Standard": "downloads",
   "App Downloads Detailed": "downloads_detailed",
   "App Store Installation and Deletion Standard": "install_delete",
+  "App Sessions Standard": "sessions",
+  "App Crashes": "crashes",
 };
 
 export type AnalyticsRow = {
@@ -32,7 +34,8 @@ export type AnalyticsRow = {
 };
 
 /** 숫자로 읽을 열. 나머지 열은 전부 나눠 보는 축(dims)이다 */
-const MEASURES = new Set(["counts", "unique counts", "unique devices"]);
+// 세션과 비정상 종료 리포트는 횟수 열 이름이 Sessions, Crashes 다. 세션 시간은 쓰지 않는다
+const MEASURES = new Set(["counts", "sessions", "crashes", "total session duration", "unique counts", "unique devices"]);
 /** 모든 줄에 같은 값이라 저장할 필요가 없는 열 */
 const DROP = new Set(["app name", "app apple identifier"]);
 
@@ -48,7 +51,7 @@ export function parseAnalyticsTsv(text: string): AnalyticsRow[] {
   const lower = head.map((h) => h.toLowerCase());
   const iDate = lower.indexOf("date");
   if (iDate < 0) throw new Error(`분석 리포트에 Date 열이 없어요 (열: ${head.join(", ")})`);
-  const iCounts = lower.indexOf("counts");
+  const iCounts = ["counts", "sessions", "crashes"].map((n) => lower.indexOf(n)).find((i) => i >= 0) ?? -1;
   // 설치와 삭제 리포트는 고유 수 열 이름이 Unique Devices 다
   const iUnique = lower.indexOf("unique counts") >= 0 ? lower.indexOf("unique counts") : lower.indexOf("unique devices");
   const num = (s: string | undefined) => (s === undefined || s === "" ? null : Number(s));

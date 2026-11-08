@@ -84,7 +84,21 @@ async function listFiles(bucket: string, token: string): Promise<string[]> {
   return names;
 }
 
-async function download(bucket: string, name: string, token: string): Promise<Uint8Array> {
+/** 접두어로 시작하는 파일 이름 전부 */
+export async function listPrefix(bucket: string, prefix: string, token: string): Promise<string[]> {
+  const names: string[] = [];
+  let page: string | undefined;
+  do {
+    const q = new URLSearchParams({ prefix, maxResults: "1000", fields: "items(name),nextPageToken" });
+    if (page) q.set("pageToken", page);
+    const body = await gcsJson(`${GCS}/${bucket}/o?${q}`, token);
+    for (const it of (body.items as { name: string }[] | undefined) ?? []) names.push(it.name);
+    page = body.nextPageToken as string | undefined;
+  } while (page);
+  return names;
+}
+
+export async function download(bucket: string, name: string, token: string): Promise<Uint8Array> {
   const res = await fetch(`${GCS}/${bucket}/o/${encodeURIComponent(name)}?alt=media`, {
     headers: { Authorization: `Bearer ${token}` },
     signal: AbortSignal.timeout(60_000),
