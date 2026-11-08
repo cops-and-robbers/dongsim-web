@@ -32,6 +32,7 @@
 | `/api/admin/webgame` | 어드민 "온라인 게임": 게임 서버의 운영 상태를 비밀값으로 대신 읽고 바꿈 |
 | `/api/admin/release` | 어드민 "출시": 두 스토어의 출시 단계와 다음 할 일(읽기만, 1분 캐시). 판단은 `lib/release/board.ts`, 읽기는 `lib/release/stores.ts` |
 | `/api/admin/release/actions` | 어드민 출시 조작: 다시 읽고 확인한 뒤 스토어에 보냄, `release_actions` 에 기록. 고르기는 `lib/release/options.ts`, 보내기는 `lib/release/actions.ts` |
+| `/api/admin/store-page` | 어드민 "스토어 페이지": 두 스토어의 문구 읽기(1분 캐시)와 초안 저장. 칸과 점검은 `lib/store-page/fields.ts`, 스토어에는 쓰지 않음 |
 
 `/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 다국어 라우팅용 `proxy.ts`도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/en/*`·`app/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
 
@@ -54,6 +55,7 @@
 - `lib/constants.ts` - 사이트 전역 상수: 브랜드, 팀원(블로그 작성자 매핑에도 사용), 앱 링크, 게임 기능 목업 순서. 사용자에게 보이는 카피는 여기 두지 않는다
 - `lib/i18n/` - 다국어: 로케일 설정·경로 헬퍼(`config.ts`), 페이지 카피 단일 출처(`messages.ts`), 공통 UI 문구(`chrome.ts`). 상세는 `docs/i18n.md`
 - `lib/blog/` - 노션 데이터 레이어 (`notion.ts`), 작성자 매핑(`authors.ts`), 날짜 포맷(`format.ts`)
+- `lib/store-page/` - 어드민 "스토어 페이지": 칸, 한도, 자동 점검(`fields.ts`), 이미지 규격(`specs.ts`), 스토어 읽기(`read.ts`), 초안 저장(`server.ts`)
 - `lib/release/` - 어드민 "출시": 스토어 읽기(`stores.ts`), 단계와 할 수 있는 일 판단(`board.ts`), 조작 고르기(`options.ts`)와 요청 모양(`requests.ts`), 보내기(`actions.ts`), 기록(`audit.ts`), 콘솔 바로가기(`links.ts`). 상세는 `docs/admin-ui.md` "출시", "출시 조작"
 - `public/` - 정적 에셋: `brand/`(로고), `characters/`, `event/`, `photobooth/`, `team/`(프로필 사진)
 - `next.config.ts` - 이미지 설정, `.well-known` 헤더, OG 라우트 파일 트레이싱

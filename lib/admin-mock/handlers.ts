@@ -7,6 +7,7 @@ import { mockApplyWebgame, mockWebgame, mockWebgameMonitor } from "./webgame";
 import { mockEvent, mockEvents, mockSaveEvent, mockSaveMinigame } from "./events";
 import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
 import { mockRelease, mockRunAction } from "./release";
+import { mockSaveDraft, mockStorePage } from "./storePage";
 import {
   queryUsers,
   getUser,
@@ -436,6 +437,17 @@ export const handlers = [
     await delay(900);
     const { status, body } = mockRunAction((await request.json()) as { id?: string; dryRun?: boolean });
     return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  // 스토어 페이지. 로컬에서는 실제 스토어와 Supabase 에 닿지 않는다
+  http.get("/api/admin/store-page", async () => {
+    await delay(400);
+    return HttpResponse.json(mockStorePage());
+  }),
+
+  http.put("/api/admin/store-page", async ({ request }) => {
+    await delay(300);
+    return HttpResponse.json(mockSaveDraft((await request.json()) as Parameters<typeof mockSaveDraft>[0]));
   }),
 
   // 그림 보관함(#224). 로컬에서는 실제 R2 와 Supabase 에 닿지 않는다
