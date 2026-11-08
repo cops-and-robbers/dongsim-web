@@ -13,6 +13,7 @@
 import { ascToken, ASC_API } from "../metrics/appstore/auth.ts";
 import { APPSTORE_APP_ID, PLAY_PACKAGE } from "../metrics/config.ts";
 import { serviceAccountFromEnv, serviceAccountToken } from "../metrics/google.ts";
+import { db } from "../metrics/db.ts";
 import type { AndroidRaw, HistoryItem, IosBuild, IosRaw, IosVersion, PlayRelease } from "./board.ts";
 
 const TIMEOUT = 15_000;
@@ -139,34 +140,59 @@ export function releaseAscToken(now = new Date()): string {
 type ListedRelease = { releaseName?: string; activeArtifacts?: { versionCode?: number }[]; releaseLifecycleState?: string };
 
 /**
- * 출시 목록(심사 상태가 들어 있다)은 서버마다 마지막으로 읽은 값을 둔다.
- * 구글이 이 호출에만 따로 한도를 걸어 1분마다 읽으면 막힌다. 심사 상태는 분 단위로 바뀌지 않으니 5분에 한 번만 새로 읽고,
- * 막히면 마지막 값을 쓴다(언제 값인지 함께 돌려 화면이 "N분 전 값"이라고 말한다). 출시 조작은 fresh 로 늘 새로 읽고, 막히면 하지 않는다
+ * 출시 목록(심사 상태가 들어 있다)은 구글이 이 호출에만 문서에 없는 짧은 한도를 건다(2026-11-08, 403 "Listing releases quota exceeded").
+ * 서버 메모리에만 두면 Vercel 은 요청마다 다른 서버가 받아 소용이 없었다. 그래서 마지막으로 읽은 두 트랙 목록을
+ * Supabase site_settings(key = play_release_lists)에 두고, 모든 서버가 그것을 본다.
+ * - 5분 안에 읽은 값이 있으면 구글을 부르지 않는다(전체에서 5분에 한 번)
+ * - 구글이 막으면 저장된 값을 쓰고, 화면은 "N분 전 값"이라고 말한다
+ * 출시 조작은 이 목록 대신 편집(edit)의 트랙으로 지금 상태를 한 번 더 확인한다(actions.ts). 편집은 이 한도와 상관없다
  */
 const LIST_MAX_AGE = 5 * 60_000;
-const lastLists = new Map<string, { at: number; data: ListedRelease[] }>();
+const LISTS_KEY = "play_release_lists";
+type Lists = { at: number; production: ListedRelease[]; internal: ListedRelease[] };
+let memLists: Lists | null = null;
 
-async function listReleases(track: string, token: string, fresh: boolean): Promise<{ data: ListedRelease[]; at: number }> {
-  const last = lastLists.get(track);
-  if (!fresh && last && Date.now() - last.at < LIST_MAX_AGE) return last;
+async function storedLists(): Promise<Lists | null> {
+  if (memLists && Date.now() - memLists.at < LIST_MAX_AGE) return memLists;
   try {
-    const data = ((await play(`${PLAY_API}/tracks/${track}/releases`, token)).releases ?? []) as ListedRelease[];
-    const got = { data, at: Date.now() };
-    lastLists.set(track, got);
+    const { data } = await db().from("site_settings").select("value").eq("key", LISTS_KEY).maybeSingle();
+    const v = data?.value as Lists | undefined;
+    if (v && typeof v.at === "number" && Array.isArray(v.production) && Array.isArray(v.internal)) memLists = v;
+  } catch {
+    // 저장소를 못 읽어도 구글에서 읽으면 된다
+  }
+  return memLists;
+}
+
+async function saveLists(v: Lists): Promise<void> {
+  memLists = v;
+  try {
+    await db().from("site_settings").upsert({ key: LISTS_KEY, value: v, updated_by: "출시 보드", updated_at: new Date().toISOString() });
+  } catch {
+    // 못 남겨도 이번 값은 쓴다
+  }
+}
+
+async function listReleases(token: string): Promise<Lists> {
+  const stored = await storedLists();
+  if (stored && Date.now() - stored.at < LIST_MAX_AGE) return stored;
+  try {
+    const get = async (track: string) => ((await play(`${PLAY_API}/tracks/${track}/releases`, token)).releases ?? []) as ListedRelease[];
+    const [production, internal] = await Promise.all([get("production"), get("internal")]);
+    const got = { at: Date.now(), production, internal };
+    await saveLists(got);
     return got;
   } catch (e) {
-    if (!fresh && last && e instanceof QuotaError) return last;
+    if (stored && e instanceof QuotaError) return stored;
     throw e;
   }
 }
 
-export async function readAndroid(opts: { fresh?: boolean } = {}): Promise<AndroidRaw> {
+export async function readAndroid(): Promise<AndroidRaw> {
   const token = await playToken();
-  const fresh = opts.fresh === true;
-  const [prodList, internalList, edit] = await Promise.all([listReleases("production", token, fresh), listReleases("internal", token, fresh), readEdit(token)]);
-  const production = prodList.data;
-  const internal = internalList.data;
-  const listedAt = new Date(Math.min(prodList.at, internalList.at)).toISOString();
+  const [lists, edit] = await Promise.all([listReleases(token), readEdit(token)]);
+  const { production, internal } = lists;
+  const listedAt = new Date(lists.at).toISOString();
 
   const merge = (rels: ListedRelease[], track: string): PlayRelease[] =>
     rels.map((r) => {

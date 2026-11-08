@@ -34,8 +34,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   // 2. 다시 읽기
   let options;
   try {
-    // 조작은 늘 새로 읽은 값으로 판단한다(마지막 값을 쓰지 않는다)
-    options = optionsFor(platform, platform === "ios" ? await readIos() : await readAndroid({ fresh: true }));
+    // iOS 는 늘 새로 읽는다. Play 출시 목록은 구글 한도 때문에 5분 안의 값을 쓰고, 지금 상태는 보낼 때 편집(edit)으로 한 번 더 확인한다(actions.ts)
+    options = optionsFor(platform, platform === "ios" ? await readIos() : await readAndroid());
   } catch (e) {
     return NextResponse.json({ error: e instanceof StoreError ? e.message : "스토어를 다시 읽지 못해 하지 않았어요. 잠시 뒤 다시 해 주세요." }, { status: 502 });
   }
