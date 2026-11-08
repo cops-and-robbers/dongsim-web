@@ -6,18 +6,20 @@ import { ErrorBlock, PageHeader, ScrollPage } from "@/components/admin/Parts";
 import { AppStoreMark, GooglePlayMark, RefreshIcon } from "@/components/admin/icons";
 import { PreviewPane } from "@/components/admin/ops/PreviewPane";
 import { FieldEditor, OfficialLink } from "@/components/admin/store-page/FieldEditor";
+import { ImageBoard } from "@/components/admin/store-page/ImageBoard";
 import { SpecGuide } from "@/components/admin/store-page/SpecGuide";
 import { StorePreview } from "@/components/admin/store-page/StorePreview";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import type { Surface } from "@/lib/store-page/display";
-import { DraftConflict, fetchStorePage, saveStoreDraft } from "@/lib/admin/storePageClient";
+import { DraftConflict, fetchStorePage, saveImageDraft, saveStoreDraft } from "@/lib/admin/storePageClient";
+import { draftKey, IMAGE_SLOTS, sameItems, type ImageDraft, type ImageItem, type ImageSlotId } from "@/lib/store-page/images";
 import { baseOf, FIELDS, HUMAN_CHECKS, keyOf, LANGS, LINKS, type Draft, type FieldId, type Lang, type Platform, type Side, type StorePage, type Values } from "@/lib/store-page/fields";
 
 // 어드민 "스토어 페이지" (docs/admin-ui.md "스토어 페이지"). 마케터와 디자이너가 쓴다.
 // 왼쪽에서 고치면 오른쪽 폰에 바로 보이고, 칸을 고치면 잠시 뒤 초안으로 저장된다. 스토어에는 보내지 않는다.
 
 const SAVE_DELAY = 800;
-type View = "edit" | "spec";
+type View = "edit" | "images" | "spec";
 
 /** 칸 옆에 표시를 붙일 수 있는 탭. 고른 알약은 미끄러지듯 옮겨 간다 */
 function Tabs<T extends string>({ value, onChange, items, label }: { value: T; onChange: (v: T) => void; items: { value: T; label: ReactNode; count?: number }[]; label: string }) {
@@ -64,6 +66,7 @@ export default function StorePageScreen() {
   const [saving, setSaving] = useState(0);
   const [failed, setFailed] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [imageDrafts, setImageDrafts] = useState<Record<string, ImageDraft>>({});
   const timers = useRef<Record<string, number>>({});
   const seq = useRef(0);
 
@@ -74,6 +77,7 @@ export default function StorePageScreen() {
         if (id !== seq.current) return;
         setData(d);
         setDrafts(Object.fromEntries(d.drafts.map((x) => [keyOf(x.platform, x.lang, x.field), x])));
+        setImageDrafts(Object.fromEntries(d.imageDrafts.map((x) => [draftKey(x.platform, x.lang, x.slot), x])));
         setError(null);
       })
       .catch((e: Error) => id === seq.current && setError(e.message))
@@ -135,6 +139,47 @@ export default function StorePageScreen() {
     timers.current[key] = window.setTimeout(() => save(p, l, f, value, expect), SAVE_DELAY);
   };
 
+  const liveOf = useCallback(
+    (p: Platform, l: Lang, slot: ImageSlotId): ImageItem[] => {
+      const pg = data?.[p];
+      return pg?.ok ? (pg.images[l][slot] ?? []) : [];
+    },
+    [data],
+  );
+  const listOf = useCallback((p: Platform, l: Lang, slot: ImageSlotId) => imageDrafts[draftKey(p, l, slot)]?.items ?? liveOf(p, l, slot), [imageDrafts, liveOf]);
+
+  const changeImages = (slot: ImageSlotId, next: ImageItem[]) => {
+    const key = draftKey(platform, lang, slot);
+    const before = imageDrafts[key];
+    const same = sameItems(next, liveOf(platform, lang, slot));
+    setImageDrafts((m) => {
+      const out = { ...m };
+      if (same) delete out[key];
+      else out[key] = { platform, lang, slot, items: next, updatedBy: before?.updatedBy ?? "", updatedAt: before?.updatedAt ?? "" };
+      return out;
+    });
+    if (!data?.writable) return;
+    setSaving((n) => n + 1);
+    setFailed(null);
+    saveImageDraft({ platform, lang, slot, items: same ? null : next, expect: before?.updatedAt || null })
+      .then((d) => {
+        setImageDrafts((m) => {
+          const out = { ...m };
+          if (d) out[key] = d;
+          else delete out[key];
+          return out;
+        });
+        setSavedAt(Date.now());
+      })
+      .catch((e: Error) => {
+        setFailed(e.message);
+        load();
+      })
+      .finally(() => setSaving((n) => n - 1));
+  };
+
+  const changedImages = (p: Platform, l: Lang) => IMAGE_SLOTS[p].filter((s) => !sameItems(listOf(p, l, s.id), liveOf(p, l, s.id))).length;
+
   const changedCount = useCallback(
     (p: Platform, l: Lang) => FIELDS[p].filter((f) => valueOf(p, l, f.id) !== baseOf(sideOf(p, l), f.id)).length,
     [valueOf, sideOf],
@@ -146,6 +191,27 @@ export default function StorePageScreen() {
   const ios = data?.ios;
 
   const status = !data?.writable ? data?.readOnlyReason : failed ? failed : saving > 0 ? "저장하는 중이에요" : savedAt ? "초안에 저장했어요" : null;
+
+  const storeTabs = (
+    <div className="flex flex-wrap items-center gap-2.5">
+                <Tabs<Platform>
+                  label="스토어"
+                  value={platform}
+                  onChange={(p) => {
+                    setPlatform(p);
+                    setSpot(null);
+                    if (p === "ios" && mode === "details") setMode("page");
+                  }}
+                  items={[
+                    { value: "ios", label: <span className="inline-flex items-center gap-1.5"><AppStoreMark className="size-4" />App Store</span> },
+                    { value: "android", label: <span className="inline-flex items-center gap-1.5"><GooglePlayMark className="size-4" />Google Play</span> },
+                  ]}
+                />
+                <Tabs<Lang> label="언어" value={lang} onChange={setLang} items={LANGS.map((l) => ({ value: l.id, label: l.label, count: view === "images" ? changedImages(platform, l.id) : changedCount(platform, l.id) }))} />
+              </div>
+  );
+  const screenshots = page?.ok ? listOf(platform, lang, platform === "ios" ? "iphone" : "phone").map((i) => i.url) : [];
+  const icon = platform === "android" ? listOf(platform, lang, "icon")[0]?.url : undefined;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -173,11 +239,25 @@ export default function StorePageScreen() {
         />
 
         <div className="mb-5">
-          <SegmentedControl<View> value={view} onChange={setView} options={[{ value: "edit", label: "문구 고치기" }, { value: "spec", label: "규격과 안내" }]} />
+          <SegmentedControl<View> value={view} onChange={setView} options={[{ value: "edit", label: "문구 고치기" }, { value: "images", label: "이미지와 영상" }, { value: "spec", label: "규격과 안내" }]} />
         </div>
 
         {view === "spec" ? (
           <SpecGuide />
+        ) : view === "images" && data ? (
+          <div className="space-y-4">
+            {storeTabs}
+            {page?.ok ? (
+              <>
+                <p className="text-[13px] leading-relaxed text-sd-fg-muted">끌어서 순서를 바꿀 수 있어요. 규격에 맞는지는 올리기 전에 확인해요. 초안으로만 저장되고 스토어에는 아직 보내지 않아요.</p>
+                <motion.div key={`${platform}-${lang}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }}>
+                  <ImageBoard platform={platform} listOf={(s) => listOf(platform, lang, s)} liveOf={(s) => liveOf(platform, lang, s)} disabled={!data.writable} onChange={changeImages} />
+                </motion.div>
+              </>
+            ) : (
+              <div className="rounded-2xl bg-sd-fill px-5 py-4 text-[14px] leading-relaxed text-sd-fg">{page?.error}</div>
+            )}
+          </div>
         ) : error && !data ? (
           <ErrorBlock message={error} onRetry={() => load(true)} />
         ) : !data ? (
@@ -185,22 +265,7 @@ export default function StorePageScreen() {
         ) : (
           <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
             <div className="min-w-0 space-y-4">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <Tabs<Platform>
-                  label="스토어"
-                  value={platform}
-                  onChange={(p) => {
-                    setPlatform(p);
-                    setSpot(null);
-                    if (p === "ios" && mode === "details") setMode("page");
-                  }}
-                  items={[
-                    { value: "ios", label: <span className="inline-flex items-center gap-1.5"><AppStoreMark className="size-4" />App Store</span> },
-                    { value: "android", label: <span className="inline-flex items-center gap-1.5"><GooglePlayMark className="size-4" />Google Play</span> },
-                  ]}
-                />
-                <Tabs<Lang> label="언어" value={lang} onChange={setLang} items={LANGS.map((l) => ({ value: l.id, label: l.label, count: changedCount(platform, l.id) }))} />
-              </div>
+              {storeTabs}
 
               {page?.ok ? (
                 <>
@@ -280,7 +345,7 @@ export default function StorePageScreen() {
                 <div className="mb-3 flex justify-center">
                   <SegmentedControl<Surface> value={mode} onChange={setMode} options={[{ value: "page", label: platform === "ios" ? "제품 페이지" : "앱 상세" }, { value: "search", label: "검색 결과" }, ...(platform === "android" ? [{ value: "details" as const, label: "세부정보" }] : [])]} />
                 </div>
-                <StorePreview platform={platform} mode={mode} values={values} art={page.art} spot={spot} onMode={setMode} />
+                <StorePreview platform={platform} mode={mode} values={values} art={{ ...page.art, icon: icon ?? page.art.icon, screenshots: screenshots.length ? screenshots : page.art.screenshots }} spot={spot} onMode={setMode} />
                 <p className="mt-2.5 text-center text-[12px] leading-relaxed text-sd-fg-subtle">
                   {spot === "keywords" ? "키워드는 사용자에게 보이지 않아요." : spot === "subtitle" && mode === "page" ? "부제는 검색 결과에 보여요." : "실제 스토어 앱 캡처로 잰 화면이에요."}
                 </p>

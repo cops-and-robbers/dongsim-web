@@ -1,3 +1,5 @@
+import type { ImageDraft, LiveImages } from "./images.ts";
+
 /**
  * 스토어 페이지 문구의 칸, 한도, 자동 점검 (docs/admin-ui.md "스토어 페이지"). 순수 함수만 둔다.
  * 한도와 규칙의 근거는 애플, 구글 공식 문서다(2026-11-08 확인, LINKS).
@@ -13,10 +15,10 @@ export type Values = Partial<Record<FieldId, string>>;
 export type Side = { live: Values; pending: Values | null };
 export type Failed = { ok: false; error: string };
 export type Art = { icon: string | null; screenshots: string[]; rating: number | null; ratingCount: number | null; age: string | null; developer: string | null; category: string | null; downloads: string | null };
-export type IosPage = { ok: true; langs: Record<Lang, Side>; art: Art; liveVersion: string | null; nextVersion: string | null } | Failed;
-export type AndroidPage = { ok: true; langs: Record<Lang, Side>; art: Art } | Failed;
+export type IosPage = { ok: true; langs: Record<Lang, Side>; art: Art; images: LiveImages; liveVersion: string | null; nextVersion: string | null } | Failed;
+export type AndroidPage = { ok: true; langs: Record<Lang, Side>; art: Art; images: LiveImages } | Failed;
 export type Draft = { platform: Platform; lang: Lang; field: FieldId; value: string; updatedBy: string; updatedAt: string };
-export type StorePage = { readAt: string; ios: IosPage; android: AndroidPage; drafts: Draft[]; writable: boolean; readOnlyReason?: string };
+export type StorePage = { readAt: string; ios: IosPage; android: AndroidPage; drafts: Draft[]; imageDrafts: ImageDraft[]; writable: boolean; readOnlyReason?: string };
 
 export const LANGS: { id: Lang; label: string; ios: string; android: string; hl: string; gl: string }[] = [
   { id: "ko", label: "한국어", ios: "ko", android: "ko-KR", hl: "ko", gl: "KR" },

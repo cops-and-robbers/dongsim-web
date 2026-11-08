@@ -7,7 +7,7 @@ import { mockApplyWebgame, mockWebgame, mockWebgameMonitor } from "./webgame";
 import { mockEvent, mockEvents, mockSaveEvent, mockSaveMinigame } from "./events";
 import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
 import { mockRelease, mockRunAction } from "./release";
-import { mockSaveDraft, mockStorePage } from "./storePage";
+import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockStorePage } from "./storePage";
 import {
   queryUsers,
   getUser,
@@ -448,6 +448,16 @@ export const handlers = [
   http.put("/api/admin/store-page", async ({ request }) => {
     await delay(300);
     return HttpResponse.json(mockSaveDraft((await request.json()) as Parameters<typeof mockSaveDraft>[0]));
+  }),
+
+  http.post("/api/admin/store-page/images", async ({ request }) => {
+    await delay(200);
+    return HttpResponse.json(mockPresign((await request.json()) as Parameters<typeof mockPresign>[0]));
+  }),
+
+  http.put("/api/admin/store-page/images", async ({ request }) => {
+    await delay(200);
+    return HttpResponse.json(mockSaveImageDraft((await request.json()) as Parameters<typeof mockSaveImageDraft>[0]));
   }),
 
   // 그림 보관함(#224). 로컬에서는 실제 R2 와 Supabase 에 닿지 않는다

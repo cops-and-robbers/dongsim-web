@@ -1,5 +1,6 @@
 // 로컬에서 스토어 페이지를 보는 가짜 값. 실제 스토어와 Supabase 에 닿지 않는다.
 import type { Art, Draft, FieldId, Lang, Platform, Side, StorePage } from "@/lib/store-page/fields";
+import { extOf, type ImageDraft, type ImageItem, type ImageSlotId, type LiveImage, type LiveImages } from "@/lib/store-page/images";
 
 const langs = (ko: Side, en: Side, ja: Side): Record<Lang, Side> => ({ ko, en, ja });
 
@@ -37,11 +38,16 @@ const android = (title: string, shortDescription: string, fullDescription: strin
 
 const art: Art = { icon: "/brand/app-icon.png", screenshots: [], rating: 5, ratingCount: 7, age: "12+", developer: "동심지키미", category: "스포츠", downloads: "100회 이상" };
 
-const base: Omit<StorePage, "readAt" | "drafts"> = {
-  ios: { ok: true, langs: langs(iosKo, iosEn, iosJa), art, liveVersion: "3.2.7", nextVersion: "3.2.8" },
+const shots = (prefix: string, n: number): LiveImage[] => Array.from({ length: n }, (_, i) => ({ kind: "live", id: `${prefix}${i}`, url: "/brand/app-icon.png" }));
+const iosImages = (ipad: number): LiveImages[Lang] => ({ iphone: shots("iphone", 8), ipad: shots("ipad", ipad), preview: [] });
+const playImages = (): LiveImages[Lang] => ({ icon: shots("icon", 1), feature: shots("feature", 1), phone: shots("phone", 8), tablet7: shots("tablet7", 8), tablet10: shots("tablet10", 8) });
+
+const base: Omit<StorePage, "readAt" | "drafts" | "imageDrafts"> = {
+  ios: { ok: true, langs: langs(iosKo, iosEn, iosJa), art, images: { ko: iosImages(7), en: iosImages(0), ja: iosImages(0) }, liveVersion: "3.2.7", nextVersion: "3.2.8" },
   android: {
     ok: true,
     art,
+    images: { ko: playImages(), en: playImages(), ja: playImages() },
     langs: langs(
       android("경찰과도둑", "친구들과 밖에서 노는 GPS 술래잡기, 경도. 숨바꼭질·추격전을 진짜로 즐겨요", "경찰과도둑, 친구들과 밖에서 노는 GPS 술래잡기예요.\n\n어릴 때 하던 경도, 숨바꼭질, 추격전을 이제 진짜로 해 보세요."),
       android("Cops and Robbers:Hide and Seek", "Real-Life GPS Tag Game: play manhunt and hide and seek outdoors with friends", "Play manhunt and hide and seek outdoors with friends.", "Cops and Robbers"),
@@ -54,7 +60,7 @@ const base: Omit<StorePage, "readAt" | "drafts"> = {
 let drafts: Draft[] = [{ platform: "ios", lang: "ko", field: "promotionalText", value: "이번 주말 노원 축제에서 경찰과 도둑을 직접 해 보세요.", updatedBy: "마케터", updatedAt: "2026-11-08T05:00:00.000Z" }];
 
 export function mockStorePage(): StorePage {
-  return { ...base, readAt: new Date().toISOString(), drafts };
+  return { ...base, readAt: new Date().toISOString(), drafts, imageDrafts };
 }
 
 export function mockSaveDraft(body: { platform: Platform; lang: Lang; field: FieldId; value: string | null }): { draft: Draft | null } {
@@ -64,4 +70,19 @@ export function mockSaveDraft(body: { platform: Platform; lang: Lang; field: Fie
   const draft: Draft = { platform: body.platform, lang: body.lang, field: body.field, value: body.value, updatedBy: "로컬 관리자", updatedAt: new Date().toISOString() };
   drafts.push(draft);
   return { draft };
+}
+
+let imageDrafts: ImageDraft[] = [];
+
+export function mockSaveImageDraft(body: { platform: Platform; lang: Lang; slot: ImageSlotId; items: ImageItem[] | null }): { draft: ImageDraft | null } {
+  const same = (d: ImageDraft) => d.platform === body.platform && d.lang === body.lang && d.slot === body.slot;
+  imageDrafts = imageDrafts.filter((d) => !same(d));
+  if (!body.items) return { draft: null };
+  const draft: ImageDraft = { platform: body.platform, lang: body.lang, slot: body.slot, items: body.items, updatedBy: "로컬 관리자", updatedAt: new Date().toISOString() };
+  imageDrafts.push(draft);
+  return { draft };
+}
+
+export function mockPresign(body: { slot: string; type: string }): { uploadUrl: string; url: string; key: string } {
+  return { uploadUrl: "", url: "", key: `store/${body.slot}/${Date.now()}-abcdef12.${extOf(body.type) ?? "png"}` };
 }
