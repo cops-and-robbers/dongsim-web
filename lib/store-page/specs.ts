@@ -19,11 +19,11 @@ export type Spec = {
 
 export const IMAGE_SPECS: Record<Platform, Spec[]> = {
   ios: [
-    { item: "iPhone 스크린샷", sizes: ["1206 x 2622", "1179 x 2556"], sizeNote: "가로로 돌린 크기도 돼요", format: "JPEG, PNG. 투명 배경 불가", count: "1 ~ 10장", need: "required", needLabel: "필수", link: LINKS.appleShots },
+    { item: "iPhone 스크린샷", sizes: ["1320 x 2868", "1290 x 2796", "1260 x 2736"], sizeNote: "가로로 돌린 크기도 돼요", format: "JPEG, PNG. 투명 배경 불가", count: "1 ~ 10장", need: "required", needLabel: "필수", link: LINKS.appleShots },
     { item: "iPad 13인치 스크린샷", sizes: ["2064 x 2752", "2048 x 2732"], sizeNote: "가로로 돌린 크기도 돼요", format: "JPEG, PNG. 투명 배경 불가", count: "1 ~ 10장", need: "optional", needLabel: "iPad 지원 시 필수", link: LINKS.appleShots },
     { item: "iPhone Duo 스크린샷", sizes: ["1398 x 2034", "2007 x 2853"], sizeNote: "바깥 화면, 안쪽 화면 크기예요", format: "JPEG, PNG. 투명 배경 불가", count: "최대 10장", need: "soon", needLabel: "2027년 4월부터 필수", link: LINKS.appleShots },
-    { item: "앱 미리보기 영상 (iPhone)", sizes: ["886 x 1920", "1920 x 886"], format: "H.264 또는 ProRes 422 HQ, 30fps, 500MB 이하, 15 ~ 30초", count: "언어별 최대 3개", need: "optional", needLabel: "선택", link: LINKS.applePreview },
-    { item: "앱 미리보기 영상 (iPad 13인치)", sizes: ["1200 x 1600", "1600 x 1200"], format: "H.264 또는 ProRes 422 HQ, 30fps, 500MB 이하, 15 ~ 30초", count: "언어별 최대 3개", need: "optional", needLabel: "선택", link: LINKS.applePreview },
+    { item: "앱 미리보기 영상 (iPhone)", sizes: ["886 x 1920", "1920 x 886"], format: "H.264 또는 ProRes 422 HQ, 23 ~ 30fps, 소리 트랙 필수, 500MB 이하, 15 ~ 30초", count: "언어별 최대 3개", need: "optional", needLabel: "선택", link: LINKS.applePreview },
+    { item: "앱 미리보기 영상 (iPad 13인치)", sizes: ["1200 x 1600", "1600 x 1200"], format: "H.264 또는 ProRes 422 HQ, 23 ~ 30fps, 소리 트랙 필수, 500MB 이하, 15 ~ 30초", count: "언어별 최대 3개", need: "optional", needLabel: "선택", link: LINKS.applePreview },
     { item: "앱 아이콘", sizes: ["1024 x 1024"], sizeNote: "모서리는 시스템이 둥글게 깎아요", format: "PNG", count: "1개, 앱 빌드에 들어가요", need: "required", needLabel: "필수", link: LINKS.appleIcon },
   ],
   android: [

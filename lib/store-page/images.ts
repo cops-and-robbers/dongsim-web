@@ -31,7 +31,7 @@ export const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
 
 export const IMAGE_SLOTS: Record<Platform, ImageSlot[]> = {
   ios: [
-    { id: "iphone", label: "iPhone 스크린샷", need: "필수", max: 10, types: SHOT_TYPES, sizes: rotate([[1320, 2868], [1290, 2796], [1260, 2736], [1206, 2622], [1179, 2556]]), noAlpha: true, link: LINKS.appleShots },
+    { id: "iphone", label: "iPhone 스크린샷", need: "필수", max: 10, types: SHOT_TYPES, sizes: rotate([[1320, 2868], [1290, 2796], [1260, 2736]]), noAlpha: true, link: LINKS.appleShots },
     { id: "ipad", label: "iPad 13인치 스크린샷", need: "iPad 지원 시 필수", max: 10, types: SHOT_TYPES, sizes: rotate([[2064, 2752], [2048, 2732]]), noAlpha: true, link: LINKS.appleShots },
     { id: "preview", label: "앱 미리보기 영상", need: "선택", max: 3, video: true, types: VIDEO_TYPES, sizes: [[886, 1920], [1920, 886]], maxBytes: MAX_VIDEO_BYTES, noAlpha: false, seconds: [15, 30], link: LINKS.applePreview },
   ],
