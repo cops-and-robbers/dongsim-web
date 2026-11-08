@@ -13,6 +13,7 @@
  */
 
 import { consoleLinks } from "./links.ts";
+import type { Option } from "./options.ts";
 import { since } from "./time.ts";
 
 export type Platform = "ios" | "android";
@@ -65,6 +66,10 @@ export type Track =
       rollout: Rollout | null;
       /** Android 만 */
       queue?: PublishQueue;
+      /** 어드민에서 바로 할 수 있는 조작(options.ts). 서버가 붙인다 */
+      options?: Option[];
+      /** 심사 상태를 몇 분 전에 읽은 값이면 그 시각(Android) */
+      staleSince?: string;
     }
   | { platform: Platform; ok: false; error: string; href: string };
 
@@ -82,12 +87,18 @@ export type ReleaseBoard = {
   /** 두 스토어 공통으로 알릴 것(빌드 번호가 다름 등) */
   notes: Action[];
   history: HistoryItem[];
+  /** 최근 출시 조작 기록 */
+  actions?: { id: number; platform: string; action: string; version: string; status: string; message: string | null; actor: string; createdAt: string }[];
+  /** 조작 버튼을 켤지. 운영 배포이고 기록 표가 있을 때만 */
+  writable?: boolean;
+  /** 왜 버튼이 꺼졌는지 */
+  readOnlyReason?: string;
 };
 
 // ---------- 스토어에서 읽은 값 (stores.ts 가 채운다) ----------
 
 /** version 은 빌드 안에 적힌 버전(CFBundleShortVersionString). 스토어 버전 칸 이름과 같아야 그 칸에 붙는다 */
-export type IosBuild = { number: string; state: string; uploadedAt: string; version?: string };
+export type IosBuild = { id?: string; number: string; state: string; uploadedAt: string; version?: string };
 export type IosVersion = {
   id: string;
   version: string;
@@ -99,7 +110,7 @@ export type IosVersion = {
   earliestReleaseDate?: string | null;
   build: IosBuild | null;
   /** 단계적 출시를 켰을 때만. state: INACTIVE, ACTIVE, PAUSED, COMPLETE */
-  phased: { state: string; day: number; startDate?: string | null } | null;
+  phased: { id?: string; state: string; day: number; startDate?: string | null } | null;
 };
 export type IosRaw = {
   /** 새 것 먼저 */
@@ -107,7 +118,7 @@ export type IosRaw = {
   /** 가장 최근에 올라온 빌드(버전에 안 붙은 것 포함) */
   latestBuild: IosBuild | null;
   /** 심사 제출 묶음. 새 것 먼저 */
-  submissions: { state: string; submittedAt: string | null }[];
+  submissions: { id?: string; state: string; submittedAt: string | null; versionId?: string | null }[];
 };
 
 export type PlayRelease = {
@@ -118,12 +129,16 @@ export type PlayRelease = {
   /** edits.tracks 의 status. completed, inProgress, halted, draft */
   status?: string;
   fraction?: number;
+  /** 출시 노트(언어별). CI 는 내부 테스트 초안에 한국어만 넣는다 */
+  notes?: { language: string; text: string }[];
 };
 export type AndroidRaw = {
   production: PlayRelease[];
   internal: PlayRelease[];
   /** 언어마다 승인된 이름과 스토어에 실제로 보이는 이름. 다르면 게시 안 된 변경이 있다 */
   listing: { language: string; approved: string; live: string | null }[];
+  /** 출시 목록(심사 상태)을 언제 읽었나. 구글 한도 때문에 몇 분 전 값일 수 있다 */
+  listedAt?: string;
 };
 
 export type BoardInput = {
@@ -236,12 +251,18 @@ const IOS_APPROVED = new Set(["PENDING_DEVELOPER_RELEASE", "PENDING_APPLE_RELEAS
 
 const buildWord = (state: string) => (state === "PROCESSING" ? "처리 중" : state === "FAILED" ? "처리 실패" : state === "INVALID" ? "쓸 수 없음" : state);
 
-export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.now()): Track {
-  const links = consoleLinks();
+/** 나가 있는 버전, 단계적 출시 중인 버전, 진행 중인 버전. 출시 조작(options.ts)도 같은 판단을 쓴다 */
+export function pickIos(raw: IosRaw) {
   const live = raw.versions.find((v) => v.state === "READY_FOR_DISTRIBUTION") ?? null;
   // 단계적 출시가 아직 끝나지 않았으면 나가 있는 버전이 곧 진행 중인 버전이다
   const rolling = live?.phased && (live.phased.state === "ACTIVE" || live.phased.state === "PAUSED") ? live : null;
   const inflight = raw.versions.find((v) => IOS_PRE.has(v.state) && (!live || versionGt(v.version, live.version))) ?? rolling;
+  return { live, rolling, inflight };
+}
+
+export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.now()): Track {
+  const links = consoleLinks();
+  const { live, rolling, inflight } = pickIos(raw);
   const v = inflight ?? live;
   const liveOut: Live | null = live ? { version: live.version, build: live.build?.number } : null;
   if (!v) return { platform: "ios", ok: true, live: null, inflight: null, steps: [], current: 0, status: statusOf(undefined), action: null, rollout: null };
@@ -341,8 +362,8 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
 
 // ---------- Android ----------
 
-export function androidTrack(raw: AndroidRaw, now = Date.now()): Track {
-  const links = consoleLinks();
+/** 나가 있는 출시, 프로덕션에서 아직 안 나간 출시, 단계적 출시 중인 출시, 프로덕션에 아직 안 올린 새 빌드 */
+export function pickAndroid(raw: AndroidRaw) {
   const published = raw.production.filter((r) => r.lifecycle === "PUBLISHED").sort((a, b) => maxCode(b) - maxCode(a));
   const liveRel = published[0] ?? null;
   const liveCode = liveRel ? maxCode(liveRel) : 0;
@@ -352,6 +373,14 @@ export function androidTrack(raw: AndroidRaw, now = Date.now()): Track {
   const rolling = liveRel && (liveRel.status === "inProgress" || liveRel.status === "halted") ? liveRel : null;
   // 프로덕션에 아직 안 올린 새 빌드(CI 가 내부 테스트에 초안으로 올린다)
   const candidate = !pending ? (raw.internal.filter((r) => maxCode(r) > liveCode).sort((a, b) => maxCode(b) - maxCode(a))[0] ?? null) : null;
+  return { published, liveRel, liveCode, pending, rolling, candidate };
+}
+
+export const maxCodeOf = maxCode;
+
+export function androidTrack(raw: AndroidRaw, now = Date.now()): Track {
+  const links = consoleLinks();
+  const { published, liveRel, liveCode, pending, rolling, candidate } = pickAndroid(raw);
   const rel = pending ?? rolling;
 
   // 단계적 출시 중이면 대부분의 사람은 이전 버전을 받는다. "지금 나가 있는" 버전은 그 이전 버전으로 보여 준다
@@ -404,9 +433,10 @@ export function androidTrack(raw: AndroidRaw, now = Date.now()): Track {
     steps.push({ ...rolloutBase, state: "100%", tone: "done" });
   } else steps.push({ ...rolloutBase, tone: "idle", hint: "게시할 때 비율을 정하고 나중에 올릴 수 있어요" });
 
+  const staleSince = raw.listedAt && now - Date.parse(raw.listedAt) > 90_000 ? raw.listedAt : undefined;
   const queue: PublishQueue = { release: l === "APPROVED_NOT_PUBLISHED" && inflight ? `앱 출시 ${inflight.version || `빌드 ${inflight.build}`}` : null, listing };
   const current = currentStep(steps);
-  return { platform: "android", ok: true, live, inflight, steps, current, status: statusOf(steps[current]), action: actionOf("android", steps[current], inflight ?? live, now), rollout: rolloutOut, queue };
+  return { platform: "android", ok: true, live, inflight, steps, current, status: statusOf(steps[current]), action: actionOf("android", steps[current], inflight ?? live, now), rollout: rolloutOut, queue, ...(staleSince ? { staleSince } : {}) };
 }
 
 const LANG: Record<string, string> = { "en-US": "영어", "ko-KR": "한국어", "ja-JP": "일본어" };
