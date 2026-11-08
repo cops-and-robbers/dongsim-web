@@ -9,6 +9,7 @@ import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
 import { mockRelease, mockRunAction } from "./release";
 import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockSend, mockStorePage } from "./storePage";
 import { mockInbox, mockPatchReview, mockReply, mockWaiting } from "./reviews";
+import { mockPatchCheck, mockStoreCheck } from "./storeCheck";
 import {
   queryUsers,
   getUser,
@@ -438,6 +439,17 @@ export const handlers = [
     await delay(900);
     const { status, body } = mockRunAction((await request.json()) as { id?: string; dryRun?: boolean });
     return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  // 스토어 점검. 로컬에서는 실제 스토어와 Supabase 에 닿지 않는다
+  http.get("/api/admin/store-check", async () => {
+    await delay(300);
+    return HttpResponse.json(mockStoreCheck());
+  }),
+
+  http.patch("/api/admin/store-check", async ({ request }) => {
+    await delay(200);
+    return HttpResponse.json(mockPatchCheck((await request.json()) as Parameters<typeof mockPatchCheck>[0]));
   }),
 
   // 리뷰. 로컬에서는 실제 스토어와 Supabase 에 닿지 않는다
