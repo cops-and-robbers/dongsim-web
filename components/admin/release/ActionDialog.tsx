@@ -9,7 +9,7 @@ import { obj } from "@/lib/release/board";
 import { NOTE_LANGS, NOTE_MAX, ROLLOUT_STEPS, type Option } from "@/lib/release/options";
 
 // 출시 조작 확인창 (docs/admin-ui.md "출시 조작").
-// 읽는 순서: 무엇이 바뀌나(전 → 후) → 사실 세 줄(사용자에게 닿나, 되돌릴 수 있나, 그다음) → 고를 것과 쓸 것 → 안전 확인(구글 검사, 번호 입력) → 버튼.
+// 읽는 순서: 무엇이 바뀌나(전 → 후) → 사실 세 줄(사용자에게 영향이 가나, 되돌릴 수 있나, 그다음) → 고를 것과 쓸 것 → 안전 확인(구글 검사, 번호 입력) → 버튼.
 // - Play 새 출시는 넓은 화면에서 두 단: 왼쪽 무엇과 고르기와 안전 확인, 오른쪽 세 언어 출시 노트
 // - Play 조작은 창을 열자마자 구글 검사(커밋 없음)를 돌려 통과해야 버튼이 켜진다
 // - 단계 2는 버전 번호를 그대로 입력해야 켜진다. 입력이 필요한 창은 바로 입력 칸에 커서를 둔다
@@ -108,7 +108,7 @@ export function ActionDialog({ option, onDone, onClose }: { option: Option; onDo
       )}
 
       <ul className="space-y-2 text-[13.5px] leading-relaxed">
-        <Fact tone={option.reachesUsers ? "bad" : "good"} title={option.reachesUsers ? "사용자에게 닿아요" : "사용자에게 닿지 않아요"} />
+        <Fact tone={option.reachesUsers ? "bad" : "good"} title={option.reachesUsers ? "사용자에게 영향이 가요" : "사용자에게 영향이 없어요"} />
         <Fact tone={/되돌릴 수 없어요|내릴 수 없어요/.test(option.undo) ? "bad" : "good"} title={option.undo} />
         {option.then && <Fact tone="info" title={option.then} />}
       </ul>
