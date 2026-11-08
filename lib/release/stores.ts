@@ -148,24 +148,28 @@ type ListedRelease = { releaseName?: string; activeArtifacts?: { versionCode?: n
  * 출시 조작은 이 목록 대신 편집(edit)의 트랙으로 지금 상태를 한 번 더 확인한다(actions.ts). 편집은 이 한도와 상관없다
  */
 const LIST_MAX_AGE = 5 * 60_000;
+/** 막히면 모든 서버가 이만큼 구글을 부르지 않는다. 막힌 채 계속 부르면 막힌 시간이 길어질 수 있다 */
+const BLOCK_BACKOFF = 10 * 60_000;
 const LISTS_KEY = "play_release_lists";
-type Lists = { at: number; production: ListedRelease[]; internal: ListedRelease[] };
-let memLists: Lists | null = null;
+/** at 이 0 이면 아직 한 번도 읽지 못한 것. blockedUntil 까지는 구글을 부르지 않는다 */
+type Lists = { at: number; production: ListedRelease[]; internal: ListedRelease[]; blockedUntil?: number };
+let mem: { value: Lists; readAt: number } | null = null;
 
 async function storedLists(): Promise<Lists | null> {
-  if (memLists && Date.now() - memLists.at < LIST_MAX_AGE) return memLists;
+  // 같은 서버에서 30초 안에는 저장소도 다시 읽지 않는다
+  if (mem && Date.now() - mem.readAt < 30_000) return mem.value;
   try {
     const { data } = await db().from("site_settings").select("value").eq("key", LISTS_KEY).maybeSingle();
     const v = data?.value as Lists | undefined;
-    if (v && typeof v.at === "number" && Array.isArray(v.production) && Array.isArray(v.internal)) memLists = v;
+    if (v && typeof v.at === "number" && Array.isArray(v.production) && Array.isArray(v.internal)) mem = { value: v, readAt: Date.now() };
   } catch {
     // 저장소를 못 읽어도 구글에서 읽으면 된다
   }
-  return memLists;
+  return mem?.value ?? null;
 }
 
 async function saveLists(v: Lists): Promise<void> {
-  memLists = v;
+  mem = { value: v, readAt: Date.now() };
   try {
     await db().from("site_settings").upsert({ key: LISTS_KEY, value: v, updated_by: "출시 보드", updated_at: new Date().toISOString() });
   } catch {
@@ -173,17 +177,32 @@ async function saveLists(v: Lists): Promise<void> {
   }
 }
 
+/** 지금 구글을 불러도 되는지와, 쓸 수 있는 저장된 값. 순수 함수라 테스트한다 */
+export function listPlan(stored: Lists | null, now: number): "use-stored" | "blocked" | "fetch" {
+  const hasData = !!stored && stored.at > 0;
+  if (hasData && now - stored!.at < LIST_MAX_AGE) return "use-stored";
+  if (stored?.blockedUntil && now < stored.blockedUntil) return hasData ? "use-stored" : "blocked";
+  return "fetch";
+}
+
 async function listReleases(token: string): Promise<Lists> {
   const stored = await storedLists();
-  if (stored && Date.now() - stored.at < LIST_MAX_AGE) return stored;
+  const plan = listPlan(stored, Date.now());
+  if (plan === "use-stored") return stored!;
+  if (plan === "blocked") throw new QuotaError("구글이 출시 목록을 너무 자주 읽었다고 잠시 막았어요. 몇 분 뒤 다시 읽어요");
   try {
     const get = async (track: string) => ((await play(`${PLAY_API}/tracks/${track}/releases`, token)).releases ?? []) as ListedRelease[];
-    const [production, internal] = await Promise.all([get("production"), get("internal")]);
-    const got = { at: Date.now(), production, internal };
+    const production = await get("production");
+    const internal = await get("internal");
+    const got: Lists = { at: Date.now(), production, internal };
     await saveLists(got);
     return got;
   } catch (e) {
-    if (stored && e instanceof QuotaError) return stored;
+    if (e instanceof QuotaError) {
+      // 막혔다고 적어 두면 모든 서버가 잠시 쉰다
+      await saveLists({ ...(stored ?? { at: 0, production: [], internal: [] }), blockedUntil: Date.now() + BLOCK_BACKOFF });
+      if (stored && stored.at > 0) return stored;
+    }
     throw e;
   }
 }
