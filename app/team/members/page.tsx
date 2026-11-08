@@ -4,6 +4,7 @@ import TeamGridSection from "@/components/team/TeamGridSection";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
+import { companyHelpers } from "@/lib/company/server";
 
 export const metadata: Metadata = {
   title: "구성원",
@@ -19,7 +20,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function TeamMembersPage() {
+// 어드민이 저장하면 바로 버리고, 놓쳐도 5분 안에 새로 그린다 (#250)
+export const revalidate = 300;
+
+export default async function TeamMembersPage() {
+  const helpers = await companyHelpers();
+
   return (
     <>
       <BreadcrumbJsonLd
@@ -61,7 +67,7 @@ export default function TeamMembersPage() {
           </ScrollReveal>
         </Container>
       </section>
-      <TeamGridSection />
+      <TeamGridSection helpers={helpers} />
     </>
   );
 }

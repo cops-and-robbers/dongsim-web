@@ -9,12 +9,8 @@
 // 걸어 내려가며 스크롤을 유도한다. 도와준 분들은 인게임 채팅 시트 모양의
 // 바닥판에 기여 티어 색으로 흐른다. 색·캐릭터·아이콘은 기존 자산만 쓴다.
 
-import {
-  CREDITS,
-  type ContributionTier,
-  type CreditMember,
-  type CreditRole,
-} from "./data";
+import { CREDITS, type CreditMember, type CreditRole } from "./data";
+import type { ContributionTier, CreditHelper } from "@/lib/company/model";
 
 /** 역할색 - 앱 팔레트에서 경찰 파랑·도둑 초록에 노랑·로즈까지 대등하게 */
 const ROLE_COLOR: Record<CreditRole, string> = {
@@ -126,8 +122,8 @@ ${trail}`;
 }
 
 // 이어붙인 두 벌을 -50% 이동시키는 표준 CSS 마퀴 - 이음새 없이 무한히 흐른다
-function thanksRow(): string {
-  const items = CREDITS.helpers
+function thanksRow(helpers: readonly CreditHelper[]): string {
+  const items = helpers
     .map(
       (helper) =>
         `<span class="thank" style="color:${TIER_COLOR[helper.tier]};${helper.tier === "tier5" ? "font-weight:600" : ""}">${escapeHtml(helper.name)} <span class="thank-role">(${escapeHtml(helper.role)})</span></span>`,
@@ -319,8 +315,12 @@ ${crossfadeCss(new Set(CREDITS.members.map((m) => m.photos.length)))}
 }
 `;
 
-export function renderCreditsEmbedHtml(): string {
-  const members = CREDITS.members;
+// thanksOnly: 어드민 미리보기용. 멤버 카드를 빼고 어드민이 고치는 명단 자리만 그린다(#250)
+export function renderCreditsEmbedHtml(
+  helpers: readonly CreditHelper[],
+  { thanksOnly = false }: { thanksOnly?: boolean } = {},
+): string {
+  const members = thanksOnly ? [] : CREDITS.members;
   return `<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -340,11 +340,15 @@ export function renderCreditsEmbedHtml(): string {
   ${members.map((member, i) => memberCard(member, i, members.length)).join("\n")}
 </main>
 
-<section class="sheet rise" style="animation-delay:.4s">
+${
+  helpers.length > 0
+    ? `<section class="sheet rise" style="animation-delay:.4s">
   <div class="handle" aria-hidden="true"></div>
   <h2>SPECIAL THANKS</h2>
-  <div class="marquee">${thanksRow()}</div>
-</section>
+  <div class="marquee">${thanksRow(helpers)}</div>
+</section>`
+    : ""
+}
 
 <div class="chase" aria-hidden="true">
   <div class="runners">

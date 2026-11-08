@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   },
 };
 
+export const revalidate = 300;
+
 export default function TeamJaPage() {
   return <TeamSections locale="ja" />;
 }

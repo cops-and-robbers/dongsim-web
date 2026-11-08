@@ -73,23 +73,5 @@
       "photos": ["/credits/MKT-Choi.jpeg"],
       "links": []
     }
-  ],
-  "helpers": [
-    { "name": "신지훈", "role": "Infra Provision", "tier": "tier4" },
-    { "name": "남해윤", "role": "QA", "tier": "tier2" },
-    { "name": "송혜정", "role": "QA", "tier": "tier2" },
-    { "name": "이진", "role": "QA", "tier": "tier2" },
-    { "name": "안금서", "role": "QA", "tier": "tier1" },
-    { "name": "손건우", "role": "QA", "tier": "tier1" },
-    { "name": "신혜빈", "role": "QA", "tier": "tier1" },
-    { "name": "정창우", "role": "QA", "tier": "tier1" },
-    { "name": "허석준", "role": "QA", "tier": "tier1" },
-    { "name": "서현진", "role": "QA", "tier": "tier1" },
-    { "name": "오동현", "role": "QA", "tier": "tier1" },
-    { "name": "최승훈", "role": "QA", "tier": "tier1" },
-    { "name": "김민욱", "role": "QA", "tier": "tier1" },
-    { "name": "정명준", "role": "QA", "tier": "tier1" },
-    { "name": "강대현", "role": "QA", "tier": "tier1" },
-    { "name": "심 혁", "role": "QA", "tier": "tier1" }
   ]
 }
