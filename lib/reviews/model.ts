@@ -104,6 +104,55 @@ export type PlayReview = {
   }[];
 };
 
+/** 따옴표 안의 줄바꿈까지 읽는 CSV. 리뷰 글에는 줄바꿈과 쉼표가 들어 있다 */
+export function csvRows(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') {
+        cell += '"';
+        i++;
+      } else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ",") {
+      row.push(cell);
+      cell = "";
+    } else if (ch === "\n") {
+      row.push(cell.replace(/\r$/, ""));
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else cell += ch;
+  }
+  if (cell || row.length) rows.push([...row, cell.replace(/\r$/, "")]);
+  return rows;
+}
+
+/**
+ * Google Play 가 달마다 버킷에 쌓는 리뷰 파일. API 는 최근 7일치만 줘서 지난 리뷰를 여기서 채운다.
+ * 글이 있는 리뷰만, 리뷰 번호는 링크에서 읽는다. 쓴 사람 이름은 파일에 없다
+ */
+export function fromPlayCsv(text: string): StoreReview[] {
+  const [head, ...rows] = csvRows(text);
+  if (!head) return [];
+  const at = (name: string) => head.findIndex((h) => h.trim() === name);
+  const col = { version: at("App Version Name"), lang: at("Reviewer Language"), device: at("Device"), updated: at("Review Last Update Millis Since Epoch"), star: at("Star Rating"), title: at("Review Title"), text: at("Review Text"), replyAt: at("Developer Reply Millis Since Epoch"), reply: at("Developer Reply Text"), link: at("Review Link") };
+  if (col.text < 0 || col.link < 0 || col.star < 0 || col.updated < 0) throw new Error(`Play 리뷰 파일의 열이 달라요 (열: ${head.join(", ")})`);
+  return rows.flatMap((c) => {
+    const body = (c[col.text] ?? "").trim();
+    const id = (c[col.link] ?? "").match(/reviewid=([^&\s]+)/i)?.[1];
+    if (!body || !id) return [];
+    const replyMs = Number(c[col.replyAt]);
+    const reply = (c[col.reply] ?? "").trim() || null;
+    return [{ platform: "android" as const, id: decodeURIComponent(id), rating: Number(c[col.star]), title: (c[col.title] ?? "").trim(), body, translated: null, author: "", place: c[col.lang] || null, appVersion: c[col.version] || null, device: c[col.device] || null, reviewedAt: new Date(Number(c[col.updated])).toISOString(), reply, replyAt: reply && replyMs ? new Date(replyMs).toISOString() : null, replyState: reply ? ("published" as const) : null }];
+  });
+}
+
 const fromSeconds = (s?: string) => new Date(Number(s ?? 0) * 1000).toISOString();
 
 export function fromPlay(row: PlayReview): StoreReview {

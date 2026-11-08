@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { authorizedCron } from "@/lib/metrics/cron";
-import { syncReviews } from "@/lib/reviews/server";
+import { backfillPlayReviews, syncReviews } from "@/lib/reviews/server";
 
 /**
  * 스토어 리뷰 수집. 매일 GitHub Actions(metrics-collect.yml)가 부른다.
@@ -12,5 +12,10 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   if (!authorizedCron(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const result = await syncReviews();
-  return NextResponse.json(result, { status: result.error ? 500 : 200 });
+  try {
+    const playStored = await backfillPlayReviews();
+    return NextResponse.json({ ...result, playStored }, { status: result.error ? 500 : 200 });
+  } catch (e) {
+    return NextResponse.json({ ...result, error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
 }

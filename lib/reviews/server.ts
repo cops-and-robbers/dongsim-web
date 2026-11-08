@@ -4,11 +4,14 @@
  */
 import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/lib/metrics/db";
-import { APPSTORE_APP_ID } from "@/lib/metrics/config";
+import { APPSTORE_APP_ID, PLAY_PACKAGE } from "@/lib/metrics/config";
+import { serviceAccountFromEnv, serviceAccountToken } from "@/lib/metrics/google";
+import { decodePlayFile } from "@/lib/metrics/play/parse";
+import { bucketFromUri, download, listPrefix } from "@/lib/metrics/play/run";
 import { NotCached, unwrapNotCached } from "@/lib/release/reliable";
 import { asc, play, playToken, PLAY_API, releaseAscToken, StoreError } from "@/lib/release/stores";
 import { ascWrite } from "@/lib/store-page/sendImages";
-import { fromAsc, fromPlay, type Inbox, type Platform, type PlayReview, type Review, type StoreReview } from "./model";
+import { fromAsc, fromPlay, fromPlayCsv, type Inbox, type Platform, type PlayReview, type Review, type StoreReview } from "./model";
 
 const TABLE = "store_reviews";
 const TAG = "store-reviews";
@@ -44,6 +47,24 @@ async function save(rows: StoreReview[]): Promise<void> {
   if (rows.length === 0) return;
   const { error } = await db().from(TABLE).upsert(rows.map(toStoreRow), { onConflict: "platform,review_id" });
   if (error) throw new Error(error.message);
+}
+
+/** 지난 Google Play 리뷰를 달별 파일에서 채운다. 이미 있는 리뷰는 건드리지 않는다(API 가 준 이름과 초안을 지키려고). 쌓인 수를 돌려준다 */
+export async function backfillPlayReviews(): Promise<number> {
+  const uri = process.env.PLAY_GCS_URI;
+  if (!uri) throw new Error("PLAY_GCS_URI 환경변수가 없어요");
+  const bucket = bucketFromUri(uri);
+  const token = await serviceAccountToken(serviceAccountFromEnv(), "https://www.googleapis.com/auth/devstorage.read_only");
+  const names = await listPrefix(bucket, `reviews/reviews_${PLAY_PACKAGE}_`, token);
+  const rows = (await Promise.all(names.map(async (n) => fromPlayCsv(decodePlayFile(await download(bucket, n, token)))))).flat();
+  // 한 파일과 다음 달 파일에 같은 리뷰가 있으면 최근 수정본만 남긴다
+  const latest = new Map<string, StoreReview>();
+  for (const r of rows) if (!latest.has(r.id) || r.reviewedAt > latest.get(r.id)!.reviewedAt) latest.set(r.id, r);
+  if (latest.size) {
+    const { error } = await db().from(TABLE).upsert([...latest.values()].map(toStoreRow), { onConflict: "platform,review_id", ignoreDuplicates: true });
+    if (error) throw new Error(error.message);
+  }
+  return latest.size;
 }
 
 export type SyncResult = { ios: number | null; android: number | null; error: string | null };
