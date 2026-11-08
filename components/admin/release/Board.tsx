@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useState, type ReactNode } from "react";
-import { AlertIcon, AppStoreMark, ArrowRightIcon, CheckIcon, ChevronDownIcon, ClockIcon, DeviceIcon, ExternalLinkIcon, GooglePlayMark } from "@/components/admin/icons";
+import { AppStoreMark, CheckIcon, ChevronDownIcon, DeviceIcon, ExternalLinkIcon, GooglePlayMark } from "@/components/admin/icons";
 import { consoleLinks } from "@/lib/release/links";
 import type { Option } from "@/lib/release/options";
 import {
@@ -110,8 +110,8 @@ export function StoreCard({ track, reach, now, act }: { track: Track; reach: Rea
       ) : (
         <>
           <Versions track={track} />
-          {track.action ? <ActionBox action={track.action} options={track.options ?? []} act={act} /> : <Calm track={track} />}
-          <Flow track={track} reach={reach} now={now} />
+          {!track.action && <Calm track={track} />}
+          <Flow track={track} reach={reach} now={now} act={act} />
           {track.platform === "android" && track.queue && <QueueBox queue={track.queue} />}
         </>
       )}
@@ -141,59 +141,52 @@ function Versions({ track }: { track: Extract<Track, { ok: true }> }) {
   );
 }
 
-/** 이 스토어에서 지금 할 수 있는 일(또는 기다리는 일) */
-function ActionBox({ action, options, act }: { action: Action; options: Option[]; act: ActControl }) {
-  const t = TONE[action.tone];
+/** 지금 단계에서 할 수 있는 일(또는 기다리는 일). 어느 단계의 일인지 찾지 않게 흐름의 지금 단계 안에 둔다 */
+function StepAction({ action, options, act, children }: { action: Action; options: Option[]; act: ActControl; children?: ReactNode }) {
   // 반려됐을 때는 사유부터 봐야 하니 콘솔 바로가기를 앞세우고, 다시 내기는 뒤로 둔다
   const rejected = action.tone === "bad";
   const primary = rejected ? [] : options.filter((o) => o.primary);
   const rest = rejected ? options : options.filter((o) => !o.primary);
   const lead = primary[0];
   return (
-    <div className={`mx-5 mt-4 rounded-xl px-4 py-3.5 ${t.weak}`}>
-      <div className="flex gap-2.5">
-        <span className={`mt-0.5 flex-none ${t.text}`}>
-          {action.tone === "wait" ? <ClockIcon className="size-[18px]" /> : action.tone === "bad" ? <AlertIcon className="size-[18px]" /> : <ArrowRightIcon className="size-[18px]" />}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-bold leading-snug text-sd-fg [text-wrap:balance]">{action.title}</p>
-          {action.reason && <p className="mt-1 text-[13px] leading-relaxed text-sd-fg-muted">{action.reason}</p>}
-          {action.why && <Why text={action.why} />}
-          {options.length > 0 ? (
-            <>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {rejected && action.action && (
-                  <ConsoleLink href={action.action.href} primary>
-                    {action.action.label}
-                  </ConsoleLink>
-                )}
-                {primary.map((o) => (
-                  <OptionButton key={o.id} option={o} act={act} primary />
-                ))}
-                {rest.map((o) => (
-                  <OptionButton key={o.id} option={o} act={act} />
-                ))}
-                {!rejected && action.action && <ConsoleLink href={action.action.href}>{action.action.label}</ConsoleLink>}
-              </div>
-              {lead && act.writable && <Assure option={lead} />}
-            </>
-          ) : (
-            action.action && (
-              <div className="mt-3">
-                <ConsoleLink href={action.action.href} primary>
-                  {action.action.label}
-                </ConsoleLink>
-              </div>
-            )
-          )}
-          {options.length > 0 && !act.writable && act.readOnlyReason && <p className="mt-2 text-[12px] text-sd-fg-subtle">{act.readOnlyReason}</p>}
-        </div>
-      </div>
-    </div>
+    <motion.div key={action.title} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 380, damping: 36 }}>
+      <p className="mt-1 text-[14.5px] font-bold leading-snug text-sd-fg [text-wrap:balance]">{action.title}</p>
+      {action.reason && <p className="mt-1 text-[13px] leading-relaxed text-sd-fg-muted">{action.reason}</p>}
+      {children}
+      {action.why && <Why text={action.why} />}
+      {options.length > 0 ? (
+        <>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {rejected && action.action && (
+              <ConsoleLink href={action.action.href} primary>
+                {action.action.label}
+              </ConsoleLink>
+            )}
+            {primary.map((o) => (
+              <OptionButton key={o.id} option={o} act={act} primary />
+            ))}
+            {rest.map((o) => (
+              <OptionButton key={o.id} option={o} act={act} />
+            ))}
+            {!rejected && action.action && <ConsoleLink href={action.action.href}>{action.action.label}</ConsoleLink>}
+          </div>
+          {lead && act.writable && <Assure option={lead} />}
+        </>
+      ) : (
+        action.action && (
+          <div className="mt-3">
+            <ConsoleLink href={action.action.href} primary>
+              {action.action.label}
+            </ConsoleLink>
+          </div>
+        )
+      )}
+      {options.length > 0 && !act.writable && act.readOnlyReason && <p className="mt-2 text-[12px] text-sd-fg-subtle">{act.readOnlyReason}</p>}
+    </motion.div>
   );
 }
 
-/** "왜 그런가요?" 펼쳐 보는 설명. 처음엔 접어 두어 할 일 상자를 짧게 둔다 */
+/** "왜 그런가요?" 펼쳐 보는 설명. 처음엔 접어 두어 지금 단계를 짧게 둔다 */
 function Why({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -207,7 +200,7 @@ function Why({ text }: { text: string }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="overflow-hidden">
-            <ul className="mt-1.5 space-y-1 rounded-lg bg-sd-surface/70 px-3 py-2.5 text-[12.5px] leading-relaxed text-sd-fg-muted">
+            <ul className="mt-1.5 space-y-1 rounded-lg bg-sd-fill px-3 py-2.5 text-[12.5px] leading-relaxed text-sd-fg-muted">
               {text.split("\n").map((line) => (
                 <li key={line} className="flex gap-2">
                   <span aria-hidden className="mt-[7px] size-1 flex-none rounded-full bg-sd-gray-400" />
@@ -276,14 +269,17 @@ function Calm({ track }: { track: Extract<Track, { ok: true }> }) {
 
 // ---------- 흐름 ----------
 
+function DoneNode() {
+  return (
+    <span className="relative z-[1] flex size-6 flex-none items-center justify-center rounded-full bg-sd-positive text-white transition-colors duration-300">
+      <CheckIcon className="size-3.5" />
+    </span>
+  );
+}
+
 function Node({ step, current }: { step: Step; current: boolean }) {
   const t = TONE[step.tone];
-  if (step.tone === "done")
-    return (
-      <span className="relative z-[1] flex size-6 flex-none items-center justify-center rounded-full bg-sd-positive text-white transition-colors duration-300">
-        <CheckIcon className="size-3.5" />
-      </span>
-    );
+  if (step.tone === "done") return <DoneNode />;
   if (step.tone === "idle" && !current) return <span className="relative z-[1] size-6 flex-none rounded-full border-2 border-sd-gray-400 bg-sd-surface" />;
   return (
     <span className={`relative z-[1] flex size-6 flex-none items-center justify-center rounded-full bg-sd-surface ring-2 ring-inset ${t.ring} ${t.text}`}>
@@ -313,55 +309,105 @@ function stepTime(s: Step, now: number): string | null {
   return s.atKind === "since" ? since(s.at, now) : ago(s.at, now);
 }
 
-function Flow({ track, reach, now }: { track: Extract<Track, { ok: true }>; reach: Reach; now: number }) {
-  // 다 끝났으면 지나온 단계는 접어 둔다. 늘 보이는 일곱 줄의 체크는 읽을 거리가 아니다
+const FOLD = { type: "spring", stiffness: 380, damping: 36 } as const;
+
+/** 끝난 단계를 접어 둔 한 줄. 누르면 그 자리에서 펼쳐진다 */
+function FoldRow({ count, open, line, onToggle }: { count: number; open: boolean; line: boolean; onToggle: () => void }) {
+  return (
+    <li className="relative">
+      {line && <span aria-hidden className="absolute left-[11px] top-6 h-[calc(100%-24px)] w-[2px] bg-sd-positive" />}
+      <button type="button" aria-expanded={open} onClick={onToggle} className="group flex w-full items-center gap-3 pb-3.5 text-left">
+        <DoneNode />
+        <span className="text-[13.5px] font-semibold text-sd-fg-muted transition group-hover:text-sd-fg">끝난 단계 {count}개</span>
+        <span className="ml-auto inline-flex flex-none items-center gap-0.5 text-[12.5px] font-semibold text-sd-fg-subtle transition group-hover:text-sd-fg">
+          {open ? "접기" : "펼치기"}
+          <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 420, damping: 34 }} className="inline-flex">
+            <ChevronDownIcon className="size-3.5" />
+          </motion.span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function Flow({ track, reach, now, act }: { track: Extract<Track, { ok: true }>; reach: Reach; now: number; act: ActControl }) {
+  const { steps, current: at, action } = track;
   const allDone = track.status.tone === "done";
   const [open, setOpen] = useState(false);
-  if (allDone && !open)
-    return (
-      <div className="px-5 pb-5 pt-2">
-        {track.platform === "ios" && reach && <ReachChips reach={reach} />}
-        <StoreNotes track={track} reach={reach} />
-        <button type="button" onClick={() => setOpen(true)} className="mt-3 text-[13px] font-semibold text-sd-fg-muted underline-offset-2 transition hover:text-sd-fg hover:underline">
-          지나온 단계 {track.steps.length}개 보기
-        </button>
-      </div>
-    );
+  // 끝난 단계는 한 줄로 접어 지금 단계가 카드 위쪽에 오게 한다. 하나뿐이면 접어도 줄이 줄지 않아 그대로 둔다
+  const firstOpen = steps.findIndex((s) => s.tone !== "done");
+  const doneCount = allDone ? steps.length : Math.min(firstOpen < 0 ? steps.length : firstOpen, at);
+  const foldable = doneCount >= 2;
   return (
-    <motion.div className="px-5 pb-5 pt-5" initial={allDone ? { opacity: 0, height: 0 } : false} animate={{ opacity: 1, height: "auto" }} transition={{ type: "spring", stiffness: 380, damping: 36 }}>
+    <div className={`px-5 pb-5 ${allDone ? "pt-3" : "pt-5"}`}>
+      {allDone && !open && track.platform === "ios" && reach && <div className="mb-3"><ReachChips reach={reach} /></div>}
       <ol aria-label={`${STORE[track.platform].name} 출시 흐름`}>
-        {track.steps.map((s, i) => {
-          const current = i === track.current;
-          const time = stepTime(s, now);
-          const last = i === track.steps.length - 1;
-          return (
-            <li key={s.key} className="relative flex gap-3 pb-3.5 last:pb-0" aria-current={current ? "step" : undefined}>
-              {!last && <span aria-hidden className={`absolute left-[11px] top-6 h-[calc(100%-24px)] w-[2px] transition-colors duration-500 ${s.tone === "done" ? "bg-sd-positive" : "bg-sd-gray-300"}`} />}
-              <Node step={s} current={current} />
-              <div className="min-w-0 flex-1 pt-[1px]">
-                <div className="flex items-center gap-2">
-                  <p className={`text-[13.5px] font-semibold ${s.tone === "idle" && !current ? "text-sd-fg-subtle" : "text-sd-fg"}`}>{s.label}</p>
-                  {s.tone !== "done" && <WhoChip step={s} />}
-                  {time && (
-                    <span className="ml-auto flex-none text-[11.5px] tabular-nums text-sd-fg-subtle" title={s.at ? kstShort(s.at) : undefined}>
-                      {time}
-                    </span>
-                  )}
-                </div>
-                {s.state ? (
-                  <p className={`mt-0.5 text-[13px] font-medium ${s.tone === "done" ? "text-sd-fg-muted" : s.tone === "idle" ? "text-sd-fg-subtle" : TONE[s.tone].text}`}>{s.state}</p>
+        {foldable && <FoldRow count={doneCount} open={open} line={open || doneCount < steps.length} onToggle={() => setOpen((v) => !v)} />}
+        <AnimatePresence initial={false}>
+          {steps.map((s, i) => {
+            const folds = foldable && i < doneCount;
+            if (folds && !open) return null;
+            const current = i === at;
+            const last = i === steps.length - 1;
+            const here = current && action ? action : null;
+            // "제출한 지 3일"은 설명에 이미 있다
+            const time = here && s.atKind === "since" ? null : stepTime(s, now);
+            const progress =
+              s.key === "rollout" && track.rollout ? (
+                track.platform === "ios" ? (
+                  <PhasedBar rollout={track.rollout} />
                 ) : (
-                  s.hint && i <= track.current + 1 && <p className="mt-0.5 text-[12.5px] text-sd-fg-subtle">{s.hint}</p>
-                )}
-                {s.key === "rollout" && track.rollout && (track.platform === "ios" ? <PhasedBar rollout={track.rollout} /> : <PercentBar rollout={track.rollout} />)}
-                {s.key === "reach" && reach && s.tone !== "idle" && <ReachChips reach={reach} />}
-              </div>
-            </li>
-          );
-        })}
+                  <PercentBar rollout={track.rollout} />
+                )
+              ) : s.key === "reach" && reach && s.tone !== "idle" ? (
+                <ReachChips reach={reach} />
+              ) : null;
+            return (
+              <motion.li
+                key={s.key}
+                initial={folds ? { height: 0, opacity: 0 } : false}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={folds ? { height: 0, opacity: 0 } : undefined}
+                transition={FOLD}
+                className={folds ? "overflow-hidden" : undefined}
+                aria-current={current ? "step" : undefined}
+              >
+                <div className={`relative flex gap-3 ${last ? "" : "pb-3.5"}`}>
+                  {!last && <span aria-hidden className={`absolute left-[11px] top-6 h-[calc(100%-24px)] w-[2px] transition-colors duration-500 ${s.tone === "done" ? "bg-sd-positive" : "bg-sd-gray-300"}`} />}
+                  <Node step={s} current={current} />
+                  <div className="min-w-0 flex-1 pt-[1px]">
+                    <div className="flex items-center gap-2">
+                      <p className={`text-[13.5px] font-semibold ${s.tone === "idle" && !current ? "text-sd-fg-subtle" : "text-sd-fg"}`}>{s.label}</p>
+                      {s.tone !== "done" && <WhoChip step={s} />}
+                      {time && (
+                        <span className="ml-auto flex-none text-[11.5px] tabular-nums text-sd-fg-subtle" title={s.at ? kstShort(s.at) : undefined}>
+                          {time}
+                        </span>
+                      )}
+                    </div>
+                    {here ? (
+                      <StepAction action={here} options={track.options ?? []} act={act}>
+                        {progress}
+                      </StepAction>
+                    ) : (
+                      <>
+                        {s.state ? (
+                          <p className={`mt-0.5 text-[13px] font-medium ${s.tone === "done" ? "text-sd-fg-muted" : s.tone === "idle" ? "text-sd-fg-subtle" : TONE[s.tone].text}`}>{s.state}</p>
+                        ) : (
+                          s.hint && i <= at + 1 && <p className="mt-0.5 text-[12.5px] text-sd-fg-subtle">{s.hint}</p>
+                        )}
+                        {progress}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </motion.li>
+            );
+          })}
+        </AnimatePresence>
       </ol>
       <StoreNotes track={track} reach={reach} />
-    </motion.div>
+    </div>
   );
 }
 
