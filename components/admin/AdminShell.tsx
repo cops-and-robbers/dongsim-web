@@ -92,7 +92,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   const counts = usePendingCounts();
   const countOf = (item: NavItem) => (item.pending && counts ? counts[item.pending] : 0);
-  const pendingTotal = counts ? counts.reports + counts.bugs : 0;
+  const pendingTotal = counts ? counts.reports + counts.bugs + counts.reviews : 0;
   // 점검을 켜 두고 잊으면 사용자 전체가 막힌다. 어느 화면에서나 보이게 한다
   const maintenanceOn = useMaintenanceOn();
   const webgamePaused = useWebgamePaused();

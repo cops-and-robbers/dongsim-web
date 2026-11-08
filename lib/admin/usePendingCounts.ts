@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { fetchQuery, useRelayEnvironment } from "react-relay";
 import type { AdminPendingCounts } from "@/__generated__/AdminPendingCounts.graphql";
 import { AdminPendingCountsQuery } from "@/lib/admin/gql/AdminPendingCounts";
+import { fetchWaitingCount } from "@/lib/admin/reviewsClient";
 
 const CHANGED_EVENT = "admin-pending-changed";
 const VISIBLE_MS = 30_000;
 const HIDDEN_MS = 5 * 60_000;
 
-/** 신고나 버그를 처리한 뒤 불러 메뉴 숫자를 바로 맞춘다. */
+/** 신고나 버그, 리뷰를 처리한 뒤 불러 메뉴 숫자를 바로 맞춘다. */
 export const refreshPendingCounts = () => window.dispatchEvent(new Event(CHANGED_EVENT));
 
 /**
@@ -21,6 +22,7 @@ export const refreshPendingCounts = () => window.dispatchEvent(new Event(CHANGED
 export function usePendingCounts() {
   const environment = useRelayEnvironment();
   const [counts, setCounts] = useState<{ reports: number; bugs: number } | null>(null);
+  const [reviews, setReviews] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -37,6 +39,10 @@ export function usePendingCounts() {
             });
           }
         })
+        .catch(() => {});
+      // 리뷰는 우리 서버가 세어서 따로 읽는다. 실패하면 마지막 숫자를 그대로 둔다
+      fetchWaitingCount()
+        .then((n) => active && setReviews(n))
         .catch(() => {});
     };
     const tick = () => {
@@ -58,5 +64,6 @@ export function usePendingCounts() {
     };
   }, [environment]);
 
-  return counts;
+  // 한쪽만 읽혀도 읽힌 숫자는 보여 준다
+  return counts === null && reviews === null ? null : { reports: counts?.reports ?? 0, bugs: counts?.bugs ?? 0, reviews: reviews ?? 0 };
 }
