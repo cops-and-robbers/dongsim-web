@@ -5,6 +5,7 @@
 import { APPSTORE_APP_ID } from "../metrics/config.ts";
 import { PLAY_PACKAGE } from "../metrics/config.ts";
 import { asc, parsePlayTitle, play, playToken, PLAY_API, releaseAscToken } from "../release/stores.ts";
+import { ascImageUrl, type LiveImage, type LiveImages } from "./images.ts";
 import { LANGS, type Art, type IosPage, type AndroidPage, type Lang, type Side, type Values } from "./fields.ts";
 
 /** 아직 심사에 내지 않았거나 고칠 수 있는 버전 */
@@ -12,7 +13,7 @@ const IOS_EDITABLE = new Set(["PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "R
 const IOS_LIVE = "READY_FOR_DISTRIBUTION";
 const IOS_LIVE_INFO = "READY_FOR_SALE";
 
-type Row = { attributes?: Record<string, unknown> };
+type Row = { id?: string; attributes?: Record<string, unknown> };
 const text = (r: Row, k: string) => (r.attributes?.[k] as string | null | undefined) ?? "";
 const byLocale = (rows: Row[] | undefined) => new Map((rows ?? []).map((r) => [text(r, "locale"), r]));
 
@@ -54,8 +55,43 @@ export async function readIosPage(now = new Date()): Promise<IosPage> {
       pending: hasNext ? { ...infoValues(infoNext.get(l.ios) ?? infoLive.get(l.ios)), ...versionValues(verNext.get(l.ios) ?? verLive.get(l.ios)), promotionalText: live.promotionalText } : null,
     };
   }
-  return { ok: true, langs, art, liveVersion: (liveVersion?.attributes?.versionString as string) ?? null, nextVersion: (nextVersion?.attributes?.versionString as string) ?? null };
+  const images = await readIosImages(token, verNext.size ? verNext : verLive);
+  return { ok: true, langs, art, images, liveVersion: (liveVersion?.attributes?.versionString as string) ?? null, nextVersion: (nextVersion?.attributes?.versionString as string) ?? null };
 }
+
+const emptyImages = (): LiveImages => ({ ko: {}, en: {}, ja: {} });
+
+/** 버전의 언어마다 올라간 스크린샷과 미리보기 영상. 스토어가 정한 순서 그대로 */
+async function readIosImages(token: string, locales: Map<string, Row>): Promise<LiveImages> {
+  const out = emptyImages();
+  await Promise.all(
+    LANGS.map(async (l) => {
+      const id = locales.get(l.ios)?.id;
+      if (!id) return;
+      const sets = await asc(`/appStoreVersionLocalizations/${id}/appScreenshotSets?limit=30&include=appScreenshots&fields[appScreenshots]=imageAsset&limit[appScreenshots]=10`, token);
+      const byId = new Map((sets.included ?? []).map((r) => [r.id, r]));
+      const list = (type: string): LiveImage[] => {
+        const set = sets.data?.find((s) => s.attributes?.screenshotDisplayType === type);
+        return ((set?.relationships?.appScreenshots?.data ?? []) as unknown as { id: string }[]).flatMap((ref) => {
+          const asset = byId.get(ref.id)?.attributes?.imageAsset as { templateUrl?: string; width?: number; height?: number } | undefined;
+          if (!asset?.templateUrl || !asset.width || !asset.height) return [];
+          const w = 600;
+          return [{ kind: "live" as const, id: ref.id, url: ascImageUrl(asset.templateUrl, w, Math.round((w * asset.height) / asset.width)) }];
+        });
+      };
+      out[l.id] = { iphone: list("APP_IPHONE_67"), ipad: list("APP_IPAD_PRO_3GEN_129"), preview: [] };
+    }),
+  );
+  return out;
+}
+
+const PLAY_IMAGE_TYPES = [
+  ["icon", "icon"],
+  ["feature", "featureGraphic"],
+  ["phone", "phoneScreenshots"],
+  ["tablet7", "sevenInchScreenshots"],
+  ["tablet10", "tenInchScreenshots"],
+] as const;
 
 type PlayListing = { language: string; title?: string; shortDescription?: string; fullDescription?: string; video?: string };
 
@@ -63,8 +99,17 @@ export async function readAndroidPage(): Promise<AndroidPage> {
   const token = await playToken();
   const edit = (await play(`${PLAY_API}/edits`, token, { method: "POST", body: "{}" })) as { id: string };
   let listings: PlayListing[];
+  const images = emptyImages();
   try {
     listings = ((await play(`${PLAY_API}/edits/${edit.id}/listings`, token)).listings ?? []) as PlayListing[];
+    await Promise.all(
+      LANGS.flatMap((l) =>
+        PLAY_IMAGE_TYPES.map(async ([slot, type]) => {
+          const found = ((await play(`${PLAY_API}/edits/${edit.id}/listings/${l.android}/${type}`, token)).images ?? []) as { id: string; url: string }[];
+          images[l.id][slot] = found.map((i) => ({ kind: "live" as const, id: i.id, url: `${i.url}=w600` }));
+        }),
+      ),
+    );
   } finally {
     // 지우지 못해도 커밋하지 않은 편집은 스토어에 영향이 없다
     await play(`${PLAY_API}/edits/${edit.id}`, token, { method: "DELETE" }).catch(() => undefined);
@@ -80,7 +125,7 @@ export async function readAndroidPage(): Promise<AndroidPage> {
     const same = (a?: string, b?: string) => squash(a) === squash(b);
     langs[l.id] = same(live.title, saved.title) && same(live.fullDescription, saved.fullDescription) ? { live: saved, pending: null } : { live, pending: saved };
   });
-  return { ok: true, langs, art: shown[0]?.art ?? NO_ART };
+  return { ok: true, langs, art: shown[0]?.art ?? NO_ART, images };
 }
 
 const squash = (s = "") => s.replace(/\s+/g, "");

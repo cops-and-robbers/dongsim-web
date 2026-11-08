@@ -7,6 +7,7 @@ import { db } from "@/lib/metrics/db";
 import { NotCached, retryOnce, unwrapNotCached } from "@/lib/release/reliable";
 import { StoreError } from "@/lib/release/stores";
 import type { Draft, FieldId, Lang, StorePage } from "./fields";
+import type { ImageDraft, ImageItem, ImageSlotId } from "./images";
 import { readAndroidPage, readIosPage } from "./read";
 
 const TAG = "store-page";
@@ -53,11 +54,48 @@ async function readDrafts(): Promise<Draft[] | null> {
   }
 }
 
+const IMAGE_TABLE = "store_page_image_drafts";
+const IMAGE_COLUMNS = "platform,lang,slot,items,updated_by,updated_at";
+type ImageRow = { platform: ImageDraft["platform"]; lang: Lang; slot: ImageSlotId; items: ImageItem[]; updated_by: string; updated_at: string };
+const toImageDraft = (r: ImageRow): ImageDraft => ({ platform: r.platform, lang: r.lang, slot: r.slot, items: r.items, updatedBy: r.updated_by, updatedAt: r.updated_at });
+
+/** 표가 아직 없으면 null */
+async function readImageDrafts(): Promise<ImageDraft[] | null> {
+  try {
+    const { data, error } = await db().from(IMAGE_TABLE).select(IMAGE_COLUMNS);
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as ImageRow[]).map(toImageDraft);
+  } catch (e) {
+    console.error("[store-page] 이미지 초안", e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
+export type SaveImageInput = { platform: ImageDraft["platform"]; lang: Lang; slot: ImageSlotId; items: ImageItem[] | null; expect: string | null };
+export type SaveImageResult = { ok: true; draft: ImageDraft | null } | { ok: false; current: ImageDraft | null };
+
+/** 한 칸의 목록을 저장한다. items 가 null 이면 초안을 지운다. 다른 사람이 먼저 고쳤으면 덮어쓰지 않는다 */
+export async function saveImageDraft(input: SaveImageInput, actor: string): Promise<SaveImageResult> {
+  const where = { platform: input.platform, lang: input.lang, slot: input.slot };
+  const found = await db().from(IMAGE_TABLE).select(IMAGE_COLUMNS).match(where).maybeSingle();
+  if (found.error) throw new Error(found.error.message);
+  const current = found.data ? toImageDraft(found.data as ImageRow) : null;
+  if ((current?.updatedAt ?? null) !== input.expect && current?.updatedBy !== actor) return { ok: false, current };
+  if (input.items === null) {
+    const { error } = await db().from(IMAGE_TABLE).delete().match(where);
+    if (error) throw new Error(error.message);
+    return { ok: true, draft: null };
+  }
+  const { data, error } = await db().from(IMAGE_TABLE).upsert({ ...where, items: input.items, updated_by: actor, updated_at: new Date().toISOString() }).select(IMAGE_COLUMNS).single();
+  if (error) throw new Error(error.message);
+  return { ok: true, draft: toImageDraft(data as ImageRow) };
+}
+
 export async function storePage(): Promise<StorePage> {
-  const [stores, drafts] = await Promise.all([unwrapNotCached<Stores>(cachedStores), readDrafts()]);
+  const [stores, drafts, imageDrafts] = await Promise.all([unwrapNotCached<Stores>(cachedStores), readDrafts(), readImageDrafts()]);
   const production = process.env.VERCEL_ENV === "production";
-  const writable = production && drafts !== null;
-  return { ...stores, drafts: drafts ?? [], writable, readOnlyReason: writable ? undefined : production ? "지금은 저장할 수 없어요. 개발 담당자에게 알려 주세요." : "초안은 운영 어드민에서만 저장돼요." };
+  const writable = production && drafts !== null && imageDrafts !== null;
+  return { ...stores, drafts: drafts ?? [], imageDrafts: imageDrafts ?? [], writable, readOnlyReason: writable ? undefined : production ? "지금은 저장할 수 없어요. 개발 담당자에게 알려 주세요." : "초안은 운영 어드민에서만 저장돼요." };
 }
 
 export type SaveInput = { platform: Draft["platform"]; lang: Lang; field: FieldId; value: string | null; expect: string | null };
