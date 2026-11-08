@@ -192,6 +192,7 @@ export default function StorePageScreen() {
                   onChange={(p) => {
                     setPlatform(p);
                     setSpot(null);
+                    if (p === "ios" && mode === "details") setMode("page");
                   }}
                   items={[
                     { value: "ios", label: <span className="inline-flex items-center gap-1.5"><AppStoreMark className="size-4" />App Store</span> },
@@ -229,6 +230,11 @@ export default function StorePageScreen() {
                             conflict={key in conflicts ? conflicts[key] : undefined}
                             disabled={false}
                             onFocus={() => setSpot(f.id)}
+                            onEdit={() => {
+                              // 자세한 설명은 세부정보에서만 보이고, 동영상은 앱 상세에서만 보인다
+                              if (f.id === "fullDescription") setMode("details");
+                              else if (f.id === "video" && mode === "details") setMode("page");
+                            }}
                             onChange={(v) => change(f.id, v)}
                             onRevert={() => change(f.id, base)}
                             onTakeTheirs={() => {
@@ -272,11 +278,11 @@ export default function StorePageScreen() {
             {page?.ok && (
               <PreviewPane title="스토어에서 이렇게 보여요">
                 <div className="mb-3 flex justify-center">
-                  <SegmentedControl<Surface> value={mode} onChange={setMode} options={[{ value: "page", label: "제품 페이지" }, { value: "search", label: "검색 결과" }]} />
+                  <SegmentedControl<Surface> value={mode} onChange={setMode} options={[{ value: "page", label: platform === "ios" ? "제품 페이지" : "앱 상세" }, { value: "search", label: "검색 결과" }, ...(platform === "android" ? [{ value: "details" as const, label: "세부정보" }] : [])]} />
                 </div>
-                <StorePreview platform={platform} mode={mode} values={values} art={page.art} spot={spot} />
+                <StorePreview platform={platform} mode={mode} values={values} art={page.art} spot={spot} onMode={setMode} />
                 <p className="mt-2.5 text-center text-[12px] leading-relaxed text-sd-fg-subtle">
-                  {spot === "keywords" ? "키워드는 사용자에게 보이지 않아요." : spot === "fullDescription" ? "자세한 설명은 앱 정보의 화살표를 누르면 보여요." : spot === "subtitle" && mode === "page" ? "부제는 검색 결과에 보여요." : "실제 스토어 앱 캡처로 잰 화면이에요."}
+                  {spot === "keywords" ? "키워드는 사용자에게 보이지 않아요." : spot === "subtitle" && mode === "page" ? "부제는 검색 결과에 보여요." : "실제 스토어 앱 캡처로 잰 화면이에요."}
                 </p>
               </PreviewPane>
             )}

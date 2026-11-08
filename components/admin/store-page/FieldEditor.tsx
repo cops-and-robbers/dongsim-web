@@ -131,6 +131,7 @@ export function FieldEditor({
   onChange,
   onRevert,
   onFocus,
+  onEdit,
   onTakeTheirs,
   onKeepMine,
 }: {
@@ -146,6 +147,7 @@ export function FieldEditor({
   onChange: (v: string) => void;
   onRevert: () => void;
   onFocus: () => void;
+  onEdit: () => void;
   onTakeTheirs: () => void;
   onKeepMine: () => void;
 }) {
@@ -159,7 +161,14 @@ export function FieldEditor({
   const box = `rounded-xl border bg-sd-surface transition focus-within:border-accent ${n > field.max ? "border-sd-critical" : "border-sd-line"}`;
   const input = "block w-full bg-transparent px-3.5 py-2.5 text-[14px] leading-relaxed text-sd-fg outline-none placeholder:text-sd-placeholder disabled:opacity-60";
   return (
-    <div className="px-5 py-5" onFocusCapture={onFocus} onMouseEnter={onFocus}>
+    <div
+      className="px-5 py-5"
+      onFocusCapture={() => {
+        onFocus();
+        onEdit();
+      }}
+      onMouseEnter={onFocus}
+    >
       <div className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
         <label htmlFor={id} className="text-[14px] font-bold text-sd-fg">
           {field.label}
@@ -189,7 +198,7 @@ export function FieldEditor({
       )}
       {value.trim() && SLOTS[platform][field.id] && (
         <div className="relative mt-2 flex flex-wrap gap-1 overflow-hidden">
-          {SLOTS[platform][field.id]!.map((s) => (
+          {SLOTS[platform][field.id]!.filter((s) => s.surface !== "pageLong").map((s) => (
             <FitChip key={s.surface} slot={s} value={value} />
           ))}
         </div>
