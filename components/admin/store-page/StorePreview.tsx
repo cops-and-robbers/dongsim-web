@@ -278,7 +278,11 @@ function PlayPage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null 
 }
 
 function PlaySearch({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
+  // 앱에서 검색 결과의 화살표를 연 화면이 기본이다. 영상과 스크린샷까지 보여서 고칠 때 더 쓸모 있다
+  const [open, setOpen] = useState(true);
   const chip: CSSProperties = { flex: "none", height: 32, lineHeight: "30px", padding: "0 14px", border: `1px solid ${PLAY.line}`, borderRadius: 9, fontSize: 13, color: PLAY.gray };
+  const round: CSSProperties = { width: 28, height: 32, borderRadius: 16, background: PLAY.tint, flex: "none", display: "flex", alignItems: "center", justifyContent: "center" };
+  const installs = art.downloads?.replace("회", "");
   return (
     <div style={{ background: "#fff", minHeight: "100%", paddingBottom: 130 }}>
       <PlayBar title="경찰과 도둑" />
@@ -289,7 +293,7 @@ function PlaySearch({ v, art, spot }: { v: Values; art: Art; spot: FieldId | nul
           </span>
         ))}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 16.7, padding: "28px 24px 0" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 16.7, padding: "29px 24px 0" }}>
         <Img src={art.icon} style={{ width: 56, height: 56, borderRadius: 12, flex: "none", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <Text platform="android" field="title" surface="search" value={v.title ?? ""} spot={spot} color={PLAY.text} />
@@ -297,11 +301,34 @@ function PlaySearch({ v, art, spot }: { v: Values; art: Art; spot: FieldId | nul
             {art.developer}
             {art.category ? ` • ${art.category}` : ""}
           </p>
+          {open && installs && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 18, marginTop: 2, padding: "0 7px", borderRadius: 9, background: PLAY.tint, fontSize: 12.4, color: PLAY.gray }}>
+              <Icon d={PATH.download} size={12} color={PLAY.blue} />
+              {installs}
+            </span>
+          )}
         </div>
-        <span style={{ width: 28, height: 32, borderRadius: 16, background: PLAY.tint, flex: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button type="button" aria-expanded={open} aria-label={open ? "접기" : "펼치기"} onClick={() => setOpen((o) => !o)} style={{ ...round, marginTop: 10, border: 0, cursor: "pointer", transform: open ? "rotate(180deg)" : undefined }}>
           <Icon d={PATH.down} size={16} color={PLAY.text} />
-        </span>
+        </button>
       </div>
+      {open && (
+        <div style={{ marginTop: 14.6 }}>
+          <Shots art={art} width={93} height={165.7} gap={13} left={24} radius={8} first={<PlayVideo url={v.video} on={spot === "video"} />} />
+        </div>
+      )}
+      {[0, 1].map((i) => (
+        <div key={i} aria-hidden style={{ display: "flex", alignItems: "center", gap: 16.7, padding: `${i === 0 && open ? 34.5 : 24}px 24px 0` }}>
+          <span style={{ width: 56, height: 56, borderRadius: 12, background: "#eceff3", flex: "none" }} />
+          <div style={{ flex: 1 }}>
+            <span style={{ display: "block", width: 150, height: 13, borderRadius: 4, background: "#eceff3" }} />
+            <span style={{ display: "block", width: 100, height: 10, borderRadius: 4, background: "#f1f3f6", marginTop: 8 }} />
+          </div>
+          <span style={round}>
+            <Icon d={PATH.down} size={16} color={PLAY.gray} />
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
