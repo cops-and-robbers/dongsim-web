@@ -41,7 +41,7 @@ export const releaseAscKey = () => ({ issuer: process.env.ASC_ISSUER_ID, keyId: 
 
 type JsonApi = { data?: { id: string; type: string; attributes?: Record<string, unknown>; relationships?: Record<string, { data?: { id: string; type: string } | null }> }[]; included?: { id: string; type: string; attributes?: Record<string, unknown> }[]; errors?: { detail?: string; title?: string }[] };
 
-async function asc(path: string, token: string): Promise<JsonApi> {
+export async function asc(path: string, token: string): Promise<JsonApi> {
   const res = await fetch(`${ASC_API}${path}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(TIMEOUT), cache: "no-store" });
   const body = (await res.json().catch(() => ({}))) as JsonApi;
   if (res.status === 401) throw new StoreError(NEED_DEV, { detail: "ASC 401: 출시용 키가 폐기됐거나 ASC_RELEASE_* 값이 틀림", status: 401 });
