@@ -8,7 +8,7 @@ import type { Platform } from "@/lib/store-page/fields";
 import { checkFile, IMAGE_SLOTS, itemId, pngHasAlpha, sameItems, type FileInfo, type ImageItem, type ImageSlot, type ImageSlotId } from "@/lib/store-page/images";
 
 // 스토어 페이지의 "이미지와 영상" (docs/admin-ui.md "스토어 페이지").
-// 스토어에 올라가 있는 것을 칸마다 보여 주고, 끌어서 순서를 바꾸고, 올리기 전에 규격을 검사한다. 스토어에는 보내지 않는다.
+// 스토어에 올라가 있는 것을 칸마다 보여 주고, 끌어서 순서를 바꾸고, 올리기 전에 규격을 검사한다. 스토어로는 보내기 확인창에서 나간다.
 
 const THUMB_H = 190;
 
@@ -40,7 +40,11 @@ async function inspect(file: File, slot: ImageSlot): Promise<FileInfo> {
 function Tile({ item, video, disabled, onRemove }: { item: ImageItem; video: boolean; disabled: boolean; onRemove: () => void }) {
   return (
     <div className="group relative h-full">
-      {video ? (
+      {!item.url ? (
+        <div className="flex w-[108px] items-center justify-center rounded-xl bg-sd-fill text-[12.5px] font-semibold text-sd-fg-subtle" style={{ height: THUMB_H }}>
+          애플이 처리 중
+        </div>
+      ) : video && item.kind === "new" ? (
         <video src={item.url} muted playsInline preload="metadata" className="h-full rounded-xl bg-sd-fill object-cover" style={{ height: THUMB_H }} />
       ) : (
         // 스토어와 저장소의 이미지를 그대로 보여 준다
@@ -48,6 +52,7 @@ function Tile({ item, video, disabled, onRemove }: { item: ImageItem; video: boo
         <img src={item.url} alt="" draggable={false} className="h-full max-w-none rounded-xl bg-sd-fill object-contain" style={{ height: THUMB_H }} />
       )}
       {item.kind === "new" && <span className="absolute left-1.5 top-1.5 rounded-md bg-accent px-1.5 text-[11px] font-bold leading-[18px] text-accent-fg">새 파일</span>}
+      {item.kind === "live" && item.status === "failed" && <span className="absolute left-1.5 top-1.5 rounded-md bg-sd-critical px-1.5 text-[11px] font-bold leading-[18px] text-white">애플이 거절</span>}
       {!disabled && (
         <button type="button" aria-label="빼기" onClick={onRemove} className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-black/60 text-[14px] leading-none text-white opacity-0 transition focus:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
           ×

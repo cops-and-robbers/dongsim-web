@@ -46,7 +46,8 @@ export const IMAGE_SLOTS: Record<Platform, ImageSlot[]> = {
 
 export const slotById = (p: Platform, id: string) => IMAGE_SLOTS[p].find((s) => s.id === id);
 
-export type LiveImage = { kind: "live"; id: string; url: string };
+/** status: 스토어가 아직 파일을 처리 중이거나 거절했을 때 */
+export type LiveImage = { kind: "live"; id: string; url: string; status?: "processing" | "failed" };
 export type NewImage = { kind: "new"; key: string; url: string; width: number; height: number; bytes: number; type: string; name: string; seconds?: number };
 export type ImageItem = LiveImage | NewImage;
 export type LiveImages = Record<Lang, Partial<Record<ImageSlotId, LiveImage[]>>>;
