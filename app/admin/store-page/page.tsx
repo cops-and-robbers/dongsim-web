@@ -9,7 +9,7 @@ import { FieldEditor, OfficialLink } from "@/components/admin/store-page/FieldEd
 import { ImageBoard } from "@/components/admin/store-page/ImageBoard";
 import { SendDialog } from "@/components/admin/store-page/SendDialog";
 import { useToast } from "@/components/admin/Toast";
-import { blockers, changesOf } from "@/lib/store-page/send";
+import { blockers, changesOf, imageBlockers, imageChangesOf } from "@/lib/store-page/send";
 import { SpecGuide } from "@/components/admin/store-page/SpecGuide";
 import { StorePreview } from "@/components/admin/store-page/StorePreview";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
@@ -201,8 +201,20 @@ export default function StorePageScreen() {
   const saved = Object.values(drafts);
   const pageOk = page?.ok ? page : null;
   const changes = pageOk ? changesOf(platform, pageOk.langs, saved) : [];
-  const blocked = pageOk ? blockers(platform, pageOk.langs, changes) : [];
+  const imageChanges = pageOk ? imageChangesOf(platform, pageOk.images, Object.values(imageDrafts)) : [];
+  const blocked = pageOk ? [...blockers(platform, pageOk.langs, changes), ...imageBlockers(platform, pageOk.images, imageChanges)] : [];
+  const toSend = changes.length + imageChanges.length;
+  const allChanged = total + (["ios", "android"] as Platform[]).reduce((sum, p) => sum + LANGS.reduce((s, l) => s + changedImages(p, l.id), 0), 0);
   const nextVersion = ios?.ok ? ios.nextVersion : null;
+
+  const sendBar = toSend > 0 && data?.writable && (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sd-line bg-sd-surface px-4 py-3">
+      <p className="text-[13.5px] text-sd-fg">{blocked.length ? blocked[0] : `${toSend}칸을 스토어로 보낼 수 있어요.`}</p>
+      <button type="button" disabled={blocked.length > 0 || saving > 0} onClick={() => setSending(true)} className="h-9 flex-none rounded-[10px] bg-accent px-3.5 text-[13.5px] font-semibold text-accent-fg transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">
+        {platform === "ios" ? "App Store로 보내기" : "Google Play로 보내기"}
+      </button>
+    </div>
+  );
 
   const storeTabs = (
     <div className="flex flex-wrap items-center gap-2.5">
@@ -222,7 +234,7 @@ export default function StorePageScreen() {
                 <Tabs<Lang> label="언어" value={lang} onChange={setLang} items={LANGS.map((l) => ({ value: l.id, label: l.label, count: view === "images" ? changedImages(platform, l.id) : changedCount(platform, l.id) }))} />
               </div>
   );
-  const screenshots = page?.ok ? listOf(platform, lang, platform === "ios" ? "iphone" : "phone").map((i) => i.url) : [];
+  const screenshots = page?.ok ? listOf(platform, lang, platform === "ios" ? "iphone" : "phone").map((i) => i.url).filter(Boolean) : [];
   const icon = platform === "android" ? listOf(platform, lang, "icon")[0]?.url : undefined;
 
   return (
@@ -233,6 +245,7 @@ export default function StorePageScreen() {
             <SendDialog
               platform={platform}
               changes={changes}
+              images={imageChanges}
               version={platform === "ios" ? nextVersion : null}
               onClose={() => setSending(false)}
               onDone={(message) => {
@@ -247,7 +260,7 @@ export default function StorePageScreen() {
         </AnimatePresence>
         <PageHeader
           title="스토어 페이지"
-          description={total > 0 ? `고친 칸이 ${total}개 있어요. 보내기 전까지 스토어는 바뀌지 않아요.` : "문구를 고치면 스토어에서 어떻게 보일지 바로 볼 수 있어요. 보내기 전까지 스토어는 바뀌지 않아요."}
+          description={allChanged > 0 ? `고친 칸이 ${allChanged}개 있어요. 보내기 전까지 스토어는 바뀌지 않아요.` : "문구를 고치면 스토어에서 어떻게 보일지 바로 볼 수 있어요. 보내기 전까지 스토어는 바뀌지 않아요."}
           actions={
             <div className="flex items-center gap-2.5">
               {status && <span className={`text-[12.5px] ${failed ? "text-sd-critical" : "text-sd-fg-subtle"}`}>{status}</span>}
@@ -278,7 +291,8 @@ export default function StorePageScreen() {
             {storeTabs}
             {page?.ok ? (
               <>
-                <p className="text-[13px] leading-relaxed text-sd-fg-muted">끌어서 순서를 바꿀 수 있어요. 규격에 맞는지는 올리기 전에 확인해요. 초안으로만 저장되고 스토어에는 아직 보내지 않아요.</p>
+                {sendBar}
+                <p className="text-[13px] leading-relaxed text-sd-fg-muted">끌어서 순서를 바꿀 수 있어요. 규격에 맞는지는 올리기 전에 확인해요. 보내기 전까지 스토어는 바뀌지 않아요.</p>
                 <motion.div key={`${platform}-${lang}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }}>
                   <ImageBoard platform={platform} listOf={(s) => listOf(platform, lang, s)} liveOf={(s) => liveOf(platform, lang, s)} disabled={!data.writable} onChange={changeImages} />
                 </motion.div>
@@ -298,14 +312,7 @@ export default function StorePageScreen() {
 
               {page?.ok ? (
                 <>
-                  {changes.length > 0 && data.writable && (
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sd-line bg-sd-surface px-4 py-3">
-                      <p className="text-[13.5px] text-sd-fg">{blocked.length ? blocked[0] : `${changes.length}칸을 스토어로 보낼 수 있어요.`}</p>
-                      <button type="button" disabled={blocked.length > 0 || saving > 0} onClick={() => setSending(true)} className="h-9 flex-none rounded-[10px] bg-accent px-3.5 text-[13.5px] font-semibold text-accent-fg transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">
-                        {platform === "ios" ? "App Store로 보내기" : "Google Play로 보내기"}
-                      </button>
-                    </div>
-                  )}
+                  {sendBar}
                   <p className="text-[13px] leading-relaxed text-sd-fg-muted">
                     {platform === "ios"
                       ? ios?.ok && ios.nextVersion
