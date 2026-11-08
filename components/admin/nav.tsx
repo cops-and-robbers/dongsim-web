@@ -15,6 +15,7 @@ import {
   ImageIcon,
   RocketIcon,
   StoreIcon,
+  StarIcon,
 } from "@/components/admin/icons";
 
 // 어드민 메뉴 정본. 데스크톱 사이드바(AdminShell)와 폰 하단 탭, 전체 메뉴(MobileNav)가 같은 목록을 쓴다
@@ -25,7 +26,7 @@ export type NavItem = {
   Icon: (p: { className?: string }) => ReactNode;
   exact?: boolean;
   /** 미처리 건수를 옆에 띄우는 메뉴. */
-  pending?: "reports" | "bugs";
+  pending?: "reports" | "bugs" | "reviews";
   /** 폰 하단 탭에 바로 두는 메뉴. 나머지는 "전체"에서 연다. */
   tab?: boolean;
 };
@@ -59,6 +60,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/reports", label: "신고", Icon: ReportIcon, pending: "reports", tab: true },
       { href: "/admin/bugs", label: "버그", Icon: BugIcon, pending: "bugs" },
+      { href: "/admin/reviews", label: "리뷰", Icon: StarIcon, pending: "reviews" },
     ],
   },
   {
