@@ -85,7 +85,7 @@ export const SCENARIOS: Record<string, { label: string; input: BoardInput }> = {
     input: {
       ...base,
       ios: ios({ state: "IN_REVIEW" }, { submissions: [{ state: "IN_REVIEW", submittedAt: "2026-11-08T00:10:00Z" }, ...iosReal.submissions] }),
-      android: android([{ name: "392 (3.2.8)", codes: [392], lifecycle: "IN_REVIEW", status: "completed" }, published]),
+      android: android([{ name: "392 (3.2.8)", codes: [392], lifecycle: "IN_REVIEW", status: "completed" }, published], { listedAt: "2026-11-08T02:58:00Z" }),
     },
   },
   rejected: {
@@ -123,6 +123,6 @@ export const SCENARIOS: Record<string, { label: string; input: BoardInput }> = {
   },
   androidFail: {
     label: "Android 를 못 읽음",
-    input: { ...base, ios: ios({ state: "WAITING_FOR_REVIEW" }, { submissions: [{ state: "WAITING_FOR_REVIEW", submittedAt: "2026-11-08T01:30:00Z" }] }), android: { error: "Play 키가 없어요. Vercel 에 PLAY_RELEASE_SERVICE_ACCOUNT_JSON 을 넣어 주세요" } },
+    input: { ...base, ios: ios({ state: "WAITING_FOR_REVIEW" }, { submissions: [{ state: "WAITING_FOR_REVIEW", submittedAt: "2026-11-08T01:30:00Z" }] }), android: { error: "지금은 상태를 가져오지 못했어요. 잠시 뒤 다시 확인해 주세요." } },
   },
 };

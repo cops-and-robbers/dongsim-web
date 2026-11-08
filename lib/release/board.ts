@@ -34,8 +34,8 @@ export type Step = {
   hint?: string;
   /** 그 상태가 된 시각(ISO). 화면이 한국 시각과 상대 시각으로 쓴다 */
   at?: string;
-  /** "since" 면 "3시간째" */
-  atKind?: "at" | "since";
+  /** "since" 면 "3시간째", "checked" 면 "2분 전 확인" */
+  atKind?: "at" | "since" | "checked";
   detail?: string;
   /** 왜 이런 상태가 됐는지(펼쳐 보는 설명) */
   why?: string;
@@ -63,7 +63,7 @@ export type Track =
       steps: Step[];
       /** 지금 단계(steps 의 칸 번호) */
       current: number;
-      /** 상태 알약. "진행 가능", "애플 심사 중" */
+      /** 상태 알약. "심사에 낼 수 있음", "애플 심사 중" */
       status: { tone: Tone; label: string };
       /** 이 스토어에서 지금 할 일. 다 끝났으면 null */
       action: Action | null;
@@ -72,8 +72,6 @@ export type Track =
       queue?: PublishQueue;
       /** 어드민에서 바로 할 수 있는 조작(options.ts). 서버가 붙인다 */
       options?: Option[];
-      /** 심사 상태를 몇 분 전에 읽은 값이면 그 시각(Android) */
-      staleSince?: string;
     }
   | { platform: Platform; ok: false; error: string; href: string };
 
@@ -219,10 +217,20 @@ function currentStep(steps: Step[]): number {
 }
 
 /** 상태 알약. 지금 단계의 색과 누가 하는지로 */
+/** 할 수 있는 일을 알약 하나로. "진행 가능"은 무엇이 가능한지 말해 주지 않는다 */
+function turnLabel(step: Step): string {
+  if (step.key === "build") return step.fixTo || !step.state?.includes("없음") ? "빌드 붙일 수 있음" : "빌드 기다림";
+  if (step.key === "submit") return "심사에 낼 수 있음";
+  if (step.key === "release") return "출시할 수 있음";
+  if (step.key === "publish") return "게시할 수 있음";
+  if (step.key === "rollout") return "멈춰 있음";
+  return "할 수 있는 일 있음";
+}
+
 function statusOf(step: Step | undefined): { tone: Tone; label: string } {
   if (!step || step.tone === "done") return { tone: "done", label: "최신" };
   if (step.tone === "bad") return { tone: "bad", label: step.state?.includes("반려") ? "반려" : "확인 필요" };
-  if (step.tone === "turn") return { tone: "turn", label: "진행 가능" };
+  if (step.tone === "turn") return { tone: "turn", label: turnLabel(step) };
   if (step.tone === "wait") {
     if (step.key === "reach") return { tone: "wait", label: "나라별 반영 중" };
     if (step.key === "rollout") return { tone: "wait", label: "단계적 출시 중" };
@@ -274,9 +282,9 @@ function mismatchWhy(v: IosVersion, b: IosBuild, live: string | undefined): stri
   const prev = parts.length === 3 && parts[2] > 0 ? `${parts[0]}.${parts[1]}.${parts[2] - 1}` : null;
   const between = prev && versionGt(prev, v.version) ? `${v.version}~${prev}` : v.version;
   const lines = [
-    `${v.version} 칸은 ${made}에 만들었어요.`,
-    `앱 저장소는 main 에 PR 이 머지될 때마다 앱 버전을 하나씩 올려요. 그 사이 머지가 쌓여 빌드 ${b.number} 안의 버전이 ${subj(b.version ?? "")} 됐어요.`,
-    "애플은 빌드 안 버전과 칸 이름이 같아야 그 칸에 빌드를 붙여 줘요. 그래서 칸 이름을 빌드에 맞추면 돼요.",
+    `${v.version} 버전은 ${made}에 만들어 뒀어요.`,
+    `개발 내용이 합쳐질 때마다 앱 버전이 자동으로 하나씩 올라가요. 그래서 빌드 ${b.number}의 버전이 ${subj(b.version ?? "")} 됐어요.`,
+    "애플은 두 번호가 같아야 빌드를 붙여 줘요. 그래서 스토어 버전 번호를 빌드에 맞추면 돼요.",
   ];
   if (live && b.version && versionGt(b.version, live))
     lines.push(`${topic(between)} 한 번도 스토어에 나간 적 없는 번호라 건너뛰어도 괜찮아요. 사용자에게는 ${live} 다음 업데이트가 ${copula(b.version)}.`);
@@ -294,7 +302,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
   const s = v.state;
   const manual = (v.releaseType ?? "MANUAL") === "MANUAL";
 
-  const slot: Step = { key: "slot", label: "버전 칸", who: "us", state: v.version, tone: "done", at: v.createdAt };
+  const slot: Step = { key: "slot", label: "버전 만들기", who: "us", state: v.version, tone: "done", at: v.createdAt };
 
   // 빌드 붙이기
   let build: Step;
@@ -307,7 +315,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
       detail = `가장 최근 빌드는 ${latest.number}${latest.state === "VALID" ? "" : `(${buildWord(latest.state)})`}`;
       // 빌드 안의 버전이 칸 이름과 다르면 애플이 그 칸에 붙여 주지 않는다. 콘솔에서는 빌드 고르기 목록이 비어 보일 뿐이라 이유를 적는다
       if (mismatch) {
-        detail = `지금 칸 이름은 ${v.version}이고, 빌드 ${latest.number} 안의 버전은 ${copula(latest.version!)}. 애플은 둘이 같아야 빌드를 붙여 줘요`;
+        detail = `지금 버전 번호는 ${v.version}이고, ${topic(`빌드 ${latest.number}`)} ${copula(latest.version!)}`;
         why = mismatchWhy(v, latest, live?.version);
       }
     }
@@ -348,7 +356,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
   else if (s === "PENDING_APPLE_RELEASE") release = { ...releaseBase, who: "auto", state: "예약 출시", tone: "wait", at: v.earliestReleaseDate ?? undefined, detail: "정한 시각에 애플이 내보내요" };
   else if (s === "PROCESSING_FOR_DISTRIBUTION" || s === "ACCEPTED") release = { ...releaseBase, who: "apple", state: "출시 처리 중", tone: "wait" };
   else if (s === "READY_FOR_DISTRIBUTION") release = { ...releaseBase, state: "출시함", tone: "done", at: v.phased?.startDate ?? undefined };
-  else release = { ...releaseBase, tone: "idle", hint: manual ? "승인되면 원하는 때 출시할 수 있어요(수동 출시)" : "승인되면 바로 나가요" };
+  else release = { ...releaseBase, tone: "idle", hint: manual ? "승인되면 원하는 때 출시할 수 있어요" : "승인되면 바로 나가요" };
 
   // 단계적 출시 (켰을 때만 7일)
   const p = v.phased;
@@ -357,7 +365,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
   let rollout: Step;
   let rolloutOut: Rollout | null = null;
   if (s !== "READY_FOR_DISTRIBUTION") {
-    rollout = { ...rolloutBase, tone: "idle", hint: p ? "7일 동안 1%에서 100%로, 자동 업데이트에만" : "꺼져 있어요. 출시하면 바로 모두에게" };
+    rollout = { ...rolloutBase, tone: "idle", hint: p ? "7일에 걸쳐 1%에서 100%까지 나가요" : "꺼져 있어요. 출시하면 바로 모두에게 나가요" };
   } else if (p?.state === "ACTIVE") {
     rolloutOut = { percent: phasedPercent(p.day), day: p.day, paused: false };
     rollout = { ...rolloutBase, state: `${phasedPercent(p.day)}% · ${p.day}일째`, tone: "wait", href: links.iosVersions, detail: "자동 업데이트에만 적용돼요. 손으로 업데이트하면 바로 받아요" };
@@ -372,7 +380,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
   // 나라별 반영
   const reachBase = { key: "reach", label: "나라별 반영", who: "apple" as Who };
   let reach: Step;
-  if (s !== "READY_FOR_DISTRIBUTION") reach = { ...reachBase, tone: "idle", hint: "나라마다 반영에 최대 24시간" };
+  if (s !== "READY_FOR_DISTRIBUTION") reach = { ...reachBase, tone: "idle", hint: "나라마다 보이기까지 최대 24시간 걸려요" };
   else if (!lookup) reach = { ...reachBase, state: "확인 못 함", tone: "idle", detail: "App Store 조회가 안 됐어요" };
   else {
     const seen = REACH_COUNTRIES.filter(([c]) => lookup[c] === v.version).length;
@@ -423,27 +431,29 @@ export function androidTrack(raw: AndroidRaw, now = Date.now()): Track {
 
   if (!code) return { platform: "android", ok: true, live, inflight, steps: [], current: 0, status: statusOf(undefined), action: null, rollout: null, queue: { release: null, listing } };
 
-  const steps: Step[] = [{ key: "build", label: "내부 테스트 빌드", who: "auto", state: `빌드 ${code}`, tone: "done", detail: "CI 가 내부 테스트에 올려요" }];
+  const steps: Step[] = [{ key: "build", label: "내부 테스트 빌드", who: "auto", state: `빌드 ${code}`, tone: "done", detail: "개발팀이 올린 빌드예요" }];
 
   // 프로덕션 출시 만들기 (= 검토로 보내기)
-  const submitBase = { key: "submit", label: "프로덕션 출시 만들기", who: "us" as Who };
-  if (candidate) steps.push({ ...submitBase, state: "만들기 전", tone: "turn", href: links.playProduction, detail: "프로덕션에 이 빌드로 새 출시를 만들어 검토로 보낼 수 있어요" });
+  const submitBase = { key: "submit", label: "출시 만들기", who: "us" as Who };
+  if (candidate) steps.push({ ...submitBase, state: "만들기 전", tone: "turn", href: links.playProduction, detail: "이 빌드로 새 출시를 만들어 구글 심사에 낼 수 있어요" });
   else if (l === "DRAFT") steps.push({ ...submitBase, state: "초안", tone: "turn", href: links.playPublishing, detail: "초안을 검토로 보내면 심사가 시작돼요" });
   else if (l === "NOT_SENT_FOR_REVIEW") steps.push({ ...submitBase, state: "검토 보내기 전", tone: "turn", href: links.playPublishing, detail: "게시 개요에서 검토로 보낼 수 있어요" });
   else steps.push({ ...submitBase, state: "검토로 보냄", tone: "done" });
 
   // 구글 심사
   const reviewBase = { key: "review", label: "구글 심사", who: "google" as Who };
-  if (l === "IN_REVIEW") steps.push({ ...reviewBase, state: "심사 중", tone: "wait", detail: "구글은 심사 시작 시각을 알려 주지 않아요" });
+  // 심사 단계는 몇 분마다 확인하므로 언제 확인했는지 함께 보여 준다
+  const checked = raw.listedAt ? { at: raw.listedAt, atKind: "checked" as const } : {};
+  if (l === "IN_REVIEW" || l === "PENDING_UNKNOWN") steps.push({ ...reviewBase, state: l === "IN_REVIEW" ? "심사 중" : "심사 진행 중", tone: "wait", ...checked });
   else if (l === "NOT_APPROVED") steps.push({ ...reviewBase, state: "반려", tone: "bad", href: links.playPublishing, detail: "사유는 Play Console 에서 볼 수 있어요" });
   else if (l === "APPROVED_NOT_PUBLISHED" || settled || rolling) steps.push({ ...reviewBase, state: "승인", tone: "done" });
   else steps.push({ ...reviewBase, tone: "idle", hint: "검토로 보내면 구글이 봐요" });
 
   // 게시 (관리형 게시)
   const publishBase = { key: "publish", label: "게시", who: "us" as Who };
-  if (l === "APPROVED_NOT_PUBLISHED") steps.push({ ...publishBase, state: "게시 대기", tone: "turn", href: links.playPublishing, detail: "관리형 게시라 게시 개요에서 게시하면 나가요" });
+  if (l === "APPROVED_NOT_PUBLISHED") steps.push({ ...publishBase, state: "게시 대기", tone: "turn", href: links.playPublishing, detail: "게시 개요에서 게시하면 나가요" });
   else if (settled || rolling) steps.push({ ...publishBase, state: "게시함", tone: "done" });
-  else steps.push({ ...publishBase, tone: "idle", hint: "승인되면 게시 개요에서 원하는 때 게시할 수 있어요(관리형 게시)" });
+  else steps.push({ ...publishBase, tone: "idle", hint: "승인되면 게시 개요에서 원하는 때 게시할 수 있어요" });
 
   // 단계적 출시
   const rolloutBase = { key: "rollout", label: "단계적 출시", who: "us" as Who };
@@ -461,10 +471,9 @@ export function androidTrack(raw: AndroidRaw, now = Date.now()): Track {
     steps.push({ ...rolloutBase, state: "100%", tone: "done" });
   } else steps.push({ ...rolloutBase, tone: "idle", hint: "게시할 때 비율을 정하고 나중에 올릴 수 있어요" });
 
-  const staleSince = raw.listedAt && now - Date.parse(raw.listedAt) > 90_000 ? raw.listedAt : undefined;
   const queue: PublishQueue = { release: l === "APPROVED_NOT_PUBLISHED" && inflight ? `앱 출시 ${inflight.version || `빌드 ${inflight.build}`}` : null, listing };
   const current = currentStep(steps);
-  return { platform: "android", ok: true, live, inflight, steps, current, status: statusOf(steps[current]), action: actionOf("android", steps[current], inflight ?? live, now), rollout: rolloutOut, queue, ...(staleSince ? { staleSince } : {}) };
+  return { platform: "android", ok: true, live, inflight, steps, current, status: statusOf(steps[current]), action: actionOf("android", steps[current], inflight ?? live, now), rollout: rolloutOut, queue };
 }
 
 const LANG: Record<string, string> = { "en-US": "영어", "ko-KR": "한국어", "ja-JP": "일본어" };
@@ -490,10 +499,10 @@ function actionOf(p: Platform, st: Step | undefined, ver: { version: string; bui
     if (st.key === "build") {
       // 문제가 아니라 할 수 있는 일로 말한다. 칸 이름만 맞추면 되는 경우가 대부분이다(앱 저장소가 머지마다 버전을 올린다)
       const to = st.fixTo;
-      const title = st.state === "붙일 빌드 없음" && to ? `칸 이름만 ${ro(to)} 맞추면 빌드를 붙일 수 있어요` : st.state === "붙일 빌드 없음" ? `${name}에 붙일 수 있는 빌드가 아직 없어요` : `${name}에 빌드를 붙일 수 있어요`;
+      const title = st.state === "붙일 빌드 없음" && to ? `버전 번호만 ${ro(to)} 맞추면 빌드를 붙일 수 있어요` : st.state === "붙일 빌드 없음" ? `${name}에 붙일 수 있는 빌드가 아직 없어요` : `${name}에 빌드를 붙일 수 있어요`;
       return { ...base, title, reason: st.detail, ...(st.why ? { why: st.why } : {}), action: go("버전 화면 열기") };
     }
-    if (st.key === "submit") return { ...base, title: `${obj(name)} 심사에 낼 수 있어요`, reason: st.detail, action: go(p === "ios" ? "버전 화면 열기" : "프로덕션 트랙 열기") };
+    if (st.key === "submit") return { ...base, title: `${obj(name)} 심사에 낼 수 있어요`, reason: st.detail, action: go(p === "ios" ? "버전 화면 열기" : "Play Console 열기") };
     if (st.key === "release") return { ...base, title: `${subj(name)} 승인됐어요. 지금 출시할 수 있어요`, reason: st.detail, action: go("버전 화면 열기") };
     if (st.key === "publish") return { ...base, title: `${subj(name)} 승인됐어요. 지금 게시할 수 있어요`, reason: st.detail, action: go("게시 개요 열기") };
     if (st.key === "rollout") return { ...base, title: "단계적 출시가 멈춰 있어요", reason: st.detail, action: go("단계적 출시 보기") };
@@ -502,10 +511,10 @@ function actionOf(p: Platform, st: Step | undefined, ver: { version: string; bui
   // 기다리는 일
   if (st.key === "review") {
     const title = st.state === "순서 기다림" ? `${subj(name)} 심사 순서를 기다리고 있어요` : `${name} ${copula(st.state ?? "심사 중")}`;
-    const reason = st.at ? `제출한 지 ${since(st.at, now)}예요. 기다리면 돼요` : (st.detail ? `${st.detail}. 기다리면 돼요` : "기다리면 돼요");
+    const reason = st.at && st.atKind === "since" ? `제출한 지 ${since(st.at, now)}예요. 기다리면 돼요` : st.atKind === "checked" ? "기다리면 돼요. 몇 분마다 다시 확인해요" : "기다리면 돼요";
     return { ...base, title, reason };
   }
-  if (st.key === "rollout") return { ...base, title: `단계적 출시 ${copula(st.state?.split(" ·")[0] ?? "")}`, reason: st.detail, action: go("단계적 출시 보기") };
+  if (st.key === "rollout") return { ...base, title: `단계적 출시가 ${st.state?.split(" ·")[0] ?? ""}까지 나갔어요`, reason: st.detail, action: go("단계적 출시 보기") };
   if (st.key === "reach") return { ...base, title: `${subj(name)} 나라마다 퍼지는 중이에요`, reason: st.detail };
   return { ...base, title: `${name} ${copula(st.state ?? "기다리는 중")}`, reason: st.detail };
 }

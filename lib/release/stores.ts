@@ -14,12 +14,24 @@ import { ascToken, ASC_API } from "../metrics/appstore/auth.ts";
 import { APPSTORE_APP_ID, PLAY_PACKAGE } from "../metrics/config.ts";
 import { serviceAccountFromEnv, serviceAccountToken } from "../metrics/google.ts";
 import { db } from "../metrics/db.ts";
+import { productionRelease } from "../metrics/play/releases.ts";
 import type { AndroidRaw, HistoryItem, IosBuild, IosRaw, IosVersion, PlayRelease } from "./board.ts";
 
 const TIMEOUT = 15_000;
 
-/** 화면에 그대로 보여 줄 수 있는 오류 */
-export class StoreError extends Error {}
+/** 운영진에게 보여 줄 말이 message 다. 키 이름, 오류 코드 같은 개발자용 내용은 detail 에 담아 서버 기록에만 남긴다 */
+export class StoreError extends Error {
+  readonly detail?: string;
+  readonly status?: number;
+  constructor(message: string, opts: { detail?: string; status?: number } = {}) {
+    super(message);
+    this.detail = opts.detail;
+    this.status = opts.status;
+  }
+}
+/** 키나 권한처럼 운영진이 고칠 수 없는 문제 */
+const NEED_DEV = "스토어 연결에 문제가 있어요. 개발 담당자에게 알려 주세요.";
+const TRY_LATER = "지금은 상태를 가져오지 못했어요. 잠시 뒤 다시 확인해 주세요.";
 /** 구글이 읽는 횟수를 막았을 때 */
 export class QuotaError extends StoreError {}
 
@@ -32,9 +44,9 @@ type JsonApi = { data?: { id: string; type: string; attributes?: Record<string, 
 async function asc(path: string, token: string): Promise<JsonApi> {
   const res = await fetch(`${ASC_API}${path}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(TIMEOUT), cache: "no-store" });
   const body = (await res.json().catch(() => ({}))) as JsonApi;
-  if (res.status === 401) throw new StoreError("App Store Connect 가 키를 받지 않아요. 키가 폐기되지 않았는지, Vercel 의 ASC_RELEASE_* 값이 맞는지 확인해 주세요");
-  if (res.status === 403) throw new StoreError("출시용 키에 권한이 없어요. App Store Connect 에서 키 역할이 App Manager 인지 확인해 주세요");
-  if (!res.ok) throw new StoreError(`App Store Connect 가 오류를 돌려줬어요 (${res.status} ${body.errors?.[0]?.detail ?? body.errors?.[0]?.title ?? ""})`.trim());
+  if (res.status === 401) throw new StoreError(NEED_DEV, { detail: "ASC 401: 출시용 키가 폐기됐거나 ASC_RELEASE_* 값이 틀림", status: 401 });
+  if (res.status === 403) throw new StoreError(NEED_DEV, { detail: "ASC 403: 출시용 키 역할이 App Manager 가 아님", status: 403 });
+  if (!res.ok) throw new StoreError(TRY_LATER, { detail: `ASC ${res.status} ${body.errors?.[0]?.detail ?? body.errors?.[0]?.title ?? ""}`, status: res.status });
   return body;
 }
 
@@ -108,9 +120,9 @@ export async function play(url: string, token: string, init: RequestInit = {}): 
   const body = text ? (JSON.parse(text) as Record<string, unknown>) : {};
   const message = (body.error as { message?: string } | undefined)?.message ?? "";
   // 출시 목록 읽기는 문서에 없는 따로 된 한도가 있다(403 "Listing releases quota exceeded", 2026-11-08). 권한 문제와 구별한다
-  if (/quota/i.test(message)) throw new QuotaError("구글이 출시 목록을 너무 자주 읽었다고 잠시 막았어요. 몇 분 뒤 다시 읽어요");
-  if (res.status === 401 || res.status === 403) throw new StoreError("Play 가 출시용 서비스 계정을 받지 않아요. Play Console 사용자 목록에 admin-release 계정이 경찰과 도둑 앱 권한으로 있는지 확인해 주세요");
-  if (!res.ok) throw new StoreError(`Play 가 오류를 돌려줬어요 (${res.status} ${message})`.trim());
+  if (/quota/i.test(message)) throw new QuotaError(TRY_LATER, { detail: `Play 한도: ${message}`, status: res.status });
+  if (res.status === 401 || res.status === 403) throw new StoreError(NEED_DEV, { detail: `Play ${res.status}: admin-release 권한 확인. ${message}`, status: res.status });
+  if (!res.ok) throw new StoreError(init.method && init.method !== "GET" ? `Google Play 가 받지 않았어요. ${message}`.trim() : TRY_LATER, { detail: `Play ${res.status} ${message}`, status: res.status });
   return body;
 }
 
@@ -122,18 +134,18 @@ export async function playToken(): Promise<string> {
     return await serviceAccountToken(serviceAccountFromEnv("PLAY_RELEASE_SERVICE_ACCOUNT_JSON"), "https://www.googleapis.com/auth/androidpublisher");
   } catch (e) {
     const missing = e instanceof Error && /환경변수가 없어요/.test(e.message);
-    throw new StoreError(missing ? "출시용 Play 키가 없어요. Vercel 에 PLAY_RELEASE_SERVICE_ACCOUNT_JSON 을 넣어 주세요" : "출시용 Play 키로 로그인하지 못했어요. Vercel 의 PLAY_RELEASE_SERVICE_ACCOUNT_JSON 에 JSON 파일 내용 전체를 넣었는지 확인해 주세요");
+    throw new StoreError(NEED_DEV, { detail: missing ? "PLAY_RELEASE_SERVICE_ACCOUNT_JSON 없음" : "PLAY_RELEASE_SERVICE_ACCOUNT_JSON 을 읽지 못함" });
   }
 }
 
 /** 출시용 App Store 키 토큰 */
 export function releaseAscToken(now = new Date()): string {
   const key = releaseAscKey();
-  if (!key.keyId || !key.pem || !key.issuer) throw new StoreError("출시용 App Store 키가 없어요. Vercel 에 ASC_RELEASE_KEY_ID, ASC_RELEASE_PRIVATE_KEY 를 넣어 주세요");
+  if (!key.keyId || !key.pem || !key.issuer) throw new StoreError(NEED_DEV, { detail: "ASC_RELEASE_KEY_ID, ASC_RELEASE_PRIVATE_KEY 없음" });
   try {
     return ascToken(now, key);
   } catch {
-    throw new StoreError("출시용 App Store 키(.p8)를 읽지 못했어요. Vercel 의 ASC_RELEASE_PRIVATE_KEY 에 파일 내용 전체를 넣었는지 확인해 주세요");
+    throw new StoreError(NEED_DEV, { detail: "ASC_RELEASE_PRIVATE_KEY(.p8)를 읽지 못함" });
   }
 }
 
@@ -189,7 +201,7 @@ async function listReleases(token: string): Promise<Lists> {
   const stored = await storedLists();
   const plan = listPlan(stored, Date.now());
   if (plan === "use-stored") return stored!;
-  if (plan === "blocked") throw new QuotaError("구글이 출시 목록을 너무 자주 읽었다고 잠시 막았어요. 몇 분 뒤 다시 읽어요");
+  if (plan === "blocked") throw new QuotaError(TRY_LATER, { detail: "Play 출시 목록 한도로 쉬는 중" });
   try {
     const get = async (track: string) => ((await play(`${PLAY_API}/tracks/${track}/releases`, token)).releases ?? []) as ListedRelease[];
     const production = await get("production");
@@ -207,32 +219,77 @@ async function listReleases(token: string): Promise<Lists> {
   }
 }
 
+/** 사용자에게 실제로 나가 있는 프로덕션 빌드(Reporting API). 못 읽으면 null */
+async function readServing(): Promise<number | null> {
+  try {
+    const token = await serviceAccountToken(serviceAccountFromEnv("PLAY_RELEASE_SERVICE_ACCOUNT_JSON"), "https://www.googleapis.com/auth/playdeveloperreporting");
+    const res = await fetch(`https://playdeveloperreporting.googleapis.com/v1beta1/apps/${PLAY_PACKAGE}:fetchReleaseFilterOptions`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(TIMEOUT), cache: "no-store" });
+    if (!res.ok) return null;
+    const current = productionRelease((await res.json()) as Parameters<typeof productionRelease>[0]);
+    return current ? Number(current.code) : null;
+  } catch {
+    return null;
+  }
+}
+
+const codesOf = (r: TrackRelease) => (r.versionCodes ?? []).map(Number).filter(Number.isFinite);
+
+/** 심사 단계를 알아야 하는지: 올라간 출시가 나가 있는 빌드보다 새로울 때만(또는 나가 있는 빌드를 못 읽었을 때) */
+export function needsReviewList(production: TrackRelease[], serving: number | null): boolean {
+  if (serving === null) return true;
+  return production.some((r) => r.status !== "draft" && r.status !== "halted" && Math.max(0, ...codesOf(r)) > serving);
+}
+
+/**
+ * 편집의 트랙(올라간 빌드)과 나가 있는 빌드로 상태를 정한다. 심사 단계는 출시 목록에만 있어, 목록에 없으면 PENDING_UNKNOWN(아직 안 나감, 단계는 모름)이다.
+ * 2026-11-08 기준 심사 중인 출시가 없어 편집에 어떻게 보이는지는 실제로 보지 못했다. 첫 출시 때 콘솔과 대조한다
+ */
+export function mergeAndroid(tracks: Map<string, TrackRelease[]>, serving: number | null, listed: { production: ListedRelease[] } | null): Pick<AndroidRaw, "production" | "internal"> {
+  const lifecycleOf = (code: number) => {
+    const hit = listed?.production.find((r) => (r.activeArtifacts ?? []).some((a) => Number(a.versionCode) === code));
+    return hit?.releaseLifecycleState?.replace(/^RELEASE_LIFECYCLE_STATE_/, "") ?? "PENDING_UNKNOWN";
+  };
+  const convert = (r: TrackRelease, lifecycle: string): PlayRelease => ({
+    name: r.name ?? "",
+    codes: codesOf(r),
+    lifecycle,
+    ...(r.status ? { status: r.status } : {}),
+    ...(typeof r.userFraction === "number" ? { fraction: r.userFraction } : {}),
+    ...(r.releaseNotes?.length ? { notes: r.releaseNotes } : {}),
+  });
+  const usable = (track: string) => (tracks.get(track) ?? []).filter((r) => codesOf(r).length > 0);
+  return {
+    production: usable("production").map((r) => {
+      const code = Math.max(...codesOf(r));
+      if (r.status === "draft") return convert(r, "DRAFT");
+      if (r.status === "halted" || (serving !== null && code <= serving)) return convert(r, "PUBLISHED");
+      return convert(r, lifecycleOf(code));
+    }),
+    internal: usable("internal").map((r) => convert(r, r.status === "draft" ? "DRAFT" : "PUBLISHED")),
+  };
+}
+
 export async function readAndroid(): Promise<AndroidRaw> {
   const token = await playToken();
-  const [lists, edit] = await Promise.all([listReleases(token), readEdit(token)]);
-  const { production, internal } = lists;
-  const listedAt = new Date(lists.at).toISOString();
-
-  const merge = (rels: ListedRelease[], track: string): PlayRelease[] =>
-    rels.map((r) => {
-      const codes = (r.activeArtifacts ?? []).map((a) => Number(a.versionCode)).filter(Number.isFinite);
-      const t = edit.tracks.get(track)?.find((x) => (x.versionCodes ?? []).some((c) => codes.includes(Number(c))));
-      return {
-        name: r.releaseName ?? "",
-        codes,
-        lifecycle: (r.releaseLifecycleState ?? "").replace(/^RELEASE_LIFECYCLE_STATE_/, ""),
-        ...(t?.status ? { status: t.status } : {}),
-        ...(typeof t?.userFraction === "number" ? { fraction: t.userFraction } : {}),
-        ...(t?.releaseNotes?.length ? { notes: t.releaseNotes } : {}),
-      };
-    });
+  const [edit, serving] = await Promise.all([readEdit(token), readServing()]);
+  // 심사 단계가 담긴 출시 목록은 구글 한도가 빠듯해, 심사가 진행 중일 때만 읽는다
+  let lists: Lists | null = null;
+  if (needsReviewList(edit.tracks.get("production") ?? [], serving)) {
+    try {
+      lists = await listReleases(token);
+    } catch (e) {
+      // 나가 있는 빌드를 알면 막혀도 화면은 그린다(심사 단계만 모른다)
+      if (!(e instanceof QuotaError) || serving === null) throw e;
+    }
+  }
+  const merged = mergeAndroid(edit.tracks, serving, lists);
 
   const live = await Promise.all(LANGS.map((l) => liveTitle(l.hl, l.gl)));
   const listing = LANGS.flatMap((l, i) => {
     const approved = edit.titles.get(l.language);
     return approved ? [{ language: l.language, approved, live: live[i] }] : [];
   });
-  return { production: merge(production, "production"), internal: merge(internal, "internal"), listing, listedAt };
+  return { ...merged, listing, ...(lists ? { listedAt: new Date(lists.at).toISOString() } : {}) };
 }
 
 /** 편집을 열어 트랙(단계적 출시 비율)과 승인된 스토어 이름을 읽고, 커밋하지 않고 지운다 */

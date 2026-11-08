@@ -28,7 +28,7 @@ async function asc(req: AscRequest | { method: "GET"; path: string }, token: str
   if (!res.ok) {
     const errs = (body.errors ?? []) as { detail?: string; title?: string }[];
     // 애플이 준 사유를 그대로 보여 준다(예: 빌드가 없음, 문구가 비었음). 키나 토큰은 들어 있지 않다
-    throw new StoreError(`App Store Connect 가 받지 않았어요 (${res.status}) ${errs.map((e) => e.detail ?? e.title).filter(Boolean).join(" / ")}`.trim());
+    throw new StoreError(`App Store Connect 가 받지 않았어요. ${errs.map((e) => e.detail ?? e.title).filter(Boolean).join(" / ")}`.trim(), { status: res.status });
   }
   return body;
 }
@@ -47,9 +47,9 @@ export function guardTrack(action: "createRelease" | "rolloutSet" | "halt" | "re
   const target = releases.find((r) => (r.versionCodes ?? []).map(Number).includes(code));
   if (action === "createRelease") {
     const top = Math.max(0, ...releases.flatMap((r) => (r.versionCodes ?? []).map(Number)));
-    return top >= code ? `프로덕션에 이미 빌드 ${top} 출시가 있어요.` : null;
+    return top >= code ? `이미 빌드 ${top} 출시가 있어요.` : null;
   }
-  if (!target) return `프로덕션에 빌드 ${code} 출시가 없어요.`;
+  if (!target) return `빌드 ${code} 출시를 찾지 못했어요.`;
   const want: Record<string, string[]> = { rolloutSet: ["inProgress"], halt: ["inProgress"], resume: ["halted"], complete: ["inProgress", "halted"] };
   const word: Record<string, string> = { inProgress: "단계적 출시 중", halted: "단계적 출시가 멈춘", completed: "모두에게 나간", draft: "초안" };
   return want[action].includes(target.status ?? "") ? null : `빌드 ${code} 출시가 지금 ${word[target.status ?? ""] ?? "알 수 없는"} 상태예요.`;
@@ -63,7 +63,7 @@ export async function runAction(option: Option, input: { fraction?: number; note
     switch (option.id) {
       case "ios.renameVersion":
         await asc(ascRequests.renameVersion(p.versionId!, p.to!), token);
-        return { message: `버전 칸 이름을 ${ro(p.to!)} 바꿨어요` };
+        return { message: `버전 번호를 ${ro(p.to!)} 맞췄어요` };
       case "ios.attachBuild":
         await asc(ascRequests.attachBuild(p.versionId!, p.buildId!), token);
         return { message: "빌드를 붙였어요" };
@@ -77,7 +77,7 @@ export async function runAction(option: Option, input: { fraction?: number; note
           await asc(ascRequests.addSubmissionItem(sub, p.versionId!), token);
         } catch (e) {
           // 이미 묶음에 들어 있으면 409. 그대로 제출로 넘어간다
-          if (!(e instanceof StoreError && /\(409\)/.test(e.message))) throw e;
+          if (!(e instanceof StoreError && e.status === 409)) throw e;
         }
         await asc(ascRequests.submit(sub), token);
         return { message: "심사에 냈어요" };
@@ -111,16 +111,16 @@ export async function runAction(option: Option, input: { fraction?: number; note
     const track = (await play(`${PLAY_API}/edits/${edit.id}/tracks/production`, token)) as { releases?: TrackRelease[] };
     // 출시 목록은 몇 분 전 값일 수 있어, 편집으로 읽은 지금 프로덕션 트랙이 화면이 본 것과 맞는지 한 번 더 본다
     const mismatch = guardTrack(action, track.releases ?? [], p.code!);
-    if (mismatch) throw new StoreError(`${mismatch} 다시 읽고 확인해 주세요.`);
+    if (mismatch) throw new StoreError(`${mismatch} 화면을 새로 확인해 주세요.`);
     const releases = productionReleases(action, track.releases ?? [], { code: p.code!, fraction: input.fraction ?? p.fraction, notes: input.notes ?? p.notes });
     await play(`${PLAY_API}/edits/${edit.id}/tracks/production`, token, { method: "PUT", body: JSON.stringify({ track: "production", releases }) });
     // 구글의 검사. 여기서 걸리면 커밋하지 않는다
     await play(`${PLAY_API}/edits/${edit.id}:validate`, token, { method: "POST" });
-    if (dryRun) return { message: "Play 가 이 변경을 받아들여요(커밋하지 않았어요)", validated: true };
+    if (dryRun) return { message: "Play 가 이 변경을 받아들여요", validated: true };
     await play(`${PLAY_API}/edits/${edit.id}:commit?changesInReviewBehavior=ERROR_IF_IN_REVIEW`, token, { method: "POST" });
     committed = true;
     const done: Record<typeof action, string> = {
-      createRelease: "프로덕션 출시를 만들고 심사에 냈어요. 승인되면 게시 개요에서 게시할 수 있어요",
+      createRelease: "심사에 냈어요. 승인되면 게시 개요에서 게시할 수 있어요",
       rolloutSet: "비율을 바꿨어요",
       halt: "단계적 출시를 멈췄어요",
       resume: "단계적 출시를 이어 가요",
