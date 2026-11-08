@@ -7,7 +7,7 @@ import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { CheckIcon } from "@/components/admin/icons";
 import type { PreviewMessage } from "@/components/photobooth/BoothPreview";
 import { fetchAssets } from "@/lib/admin/assetsClient";
-import { BUILTIN_CHARACTERS, BUILTIN_FRAME, assetUrl, compatible, frameSrc, toFrameRef, type Asset, type FrameRef, type Side } from "@/lib/event/assets";
+import { BUILTIN_CHARACTERS, BUILTIN_CHARACTER_SET, BUILTIN_FRAME, assetUrl, compatible, frameSrc, toFrameRef, type Asset, type FrameRef, type Side } from "@/lib/event/assets";
 import {
   COPY,
   COPY_KEYS,
@@ -602,6 +602,7 @@ function CharactersCard({ k, set, disabled, library }: { k: KioskConfig; set: (p
         {(["cop", "thief"] as const).map((side) => {
           const items = [
             { key: null as string | null, label: BUILTIN_CHARACTERS[side].label, src: BUILTIN_CHARACTERS[side].src },
+            ...BUILTIN_CHARACTER_SET.filter((c) => c.side === side).map((c) => ({ key: c.key as string | null, label: c.label, src: c.src })),
             ...library.assets.filter((a) => a.kind === "character" && a.meta.side === side).map((a) => ({ key: a.key as string | null, label: a.label, src: assetUrl(a.key) })),
           ];
           return (

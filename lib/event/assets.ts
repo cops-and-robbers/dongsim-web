@@ -53,8 +53,32 @@ export const BUILTIN_FRAME: FrameRef = {
 };
 export const BUILTIN_CHARACTERS: Record<Side, { label: string; src: string }> = {
   cop: { label: "냥파 교수(기본)", src: "/photobooth/cop-professor.svg" },
-  thief: { label: "도둥이(기본)", src: "/photobooth/thief-runaway.svg" },
+  thief: { label: "책 든 도둥이(기본)", src: "/photobooth/thief-runaway.svg" },
 };
+
+export type BuiltinCharacter = { key: string; label: string; side: Side; src: string };
+
+/**
+ * 코드에 든 냥파(경찰)와 도둥이(도둑) 그림. 보관함에 늘 보이고 행사에서 골라 쓴다(올리지 않아도 된다).
+ * 사이트, 발표 자료, 앱 데모에 흩어져 있던 그림 중 자세가 다른 것만 모았다. 짝을 맞추기 쉽게 양쪽 자세를 비슷하게 둔다.
+ * 기본 짝(냥파 교수, 책 든 도둥이)은 "고른 게 없음"과 같아서 여기 넣지 않는다
+ */
+export const BUILTIN_CHARACTER_SET: BuiltinCharacter[] = [
+  { key: "builtin/cop-front", label: "냥파", side: "cop", src: "/characters/police.svg" },
+  { key: "builtin/cop-sparkle", label: "반짝 냥파", side: "cop", src: "/photobooth/cop.svg" },
+  { key: "builtin/cop-search", label: "돋보기 냥파", side: "cop", src: "/photobooth/cop-search.svg" },
+  { key: "builtin/cop-chase", label: "쫓는 냥파", side: "cop", src: "/characters/police-chase.svg" },
+  { key: "builtin/cop-wave", label: "손 흔드는 냥파", side: "cop", src: "/photobooth/police-wave.svg" },
+  { key: "builtin/thief-front", label: "도둥이", side: "thief", src: "/characters/robber.svg" },
+  { key: "builtin/thief-crouch", label: "웅크린 도둥이", side: "thief", src: "/photobooth/thief.svg" },
+  { key: "builtin/thief-flee", label: "치즈 든 도둥이", side: "thief", src: "/photobooth/thief-flee.svg" },
+  { key: "builtin/thief-jailed", label: "갇힌 도둥이", side: "thief", src: "/characters/robber-jailed.svg" },
+  { key: "builtin/thief-peace", label: "브이 하는 도둥이", side: "thief", src: "/photobooth/robber-peace.svg" },
+  { key: "builtin/thief-wave", label: "손 흔드는 도둥이", side: "thief", src: "/photobooth/robber-wave.svg" },
+];
+export const builtinCharacter = (key: string) => BUILTIN_CHARACTER_SET.find((c) => c.key === key);
+/** 캐릭터 그림 주소. 코드에 든 그림이면 그 경로, 올린 그림이면 사이트 주소로 */
+export const characterSrc = (key: string) => builtinCharacter(key)?.src ?? assetUrl(key);
 export const frameSrc = (f: FrameRef) => (f.key === BUILTIN_FRAME.key ? "/photobooth/frame-green.png" : assetUrl(f.key));
 
 // ── 프레임 재기 ──
