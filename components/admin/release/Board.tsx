@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useState, type ReactNode } from "react";
-import { AlertIcon, AppStoreMark, CheckIcon, ChevronDownIcon, ClockIcon, DeviceIcon, ExternalLinkIcon, GooglePlayMark } from "@/components/admin/icons";
+import { AlertIcon, AppStoreMark, ArrowRightIcon, CheckIcon, ChevronDownIcon, ClockIcon, DeviceIcon, ExternalLinkIcon, GooglePlayMark } from "@/components/admin/icons";
 import { consoleLinks } from "@/lib/release/links";
 import type { Option } from "@/lib/release/options";
 import {
@@ -25,11 +25,11 @@ import { ago, kstDay, kstShort, since } from "@/lib/release/time";
 
 // 출시 보드 화면 조각 (docs/admin-ui.md "출시").
 // 두 스토어를 같은 크기의 카드 두 장으로 나란히 두되, 카드 안의 흐름은 스토어마다 고유하게 그린다.
-// 색 원칙: 노랑은 "우리가 지금 할 수 있는 일"에만, 남(애플, 구글, 자동)을 기다리는 일은 파랑, 빨강은 반려와 읽기 실패만, 초록은 끝남.
+// 색은 적게 쓴다. 우리가 할 수 있는 일은 브랜드색, 기다리는 일과 끝난 일은 무채색에 가깝게, 빨강은 반려와 실패만. 할 수 있는 일은 경고가 아니라서 노랑과 경고 아이콘을 쓰지 않는다.
 
 const TONE: Record<Tone, { text: string; weak: string; solid: string; ring: string }> = {
-  turn: { text: "text-sd-warning", weak: "bg-sd-warning-weak", solid: "bg-sd-warning", ring: "ring-sd-warning" },
-  wait: { text: "text-sd-info", weak: "bg-sd-info-weak", solid: "bg-sd-info", ring: "ring-sd-info" },
+  turn: { text: "text-accent", weak: "bg-accent-weak", solid: "bg-accent", ring: "ring-accent" },
+  wait: { text: "text-sd-fg-muted", weak: "bg-sd-fill", solid: "bg-sd-fg-subtle", ring: "ring-sd-gray-400" },
   bad: { text: "text-sd-critical", weak: "bg-sd-critical-weak", solid: "bg-sd-critical", ring: "ring-sd-critical" },
   done: { text: "text-sd-positive", weak: "bg-sd-positive-weak", solid: "bg-sd-positive", ring: "ring-sd-positive" },
   idle: { text: "text-sd-fg-subtle", weak: "bg-sd-fill", solid: "bg-sd-gray-400", ring: "ring-sd-gray-400" },
@@ -59,14 +59,12 @@ export function ConsoleLink({ href, children, primary = false }: { href: string;
   );
 }
 
-/** 상태 알약. store 를 주면 스토어 마크와 이름을 붙인다(머리에서 두 스토어를 한 줄로 볼 때) */
-export function StatusPill({ tone, label, store }: { tone: Tone; label: string; store?: Platform }) {
+/** 상태 알약 */
+export function StatusPill({ tone, label }: { tone: Tone; label: string }) {
   const t = TONE[tone];
-  const Mark = store ? STORE[store].Mark : null;
   return (
     <span className={`inline-flex h-7 flex-none items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-semibold ${t.weak} ${tone === "idle" ? "text-sd-fg-muted" : t.text}`}>
-      {Mark ? <Mark className="size-3.5" /> : <span aria-hidden className={`size-1.5 rounded-full ${t.solid}`} />}
-      {store && <span className="text-sd-fg">{STORE[store].name}</span>}
+      <span aria-hidden className={`size-1.5 rounded-full ${t.solid}`} />
       {label}
     </span>
   );
@@ -102,9 +100,8 @@ export function StoreCard({ track, reach, now, act }: { track: Track; reach: Rea
       </header>
 
       {!track.ok ? (
-        <div className="m-5 mt-4 rounded-xl bg-sd-critical-weak px-4 py-3.5">
-          <p className="text-[14px] font-semibold text-sd-critical">{store.os} 상태를 읽지 못했어요</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-sd-fg">{track.error}</p>
+        <div className="m-5 mt-4 rounded-xl bg-sd-fill px-4 py-3.5">
+          <p className="text-[14px] leading-relaxed text-sd-fg">{track.error}</p>
           <div className="mt-2.5">
             <ConsoleLink href={track.href}>{store.console} 열기</ConsoleLink>
           </div>
@@ -113,11 +110,6 @@ export function StoreCard({ track, reach, now, act }: { track: Track; reach: Rea
         <>
           <Versions track={track} />
           {track.action ? <ActionBox action={track.action} options={track.options ?? []} act={act} /> : <Calm track={track} />}
-          {track.staleSince && (
-            <p className="mx-5 mt-2 text-[12px] text-sd-fg-subtle">
-              심사 상태는 {ago(track.staleSince, now)}에 읽은 값이에요. 구글이 출시 목록을 자주 읽지 못하게 해서 몇 분마다 새로 읽어요.
-            </p>
-          )}
           <Flow track={track} reach={reach} now={now} />
           {track.platform === "android" && track.queue && <QueueBox queue={track.queue} />}
         </>
@@ -128,7 +120,7 @@ export function StoreCard({ track, reach, now, act }: { track: Track; reach: Rea
 
 function Versions({ track }: { track: Extract<Track, { ok: true }> }) {
   const next = track.inflight;
-  const live = track.live ? `${track.live.version}${track.live.build ? ` (${track.live.build})` : ""}` : "-";
+  const live = track.live?.version ?? "-";
   return (
     <div className="flex items-end justify-between gap-3 px-5 pt-3">
       <div className="min-w-0">
@@ -151,14 +143,16 @@ function Versions({ track }: { track: Extract<Track, { ok: true }> }) {
 /** 이 스토어에서 지금 할 수 있는 일(또는 기다리는 일) */
 function ActionBox({ action, options, act }: { action: Action; options: Option[]; act: ActControl }) {
   const t = TONE[action.tone];
-  const primary = options.filter((o) => o.primary);
-  const rest = options.filter((o) => !o.primary);
+  // 반려됐을 때는 사유부터 봐야 하니 콘솔 바로가기를 앞세우고, 다시 내기는 뒤로 둔다
+  const rejected = action.tone === "bad";
+  const primary = rejected ? [] : options.filter((o) => o.primary);
+  const rest = rejected ? options : options.filter((o) => !o.primary);
   const lead = primary[0];
   return (
     <div className={`mx-5 mt-4 rounded-xl px-4 py-3.5 ${t.weak}`}>
       <div className="flex gap-2.5">
         <span className={`mt-0.5 flex-none ${t.text}`}>
-          {action.tone === "wait" ? <ClockIcon className="size-[18px]" /> : <AlertIcon className="size-[18px]" />}
+          {action.tone === "wait" ? <ClockIcon className="size-[18px]" /> : action.tone === "bad" ? <AlertIcon className="size-[18px]" /> : <ArrowRightIcon className="size-[18px]" />}
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-bold leading-snug text-sd-fg [text-wrap:balance]">{action.title}</p>
@@ -167,13 +161,18 @@ function ActionBox({ action, options, act }: { action: Action; options: Option[]
           {options.length > 0 ? (
             <>
               <div className="mt-3 flex flex-wrap items-center gap-2">
+                {rejected && action.action && (
+                  <ConsoleLink href={action.action.href} primary>
+                    {action.action.label}
+                  </ConsoleLink>
+                )}
                 {primary.map((o) => (
                   <OptionButton key={o.id} option={o} act={act} primary />
                 ))}
                 {rest.map((o) => (
                   <OptionButton key={o.id} option={o} act={act} />
                 ))}
-                {action.action && <ConsoleLink href={action.action.href}>{action.action.label}</ConsoleLink>}
+                {!rejected && action.action && <ConsoleLink href={action.action.href}>{action.action.label}</ConsoleLink>}
               </div>
               {lead && act.writable && <Assure option={lead} />}
             </>
@@ -267,7 +266,7 @@ function OptionButton({ option, act, primary = false }: { option: Option; act: A
 /** 할 일이 없을 때. 조용히 한 줄 */
 function Calm({ track }: { track: Extract<Track, { ok: true }> }) {
   return (
-    <p className="mx-5 mt-4 flex items-center gap-2 rounded-xl bg-sd-positive-weak px-4 py-3 text-[13.5px] font-medium text-sd-fg">
+    <p className="mx-5 mt-4 flex items-center gap-2 rounded-xl bg-sd-fill px-4 py-3 text-[13.5px] font-medium text-sd-fg">
       <CheckIcon className="size-4 flex-none text-sd-positive" />
       {track.live ? `${subj(track.live.version)} 모두에게 나가 있어요. 다음 빌드를 기다리는 중이에요` : "아직 나간 버전이 없어요"}
     </p>
@@ -287,12 +286,10 @@ function Node({ step, current }: { step: Step; current: boolean }) {
   if (step.tone === "idle" && !current) return <span className="relative z-[1] size-6 flex-none rounded-full border-2 border-sd-gray-400 bg-sd-surface" />;
   return (
     <span className={`relative z-[1] flex size-6 flex-none items-center justify-center rounded-full bg-sd-surface ring-2 ring-inset ${t.ring} ${t.text}`}>
-      {step.tone === "wait" ? (
-        <span className={`size-2 animate-pulse rounded-full ${t.solid}`} />
-      ) : step.tone === "idle" ? (
-        <span className={`size-1.5 rounded-full ${t.solid}`} />
-      ) : (
+      {step.tone === "bad" ? (
         <span className="text-[12px] font-bold leading-none">!</span>
+      ) : (
+        <span className={`size-2 rounded-full ${t.solid} ${step.tone === "wait" ? "animate-pulse" : ""}`} />
       )}
     </span>
   );
@@ -310,7 +307,9 @@ function WhoChip({ step }: { step: Step }) {
 
 function stepTime(s: Step, now: number): string | null {
   if (!s.at) return null;
-  return s.atKind === "since" ? since(s.at, now) : `${kstShort(s.at)} · ${ago(s.at, now)}`;
+  if (s.atKind === "checked") return `${ago(s.at, now)} 확인`;
+  // 정확한 시각은 올렸을 때(title)만. 늘 보이는 숫자를 줄인다
+  return s.atKind === "since" ? since(s.at, now) : ago(s.at, now);
 }
 
 function Flow({ track, reach, now }: { track: Extract<Track, { ok: true }>; reach: Reach; now: number }) {
@@ -335,19 +334,23 @@ function Flow({ track, reach, now }: { track: Extract<Track, { ok: true }>; reac
           const time = stepTime(s, now);
           const last = i === track.steps.length - 1;
           return (
-            <li key={s.key} className="relative flex gap-3 pb-4 last:pb-0" aria-current={current ? "step" : undefined}>
+            <li key={s.key} className="relative flex gap-3 pb-3.5 last:pb-0" aria-current={current ? "step" : undefined}>
               {!last && <span aria-hidden className={`absolute left-[11px] top-6 h-[calc(100%-24px)] w-[2px] transition-colors duration-500 ${s.tone === "done" ? "bg-sd-positive" : "bg-sd-gray-300"}`} />}
               <Node step={s} current={current} />
               <div className="min-w-0 flex-1 pt-[1px]">
                 <div className="flex items-center gap-2">
                   <p className={`text-[13.5px] font-semibold ${s.tone === "idle" && !current ? "text-sd-fg-subtle" : "text-sd-fg"}`}>{s.label}</p>
-                  <WhoChip step={s} />
-                  {time && <span className="ml-auto flex-none text-[11.5px] tabular-nums text-sd-fg-subtle">{time}</span>}
+                  {s.tone !== "done" && <WhoChip step={s} />}
+                  {time && (
+                    <span className="ml-auto flex-none text-[11.5px] tabular-nums text-sd-fg-subtle" title={s.at ? kstShort(s.at) : undefined}>
+                      {time}
+                    </span>
+                  )}
                 </div>
                 {s.state ? (
                   <p className={`mt-0.5 text-[13px] font-medium ${s.tone === "done" ? "text-sd-fg-muted" : s.tone === "idle" ? "text-sd-fg-subtle" : TONE[s.tone].text}`}>{s.state}</p>
                 ) : (
-                  s.hint && <p className="mt-0.5 text-[12.5px] text-sd-fg-subtle">{s.hint}</p>
+                  s.hint && i <= track.current + 1 && <p className="mt-0.5 text-[12.5px] text-sd-fg-subtle">{s.hint}</p>
                 )}
                 {s.key === "rollout" && track.rollout && (track.platform === "ios" ? <PhasedBar rollout={track.rollout} /> : <PercentBar rollout={track.rollout} />)}
                 {s.key === "reach" && reach && s.tone !== "idle" && <ReachChips reach={reach} />}
@@ -361,21 +364,10 @@ function Flow({ track, reach, now }: { track: Extract<Track, { ok: true }>; reac
   );
 }
 
-/** 스토어마다 흐름 아래 붙는 한 줄(EU, Play 나라별) */
+/** App Store 카드 끝의 안내. 늘 보이는 사실이라 눈에 띄는 색을 쓰지 않는다 */
 function StoreNotes({ track, reach }: { track: Extract<Track, { ok: true }>; reach: Reach }) {
-  return (
-    <>
-      {track.platform === "ios" && reach?.euBlocked && (
-        <p className="mt-4 flex gap-2 rounded-[10px] bg-sd-warning-weak px-3 py-2.5 text-[12.5px] leading-relaxed text-sd-fg">
-          <AlertIcon className="mt-0.5 size-4 flex-none text-sd-warning" />
-          <span>
-            <b className="font-semibold">EU 에서는 앱이 보이지 않아요</b> (독일 App Store 조회 기준). EU 는 판매자(Trader) 신고가 끝나야 팔 수 있어요.
-          </span>
-        </p>
-      )}
-      {track.platform === "android" && <p className="mt-4 text-[12px] text-sd-fg-subtle">Play 는 나라별로 보이는 버전을 알려 주지 않아요.</p>}
-    </>
-  );
+  if (track.platform !== "ios" || !reach?.euBlocked) return null;
+  return <p className="mt-4 rounded-[10px] bg-sd-fill px-3 py-2.5 text-[12.5px] leading-relaxed text-sd-fg-muted">EU 에서는 아직 앱이 보이지 않아요. 판매자 신고를 마치면 팔 수 있어요.</p>;
 }
 
 /** 애플 단계적 출시 7일. 자동 업데이트에만 적용된다 */
@@ -425,31 +417,24 @@ function ReachChips({ reach }: { reach: NonNullable<Reach> }) {
   );
 }
 
-/** Play 관리형 게시 대기열. 승인됐지만 아직 안 나간 것들 */
+/** 승인됐지만 아직 안 나간 변경. 있을 때만 보여 준다 */
 function QueueBox({ queue }: { queue: PublishQueue }) {
   const items = [...(queue.release ? [queue.release] : []), ...queue.listing.map((l) => `스토어 정보: ${langName(l)} 앱 이름`)];
+  if (items.length === 0) return null;
   return (
-    <div className="mt-auto border-t border-sd-hairline bg-sd-basement/60 px-5 py-4">
+    <div className="mt-auto border-t border-sd-hairline px-5 py-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[13px] font-semibold text-sd-fg">
-          게시 대기열 <span className={`tabular-nums ${items.length ? "text-sd-warning" : "text-sd-fg-subtle"}`}>{items.length}</span>
-        </p>
+        <p className="text-[13px] font-semibold text-sd-fg">승인됐지만 아직 안 나간 변경</p>
         <ConsoleLink href={consoleLinks().playPublishing}>게시 개요</ConsoleLink>
       </div>
-      {items.length > 0 && (
-        <ul className="mt-2 space-y-1">
-          {items.map((it) => (
-            <li key={it} className="flex items-center gap-2 text-[13px] text-sd-fg">
-              <span aria-hidden className="size-1.5 flex-none rounded-full bg-sd-warning" />
-              {it}
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="mt-1.5 text-[12px] leading-relaxed text-sd-fg-subtle">
-        {items.length ? "승인됐지만 아직 안 나간 변경이에요. 게시 개요에서 게시하면 나가요." : "관리형 게시라 승인된 변경은 여기 모였다가, 게시 개요에서 게시하면 나가요."}
-        {queue.listing.length > 0 && " 스토어 정보는 앱 이름만 견줘요."}
-      </p>
+      <ul className="mt-2 space-y-1">
+        {items.map((it) => (
+          <li key={it} className="text-[13px] text-sd-fg-muted">
+            {it}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1.5 text-[12px] leading-relaxed text-sd-fg-subtle">게시 개요에서 게시하면 나가요. 그 밖의 변경도 거기서 볼 수 있어요.</p>
     </div>
   );
 }
@@ -511,7 +496,7 @@ const ACTION_NAME: Record<string, string> = {
   "ios.phasedPause": "단계적 출시 멈춤",
   "ios.phasedResume": "단계적 출시 이어 가기",
   "ios.phasedComplete": "바로 모두에게",
-  "android.createRelease": "프로덕션 출시 만들고 심사에 내기",
+  "android.createRelease": "심사에 내기",
   "android.rolloutSet": "비율 올리기",
   "android.halt": "단계적 출시 멈춤",
   "android.resume": "단계적 출시 이어 가기",

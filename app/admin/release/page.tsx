@@ -8,11 +8,11 @@ import { RefreshIcon } from "@/components/admin/icons";
 import { WorldClock } from "@/components/admin/ops/WorldClock";
 import { Stagger, StaggerItem } from "@/components/admin/motion";
 import { ActionDialog } from "@/components/admin/release/ActionDialog";
-import { ActionLogList, HistoryList, Notes, StatusPill, StoreCard, type ActControl } from "@/components/admin/release/Board";
+import { ActionLogList, HistoryList, Notes, StoreCard, type ActControl } from "@/components/admin/release/Board";
 import { useToast } from "@/components/admin/Toast";
 import type { Option } from "@/lib/release/options";
 import { fetchReleaseBoard } from "@/lib/admin/releaseClient";
-import type { ReleaseBoard, Track } from "@/lib/release/board";
+import { copula, type ReleaseBoard, type Track } from "@/lib/release/board";
 import { ago } from "@/lib/release/time";
 
 // 어드민 "출시" (#229, docs/admin-ui.md "출시").
@@ -94,10 +94,10 @@ export default function ReleasePage() {
       </AnimatePresence>
       <PageHeader
         title="출시"
-        description={board ? <Balls ios={board.ios} android={board.android} /> : "두 스토어가 어디까지 왔는지, 지금 무엇을 할 수 있는지 보여 줘요."}
+        description={board ? liveLine(board.ios, board.android) : "두 스토어가 어디까지 왔는지, 지금 무엇을 할 수 있는지 보여 줘요."}
         actions={
           <div className="flex items-center gap-2.5">
-            {board && <span className="text-[12.5px] text-sd-fg-subtle">{ago(board.readAt, now) === "방금" ? "방금 읽음" : `${ago(board.readAt, now)}에 읽음`}</span>}
+            {board && <span className="text-[12.5px] text-sd-fg-subtle">{ago(board.readAt, now)} 확인</span>}
             <button
               type="button"
               onClick={() => {
@@ -108,7 +108,7 @@ export default function ReleasePage() {
               className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-sd-gray-200 px-3 text-[13px] font-semibold text-sd-fg-muted transition hover:bg-sd-gray-300 disabled:opacity-60"
             >
               <RefreshIcon className={`size-4 ${loading ? "animate-spin" : ""}`} />
-              다시 읽기
+              다시 확인
             </button>
           </div>
         }
@@ -125,7 +125,7 @@ export default function ReleasePage() {
         </div>
       ) : (
         <div className="space-y-5">
-          {error && <p className="rounded-xl bg-sd-critical-weak px-4 py-2.5 text-[13px] text-sd-fg">다시 읽지 못해 {ago(board.readAt, now)}에 읽은 값을 보여 줘요. {error}</p>}
+          {error && <p className="rounded-xl bg-sd-critical-weak px-4 py-2.5 text-[13px] text-sd-fg">새로 확인하지 못해서 {ago(board.readAt, now)}에 확인한 내용을 보여 줘요.</p>}
           <Notes notes={board.notes} />
 
           <Stagger className="grid items-stretch gap-5 lg:grid-cols-2" gap={0.08}>
@@ -152,10 +152,6 @@ export default function ReleasePage() {
               <HistoryList items={board.history} />
             </SectionCard>
           )}
-
-          <p className="pb-2 text-[12px] leading-relaxed text-sd-fg-subtle">
-            버튼은 누르기 전에 무엇이 바뀌는지 보여 주고, 누르는 순간 스토어를 다시 읽어 상태가 그대로일 때만 해요. 열어 둔 동안 1분마다 다시 읽어요. 최근 출시는 지표 일정의 출시 기록이에요.
-          </p>
         </div>
       )}
     </ScrollPage>
@@ -163,13 +159,10 @@ export default function ReleasePage() {
   );
 }
 
-/** 머리 아래 두 스토어의 공 위치. "App Store 진행 가능", "Google Play 구글 심사 중" */
-function Balls({ ios, android }: { ios: Track; android: Track }) {
-  const pill = (t: Track) => (t.ok ? <StatusPill store={t.platform} tone={t.status.tone} label={t.status.label} /> : <StatusPill store={t.platform} tone="bad" label="못 읽음" />);
-  return (
-    <span className="mt-1 flex flex-wrap items-center gap-2">
-      {pill(ios)}
-      {pill(android)}
-    </span>
-  );
+/** 머리 아래 한 줄. 지금 사용자가 받는 버전 */
+function liveLine(ios: Track, android: Track): string {
+  const v = (t: Track) => (t.ok ? t.live?.version : undefined);
+  if (!v(ios) && !v(android)) return "두 스토어가 어디까지 왔는지, 지금 무엇을 할 수 있는지 보여 줘요.";
+  const parts = [v(ios) && `iOS ${v(ios)}`, v(android) && `Android ${v(android)}`].filter(Boolean);
+  return `지금 나가 있는 버전은 ${copula(parts.join(", "))}.`;
 }

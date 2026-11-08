@@ -269,7 +269,7 @@ function CheckRow({ check }: { check: { state: "running" | "ok" | "fail"; messag
             <AlertIcon className="mt-0.5 size-4 flex-none text-sd-critical" />
           )}
           <span>
-            {check.state === "running" ? "구글 검사 중이에요. 스토어는 바뀌지 않아요." : check.state === "ok" ? "구글 검사를 통과했어요. 아직 아무것도 바뀌지 않았어요." : `구글이 받지 않아요. ${check.message ?? ""}`}
+            {check.state === "running" ? "구글 검사 중이에요. 스토어는 바뀌지 않아요." : check.state === "ok" ? "구글 검사를 통과했어요. 아직 아무것도 바뀌지 않았어요." : (check.message ?? "구글이 받지 않아요.")}
           </span>
         </motion.p>
       </AnimatePresence>
@@ -323,7 +323,7 @@ function NotesEditor({
             </label>
           );
         })}
-        <p className="text-[12px] leading-relaxed text-sd-fg-subtle">한국어는 내부 테스트 빌드에 CI 가 넣은 문구예요. 흐린 글씨는 지금 나가 있는 출시의 문구예요.</p>
+        <p className="text-[12px] leading-relaxed text-sd-fg-subtle">한국어는 개발팀이 넣어 둔 문구예요. 흐린 글씨는 지금 나가 있는 출시의 문구예요.</p>
       </div>
     </Section>
   );
