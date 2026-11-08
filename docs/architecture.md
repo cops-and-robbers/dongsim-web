@@ -9,8 +9,8 @@
 | `/` | 홈 - 게임 첫인상, 다운로드 유도 | |
 | `/game` | 게임 소개 - 규칙·기능·FAQ | 카피는 `lib/i18n/messages.ts`, `/en`·`/ja` 지원 |
 | `/blog`, `/blog/[slug]` | 팀 블로그 "이야기" | 노션 CMS, `docs/blog-system.md` |
-| `/team` | 회사 소개 - 소개·연혁·수상·QA·구성원 미리보기 | 카피는 `lib/i18n/messages.ts`, `/en`·`/ja` 지원(구성원 미리보기는 ko 전용) |
-| `/team/members` | 구성원 상세 - 멤버 그리드 + 도움 주신 분들 | 멤버 데이터는 `lib/constants.ts` |
+| `/team` | 회사 소개 - 소개·연혁·수상·QA·구성원 미리보기 | 연혁·수상은 어드민 "동심지키미 소개"(`lib/company/`), 나머지 카피는 `lib/i18n/messages.ts`, `/en`·`/ja` 지원(구성원 미리보기는 ko 전용) |
+| `/team/members` | 구성원 상세 - 멤버 그리드 + 도움 주신 분들 | 멤버 데이터는 `lib/constants.ts`, 도움 주신 분들은 어드민 "동심지키미 소개" |
 | `/design` | UI 스타일가이드 | 내부용, 내비·sitemap 미노출 |
 | `/download` | 기기 인식 스토어 리다이렉트 | 부스 QR이 가리키는 곳 |
 | `/join/[code]` | 게임 방 초대 딥링크 | `.well-known` 설정은 `next.config.ts` |
@@ -31,6 +31,7 @@
 | `/api/booth/scores` | 미니게임 리더보드 (Redis 정렬 집합, 닉네임별 최고점) |
 | `/api/admin/webgame` | 어드민 "온라인 게임": 게임 서버의 운영 상태를 비밀값으로 대신 읽고 바꿈 |
 | `/api/admin/release` | 어드민 "출시": 두 스토어의 출시 단계와 다음 할 일(읽기만, 1분 캐시). 판단은 `lib/release/board.ts`, 읽기는 `lib/release/stores.ts` |
+| `/api/admin/company`, `/api/admin/company/records`, `/people`, `/skips` | 어드민 "동심지키미 소개": 이력과 명단을 읽고 고침. 저장은 운영 배포에서만 |
 | `/api/admin/release/actions` | 어드민 출시 조작: 다시 읽고 확인한 뒤 스토어에 보냄, `release_actions` 에 기록. 고르기는 `lib/release/options.ts`, 보내기는 `lib/release/actions.ts` |
 | `/api/admin/store-page` | 어드민 "스토어 페이지": 두 스토어의 문구 읽기(1분 캐시)와 초안 저장. 칸과 점검은 `lib/store-page/fields.ts`, 스토어에는 쓰지 않음 |
 
@@ -54,6 +55,7 @@
 
 - `lib/constants.ts` - 사이트 전역 상수: 브랜드, 팀원(블로그 작성자 매핑에도 사용), 앱 링크, 게임 기능 목업 순서. 사용자에게 보이는 카피는 여기 두지 않는다
 - `lib/i18n/` - 다국어: 로케일 설정·경로 헬퍼(`config.ts`), 페이지 카피 단일 출처(`messages.ts`), 공통 UI 문구(`chrome.ts`). 상세는 `docs/i18n.md`
+- `lib/company/` - 회사 소개 이력과 고마운 분들: 계산과 검사(`model.ts`), 저장소(`server.ts`), 빌드와 로컬용 값(`fallback.ts`). 앱 크레딧 명단도 여기서 읽는다. 상세는 `docs/admin-ui.md` "회사 소개"
 - `lib/blog/` - 노션 데이터 레이어 (`notion.ts`), 작성자 매핑(`authors.ts`), 날짜 포맷(`format.ts`)
 - `lib/store-page/` - 어드민 "스토어 페이지": 칸, 한도, 자동 점검(`fields.ts`), 이미지 규격(`specs.ts`), 스토어 읽기(`read.ts`), 초안 저장(`server.ts`)
 - `lib/release/` - 어드민 "출시": 스토어 읽기(`stores.ts`), 단계와 할 수 있는 일 판단(`board.ts`), 조작 고르기(`options.ts`)와 요청 모양(`requests.ts`), 보내기(`actions.ts`), 기록(`audit.ts`), 콘솔 바로가기(`links.ts`). 상세는 `docs/admin-ui.md` "출시", "출시 조작"
