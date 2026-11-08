@@ -208,7 +208,7 @@ function recordColumns(d: RecordDraft) {
 const expireSite = () => revalidateTag(COMPANY_TAG, { expire: 0 });
 
 /**
- * 이력, 새 참가자, 참석 기록, 고친 기록을 저장소 함수 하나로 함께 저장한다(0019 company_save_record).
+ * 이력, 새 참가자, 참석 기록, 고친 기록을 저장소 함수 하나로 함께 저장한다(0021 company_save_record).
  * 나눠 쓰면 중간에 실패했을 때 이력만 남고, 늦게 도착한 요청이 다른 사람의 참가자를 덮는다
  */
 async function saveRecordRow(id: number | null, version: number, raw: RecordDraft, newNames: string[], by: string): Promise<void> {

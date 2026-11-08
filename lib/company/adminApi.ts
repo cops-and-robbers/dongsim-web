@@ -70,7 +70,7 @@ export function companyError(e: unknown): NextResponse {
   const message = e instanceof Error ? e.message : String(e);
   console.error("[company]", message);
   if (/company_|credit_people|qa_attendance/.test(message) && /does not exist|schema cache/.test(message)) {
-    return NextResponse.json({ error: "동심지키미 소개 표가 아직 없어요. supabase/migrations/0019_company_profile.sql 을 Supabase 에서 실행해 주세요." }, { status: 503 });
+    return NextResponse.json({ error: "동심지키미 소개 표가 아직 없어요. supabase/migrations/0021_company_profile.sql 을 Supabase 에서 실행해 주세요." }, { status: 503 });
   }
   return NextResponse.json({ error: "동심지키미 소개를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요." }, { status: 502 });
 }

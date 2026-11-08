@@ -512,7 +512,7 @@ Vercel 의 `NEXT_PUBLIC_PHOTOBOOTH_*` 환경 변수는 더 읽지 않아요. 지
 
 실제 사이트에 닿지 않게: 로컬(`pnpm dev`)은 MSW 가 가짜 값으로 답해요(`lib/admin-mock/company.ts`). 서버 경로는 `VERCEL_ENV === "production"` 일 때만 바꿔요. 권한은 어드민이면 모두 같아요(백엔드 등급이 하나뿐이에요).
 
-처음 연결: Supabase SQL Editor 에서 `supabase/migrations/0019_company_profile.sql` 을 한 번 실행해요. 명단 첫 값은 공개 저장소에 남지 않게 SQL Editor 에 따로 넣어요. **머지하기 전에 해요.** 표가 없으면 소개 페이지는 이전 페이지로 버티지만, 새로 빌드할 때 명단이 비어요.
+처음 연결: Supabase SQL Editor 에서 `supabase/migrations/0021_company_profile.sql` 을 한 번 실행해요. 명단 첫 값은 공개 저장소에 남지 않게 SQL Editor 에 따로 넣어요. **머지하기 전에 해요.** 표가 없으면 소개 페이지는 이전 페이지로 버티지만, 새로 빌드할 때 명단이 비어요.
 
 ## 출시 (`app/admin/release`, #229)
 
