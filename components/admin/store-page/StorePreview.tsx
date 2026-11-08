@@ -71,6 +71,7 @@ const Icon = ({ d, size = 24, color = "currentColor", width = 2 }: { d: string; 
 );
 
 const PATH = {
+  download: "M12 4v11M7 11l5 5 5-5M5 20h14",
   back: "M15 5l-7 7 7 7",
   share: "M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7",
   chevron: "M9 5l7 7-7 7",
@@ -224,6 +225,13 @@ function PlayVideo({ url, on }: { url: string | undefined; on: boolean }) {
   );
 }
 
+/** 설치 전 화면의 왼쪽 칸. 기기마다 다르고 읽어 올 공개 경로가 없어 캡처의 값을 그대로 쓴다 */
+const PLAY_SIZE = "26MB";
+
+function PlayStat({ center, children }: { center: number; children: ReactNode }) {
+  return <div style={{ position: "absolute", left: center, top: 0, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", whiteSpace: "nowrap" }}>{children}</div>;
+}
+
 function PlayPage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
   return (
     <div style={{ background: "#fff", paddingBottom: 130 }}>
@@ -235,16 +243,21 @@ function PlayPage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null 
           <p style={{ marginTop: 6, fontSize: 12.7, lineHeight: "18px", fontWeight: 500, color: PLAY.blue }}>{art.developer}</p>
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-around", margin: "22px 24px 0", textAlign: "center", color: PLAY.gray, fontSize: 12.5, lineHeight: "20px" }}>
-        <div>
+      <div style={{ position: "relative", height: 40, marginTop: 22, color: PLAY.gray, fontSize: 12.5, lineHeight: "20px" }}>
+        <PlayStat center={71}>
+          <Icon d={PATH.download} size={16} color={PLAY.text} />
+          <div>{PLAY_SIZE}</div>
+        </PlayStat>
+        <span style={{ position: "absolute", left: 133, top: 8, height: 24, width: 1, background: PLAY.line }} />
+        <PlayStat center={196}>
           <div style={{ fontWeight: 600, color: "#f29900" }}>⑫</div>
           <div>12세 이상</div>
-        </div>
-        <div style={{ width: 1, background: PLAY.line, margin: "6px 0" }} />
-        <div>
+        </PlayStat>
+        <span style={{ position: "absolute", left: 259, top: 8, height: 24, width: 1, background: PLAY.line }} />
+        <PlayStat center={322}>
           <div style={{ fontWeight: 700, color: PLAY.text }}>{art.downloads ?? "-"}</div>
           <div>다운로드</div>
-        </div>
+        </PlayStat>
       </div>
       <div style={{ margin: "32px 24px 0", height: 40, borderRadius: 20, background: PLAY.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 500 }}>설치</div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "28px 24px 0" }}>
