@@ -11,11 +11,12 @@ const v327: IosVersion = {
   version: "3.2.7",
   state: "READY_FOR_DISTRIBUTION",
   createdAt: "2026-11-01T12:44:44Z",
+  releaseType: "MANUAL",
   build: { number: "382", state: "VALID", uploadedAt: "2026-11-01T12:13:21Z" },
   phased: null,
 };
 const v326: IosVersion = { ...v327, id: "v326", version: "3.2.6", state: "REPLACED_WITH_NEW_VERSION", createdAt: "2026-10-27T07:21:39Z", build: { number: "381", state: "VALID", uploadedAt: "2026-10-27T14:05:15Z" } };
-const v328: IosVersion = { id: "v328", version: "3.2.8", state: "PREPARE_FOR_SUBMISSION", createdAt: "2026-11-03T08:49:26Z", build: null, phased: null };
+const v328: IosVersion = { id: "v328", version: "3.2.8", state: "PREPARE_FOR_SUBMISSION", createdAt: "2026-11-03T08:49:26Z", releaseType: "MANUAL", build: null, phased: null };
 // 실제로 가장 최근 빌드 392 안의 버전은 3.2.17 이었다(버전 칸 3.2.8 과 다름). 상황 예시에서는 칸 이름과 맞춘 빌드를 붙인다
 const build392 = { number: "392", state: "VALID", uploadedAt: "2026-11-07T15:48:56Z", version: "3.2.17" };
 const attached = { ...build392, version: "3.2.8" };

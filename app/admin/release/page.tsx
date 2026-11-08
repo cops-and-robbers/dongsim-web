@@ -3,15 +3,15 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ErrorBlock, PageHeader, ScrollPage, SectionCard } from "@/components/admin/Parts";
-import { DeviceIcon, RefreshIcon } from "@/components/admin/icons";
+import { RefreshIcon } from "@/components/admin/icons";
 import { WorldClock } from "@/components/admin/ops/WorldClock";
-import { HistoryList, NextCard, ReachCard, TrackRow } from "@/components/admin/release/Board";
+import { HistoryList, Notes, StatusPill, StoreCard } from "@/components/admin/release/Board";
 import { fetchReleaseBoard } from "@/lib/admin/releaseClient";
 import type { ReleaseBoard, Track } from "@/lib/release/board";
 import { ago } from "@/lib/release/time";
 
 // 어드민 "출시" (#229, docs/admin-ui.md "출시").
-// 두 스토어가 어디까지 왔는지와 지금 가장 먼저 할 일 하나. 읽기만 하고 스토어에 아무것도 바꾸지 않는다.
+// 두 스토어는 출시하는 방식이 달라서 같은 크기의 카드 두 장에 각자의 흐름으로 그린다. 읽기만 하고 스토어에 아무것도 바꾸지 않는다.
 // 열어 둔 동안 1분마다 다시 읽는다(서버도 1분 캐시라 스토어 API 를 더 부르지 않는다).
 
 const DevScenario = process.env.NODE_ENV === "development" ? dynamic(() => import("@/components/admin/release/DevScenario")) : () => null;
@@ -66,7 +66,7 @@ export default function ReleasePage() {
     <ScrollPage>
       <PageHeader
         title="출시"
-        description={board ? <LiveLine ios={board.ios} android={board.android} /> : "두 스토어가 어디까지 왔는지와 다음 할 일을 보여 줘요."}
+        description={board ? <Balls ios={board.ios} android={board.android} /> : "두 스토어가 어디까지 왔는지, 지금 무엇을 할 수 있는지 보여 줘요."}
         actions={
           <div className="flex items-center gap-2.5">
             {board && <span className="text-[12.5px] text-sd-fg-subtle">{ago(board.readAt, now) === "방금" ? "방금 읽음" : `${ago(board.readAt, now)}에 읽음`}</span>}
@@ -98,23 +98,16 @@ export default function ReleasePage() {
       ) : (
         <div className="space-y-5">
           {error && <p className="rounded-xl bg-sd-critical-weak px-4 py-2.5 text-[13px] text-sd-fg">다시 읽지 못해 {ago(board.readAt, now)}에 읽은 값을 보여 줘요. {error}</p>}
-          <NextCard next={board.next} notes={board.notes} />
+          <Notes notes={board.notes} />
 
-          <SectionCard title="진행 상황" flush>
-            <div className="divide-y divide-sd-hairline">
-              <TrackRow track={board.ios} now={now} />
-              <TrackRow track={board.android} now={now} />
-            </div>
-          </SectionCard>
-
-          <div className="grid gap-5 lg:grid-cols-2">
-            <SectionCard title="사용자에게 보이나" flush>
-              <ReachCard reach={board.reach} ios={board.ios} />
-            </SectionCard>
-            <SectionCard title="지금 내면">
-              <WorldClock at={now} />
-            </SectionCard>
+          <div className="grid items-stretch gap-5 lg:grid-cols-2">
+            <StoreCard track={board.ios} reach={board.reach} now={now} />
+            <StoreCard track={board.android} reach={board.reach} now={now} />
           </div>
+
+          <SectionCard title="지금 내면">
+            <WorldClock at={now} />
+          </SectionCard>
 
           {board.history.length > 0 && (
             <SectionCard title="최근 출시" flush>
@@ -131,20 +124,13 @@ export default function ReleasePage() {
   );
 }
 
-function LiveLine({ ios, android }: { ios: Track; android: Track }) {
-  const v = (t: Track) => (t.ok ? (t.live?.version ?? "-") : "못 읽음");
+/** 머리 아래 두 스토어의 공 위치. "App Store 진행 가능", "Google Play 구글 심사 중" */
+function Balls({ ios, android }: { ios: Track; android: Track }) {
+  const pill = (t: Track) => (t.ok ? <StatusPill store={t.platform} tone={t.status.tone} label={t.status.label} /> : <StatusPill store={t.platform} tone="bad" label="못 읽음" />);
   return (
-    <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-0.5">
-      지금 나가 있는 버전
-      <span className="inline-flex items-center gap-1 font-semibold text-sd-fg-muted">
-        <DeviceIcon type="IOS" className="size-3.5" />
-        {v(ios)}
-      </span>
-      <span aria-hidden>·</span>
-      <span className="inline-flex items-center gap-1 font-semibold text-sd-fg-muted">
-        <DeviceIcon type="ANDROID" className="size-3.5" />
-        {v(android)}
-      </span>
+    <span className="mt-1 flex flex-wrap items-center gap-2">
+      {pill(ios)}
+      {pill(android)}
     </span>
   );
 }

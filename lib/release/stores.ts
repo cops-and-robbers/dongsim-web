@@ -46,7 +46,7 @@ export async function readIos(now = new Date()): Promise<IosRaw> {
   }
   const app = APPSTORE_APP_ID;
   const [versions, builds, subs] = await Promise.all([
-    asc(`/apps/${app}/appStoreVersions?filter[platform]=IOS&limit=6&include=build,appStoreVersionPhasedRelease&fields[appStoreVersions]=versionString,appVersionState,createdDate,earliestReleaseDate,build,appStoreVersionPhasedRelease&fields[builds]=version,processingState,uploadedDate&fields[appStoreVersionPhasedReleases]=phasedReleaseState,currentDayNumber,startDate`, token),
+    asc(`/apps/${app}/appStoreVersions?filter[platform]=IOS&limit=6&include=build,appStoreVersionPhasedRelease&fields[appStoreVersions]=versionString,appVersionState,releaseType,createdDate,earliestReleaseDate,build,appStoreVersionPhasedRelease&fields[builds]=version,processingState,uploadedDate&fields[appStoreVersionPhasedReleases]=phasedReleaseState,currentDayNumber,startDate`, token),
     asc(`/builds?filter[app]=${app}&sort=-uploadedDate&limit=1&include=preReleaseVersion&fields[builds]=version,processingState,uploadedDate,preReleaseVersion&fields[preReleaseVersions]=version`, token),
     asc(`/reviewSubmissions?filter[app]=${app}&filter[platform]=IOS&limit=5&fields[reviewSubmissions]=state,submittedDate`, token),
   ]);
@@ -64,6 +64,7 @@ export async function readIos(now = new Date()): Promise<IosRaw> {
       version: String(a.versionString ?? ""),
       state: String(a.appVersionState ?? ""),
       createdAt: iso(a.createdDate),
+      releaseType: a.releaseType ? String(a.releaseType) : null,
       earliestReleaseDate: a.earliestReleaseDate ? iso(a.earliestReleaseDate) : null,
       build: b ? toBuild(inc.get(`${b.type}:${b.id}`)) : null,
       phased: pa ? { state: String(pa.phasedReleaseState ?? ""), day: Number(pa.currentDayNumber ?? 0), startDate: pa.startDate ? iso(pa.startDate) : null } : null,
