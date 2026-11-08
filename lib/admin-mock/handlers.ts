@@ -7,7 +7,7 @@ import { mockApplyWebgame, mockWebgame, mockWebgameMonitor } from "./webgame";
 import { mockEvent, mockEvents, mockSaveEvent, mockSaveMinigame } from "./events";
 import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
 import { mockRelease, mockRunAction } from "./release";
-import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockStorePage } from "./storePage";
+import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockSend, mockStorePage } from "./storePage";
 import {
   queryUsers,
   getUser,
@@ -448,6 +448,11 @@ export const handlers = [
   http.put("/api/admin/store-page", async ({ request }) => {
     await delay(300);
     return HttpResponse.json(mockSaveDraft((await request.json()) as Parameters<typeof mockSaveDraft>[0]));
+  }),
+
+  http.post("/api/admin/store-page/send", async ({ request }) => {
+    await delay(500);
+    return HttpResponse.json(mockSend((await request.json()) as Parameters<typeof mockSend>[0]));
   }),
 
   http.post("/api/admin/store-page/images", async ({ request }) => {

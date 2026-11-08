@@ -58,7 +58,7 @@ function Shots({ art, width, height, gap, left, radius, first }: { art: Art; wid
     <div style={{ display: "flex", gap, paddingLeft: left, overflow: "hidden" }}>
       {first}
       {urls.map((u, i) => (
-        <Img key={u ?? i} src={u} style={{ width, height, flex: "none", objectFit: "cover", borderRadius: radius }} />
+        <Img key={`${i}-${u}`} src={u} style={{ width, height, flex: "none", objectFit: "cover", borderRadius: radius }} />
       ))}
     </div>
   );

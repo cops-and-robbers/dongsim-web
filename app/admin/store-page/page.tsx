@@ -1,12 +1,15 @@
 "use client";
 
-import { MotionConfig, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { ErrorBlock, PageHeader, ScrollPage } from "@/components/admin/Parts";
 import { AppStoreMark, GooglePlayMark, RefreshIcon } from "@/components/admin/icons";
 import { PreviewPane } from "@/components/admin/ops/PreviewPane";
 import { FieldEditor, OfficialLink } from "@/components/admin/store-page/FieldEditor";
 import { ImageBoard } from "@/components/admin/store-page/ImageBoard";
+import { SendDialog } from "@/components/admin/store-page/SendDialog";
+import { useToast } from "@/components/admin/Toast";
+import { blockers, changesOf } from "@/lib/store-page/send";
 import { SpecGuide } from "@/components/admin/store-page/SpecGuide";
 import { StorePreview } from "@/components/admin/store-page/StorePreview";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
@@ -67,6 +70,8 @@ export default function StorePageScreen() {
   const [failed, setFailed] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [imageDrafts, setImageDrafts] = useState<Record<string, ImageDraft>>({});
+  const [sending, setSending] = useState(false);
+  const toast = useToast();
   const timers = useRef<Record<string, number>>({});
   const seq = useRef(0);
 
@@ -192,6 +197,13 @@ export default function StorePageScreen() {
 
   const status = !data?.writable ? data?.readOnlyReason : failed ? failed : saving > 0 ? "저장하는 중이에요" : savedAt ? "초안에 저장했어요" : null;
 
+  // 저장이 끝난 초안만 보낸다. 고치는 중인 글자는 저장된 뒤에 보낼 수 있다
+  const saved = Object.values(drafts);
+  const pageOk = page?.ok ? page : null;
+  const changes = pageOk ? changesOf(platform, pageOk.langs, saved) : [];
+  const blocked = pageOk ? blockers(platform, pageOk.langs, changes) : [];
+  const nextVersion = ios?.ok ? ios.nextVersion : null;
+
   const storeTabs = (
     <div className="flex flex-wrap items-center gap-2.5">
                 <Tabs<Platform>
@@ -216,9 +228,26 @@ export default function StorePageScreen() {
   return (
     <MotionConfig reducedMotion="user">
       <ScrollPage>
+        <AnimatePresence>
+          {sending && (
+            <SendDialog
+              platform={platform}
+              changes={changes}
+              version={platform === "ios" ? nextVersion : null}
+              onClose={() => setSending(false)}
+              onDone={(message) => {
+                setSending(false);
+                setEdits({});
+                toast(message);
+                setLoading(true);
+                load(true);
+              }}
+            />
+          )}
+        </AnimatePresence>
         <PageHeader
           title="스토어 페이지"
-          description={total > 0 ? `고친 칸이 ${total}개 있어요. 초안으로만 저장되고 스토어에는 아직 보내지 않아요.` : "문구를 고치면 스토어에서 어떻게 보일지 바로 볼 수 있어요. 초안으로만 저장돼요."}
+          description={total > 0 ? `고친 칸이 ${total}개 있어요. 보내기 전까지 스토어는 바뀌지 않아요.` : "문구를 고치면 스토어에서 어떻게 보일지 바로 볼 수 있어요. 보내기 전까지 스토어는 바뀌지 않아요."}
           actions={
             <div className="flex items-center gap-2.5">
               {status && <span className={`text-[12.5px] ${failed ? "text-sd-critical" : "text-sd-fg-subtle"}`}>{status}</span>}
@@ -269,6 +298,14 @@ export default function StorePageScreen() {
 
               {page?.ok ? (
                 <>
+                  {changes.length > 0 && data.writable && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sd-line bg-sd-surface px-4 py-3">
+                      <p className="text-[13.5px] text-sd-fg">{blocked.length ? blocked[0] : `${changes.length}칸을 스토어로 보낼 수 있어요.`}</p>
+                      <button type="button" disabled={blocked.length > 0 || saving > 0} onClick={() => setSending(true)} className="h-9 flex-none rounded-[10px] bg-accent px-3.5 text-[13.5px] font-semibold text-accent-fg transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">
+                        {platform === "ios" ? "App Store로 보내기" : "Google Play로 보내기"}
+                      </button>
+                    </div>
+                  )}
                   <p className="text-[13px] leading-relaxed text-sd-fg-muted">
                     {platform === "ios"
                       ? ios?.ok && ios.nextVersion
