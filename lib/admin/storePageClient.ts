@@ -69,3 +69,13 @@ export async function uploadStoreFile(platform: Platform, slot: ImageSlot, file:
     });
   return { kind: "new", key: out.key, url: out.url || URL.createObjectURL(file), width: info.width, height: info.height, bytes: file.size, type: file.type, name: file.name, seconds: info.seconds };
 }
+
+export type SendResult = { message: string; failed?: string };
+
+/** 초안을 스토어로 보낸다. dryRun 이면 스토어를 바꾸지 않고 확인만 한다 */
+export async function sendStoreDrafts(body: { platform: Platform; expect: string; confirm?: string; dryRun?: boolean }): Promise<SendResult> {
+  const res = await send("/api/admin/store-page/send", { method: "POST", body: JSON.stringify(body) });
+  const out = (await res.json().catch(() => ({}))) as SendResult & { error?: string };
+  if (!res.ok) throw new Error(out.error ?? "보내지 못했어요. 잠시 뒤 다시 시도해 주세요.");
+  return out;
+}

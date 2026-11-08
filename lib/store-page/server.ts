@@ -43,7 +43,7 @@ type Row = { platform: Draft["platform"]; lang: Lang; field: FieldId; value: str
 const toDraft = (r: Row): Draft => ({ platform: r.platform, lang: r.lang, field: r.field, value: r.value, updatedBy: r.updated_by, updatedAt: r.updated_at });
 
 /** 표가 아직 없으면(SQL 을 실행하기 전) null */
-async function readDrafts(): Promise<Draft[] | null> {
+export async function readDrafts(): Promise<Draft[] | null> {
   try {
     const { data, error } = await db().from(TABLE).select("platform,lang,field,value,updated_by,updated_at");
     if (error) throw new Error(error.message);
@@ -96,6 +96,14 @@ export async function storePage(): Promise<StorePage> {
   const production = process.env.VERCEL_ENV === "production";
   const writable = production && drafts !== null && imageDrafts !== null;
   return { ...stores, drafts: drafts ?? [], imageDrafts: imageDrafts ?? [], writable, readOnlyReason: writable ? undefined : production ? "지금은 저장할 수 없어요. 개발 담당자에게 알려 주세요." : "초안은 운영 어드민에서만 저장돼요." };
+}
+
+/** 스토어로 보낸 칸의 초안을 지운다 */
+export async function deleteDrafts(platform: Draft["platform"], changes: { lang: Lang; field: FieldId }[]): Promise<void> {
+  for (const c of changes) {
+    const { error } = await db().from(TABLE).delete().match({ platform, lang: c.lang, field: c.field });
+    if (error) throw new Error(error.message);
+  }
 }
 
 export type SaveInput = { platform: Draft["platform"]; lang: Lang; field: FieldId; value: string | null; expect: string | null };

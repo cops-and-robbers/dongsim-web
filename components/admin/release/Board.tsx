@@ -593,6 +593,8 @@ const ACTION_NAME: Record<string, string> = {
   "ios.phasedPause": "단계적 출시 멈춤",
   "ios.phasedResume": "단계적 출시 이어 가기",
   "ios.phasedComplete": "바로 모두에게",
+  "ios.storeText": "스토어 문구 보내기",
+  "android.storeText": "스토어 문구 보내기",
   "android.createRelease": "심사에 내기",
   "android.rolloutSet": "비율 올리기",
   "android.halt": "단계적 출시 멈춤",

@@ -86,3 +86,10 @@ export function mockSaveImageDraft(body: { platform: Platform; lang: Lang; slot:
 export function mockPresign(body: { slot: string; type: string }): { uploadUrl: string; url: string; key: string } {
   return { uploadUrl: "", url: "", key: `store/${body.slot}/${Date.now()}-abcdef12.${extOf(body.type) ?? "png"}` };
 }
+
+/** 로컬에서 누른 보내기. 스토어에 닿지 않고 성공한 것처럼 답하고 그 스토어의 초안을 지운다 */
+export function mockSend(body: { platform: Platform; dryRun?: boolean }): { message: string } {
+  if (body.dryRun) return { message: "보낼 수 있어요(로컬 가짜)." };
+  drafts = drafts.filter((d) => d.platform !== body.platform);
+  return { message: "로컬 가짜: 보낸 것처럼 답했어요. 실제 스토어는 바뀌지 않아요." };
+}
