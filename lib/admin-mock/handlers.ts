@@ -8,6 +8,7 @@ import { mockEvent, mockEvents, mockSaveEvent, mockSaveMinigame } from "./events
 import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
 import { mockRelease, mockRunAction } from "./release";
 import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockSend, mockStorePage } from "./storePage";
+import { mockInbox, mockPatchReview, mockReply, mockWaiting } from "./reviews";
 import {
   queryUsers,
   getUser,
@@ -437,6 +438,22 @@ export const handlers = [
     await delay(900);
     const { status, body } = mockRunAction((await request.json()) as { id?: string; dryRun?: boolean });
     return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  // 리뷰. 로컬에서는 실제 스토어와 Supabase 에 닿지 않는다
+  http.get("/api/admin/reviews", async ({ request }) => {
+    await delay(300);
+    return HttpResponse.json(new URL(request.url).searchParams.get("count") ? mockWaiting() : mockInbox());
+  }),
+
+  http.patch("/api/admin/reviews", async ({ request }) => {
+    await delay(200);
+    return HttpResponse.json(mockPatchReview((await request.json()) as Parameters<typeof mockPatchReview>[0]));
+  }),
+
+  http.post("/api/admin/reviews", async ({ request }) => {
+    await delay(500);
+    return HttpResponse.json(mockReply((await request.json()) as Parameters<typeof mockReply>[0]));
   }),
 
   // 스토어 페이지. 로컬에서는 실제 스토어와 Supabase 에 닿지 않는다
