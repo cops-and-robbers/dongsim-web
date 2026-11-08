@@ -42,6 +42,19 @@ async function openSubmission(token: string): Promise<string | null> {
 
 export type RunResult = { message: string; validated?: boolean };
 
+/** 편집으로 읽은 지금 프로덕션 트랙에서 그 조작을 해도 되는지. 안 되면 이유 */
+export function guardTrack(action: "createRelease" | "rolloutSet" | "halt" | "resume" | "complete", releases: TrackRelease[], code: number): string | null {
+  const target = releases.find((r) => (r.versionCodes ?? []).map(Number).includes(code));
+  if (action === "createRelease") {
+    const top = Math.max(0, ...releases.flatMap((r) => (r.versionCodes ?? []).map(Number)));
+    return top >= code ? `프로덕션에 이미 빌드 ${top} 출시가 있어요.` : null;
+  }
+  if (!target) return `프로덕션에 빌드 ${code} 출시가 없어요.`;
+  const want: Record<string, string[]> = { rolloutSet: ["inProgress"], halt: ["inProgress"], resume: ["halted"], complete: ["inProgress", "halted"] };
+  const word: Record<string, string> = { inProgress: "단계적 출시 중", halted: "단계적 출시가 멈춘", completed: "모두에게 나간", draft: "초안" };
+  return want[action].includes(target.status ?? "") ? null : `빌드 ${code} 출시가 지금 ${word[target.status ?? ""] ?? "알 수 없는"} 상태예요.`;
+}
+
 export async function runAction(option: Option, input: { fraction?: number; notes?: { language: string; text: string }[] }, dryRun: boolean): Promise<RunResult> {
   const p = option.params;
   if (option.platform === "ios") {
@@ -96,6 +109,9 @@ export async function runAction(option: Option, input: { fraction?: number; note
   let committed = false;
   try {
     const track = (await play(`${PLAY_API}/edits/${edit.id}/tracks/production`, token)) as { releases?: TrackRelease[] };
+    // 출시 목록은 몇 분 전 값일 수 있어, 편집으로 읽은 지금 프로덕션 트랙이 화면이 본 것과 맞는지 한 번 더 본다
+    const mismatch = guardTrack(action, track.releases ?? [], p.code!);
+    if (mismatch) throw new StoreError(`${mismatch} 다시 읽고 확인해 주세요.`);
     const releases = productionReleases(action, track.releases ?? [], { code: p.code!, fraction: input.fraction ?? p.fraction, notes: input.notes ?? p.notes });
     await play(`${PLAY_API}/edits/${edit.id}/tracks/production`, token, { method: "PUT", body: JSON.stringify({ track: "production", releases }) });
     // 구글의 검사. 여기서 걸리면 커밋하지 않는다
