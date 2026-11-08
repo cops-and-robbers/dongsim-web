@@ -13,7 +13,7 @@ import type { FieldId, Platform } from "./fields.ts";
 export const STAGE_WIDTH: Record<Platform, number> = { ios: 393, android: 384 };
 export const PREVIEW_FONT = '"Pretendard Variable", Pretendard, sans-serif';
 
-export type Surface = "page" | "search";
+export type Surface = "page" | "search" | "details";
 
 export type Slot = {
   surface: Surface;
@@ -43,7 +43,11 @@ export const SLOTS: Record<Platform, Partial<Record<FieldId, Slot[]>>> = {
       { surface: "page", where: "상세 페이지", width: 238, fontSize: 22.1, lineHeight: 30, fontWeight: 500, maxLines: null, confirmed: false, preLine: false },
       { surface: "search", where: "검색 결과", width: 219, fontSize: 13, lineHeight: 23.5, fontWeight: 400, maxLines: null, confirmed: false, preLine: false },
     ],
-    shortDescription: [{ surface: "page", where: "앱 정보", width: 335.6, fontSize: 22.15, lineHeight: 32, fontWeight: 400, maxLines: null, confirmed: false, preLine: false }],
+    shortDescription: [
+      { surface: "page", where: "앱 정보", width: 335.6, fontSize: 22.15, lineHeight: 32, fontWeight: 400, maxLines: null, confirmed: false, preLine: false },
+      { surface: "details", where: "세부정보", width: 335.6, fontSize: 13.25, lineHeight: 21, fontWeight: 400, maxLines: null, confirmed: true, preLine: false },
+    ],
+    fullDescription: [{ surface: "details", where: "세부정보", width: 335.6, fontSize: 13.25, lineHeight: 21, fontWeight: 400, maxLines: null, confirmed: true, preLine: true }],
   },
 };
 
@@ -66,7 +70,7 @@ export const OVERFLOW_ROWS: Record<Platform, { field: string; where: string; rul
   ],
   android: [
     { field: "간단한 설명", where: "앱 정보", rule: "큰 글자로 보여요. 37자 정도면 2줄이에요", seen: true },
-    { field: "자세한 설명", where: "앱 정보", rule: "첫 화면에는 안 보이고 화살표를 누르면 보여요", seen: true },
+    { field: "자세한 설명", where: "앱 정보", rule: "첫 화면에는 안 보이고, 화살표를 누르면 세부정보에 간단한 설명 다음으로 끝까지 보여요", seen: true },
     { field: "앱 이름", where: "상세 페이지", rule: "개발자 이름 위에 보여요", seen: false },
     { field: "앱 이름", where: "검색 결과", rule: "개발자 이름 위에 보여요", seen: false },
   ],

@@ -98,7 +98,9 @@ function GetButton() {
   return <span style={{ flex: "none", background: "#eef0f5", color: IOS.blue, borderRadius: 999, padding: "6px 22px", fontSize: 15, fontWeight: 700 }}>받기</span>;
 }
 
-function AppStorePage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
+type ScreenProps = { v: Values; art: Art; spot: FieldId | null; go: (m: Surface) => void };
+
+function AppStorePage({ v, art, spot }: ScreenProps) {
   const circle: CSSProperties = { width: 44, height: 44, borderRadius: 22, background: "rgba(255,255,255,.9)", boxShadow: "0 1px 6px rgba(0,0,0,.12)", display: "flex", alignItems: "center", justifyContent: "center" };
   const stat = (label: string, big: ReactNode, small: ReactNode, last = false) => (
     <div style={{ width: 105, flex: "none", textAlign: "center", borderRight: last ? "none" : `1px solid ${IOS.line}` }}>
@@ -162,7 +164,7 @@ function AppStorePage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | n
   );
 }
 
-function AppStoreSearch({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
+function AppStoreSearch({ v, art, spot }: ScreenProps) {
   return (
     <div style={{ background: "#fff", minHeight: "100%", paddingBottom: 110 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 20px 0" }}>
@@ -232,7 +234,7 @@ function PlayStat({ center, children }: { center: number; children: ReactNode })
   return <div style={{ position: "absolute", left: center, top: 0, transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", whiteSpace: "nowrap" }}>{children}</div>;
 }
 
-function PlayPage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
+function PlayPage({ v, art, spot, go }: ScreenProps) {
   return (
     <div style={{ background: "#fff", paddingBottom: 130 }}>
       <PlayBar />
@@ -262,9 +264,9 @@ function PlayPage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null 
       <div style={{ margin: "32px 24px 0", height: 40, borderRadius: 20, background: PLAY.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 500 }}>설치</div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "28px 24px 0" }}>
         <p style={{ fontSize: 16.3, lineHeight: "24px", fontWeight: 500, color: PLAY.text }}>앱 정보</p>
-        <span style={{ width: 28, height: 32, borderRadius: 16, background: PLAY.tint, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button type="button" aria-label="세부정보 보기" onClick={() => go("details")} style={{ width: 28, height: 32, borderRadius: 16, border: 0, cursor: "pointer", background: PLAY.tint, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Icon d={PATH.arrow} size={16} color={PLAY.text} />
-        </span>
+        </button>
       </div>
       <div style={{ padding: "26px 24px 0" }}>
         <Text platform="android" field="shortDescription" surface="page" value={v.shortDescription ?? ""} spot={spot} color={PLAY.gray} />
@@ -277,7 +279,7 @@ function PlayPage({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null 
   );
 }
 
-function PlaySearch({ v, art, spot }: { v: Values; art: Art; spot: FieldId | null }) {
+function PlaySearch({ v, art, spot }: ScreenProps) {
   // 앱에서 검색 결과의 화살표를 연 화면이 기본이다. 영상과 스크린샷까지 보여서 고칠 때 더 쓸모 있다
   const [open, setOpen] = useState(true);
   const chip: CSSProperties = { flex: "none", height: 32, lineHeight: "30px", padding: "0 14px", border: `1px solid ${PLAY.line}`, borderRadius: 9, fontSize: 13, color: PLAY.gray };
@@ -329,6 +331,33 @@ function PlaySearch({ v, art, spot }: { v: Values; art: Art; spot: FieldId | nul
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** 앱 정보의 화살표를 누르면 나오는 세부정보. 간단한 설명 다음에 빈 줄 하나를 두고 자세한 설명이 끝까지 이어진다 */
+function PlayDetails({ v, art, spot, go }: ScreenProps) {
+  return (
+    <div style={{ background: "#fff", minHeight: "100%", paddingBottom: 60 }}>
+      <div style={{ display: "flex", alignItems: "center", height: 50, borderBottom: `1px solid ${PLAY.line}`, padding: "0 0 0 20px" }}>
+        <button type="button" aria-label="앱 상세로 돌아가기" onClick={() => go("page")} style={{ border: 0, background: "none", padding: 0, cursor: "pointer", display: "flex" }}>
+          <Icon d={PATH.arrowBack} size={20} color={PLAY.text} />
+        </button>
+        <Img src={art.icon} style={{ width: 31, height: 31, borderRadius: 7, flex: "none", marginLeft: 18 }} />
+        <div style={{ marginLeft: 22, minWidth: 0 }}>
+          <p style={{ fontSize: 14.9, lineHeight: "20px", fontWeight: 500, color: PLAY.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{v.title}</p>
+          <p style={{ fontSize: 11.2, lineHeight: "15px", color: PLAY.gray }}>세부정보</p>
+        </div>
+      </div>
+      <div style={{ padding: "21px 24px 0" }}>
+        <p style={{ fontSize: 14.9, lineHeight: "22px", fontWeight: 500, color: PLAY.text }}>앱 정보</p>
+        <div style={{ marginTop: 18 }}>
+          <Text platform="android" field="shortDescription" surface="details" value={v.shortDescription ?? ""} spot={spot} color={PLAY.gray} />
+        </div>
+        <div style={{ marginTop: 21 }}>
+          <Text platform="android" field="fullDescription" surface="details" value={v.fullDescription ?? ""} spot={spot} color={PLAY.gray} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -413,14 +442,15 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
   );
 }
 
-export function StorePreview({ platform, mode, values, art, spot }: { platform: Platform; mode: Surface; values: Values; art: Art; spot: FieldId | null }) {
-  const Screen = platform === "ios" ? (mode === "page" ? AppStorePage : AppStoreSearch) : mode === "page" ? PlayPage : PlaySearch;
+export function StorePreview({ platform, mode, values, art, spot, onMode }: { platform: Platform; mode: Surface; values: Values; art: Art; spot: FieldId | null; onMode: (m: Surface) => void }) {
+  const Screen = platform === "ios" ? (mode === "search" ? AppStoreSearch : AppStorePage) : mode === "search" ? PlaySearch : mode === "details" ? PlayDetails : PlayPage;
+  const tabs = mode === "details" ? null : platform === "ios" ? <IosTabs /> : <PlayTabs />;
   return (
     <div className="mx-auto w-full max-w-[300px] lg:max-w-[clamp(220px,calc((100svh_-_250px)*9/19),300px)]">
       <PhoneFrame clock="9:41" unbounded>
         <div className="relative h-full" style={{ fontFamily: PREVIEW_FONT }}>
-          <Stage width={STAGE_WIDTH[platform]} spot={spot} watch={`${platform}-${mode}`} tabs={platform === "ios" ? <IosTabs /> : <PlayTabs />}>
-            <Screen v={values} art={art} spot={spot} />
+          <Stage width={STAGE_WIDTH[platform]} spot={spot} watch={`${platform}-${mode}`} tabs={tabs}>
+            <Screen v={values} art={art} spot={spot} go={onMode} />
           </Stage>
         </div>
       </PhoneFrame>
