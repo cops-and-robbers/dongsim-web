@@ -91,5 +91,6 @@ export function mockPresign(body: { slot: string; type: string }): { uploadUrl: 
 export function mockSend(body: { platform: Platform; dryRun?: boolean }): { message: string } {
   if (body.dryRun) return { message: "보낼 수 있어요(로컬 가짜)." };
   drafts = drafts.filter((d) => d.platform !== body.platform);
+  imageDrafts = imageDrafts.filter((d) => d.platform !== body.platform);
   return { message: "로컬 가짜: 보낸 것처럼 답했어요. 실제 스토어는 바뀌지 않아요." };
 }

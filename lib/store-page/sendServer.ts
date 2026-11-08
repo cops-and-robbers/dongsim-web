@@ -5,27 +5,17 @@
  * 미리 확인(dryRun)은 스토어를 바꾸지 않는다.
  */
 import { APPSTORE_APP_ID } from "../metrics/config.ts";
-import { ASC_API } from "../metrics/appstore/auth.ts";
 import { asc, play, playToken, PLAY_API, releaseAscToken, StoreError } from "../release/stores.ts";
 import { LANGS, type FieldId, type Lang } from "./fields.ts";
-import { IOS_INFO_FIELDS, IOS_VERSION_FIELDS, type Change } from "./send.ts";
+import { IOS_INFO_FIELDS, IOS_VERSION_FIELDS, type Change, type ImageChange } from "./send.ts";
+import { applyPlayImages, ascWrite, checkFiles, sendIosImages } from "./sendImages.ts";
 
-export type SendResult = { message: string; applied: Change[]; failed?: string };
+export type SendResult = { message: string; applied: Change[]; appliedImages: ImageChange[]; failed?: string };
 
 const IOS_EDITABLE = new Set(["PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED", "INVALID_BINARY"]);
 
 async function patch(type: "appInfoLocalizations" | "appStoreVersionLocalizations", id: string, attributes: Record<string, string>, token: string): Promise<void> {
-  const res = await fetch(`${ASC_API}/${type}/${id}`, {
-    method: "PATCH",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ data: { type, id, attributes } }),
-    signal: AbortSignal.timeout(20_000),
-    cache: "no-store",
-  });
-  if (res.ok) return;
-  const body = (await res.json().catch(() => ({}))) as { errors?: { detail?: string; title?: string }[] };
-  const reason = body.errors?.[0]?.detail ?? body.errors?.[0]?.title ?? "";
-  throw new StoreError(`App Store 가 받지 않았어요. ${reason}`.trim(), { detail: `ASC ${res.status} ${reason}`, status: res.status });
+  await ascWrite("PATCH", `/${type}/${id}`, { data: { type, id, attributes } }, token);
 }
 
 type IdMap = Map<string, string>;
@@ -49,8 +39,8 @@ async function iosTargets(token: string) {
 
 const pick = (cs: Change[], fields: FieldId[]) => Object.fromEntries(cs.filter((c) => fields.includes(c.field)).map((c) => [c.field, c.after]));
 
-/** App Store 로 보낸다. 묶음마다 차례로 보내고, 중간에 실패하면 어디까지 됐는지 돌려준다 */
-export async function sendIos(changes: Change[], dryRun: boolean): Promise<SendResult> {
+/** App Store 로 보낸다. 문구 묶음을 차례로 보낸 뒤 이미지 칸을 보내고, 중간에 실패하면 어디까지 됐는지 돌려준다 */
+export async function sendIos(changes: Change[], images: ImageChange[], dryRun: boolean, deadline: number): Promise<SendResult> {
   const token = releaseAscToken();
   const t = await iosTargets(token);
   const applied: Change[] = [];
@@ -94,17 +84,29 @@ export async function sendIos(changes: Change[], dryRun: boolean): Promise<SendR
       applied.push(...step.list);
     } catch (e) {
       if (applied.length === 0) throw e;
-      return { message: `${applied.length}칸은 보냈고 나머지는 보내지 못했어요.`, applied, failed: e instanceof Error ? e.message : "보내지 못했어요." };
+      return { message: `${applied.length}칸은 보냈고 나머지는 보내지 못했어요.`, applied, appliedImages: [], failed: e instanceof Error ? e.message : "보내지 못했어요." };
     }
   }
-  if (dryRun) return { message: "App Store 에 보낼 수 있어요.", applied: [] };
-  return { message: t.version ? `${t.version}에 저장했어요. 심사에 내면 함께 나가요.` : "App Store 에 저장했어요.", applied };
+  if (dryRun) {
+    if (images.length && t.next.size === 0) throw new StoreError("다음 버전을 찾지 못했어요. App Store Connect 에서 새 버전을 만들어 주세요.");
+    await checkFiles(images);
+    return { message: "App Store 에 보낼 수 있어요.", applied: [], appliedImages: [] };
+  }
+  const sent = await sendIosImages(images, t.next, token, deadline);
+  const done = applied.length + sent.applied.length;
+  if (done === 0 && sent.failed) throw new StoreError(sent.failed);
+  if (sent.failed) return { message: `${done}칸은 보냈고 나머지는 보내지 못했어요.`, applied, appliedImages: sent.applied, failed: sent.failed };
+  const saved = t.version ? `${t.version}에 저장했어요. 심사에 내면 함께 나가요.` : "App Store 에 저장했어요.";
+  return { message: images.length ? `${saved} 이미지는 애플이 확인하는 데 몇 분 걸릴 수 있어요.` : saved, applied, appliedImages: sent.applied };
 }
 
 const PLAY_KEY: Partial<Record<FieldId, string>> = { title: "title", shortDescription: "shortDescription", fullDescription: "fullDescription", video: "video" };
 
-/** Google Play 로 보낸다. 언어를 한 번에 커밋하므로 전부 되거나 전부 안 된다 */
-export async function sendAndroid(changes: Change[], dryRun: boolean): Promise<SendResult> {
+/** 다른 곳에서 새 편집을 열면 구글이 이전 편집을 지운다(2026-11-08 실제 동작). 스토어 페이지를 읽기만 해도 편집을 연다 */
+const EDIT_GONE = "다른 화면이 Google Play 를 읽는 바람에 멈췄어요. 아무것도 바뀌지 않았으니 다시 보내 주세요.";
+
+/** Google Play 로 보낸다. 문구와 이미지를 한 번에 커밋하므로 전부 되거나 전부 안 된다. 나눠 커밋하면 앞의 것이 심사 중일 때 뒤의 것이 막힌다 */
+export async function sendAndroid(changes: Change[], images: ImageChange[], dryRun: boolean): Promise<SendResult> {
   const token = await playToken();
   const edit = (await play(`${PLAY_API}/edits`, token, { method: "POST", body: "{}" })) as { id: string };
   let committed = false;
@@ -116,11 +118,17 @@ export async function sendAndroid(changes: Change[], dryRun: boolean): Promise<S
       const body = Object.fromEntries(cs.flatMap((c) => (PLAY_KEY[c.field] ? [[PLAY_KEY[c.field]!, c.after]] : [])));
       await play(`${PLAY_API}/edits/${edit.id}/listings/${code}`, token, { method: "PATCH", body: JSON.stringify({ language: code, ...body }) });
     }
+    // 미리 확인은 파일이 있는지만 본다. 창을 열 때마다 이미지를 올리지 않는다
+    if (dryRun) await checkFiles(images);
+    else await applyPlayImages(images, edit.id, token);
     await play(`${PLAY_API}/edits/${edit.id}:validate`, token, { method: "POST" });
-    if (dryRun) return { message: "구글 검사를 통과했어요.", applied: [] };
+    if (dryRun) return { message: "구글 검사를 통과했어요.", applied: [], appliedImages: [] };
     await play(`${PLAY_API}/edits/${edit.id}:commit?changesInReviewBehavior=ERROR_IF_IN_REVIEW`, token, { method: "POST" });
     committed = true;
-    return { message: "Google Play 에 보냈어요. 심사 뒤 게시 개요에서 게시하면 나가요.", applied: changes };
+    return { message: "Google Play 에 보냈어요. 심사 뒤 게시 개요에서 게시하면 나가요.", applied: changes, appliedImages: images };
+  } catch (e) {
+    if (e instanceof StoreError && /edit has been deleted/i.test(e.detail ?? "")) throw new StoreError(EDIT_GONE, { detail: e.detail, status: e.status });
+    throw e;
   } finally {
     if (!committed) await play(`${PLAY_API}/edits/${edit.id}`, token, { method: "DELETE" }).catch(() => undefined);
   }
