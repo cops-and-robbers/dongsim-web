@@ -247,6 +247,16 @@ Supabase 가 서버 사이 시계 차이로 "JWT issued at future" 를 내며 �
 
 0004 마이그레이션(`supabase/migrations/0004_followers_and_events.sql`)을 실행하기 전에는 팔로워와 일정 칸만 비어 있고 나머지는 그대로 보인다.
 
+### 스토어 탭에 더한 숫자 (2026-11-08)
+
+| 무엇 | 어디서 | 메모 |
+| --- | --- | --- |
+| Google Play 언어별 설치, 평점 | `play_daily` installs, ratings 의 `language` 축 | 평점은 누적 평균이라 더하지 않고 마지막 날 값을 써요 |
+| Google Play 지난 리뷰 | 버킷 `reviews/reviews_패키지_YYYYMM.csv` → `store_reviews` | API 는 최근 7일치만 줘요. 파일에는 쓴 사람 이름이 없어요. 이미 있는 리뷰는 덮어쓰지 않아요. 매일 `/api/metrics/reviews` 에서 읽어요 |
+| iOS 세션, 비정상 종료 | 분석 리포트 `App Sessions Standard`, `App Crashes` → `appstore_analytics_daily` | 공유를 허락한 사람만 세고, 5명이 안 되는 칸은 애플이 주지 않아요 |
+
+맞춤 제품 페이지별 성과는 받지 않아요. 맞춤 페이지가 하나도 없어요(2026-11-08). 만들면 Detailed 리포트의 Page Title 을 더해요.
+
 ## Google Play 노출(Reach)은 아직 자동으로 못 받는다 (2026-10-08)
 
 Play Console 통계에는 2026-07 부터 총노출수, 사용자 노출수(그날 우리 앱을 본 사람), 기기 노출수가 나라별로 있다.
