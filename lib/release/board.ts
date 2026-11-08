@@ -14,7 +14,7 @@
 
 import { consoleLinks } from "./links.ts";
 import type { Option } from "./options.ts";
-import { since } from "./time.ts";
+import { kstShort, since } from "./time.ts";
 
 export type Platform = "ios" | "android";
 export type Tone = "done" | "wait" | "turn" | "bad" | "idle";
@@ -37,12 +37,16 @@ export type Step = {
   /** "since" 면 "3시간째" */
   atKind?: "at" | "since";
   detail?: string;
+  /** 왜 이런 상태가 됐는지(펼쳐 보는 설명) */
+  why?: string;
+  /** 칸 이름을 맞출 버전(빌드 안 버전) */
+  fixTo?: string;
   /** 이 단계를 처리하는 콘솔 화면 */
   href?: string;
 };
 
 export type Live = { version: string; build?: string };
-export type Action = { tone: Tone; title: string; reason?: string; platform?: Platform; action?: { label: string; href: string } };
+export type Action = { tone: Tone; title: string; reason?: string; why?: string; platform?: Platform; action?: { label: string; href: string } };
 
 /** 단계적 출시. iOS 는 7일 단계(day), Android 는 우리가 정한 비율 */
 export type Rollout = { percent: number; day?: number; paused: boolean };
@@ -260,6 +264,26 @@ export function pickIos(raw: IosRaw) {
   return { live, rolling, inflight };
 }
 
+/**
+ * 칸 이름과 빌드 버전이 왜 어긋났는지. 앱 저장소(cops-and-robbers-FE)는 main 에 PR 이 머지될 때마다
+ * 버전 셋째 자리와 빌드 번호를 하나씩 올린다(PROJECT-COMMON-VERSION-CONTROL). 칸을 미리 만들어 두면 그 뒤 머지만큼 어긋난다
+ */
+function mismatchWhy(v: IosVersion, b: IosBuild, live: string | undefined): string {
+  const made = kstShort(v.createdAt).split(" ")[0];
+  const parts = (b.version ?? "").split(".").map(Number);
+  const prev = parts.length === 3 && parts[2] > 0 ? `${parts[0]}.${parts[1]}.${parts[2] - 1}` : null;
+  const between = prev && versionGt(prev, v.version) ? `${v.version}~${prev}` : v.version;
+  const lines = [
+    `${v.version} 칸은 ${made}에 만들었어요.`,
+    `앱 저장소는 main 에 PR 이 머지될 때마다 앱 버전을 하나씩 올려요. 그 사이 머지가 쌓여 빌드 ${b.number} 안의 버전이 ${subj(b.version ?? "")} 됐어요.`,
+    "애플은 빌드 안 버전과 칸 이름이 같아야 그 칸에 빌드를 붙여 줘요. 그래서 칸 이름을 빌드에 맞추면 돼요.",
+  ];
+  if (live && b.version && versionGt(b.version, live))
+    lines.push(`${topic(between)} 한 번도 스토어에 나간 적 없는 번호라 건너뛰어도 괜찮아요. 사용자에게는 ${live} 다음 업데이트가 ${copula(b.version)}.`);
+  // 한 줄에 하나씩(화면이 줄마다 나눠 보여 준다)
+  return lines.join("\n");
+}
+
 export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.now()): Track {
   const links = consoleLinks();
   const { live, rolling, inflight } = pickIos(raw);
@@ -278,12 +302,16 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
     const latest = raw.latestBuild;
     const mismatch = !!latest?.version && latest.version !== v.version;
     let detail = "올라온 빌드가 없어요";
+    let why: string | undefined;
     if (latest) {
       detail = `가장 최근 빌드는 ${latest.number}${latest.state === "VALID" ? "" : `(${buildWord(latest.state)})`}`;
       // 빌드 안의 버전이 칸 이름과 다르면 애플이 그 칸에 붙여 주지 않는다. 콘솔에서는 빌드 고르기 목록이 비어 보일 뿐이라 이유를 적는다
-      if (mismatch) detail = `가장 최근 빌드 ${topic(latest.number)} ${latest.version} 버전이라 이 칸에 안 붙어요. 칸 이름을 ${ro(latest.version!)} 바꾸거나 ${v.version} 빌드를 올리면 붙일 수 있어요`;
+      if (mismatch) {
+        detail = `지금 칸 이름은 ${v.version}이고, 빌드 ${latest.number} 안의 버전은 ${copula(latest.version!)}. 애플은 둘이 같아야 빌드를 붙여 줘요`;
+        why = mismatchWhy(v, latest, live?.version);
+      }
     }
-    build = { key: "build", label: "빌드 붙이기", who: "us", state: mismatch ? "붙일 빌드 없음" : "빌드 없음", tone: "turn", href, detail };
+    build = { key: "build", label: "빌드 붙이기", who: "us", state: mismatch ? "붙일 빌드 없음" : "빌드 없음", tone: "turn", href, detail, ...(why ? { why, fixTo: latest?.version } : {}) };
   } else if (v.build.state === "VALID") {
     build = { key: "build", label: "빌드 붙이기", who: "us", state: `빌드 ${v.build.number}`, tone: "done", at: v.build.uploadedAt };
   } else if (v.build.state === "PROCESSING") {
@@ -316,7 +344,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
   // 출시
   const releaseBase = { key: "release", label: "출시", who: (manual ? "us" : "auto") as Who };
   let release: Step;
-  if (s === "PENDING_DEVELOPER_RELEASE") release = { ...releaseBase, state: "출시 기다림", tone: "turn", href, detail: "승인됐어요. 출시를 누르면 나가요" };
+  if (s === "PENDING_DEVELOPER_RELEASE") release = { ...releaseBase, state: "출시 기다림", tone: "turn", href, detail: "출시를 누르면 App Store 에 나가요. 나라마다 보이기까지 최대 24시간이 걸려요" };
   else if (s === "PENDING_APPLE_RELEASE") release = { ...releaseBase, who: "auto", state: "예약 출시", tone: "wait", at: v.earliestReleaseDate ?? undefined, detail: "정한 시각에 애플이 내보내요" };
   else if (s === "PROCESSING_FOR_DISTRIBUTION" || s === "ACCEPTED") release = { ...releaseBase, who: "apple", state: "출시 처리 중", tone: "wait" };
   else if (s === "READY_FOR_DISTRIBUTION") release = { ...releaseBase, state: "출시함", tone: "done", at: v.phased?.startDate ?? undefined };
@@ -459,7 +487,12 @@ function actionOf(p: Platform, st: Step | undefined, ver: { version: string; bui
   const base = { tone: st.tone, platform: p };
   if (st.tone === "bad") return { ...base, title: st.key === "build" ? `${name} 빌드를 쓸 수 없어요` : `${subj(name)} 반려됐어요`, reason: st.detail, action: go("사유 보기") };
   if (st.tone === "turn") {
-    if (st.key === "build") return { ...base, title: st.state === "붙일 빌드 없음" ? `${name}에 붙일 수 있는 빌드가 아직 없어요` : `${name}에 빌드를 붙일 수 있어요`, reason: st.detail, action: go("버전 화면 열기") };
+    if (st.key === "build") {
+      // 문제가 아니라 할 수 있는 일로 말한다. 칸 이름만 맞추면 되는 경우가 대부분이다(앱 저장소가 머지마다 버전을 올린다)
+      const to = st.fixTo;
+      const title = st.state === "붙일 빌드 없음" && to ? `칸 이름만 ${ro(to)} 맞추면 빌드를 붙일 수 있어요` : st.state === "붙일 빌드 없음" ? `${name}에 붙일 수 있는 빌드가 아직 없어요` : `${name}에 빌드를 붙일 수 있어요`;
+      return { ...base, title, reason: st.detail, ...(st.why ? { why: st.why } : {}), action: go("버전 화면 열기") };
+    }
     if (st.key === "submit") return { ...base, title: `${obj(name)} 심사에 낼 수 있어요`, reason: st.detail, action: go(p === "ios" ? "버전 화면 열기" : "프로덕션 트랙 열기") };
     if (st.key === "release") return { ...base, title: `${subj(name)} 승인됐어요. 지금 출시할 수 있어요`, reason: st.detail, action: go("버전 화면 열기") };
     if (st.key === "publish") return { ...base, title: `${subj(name)} 승인됐어요. 지금 게시할 수 있어요`, reason: st.detail, action: go("게시 개요 열기") };

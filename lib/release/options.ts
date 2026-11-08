@@ -5,8 +5,8 @@
  * 같은 목록을 만든 뒤 화면이 보낸 것(id 와 expect)이 그대로 있을 때만 한다. 그 사이 상태가 바뀌었으면 하지 않는다.
  *
  * 단계(level)
- * - 1: 확인창. 되돌릴 수 있거나 사용자에게 닿지 않는 것(버전 칸 이름, 빌드 붙이기, 제출 취소, 단계적 출시 멈춤과 이어 가기)
- * - 2: 확인창 + 버전 번호를 직접 입력. 되돌릴 수 없거나 사용자에게 닿는 것(심사 제출, 출시, 바로 모두에게, 비율 올리기)
+ * - 1: 확인창. 되돌릴 수 있거나 사용자에게 영향이 없는 것(버전 칸 이름, 빌드 붙이기, 제출 취소, 단계적 출시 멈춤과 이어 가기)
+ * - 2: 확인창 + 버전 번호를 직접 입력. 되돌릴 수 없거나 사용자에게 영향이 가는 것(심사 제출, 출시, 바로 모두에게, 비율 올리기)
  *
  * 관리형 게시의 "게시"와 반려 사유 보기는 API 가 없어 콘솔 바로가기로 둔다.
  */
@@ -63,8 +63,10 @@ export type Option = {
   what: string;
   /** 되돌릴 수 있나 */
   undo: string;
-  /** 사용자에게 닿나 */
+  /** 사용자에게 영향이 가나 */
   reachesUsers: boolean;
+  /** 되돌릴 수 있나(버튼 옆 안심 말에 쓴다). 목록 끝에서 붙인다 */
+  undoable?: boolean;
   /** 버튼을 강조할지(그 스토어에서 가장 자연스러운 다음 조작) */
   primary: boolean;
   params: OptionParams;
@@ -75,6 +77,23 @@ export type Option = {
 };
 
 type Extra = Pick<Option, "changes" | "then">;
+
+/** 되돌릴 수 있는 조작. 출시, 바로 모두에게, 비율 올리기는 되돌릴 수 없다 */
+const UNDOABLE: Record<ActionId, boolean> = {
+  "ios.renameVersion": true,
+  "ios.attachBuild": true,
+  "ios.submit": true,
+  "ios.cancelSubmission": true,
+  "ios.release": false,
+  "ios.phasedPause": true,
+  "ios.phasedResume": true,
+  "ios.phasedComplete": false,
+  "android.createRelease": true,
+  "android.rolloutSet": false,
+  "android.halt": true,
+  "android.resume": true,
+  "android.complete": false,
+};
 const change = (label: string, before: string, after: string) => ({ key: label, label, before, after });
 
 // ---------- iOS ----------
@@ -95,10 +114,10 @@ export function iosOptions(raw: IosRaw): Option[] {
       out.push({
         ...base,
         id: "ios.renameVersion",
-        label: `칸 이름을 ${ro(b.version)} 바꾸기`,
+        label: `칸 이름을 ${ro(b.version)} 맞추기`,
         level: 1,
         expect: sig(`|${b.number}`),
-        what: `App Store Connect 의 버전 칸 이름이 ${v.version}에서 ${ro(b.version)} 바뀌어요.`,
+        what: `App Store Connect 의 버전 칸 이름을 ${v.version}에서 ${ro(b.version)} 맞춰요. 빌드 안 버전과 같아져요.`,
         undo: "다시 바꿀 수 있어요.",
         reachesUsers: false,
         primary: true,
@@ -226,7 +245,7 @@ export function iosOptions(raw: IosRaw): Option[] {
     "ios.phasedResume": { changes: [change("단계적 출시", `${pct}에서 멈춤`, `${pct}부터 다시 진행`)], then: "남은 날 동안 1, 2, 5, 10, 20, 50, 100% 순서로 넓어져요." },
     "ios.phasedComplete": { changes: [change("자동 업데이트", pct, "100%")], then: "출시 화면의 나라별 반영에서 확인할 수 있어요." },
   };
-  return out.map((o) => ({ ...o, ...extra[o.id] }));
+  return out.map((o) => ({ ...o, ...extra[o.id], undoable: UNDOABLE[o.id] }));
 }
 
 // ---------- Android ----------
@@ -321,7 +340,7 @@ export function androidOptions(raw: AndroidRaw): Option[] {
     "android.complete": { changes: [change("받는 사람", rPct || "일부", "모두(100%)")], then: "이전 버전 출시는 새 버전으로 바뀌어요." },
     "android.rolloutSet": { then: "출시 화면에서 더 올리거나 바로 모두에게 낼 수 있어요." },
   };
-  return out.map((o) => ({ ...o, ...extra[o.id] }));
+  return out.map((o) => ({ ...o, ...extra[o.id], undoable: UNDOABLE[o.id] }));
 }
 
 export const optionsFor = (platform: Platform, raw: IosRaw | AndroidRaw): Option[] => (platform === "ios" ? iosOptions(raw as IosRaw) : androidOptions(raw as AndroidRaw));

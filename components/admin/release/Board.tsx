@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useState, type ReactNode } from "react";
-import { AlertIcon, AppStoreMark, CheckIcon, ClockIcon, DeviceIcon, ExternalLinkIcon, GooglePlayMark } from "@/components/admin/icons";
+import { AlertIcon, AppStoreMark, CheckIcon, ChevronDownIcon, ClockIcon, DeviceIcon, ExternalLinkIcon, GooglePlayMark } from "@/components/admin/icons";
 import { consoleLinks } from "@/lib/release/links";
 import type { Option } from "@/lib/release/options";
 import {
@@ -153,6 +153,7 @@ function ActionBox({ action, options, act }: { action: Action; options: Option[]
   const t = TONE[action.tone];
   const primary = options.filter((o) => o.primary);
   const rest = options.filter((o) => !o.primary);
+  const lead = primary[0];
   return (
     <div className={`mx-5 mt-4 rounded-xl px-4 py-3.5 ${t.weak}`}>
       <div className="flex gap-2.5">
@@ -162,16 +163,20 @@ function ActionBox({ action, options, act }: { action: Action; options: Option[]
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-bold leading-snug text-sd-fg [text-wrap:balance]">{action.title}</p>
           {action.reason && <p className="mt-1 text-[13px] leading-relaxed text-sd-fg-muted">{action.reason}</p>}
+          {action.why && <Why text={action.why} />}
           {options.length > 0 ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {primary.map((o) => (
-                <OptionButton key={o.id} option={o} act={act} primary />
-              ))}
-              {rest.map((o) => (
-                <OptionButton key={o.id} option={o} act={act} />
-              ))}
-              {action.action && <ConsoleLink href={action.action.href}>{action.action.label}</ConsoleLink>}
-            </div>
+            <>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {primary.map((o) => (
+                  <OptionButton key={o.id} option={o} act={act} primary />
+                ))}
+                {rest.map((o) => (
+                  <OptionButton key={o.id} option={o} act={act} />
+                ))}
+                {action.action && <ConsoleLink href={action.action.href}>{action.action.label}</ConsoleLink>}
+              </div>
+              {lead && act.writable && <Assure option={lead} />}
+            </>
           ) : (
             action.action && (
               <div className="mt-3">
@@ -188,16 +193,71 @@ function ActionBox({ action, options, act }: { action: Action; options: Option[]
   );
 }
 
-/** 어드민에서 바로 하는 조작 버튼. 운영 배포이고 기록 표가 있을 때만 켜진다 */
+/** "왜 그런가요?" 펼쳐 보는 설명. 처음엔 접어 두어 할 일 상자를 짧게 둔다 */
+function Why({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-2">
+      <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-sd-fg-muted transition hover:text-sd-fg">
+        왜 그런가요?
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 420, damping: 34 }} className="inline-flex">
+          <ChevronDownIcon className="size-3.5" />
+        </motion.span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="overflow-hidden">
+            <ul className="mt-1.5 space-y-1 rounded-lg bg-sd-surface/70 px-3 py-2.5 text-[12.5px] leading-relaxed text-sd-fg-muted">
+              {text.split("\n").map((line) => (
+                <li key={line} className="flex gap-2">
+                  <span aria-hidden className="mt-[7px] size-1 flex-none rounded-full bg-sd-gray-400" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** 버튼 아래 안심 한 줄. 누르면 바로 바뀌지 않고 확인창이 먼저 뜬다는 것까지 */
+function Assure({ option }: { option: Option }) {
+  const items = [
+    option.reachesUsers ? "사용자에게 영향이 가요" : "사용자 영향 없음",
+    option.undoable ? "되돌릴 수 있어요" : "되돌릴 수 없어요",
+    option.level === 2 ? "확인창에서 번호 입력 뒤 진행" : "누르면 확인창이 먼저 떠요",
+  ];
+  return (
+    <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[12px] text-sd-fg-subtle">
+      {!option.reachesUsers && option.undoable && <CheckIcon className="size-3.5 text-sd-positive" />}
+      {items.map((it, i) => (
+        <span key={it} className="inline-flex items-center gap-1.5">
+          {i > 0 && <span aria-hidden>·</span>}
+          {it}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+/**
+ * 어드민에서 바로 하는 조작 버튼. 운영 배포이고 기록 표가 있을 때만 켜진다.
+ * 무게를 색으로 나눈다: 사용자에게 영향이 없는 조작은 부드러운 파랑, 영향이 가는 조작(출시, 바로 모두에게)은 진한 버튼
+ */
 function OptionButton({ option, act, primary = false }: { option: Option; act: ActControl; primary?: boolean }) {
+  const style = !primary
+    ? "bg-sd-surface text-sd-fg ring-1 ring-inset ring-sd-line hover:bg-sd-fill"
+    : option.reachesUsers
+      ? "bg-sd-inverted-bg text-sd-inverted-fg hover:opacity-90 active:opacity-80"
+      : "bg-accent text-accent-fg hover:bg-accent-hover active:bg-accent-pressed";
   return (
     <button
       type="button"
       disabled={!act.writable}
       onClick={() => act.onPick(option)}
-      className={`inline-flex h-9 flex-none items-center justify-center whitespace-nowrap rounded-[10px] px-3.5 text-[13.5px] font-semibold transition duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${
-        primary ? "bg-sd-inverted-bg text-sd-inverted-fg hover:opacity-90 active:opacity-80" : "bg-sd-surface text-sd-fg ring-1 ring-inset ring-sd-line hover:bg-sd-fill"
-      }`}
+      className={`inline-flex h-9 flex-none items-center justify-center whitespace-nowrap rounded-[10px] px-3.5 text-[13.5px] font-semibold transition duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 ${style}`}
     >
       {option.label}
     </button>
