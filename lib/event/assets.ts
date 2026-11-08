@@ -32,9 +32,11 @@ export type Asset = {
 export const FRAME_SIZE = { width: 1800, height: 5400 } as const;
 export const MAX_BYTES = { frame: 4 * 1024 * 1024, character: 1024 * 1024 } as const;
 export const FRAME_TYPES = ["image/png"] as const;
-export const CHARACTER_TYPES = ["image/png", "image/webp"] as const;
+/** 캐릭터는 SVG 도 받는다(#227). 서버가 그리는 데 필요한 것만 남겨 새로 짓고(lib/event/svgSafe.ts), 내줄 때 스크립트를 막는다 */
+export const CHARACTER_TYPES = ["image/png", "image/webp", "image/svg+xml"] as const;
 
-export const KEY_RE = /^assets\/(frame|character)\/[a-z0-9-]+\.(png|webp)$/;
+/** 프레임은 PNG 만(투명 칸을 재고 사진과 합성한다), 캐릭터는 PNG, WebP, SVG */
+export const KEY_RE = /^assets\/(frame\/[a-z0-9-]+\.png|character\/[a-z0-9-]+\.(png|webp|svg))$/;
 export const assetUrl = (key: string) => `/photobooth/${key.replace(/^assets\//, "asset/")}`;
 
 /** 기본으로 들어 있는 그림. 보관함에 늘 보이고 지울 수 없다 */

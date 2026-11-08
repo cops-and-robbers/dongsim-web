@@ -174,14 +174,14 @@ export function CharacterUploader({ onDone, onCancel, disabled }: { onDone: (a: 
   return (
     <Dialog title="캐릭터 올리기" onClose={onCancel} busy={busy} narrow>
       {!file ? (
-        <Drop accept="image/png,image/webp" hint="투명 배경 PNG 나 WebP, 1MB 아래. 경찰 쪽 하나, 도둑 쪽 하나가 짝이에요" onFile={pick} />
+        <Drop accept="image/png,image/webp,image/svg+xml,.svg" hint="투명 배경 PNG, WebP, SVG, 1MB 아래. 경찰 쪽 하나, 도둑 쪽 하나가 짝이에요" onFile={pick} />
       ) : (
         <div className="space-y-4">
           <div className="flex justify-center rounded-xl bg-[conic-gradient(#eee_25%,#fff_0_50%,#eee_0_75%,#fff_0)] bg-[length:16px_16px] p-4">
             <img src={file.url} alt="" className="max-h-48 w-auto" />
           </div>
           <ul className="space-y-1.5 text-[13px]">
-            <Check ok={okType} text="PNG 나 WebP" />
+            <Check ok={okType} text={file.file.type === "image/svg+xml" ? "SVG (올릴 때 그리는 데 필요한 것만 남겨요)" : "PNG, WebP, SVG"} />
             <Check ok={okSize} text={`파일 크기 ${Math.round(file.file.size / 1024)}KB (1MB 까지)`} />
             <Check ok={file.clear} warn text={file.clear ? "배경이 투명해요" : "모서리가 투명하지 않아요. 흰 배경이면 화면에서 상자처럼 보여요"} />
           </ul>
