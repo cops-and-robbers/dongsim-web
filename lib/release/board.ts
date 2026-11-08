@@ -63,7 +63,7 @@ export type Track =
       steps: Step[];
       /** 지금 단계(steps 의 칸 번호) */
       current: number;
-      /** 상태 알약. "진행 가능", "애플 심사 중" */
+      /** 상태 알약. "심사에 낼 수 있음", "애플 심사 중" */
       status: { tone: Tone; label: string };
       /** 이 스토어에서 지금 할 일. 다 끝났으면 null */
       action: Action | null;
@@ -217,10 +217,20 @@ function currentStep(steps: Step[]): number {
 }
 
 /** 상태 알약. 지금 단계의 색과 누가 하는지로 */
+/** 할 수 있는 일을 알약 하나로. "진행 가능"은 무엇이 가능한지 말해 주지 않는다 */
+function turnLabel(step: Step): string {
+  if (step.key === "build") return step.fixTo || !step.state?.includes("없음") ? "빌드 붙일 수 있음" : "빌드 기다림";
+  if (step.key === "submit") return "심사에 낼 수 있음";
+  if (step.key === "release") return "출시할 수 있음";
+  if (step.key === "publish") return "게시할 수 있음";
+  if (step.key === "rollout") return "멈춰 있음";
+  return "할 수 있는 일 있음";
+}
+
 function statusOf(step: Step | undefined): { tone: Tone; label: string } {
   if (!step || step.tone === "done") return { tone: "done", label: "최신" };
   if (step.tone === "bad") return { tone: "bad", label: step.state?.includes("반려") ? "반려" : "확인 필요" };
-  if (step.tone === "turn") return { tone: "turn", label: "진행 가능" };
+  if (step.tone === "turn") return { tone: "turn", label: turnLabel(step) };
   if (step.tone === "wait") {
     if (step.key === "reach") return { tone: "wait", label: "나라별 반영 중" };
     if (step.key === "rollout") return { tone: "wait", label: "단계적 출시 중" };
@@ -272,9 +282,9 @@ function mismatchWhy(v: IosVersion, b: IosBuild, live: string | undefined): stri
   const prev = parts.length === 3 && parts[2] > 0 ? `${parts[0]}.${parts[1]}.${parts[2] - 1}` : null;
   const between = prev && versionGt(prev, v.version) ? `${v.version}~${prev}` : v.version;
   const lines = [
-    `${v.version} 칸은 ${made}에 만들었어요.`,
+    `${v.version} 버전은 ${made}에 만들어 뒀어요.`,
     `개발 내용이 합쳐질 때마다 앱 버전이 자동으로 하나씩 올라가요. 그래서 빌드 ${b.number}의 버전이 ${subj(b.version ?? "")} 됐어요.`,
-    "애플은 빌드 버전과 칸 이름이 같아야 빌드를 붙여 줘요. 그래서 칸 이름을 빌드에 맞추면 돼요.",
+    "애플은 두 번호가 같아야 빌드를 붙여 줘요. 그래서 스토어 버전 번호를 빌드에 맞추면 돼요.",
   ];
   if (live && b.version && versionGt(b.version, live))
     lines.push(`${topic(between)} 한 번도 스토어에 나간 적 없는 번호라 건너뛰어도 괜찮아요. 사용자에게는 ${live} 다음 업데이트가 ${copula(b.version)}.`);
@@ -292,7 +302,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
   const s = v.state;
   const manual = (v.releaseType ?? "MANUAL") === "MANUAL";
 
-  const slot: Step = { key: "slot", label: "버전 칸", who: "us", state: v.version, tone: "done", at: v.createdAt };
+  const slot: Step = { key: "slot", label: "버전 만들기", who: "us", state: v.version, tone: "done", at: v.createdAt };
 
   // 빌드 붙이기
   let build: Step;
@@ -305,7 +315,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
       detail = `가장 최근 빌드는 ${latest.number}${latest.state === "VALID" ? "" : `(${buildWord(latest.state)})`}`;
       // 빌드 안의 버전이 칸 이름과 다르면 애플이 그 칸에 붙여 주지 않는다. 콘솔에서는 빌드 고르기 목록이 비어 보일 뿐이라 이유를 적는다
       if (mismatch) {
-        detail = `지금 칸 이름은 ${v.version}이고, 빌드 ${latest.number}의 버전은 ${copula(latest.version!)}`;
+        detail = `지금 버전 번호는 ${v.version}이고, ${topic(`빌드 ${latest.number}`)} ${copula(latest.version!)}`;
         why = mismatchWhy(v, latest, live?.version);
       }
     }
@@ -355,7 +365,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
   let rollout: Step;
   let rolloutOut: Rollout | null = null;
   if (s !== "READY_FOR_DISTRIBUTION") {
-    rollout = { ...rolloutBase, tone: "idle", hint: p ? "7일 동안 1%에서 100%로, 자동 업데이트에만" : "꺼져 있어요. 출시하면 바로 모두에게" };
+    rollout = { ...rolloutBase, tone: "idle", hint: p ? "7일에 걸쳐 1%에서 100%까지 나가요" : "꺼져 있어요. 출시하면 바로 모두에게 나가요" };
   } else if (p?.state === "ACTIVE") {
     rolloutOut = { percent: phasedPercent(p.day), day: p.day, paused: false };
     rollout = { ...rolloutBase, state: `${phasedPercent(p.day)}% · ${p.day}일째`, tone: "wait", href: links.iosVersions, detail: "자동 업데이트에만 적용돼요. 손으로 업데이트하면 바로 받아요" };
@@ -370,7 +380,7 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
   // 나라별 반영
   const reachBase = { key: "reach", label: "나라별 반영", who: "apple" as Who };
   let reach: Step;
-  if (s !== "READY_FOR_DISTRIBUTION") reach = { ...reachBase, tone: "idle", hint: "나라마다 반영에 최대 24시간" };
+  if (s !== "READY_FOR_DISTRIBUTION") reach = { ...reachBase, tone: "idle", hint: "나라마다 보이기까지 최대 24시간 걸려요" };
   else if (!lookup) reach = { ...reachBase, state: "확인 못 함", tone: "idle", detail: "App Store 조회가 안 됐어요" };
   else {
     const seen = REACH_COUNTRIES.filter(([c]) => lookup[c] === v.version).length;
@@ -489,7 +499,7 @@ function actionOf(p: Platform, st: Step | undefined, ver: { version: string; bui
     if (st.key === "build") {
       // 문제가 아니라 할 수 있는 일로 말한다. 칸 이름만 맞추면 되는 경우가 대부분이다(앱 저장소가 머지마다 버전을 올린다)
       const to = st.fixTo;
-      const title = st.state === "붙일 빌드 없음" && to ? `칸 이름만 ${ro(to)} 맞추면 빌드를 붙일 수 있어요` : st.state === "붙일 빌드 없음" ? `${name}에 붙일 수 있는 빌드가 아직 없어요` : `${name}에 빌드를 붙일 수 있어요`;
+      const title = st.state === "붙일 빌드 없음" && to ? `버전 번호만 ${ro(to)} 맞추면 빌드를 붙일 수 있어요` : st.state === "붙일 빌드 없음" ? `${name}에 붙일 수 있는 빌드가 아직 없어요` : `${name}에 빌드를 붙일 수 있어요`;
       return { ...base, title, reason: st.detail, ...(st.why ? { why: st.why } : {}), action: go("버전 화면 열기") };
     }
     if (st.key === "submit") return { ...base, title: `${obj(name)} 심사에 낼 수 있어요`, reason: st.detail, action: go(p === "ios" ? "버전 화면 열기" : "Play Console 열기") };
@@ -504,7 +514,7 @@ function actionOf(p: Platform, st: Step | undefined, ver: { version: string; bui
     const reason = st.at && st.atKind === "since" ? `제출한 지 ${since(st.at, now)}예요. 기다리면 돼요` : st.atKind === "checked" ? "기다리면 돼요. 몇 분마다 다시 확인해요" : "기다리면 돼요";
     return { ...base, title, reason };
   }
-  if (st.key === "rollout") return { ...base, title: `단계적 출시 ${copula(st.state?.split(" ·")[0] ?? "")}`, reason: st.detail, action: go("단계적 출시 보기") };
+  if (st.key === "rollout") return { ...base, title: `단계적 출시가 ${st.state?.split(" ·")[0] ?? ""}까지 나갔어요`, reason: st.detail, action: go("단계적 출시 보기") };
   if (st.key === "reach") return { ...base, title: `${subj(name)} 나라마다 퍼지는 중이에요`, reason: st.detail };
   return { ...base, title: `${name} ${copula(st.state ?? "기다리는 중")}`, reason: st.detail };
 }

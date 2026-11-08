@@ -52,7 +52,7 @@ export const NOTE_MAX = 500;
 export type Option = {
   id: ActionId;
   platform: Platform;
-  /** 버튼 말. "칸 이름을 3.2.17로 바꾸기" */
+  /** 버튼 말. "버전 번호를 3.2.17로 맞추기" */
   label: string;
   level: 1 | 2;
   /** 단계 2에서 그대로 입력해야 하는 말(버전 번호) */
@@ -114,10 +114,10 @@ export function iosOptions(raw: IosRaw): Option[] {
       out.push({
         ...base,
         id: "ios.renameVersion",
-        label: `칸 이름을 ${ro(b.version)} 맞추기`,
+        label: `버전 번호를 ${ro(b.version)} 맞추기`,
         level: 1,
         expect: sig(`|${b.number}`),
-        what: `App Store Connect 의 버전 칸 이름을 ${v.version}에서 ${ro(b.version)} 맞춰요. 빌드 안 버전과 같아져요.`,
+        what: `App Store Connect 의 버전 번호를 ${v.version}에서 ${ro(b.version)} 맞춰요. 빌드와 번호가 같아져요.`,
         undo: "다시 바꿀 수 있어요.",
         reachesUsers: false,
         primary: true,
@@ -130,7 +130,7 @@ export function iosOptions(raw: IosRaw): Option[] {
         label: `빌드 ${b.number} 붙이기`,
         level: 1,
         expect: sig(`|${b.number}`),
-        what: `${obj(`빌드 ${b.number}`)} ${v.version} 칸에 붙여요.`,
+        what: `${obj(`빌드 ${b.number}`)} ${v.version} 버전에 붙여요.`,
         undo: "다른 빌드로 바꿀 수 있어요.",
         reachesUsers: false,
         primary: true,
@@ -146,7 +146,7 @@ export function iosOptions(raw: IosRaw): Option[] {
       label: "심사에 내기",
       level: 2,
       expect: sig(),
-      what: `${v.version}(${obj(`빌드 ${v.build.number}`)}) 지금 적힌 문구와 함께 애플 심사에 내요. 심사 중에는 이 칸의 문구와 빌드를 바꿀 수 없어요.`,
+      what: `${v.version}(${obj(`빌드 ${v.build.number}`)}) 지금 적힌 문구와 함께 애플 심사에 내요. 심사 중에는 문구와 빌드를 바꿀 수 없어요.`,
       undo: "심사가 끝나기 전에는 제출을 취소할 수 있어요.",
       reachesUsers: false,
       primary: true,
@@ -236,8 +236,8 @@ export function iosOptions(raw: IosRaw): Option[] {
   const pct = p ? `${[1, 2, 5, 10, 20, 50, 100][Math.min(Math.max(p.day, 1), 7) - 1]}%` : "";
   const b = raw.latestBuild;
   const extra: Record<string, Extra> = {
-    "ios.renameVersion": { changes: [change("버전 칸 이름", v.version, b?.version ?? "")], then: `${obj(`빌드 ${b?.number ?? ""}`)} 이 칸에 붙일 수 있게 돼요.` },
-    "ios.attachBuild": { changes: [change(`${v.version} 칸의 빌드`, "없음", `빌드 ${b?.number ?? ""}`)], then: "문구를 확인한 뒤 심사에 낼 수 있어요." },
+    "ios.renameVersion": { changes: [change("버전 번호", v.version, b?.version ?? "")], then: `${obj(`빌드 ${b?.number ?? ""}`)} 붙일 수 있게 돼요.` },
+    "ios.attachBuild": { changes: [change(`${v.version}에 붙은 빌드`, "없음", `빌드 ${b?.number ?? ""}`)], then: "문구를 확인한 뒤 심사에 낼 수 있어요." },
     "ios.submit": { changes: [change("상태", "제출 전", "애플 심사 기다림")], then: "심사가 끝나면 출시 화면에 결과가 떠요. 우리는 수동 출시라 승인돼도 바로 나가지 않아요." },
     "ios.cancelSubmission": { changes: [change("상태", v.state === "IN_REVIEW" ? "심사 중" : "심사 기다림", "제출 전")], then: "고친 뒤 다시 낼 수 있어요." },
     "ios.release": { changes: [change("App Store 버전", live?.version ?? "-", v.version)], then: "나라마다 최대 24시간 안에 보여요. 출시 화면에서 나라별로 확인할 수 있어요." },

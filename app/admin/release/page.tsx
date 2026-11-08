@@ -137,12 +137,12 @@ export default function ReleasePage() {
             </StaggerItem>
           </Stagger>
 
-          <SectionCard title="지금 내면">
+          <SectionCard title="지금 내면 나라별로 몇 시일까요">
             <WorldClock at={now} />
           </SectionCard>
 
           {board.actions && board.actions.length > 0 && (
-            <SectionCard title="최근 조작" flush>
+            <SectionCard title="어드민에서 한 일" flush>
               <ActionLogList items={board.actions} now={now} />
             </SectionCard>
           )}
@@ -163,6 +163,7 @@ export default function ReleasePage() {
 function liveLine(ios: Track, android: Track): string {
   const v = (t: Track) => (t.ok ? t.live?.version : undefined);
   if (!v(ios) && !v(android)) return "두 스토어가 어디까지 왔는지, 지금 무엇을 할 수 있는지 보여 줘요.";
+  if (v(ios) === v(android)) return `두 스토어 모두 ${v(ios)} 버전이 나가 있어요.`;
   const parts = [v(ios) && `iOS ${v(ios)}`, v(android) && `Android ${v(android)}`].filter(Boolean);
   return `지금 나가 있는 버전은 ${copula(parts.join(", "))}.`;
 }

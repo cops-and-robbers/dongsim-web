@@ -63,7 +63,7 @@ export async function runAction(option: Option, input: { fraction?: number; note
     switch (option.id) {
       case "ios.renameVersion":
         await asc(ascRequests.renameVersion(p.versionId!, p.to!), token);
-        return { message: `버전 칸 이름을 ${ro(p.to!)} 바꿨어요` };
+        return { message: `버전 번호를 ${ro(p.to!)} 맞췄어요` };
       case "ios.attachBuild":
         await asc(ascRequests.attachBuild(p.versionId!, p.buildId!), token);
         return { message: "빌드를 붙였어요" };
