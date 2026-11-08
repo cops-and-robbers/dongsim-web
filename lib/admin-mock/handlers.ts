@@ -6,6 +6,7 @@ import { mockAppConfig, mockApplyAppConfig, mockUploadBanner } from "./appConfig
 import { mockApplyWebgame, mockWebgame, mockWebgameMonitor } from "./webgame";
 import { mockEvent, mockEvents, mockSaveEvent, mockSaveMinigame } from "./events";
 import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
+import { mockRelease } from "./release";
 import {
   queryUsers,
   getUser,
@@ -423,6 +424,12 @@ export const handlers = [
     await delay(500);
     const { status, body } = mockSaveEvent(Number(params.id), (await request.json()) as { settings?: unknown; version?: number });
     return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  // 출시 보드. 로컬에서는 스토어에 닿지 않고 상황별 값으로 답한다(?scenario=)
+  http.get("/api/admin/release", async ({ request }) => {
+    await delay(500);
+    return HttpResponse.json(mockRelease(new URL(request.url).searchParams.get("scenario")));
   }),
 
   // 그림 보관함(#224). 로컬에서는 실제 R2 와 Supabase 에 닿지 않는다

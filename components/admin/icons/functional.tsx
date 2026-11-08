@@ -435,3 +435,47 @@ export function ImageIcon({ className }: IconProps) {
     </Line>
   );
 }
+
+export function RocketIcon({ className }: IconProps) {
+  // Lucide 'rocket'. 어드민 "출시"(두 스토어의 출시 단계). 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+      <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+    </Line>
+  );
+}
+
+export function ExternalLinkIcon({ className }: IconProps) {
+  // Lucide 'external-link'. 어드민 밖(스토어 콘솔)으로 나가는 링크. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </Line>
+  );
+}
+
+export function ClockIcon({ className }: IconProps) {
+  // Lucide 'clock'. 기다리는 중(심사). 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </Line>
+  );
+}
+
+export function GlobeIcon({ className }: IconProps) {
+  // Lucide 'globe'. 나라별 스토어 반영. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+      <path d="M2 12h20" />
+    </Line>
+  );
+}

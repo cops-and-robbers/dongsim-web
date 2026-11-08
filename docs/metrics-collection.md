@@ -139,6 +139,7 @@ Play Developer Reporting API 는 비정상 종료율 같은 품질 지표만 줘
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Vercel | 서비스 계정 `metrics-collector` 의 JSON 키 파일 내용 전체 |
 | `ADMOB_CLIENT_ID`, `ADMOB_CLIENT_SECRET` | Vercel | OAuth 클라이언트 JSON(`installed`)의 두 값 |
 | `ADMOB_REFRESH_TOKEN` | Vercel | 팀 계정이 허락해 받은 갱신 토큰 |
+| `ASC_RELEASE_KEY_ID`, `ASC_RELEASE_PRIVATE_KEY`, `PLAY_RELEASE_SERVICE_ACCOUNT_JSON` | Vercel | 지표가 아니라 어드민 "출시" 보드용(출시 권한). `docs/admin-ui.md` "출시" |
 | `PLAY_GCS_URI` | Vercel | Play Console > 보고서 다운로드 > 통계 > Cloud Storage URI 복사(`gs://pubsite_prod_...`). 서비스 계정은 `GOOGLE_SERVICE_ACCOUNT_JSON` 을 같이 쓴다 |
 
 비밀이 아닌 식별자(앱 ID, Vendor 번호, GA4 속성 ID, AdMob 퍼블리셔 ID, 처음 채울 날짜)는 `lib/metrics/config.ts` 에 있다.

@@ -30,6 +30,7 @@
 | `/api/photobooth/upload` | Vercel Blob 업로드 토큰 발급 (운영 시간 게이트 포함) |
 | `/api/booth/scores` | 미니게임 리더보드 (Redis 정렬 집합, 닉네임별 최고점) |
 | `/api/admin/webgame` | 어드민 "온라인 게임": 게임 서버의 운영 상태를 비밀값으로 대신 읽고 바꿈 |
+| `/api/admin/release` | 어드민 "출시": 두 스토어의 출시 단계와 다음 할 일(읽기만, 1분 캐시). 판단은 `lib/release/board.ts`, 읽기는 `lib/release/stores.ts` |
 
 `/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 다국어 라우팅용 `proxy.ts`도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/en/*`·`app/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
 
@@ -52,6 +53,7 @@
 - `lib/constants.ts` - 사이트 전역 상수: 브랜드, 팀원(블로그 작성자 매핑에도 사용), 앱 링크, 게임 기능 목업 순서. 사용자에게 보이는 카피는 여기 두지 않는다
 - `lib/i18n/` - 다국어: 로케일 설정·경로 헬퍼(`config.ts`), 페이지 카피 단일 출처(`messages.ts`), 공통 UI 문구(`chrome.ts`). 상세는 `docs/i18n.md`
 - `lib/blog/` - 노션 데이터 레이어 (`notion.ts`), 작성자 매핑(`authors.ts`), 날짜 포맷(`format.ts`)
+- `lib/release/` - 어드민 "출시" 보드: 스토어 읽기(`stores.ts`), 단계와 다음 할 일 판단(`board.ts`), 콘솔 바로가기(`links.ts`). 상세는 `docs/admin-ui.md` "출시"
 - `public/` - 정적 에셋: `brand/`(로고), `characters/`, `event/`, `photobooth/`, `team/`(프로필 사진)
 - `next.config.ts` - 이미지 설정, `.well-known` 헤더, OG 라우트 파일 트레이싱
 
