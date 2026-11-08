@@ -208,8 +208,8 @@ export default function StorePageScreen() {
 
   const canSend = toSend > 0 && !!data?.writable;
   const sendBar = (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sd-line bg-sd-surface px-4 py-3 shadow-lg">
-      <p className="text-[13.5px] text-sd-fg">{blocked.length ? blocked[0] : `${toSend}칸을 스토어로 보낼 수 있어요.`}</p>
+    <div className="flex items-center gap-3 rounded-2xl border border-sd-line bg-sd-surface py-2 pl-4 pr-2 shadow-lg">
+      <p className={`text-[13px] ${blocked.length ? "line-clamp-2 max-w-[240px] text-sd-critical" : "whitespace-nowrap font-semibold text-sd-fg"}`}>{blocked.length ? blocked[0] : `고친 칸 ${toSend}개`}</p>
       <button type="button" disabled={blocked.length > 0 || saving > 0} onClick={() => setSending(true)} className="h-9 flex-none rounded-[10px] bg-accent px-3.5 text-[13.5px] font-semibold text-accent-fg transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50">
         {platform === "ios" ? "App Store로 보내기" : "Google Play로 보내기"}
       </button>
@@ -396,14 +396,14 @@ export default function StorePageScreen() {
             )}
           </div>
         )}
-        {/* 줄이 나타나도 내용이 밀리지 않게 자리를 늘 비워 두고, 높이 없는 기준점 위에 띄운다 */}
+        {/* 버튼은 스크롤을 따라오고, 나타나도 내용이 밀리지 않게 자리를 늘 비워 둔 채 높이 없는 기준점 위에 띄운다. 문구 화면에서는 미리보기를 가리지 않는다 */}
         {view !== "spec" && pageOk && (
           <>
             <div aria-hidden className="h-20" />
             <div className="sticky bottom-4 z-20 h-0">
               <AnimatePresence>
                 {canSend && (
-                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={{ duration: 0.16 }} className="absolute inset-x-0 bottom-0 mx-auto max-w-[720px]">
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={{ duration: 0.16 }} className={`absolute bottom-0 right-0 max-w-full ${view === "edit" ? "lg:right-[320px]" : ""}`}>
                     {sendBar}
                   </motion.div>
                 )}
