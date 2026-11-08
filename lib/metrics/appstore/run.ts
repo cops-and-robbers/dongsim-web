@@ -108,6 +108,9 @@ async function storedProcessingDates(client: SupabaseClient, report: string, day
   return map;
 }
 
+/** 함수 한도 300초 안에서 판매 리포트와 응답 시간을 남긴다 */
+const ANALYTICS_BUDGET = 200_000;
+
 async function collectAnalytics(client: SupabaseClient | null, token: string) {
   const instances = await listInstances(token, APPSTORE_APP_ID);
   let done = new Set<string>();
@@ -123,7 +126,14 @@ async function collectAnalytics(client: SupabaseClient | null, token: string) {
   let processed = 0;
   let skippedOlder = 0;
   let rowCount = 0;
+  let deferred = 0;
+  // 처음 받는 리포트는 인스턴스가 많다. 시간이 모자라면 멈추고, 다음 수집이 처리 안 한 것부터 이어 받는다
+  const stopAt = Date.now() + ANALYTICS_BUDGET;
   for (const inst of todo as Instance[]) {
+    if (Date.now() > stopAt) {
+      deferred = todo.length - processed;
+      break;
+    }
     const rows = await fetchInstanceRows(token, inst.id);
     rowCount += rows.length;
     processed++;
@@ -158,7 +168,7 @@ async function collectAnalytics(client: SupabaseClient | null, token: string) {
       { instance_id: inst.id, report: inst.report, granularity: inst.granularity, processing_date: inst.processingDate, rows: rows.length },
     ]);
   }
-  return { instances: instances.length, processed, skippedOlder, rows: rowCount };
+  return { instances: instances.length, processed, deferred, skippedOlder, rows: rowCount };
 }
 
 /** salesOnly: 판매 리포트만 받는다(주간 리포트가 보내기 직전에 일요일 치를 채울 때) */
