@@ -2,10 +2,10 @@
 
 import { Reorder } from "motion/react";
 import { useRef, useState } from "react";
-import { OfficialLink } from "@/components/admin/store-page/FieldEditor";
+import { MARK, OfficialLink } from "@/components/admin/store-page/FieldEditor";
 import { uploadStoreFile } from "@/lib/admin/storePageClient";
 import type { Platform } from "@/lib/store-page/fields";
-import { checkFile, IMAGE_SLOTS, itemId, pngHasAlpha, sameItems, type FileInfo, type ImageItem, type ImageSlot, type ImageSlotId } from "@/lib/store-page/images";
+import { checkFile, diffItems, IMAGE_SLOTS, itemId, pngHasAlpha, sameItems, type FileInfo, type ImageItem, type ImageSlot, type ImageSlotId } from "@/lib/store-page/images";
 
 // 스토어 페이지의 "이미지와 영상" (docs/admin-ui.md "스토어 페이지").
 // 스토어에 올라가 있는 것을 칸마다 보여 주고, 끌어서 순서를 바꾸고, 올리기 전에 규격을 검사한다. 스토어로는 보내기 확인창에서 나간다.
@@ -37,7 +37,7 @@ async function inspect(file: File, slot: ImageSlot): Promise<FileInfo> {
   return info;
 }
 
-function Tile({ item, video, disabled, onRemove }: { item: ImageItem; video: boolean; disabled: boolean; onRemove: () => void }) {
+function Tile({ item, video, moved, disabled, onRemove }: { item: ImageItem; video: boolean; moved: boolean; disabled: boolean; onRemove: () => void }) {
   return (
     <div className="group relative h-full">
       {!item.url ? (
@@ -51,11 +51,34 @@ function Tile({ item, video, disabled, onRemove }: { item: ImageItem; video: boo
         // eslint-disable-next-line @next/next/no-img-element
         <img src={item.url} alt="" draggable={false} className="h-full max-w-none rounded-xl bg-sd-fill object-contain" style={{ height: THUMB_H }} />
       )}
+      {(item.kind === "new" || moved) && <span aria-hidden className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-inset ring-accent" />}
       {item.kind === "new" && <span className="absolute left-1.5 top-1.5 rounded-md bg-accent px-1.5 text-[11px] font-bold leading-[18px] text-accent-fg">새 파일</span>}
+      {moved && <span className="absolute left-1.5 top-1.5 rounded-md bg-accent px-1.5 text-[11px] font-bold leading-[18px] text-accent-fg">옮김</span>}
       {item.kind === "live" && item.status === "failed" && <span className="absolute left-1.5 top-1.5 rounded-md bg-sd-critical px-1.5 text-[11px] font-bold leading-[18px] text-white">애플이 거절</span>}
       {!disabled && (
         <button type="button" aria-label="빼기" onClick={onRemove} className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-black/60 text-[14px] leading-none text-white opacity-0 transition focus:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
           ×
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** 스토어에 있는데 이번에 뺀 이미지. 줄 끝에 흐리게 남겨 무엇이 빠지는지 보여 준다 */
+function RemovedTile({ item, disabled, canRestore, onRestore }: { item: ImageItem; disabled: boolean; canRestore: boolean; onRestore: () => void }) {
+  return (
+    <div className="relative flex-none" style={{ height: THUMB_H }}>
+      {item.url ? (
+        // 스토어의 이미지를 그대로 보여 준다
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={item.url} alt="" draggable={false} className="max-w-none rounded-xl bg-sd-fill object-contain opacity-35 grayscale" style={{ height: THUMB_H }} />
+      ) : (
+        <div className="w-[108px] rounded-xl bg-sd-fill opacity-35" style={{ height: THUMB_H }} />
+      )}
+      <span className="absolute left-1.5 top-1.5 rounded-md bg-sd-gray-500 px-1.5 text-[11px] font-bold leading-[18px] text-white">뺌</span>
+      {canRestore && (
+        <button type="button" disabled={disabled} onClick={onRestore} className="absolute inset-x-1.5 bottom-1.5 rounded-lg bg-sd-surface py-1 text-[12px] font-semibold text-sd-fg shadow-sm transition hover:text-accent disabled:opacity-50">
+          되살리기
         </button>
       )}
     </div>
@@ -68,6 +91,7 @@ function SlotSection({ platform, slot, live, items, disabled, onChange }: { plat
   const [progress, setProgress] = useState<number | null>(null);
   const changed = !sameItems(items, live);
   const room = slot.max - items.length;
+  const diff = diffItems(live, items);
 
   const add = async (files: FileList) => {
     setErrors([]);
@@ -100,7 +124,8 @@ function SlotSection({ platform, slot, live, items, disabled, onChange }: { plat
   };
 
   return (
-    <section aria-label={slot.label} className="px-5 py-5">
+    <section aria-label={slot.label} className={`relative px-5 py-5 ${changed ? MARK : ""}`}>
+      {changed && <span className="sr-only">고친 칸이에요.</span>}
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
         <h3 className="text-[14px] font-bold text-sd-fg">{slot.label}</h3>
         <span className="inline-flex h-[20px] items-center rounded-md bg-sd-fill px-1.5 text-[11.5px] font-semibold text-sd-fg-subtle">{slot.need}</span>
@@ -121,7 +146,7 @@ function SlotSection({ platform, slot, live, items, disabled, onChange }: { plat
         <Reorder.Group axis="x" values={items} onReorder={(v: ImageItem[]) => !disabled && onChange(v)} className="flex gap-2.5" style={{ height: THUMB_H }}>
           {items.map((item) => (
             <Reorder.Item key={itemId(item)} value={item} drag={disabled || items.length < 2 ? false : "x"} className="flex-none cursor-grab active:cursor-grabbing" style={{ height: THUMB_H }}>
-              <Tile item={item} video={!!slot.video} disabled={disabled} onRemove={() => onChange(items.filter((x) => itemId(x) !== itemId(item)))} />
+              <Tile item={item} video={!!slot.video} moved={diff.moved.has(itemId(item))} disabled={disabled} onRemove={() => onChange(items.filter((x) => itemId(x) !== itemId(item)))} />
             </Reorder.Item>
           ))}
         </Reorder.Group>
@@ -139,6 +164,18 @@ function SlotSection({ platform, slot, live, items, disabled, onChange }: { plat
             )}
           </button>
         )}
+        {diff.removed.map((item) => (
+          <RemovedTile
+            key={itemId(item)}
+            item={item}
+            disabled={disabled}
+            canRestore={room > 0}
+            onRestore={() => {
+              const at = Math.min(live.findIndex((x) => itemId(x) === itemId(item)), items.length);
+              onChange([...items.slice(0, at), item, ...items.slice(at)]);
+            }}
+          />
+        ))}
         <input ref={input} type="file" hidden multiple={slot.max > 1} accept={slot.types.join(",")} onChange={(e) => e.target.files?.length && void add(e.target.files)} />
       </div>
       {items.length === 0 && <p className="mt-1 text-[12.5px] text-sd-fg-subtle">{slot.video ? "올라간 영상이 없어요." : "올라간 이미지가 없어요."}</p>}

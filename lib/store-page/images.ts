@@ -55,6 +55,27 @@ export type ImageDraft = { platform: Platform; lang: Lang; slot: ImageSlotId; it
 
 export const itemId = (i: ImageItem) => (i.kind === "live" ? i.id : i.key);
 export const sameItems = (a: ImageItem[], b: ImageItem[]) => a.length === b.length && a.every((x, i) => itemId(x) === itemId(b[i]));
+
+/** 고친 목록이 스토어와 어떻게 다른지. 옮긴 것은 제자리에 남은 가장 긴 줄 밖의 것이라, 하나를 끌면 그 하나만 잡힌다 */
+export function diffItems(live: ImageItem[], items: ImageItem[]): { moved: Set<string>; removed: ImageItem[] } {
+  const order = new Map(live.map((x, i) => [itemId(x), i]));
+  const kept = items.map(itemId).filter((id) => order.has(id));
+  const seq = kept.map((id) => order.get(id)!);
+  const length = seq.map(() => 1);
+  const prev = seq.map(() => -1);
+  seq.forEach((v, i) => {
+    for (let j = 0; j < i; j++) {
+      if (seq[j] < v && length[j] + 1 > length[i]) {
+        length[i] = length[j] + 1;
+        prev[i] = j;
+      }
+    }
+  });
+  const stay = new Set<number>();
+  for (let i = length.indexOf(Math.max(0, ...length)); i >= 0; i = prev[i]) stay.add(i);
+  return { moved: new Set(kept.filter((_, i) => !stay.has(i))), removed: live.filter((x) => !items.some((i) => itemId(i) === itemId(x))) };
+}
+
 export const draftKey = (p: Platform, l: Lang, s: ImageSlotId) => `${p}:${l}:${s}`;
 
 /** App Store 이미지 주소 틀에 크기를 넣는다 */

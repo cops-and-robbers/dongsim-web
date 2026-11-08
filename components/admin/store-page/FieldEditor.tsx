@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronDownIcon, ExternalLinkIcon } from "@/components/admin/icons";
+import { diffText, shorten } from "@/lib/store-page/diff";
 import { fitLabel, PREVIEW_FONT, SLOTS, type Slot } from "@/lib/store-page/display";
 import { checkField, countOf, keywordStates, WHEN_LABEL, type Draft, type Field, type Issue, type KeywordState, type Platform, type Side, type Values } from "@/lib/store-page/fields";
 
@@ -85,12 +86,36 @@ function FitChip({ slot, value }: { slot: Slot; value: string }) {
 }
 
 /** 지금 스토어 문구. 짧으면 바로 보이고, 길면 눌러서 본다 */
-function Compare({ text, label, onRevert, disabled, long }: { text: string; label: string; onRevert?: () => void; disabled?: boolean; long: boolean }) {
+/** 고친 칸 왼쪽의 표시. 이미지 칸(ImageBoard)과 같이 쓴다 */
+export const MARK = "before:absolute before:inset-y-4 before:left-0 before:w-[3px] before:rounded-r-full before:bg-accent";
+
+/** 스토어 문구에서 달라진 곳. 더한 글은 강조색, 지운 글은 취소선이다 */
+function Changes({ before, after }: { before: string; after: string }) {
+  return (
+    <p className="mt-0.5 whitespace-pre-line break-words text-[13px] leading-relaxed text-sd-fg-muted">
+      {shorten(diffText(before, after)).map((p, i) =>
+        p.kind === "same" ? (
+          <span key={i}>{p.text}</span>
+        ) : p.kind === "add" ? (
+          <ins key={i} className="rounded-[3px] bg-accent-weak font-semibold text-accent no-underline">
+            {p.text}
+          </ins>
+        ) : (
+          <del key={i} className="text-sd-fg-subtle line-through">
+            {p.text}
+          </del>
+        ),
+      )}
+    </p>
+  );
+}
+
+function Compare({ text, after, label, onRevert, disabled, long }: { text: string; after?: string; label: string; onRevert?: () => void; disabled?: boolean; long: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="mt-2.5 rounded-[10px] bg-sd-fill px-3 py-2">
       <div className="flex items-center justify-between gap-3">
-        {long ? (
+        {long && after === undefined ? (
           <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-1 text-[12px] font-semibold text-sd-fg-muted transition hover:text-sd-fg">
             {label}
             <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 420, damping: 34 }} className="inline-flex">
@@ -106,9 +131,10 @@ function Compare({ text, label, onRevert, disabled, long }: { text: string; labe
           </button>
         )}
       </div>
-      {!long && <p className="mt-0.5 whitespace-pre-line break-words text-[13px] leading-relaxed text-sd-fg-muted">{text || "비어 있어요"}</p>}
+      {after !== undefined && <Changes before={text} after={after} />}
+      {!long && after === undefined && <p className="mt-0.5 whitespace-pre-line break-words text-[13px] leading-relaxed text-sd-fg-muted">{text || "비어 있어요"}</p>}
       <AnimatePresence initial={false}>
-        {long && open && (
+        {long && open && after === undefined && (
           <motion.p initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 380, damping: 36 }} className="overflow-hidden whitespace-pre-line break-words text-[13px] leading-relaxed text-sd-fg-muted">
             <span className="block pt-1.5">{text || "비어 있어요"}</span>
           </motion.p>
@@ -158,11 +184,11 @@ export function FieldEditor({
   const changed = value !== base;
   const waiting = !changed && base !== live;
   const long = field.max > 200;
-  const box = `rounded-xl border bg-sd-surface transition focus-within:border-accent ${n > field.max ? "border-sd-critical" : "border-sd-line"}`;
+  const box = `rounded-xl border transition ${changed ? "bg-accent-weak" : "bg-sd-surface"} focus-within:border-accent ${n > field.max ? "border-sd-critical" : changed ? "border-accent" : "border-sd-line"}`;
   const input = "block w-full bg-transparent px-3.5 py-2.5 text-[14px] leading-relaxed text-sd-fg outline-none placeholder:text-sd-placeholder disabled:opacity-60";
   return (
     <div
-      className="px-5 py-5"
+      className={`relative px-5 py-5 ${changed ? MARK : ""}`}
       onFocusCapture={() => {
         onFocus();
         onEdit();
@@ -183,6 +209,7 @@ export function FieldEditor({
           <OfficialLink href={field.link} />
         </span>
       </div>
+      {changed && <span className="sr-only">고친 칸이에요.</span>}
       <p className="mb-2 text-[12.5px] leading-relaxed text-sd-fg-muted">{field.tip}</p>
       <div className={box}>
         {field.multiline ? (
@@ -220,7 +247,7 @@ export function FieldEditor({
         </div>
       )}
       {changed ? (
-        <Compare text={base} label={base === live ? "지금 스토어 문구" : "스토어에 저장된 문구"} long={long} onRevert={onRevert} disabled={disabled} />
+        <Compare text={base} after={value} label={base === live ? "지금 스토어 문구에서 달라진 곳" : "스토어에 저장된 문구에서 달라진 곳"} long={long} onRevert={onRevert} disabled={disabled} />
       ) : (
         waiting && <Compare text={live} label="지금 사용자에게 보이는 문구" long={long} />
       )}
