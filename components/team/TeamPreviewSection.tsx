@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import Container from "@/components/ui/Container";
+import { DongsimSymbol } from "@/components/icons/DongsimLogo";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { FOUNDER, TEAM_MEMBERS } from "@/lib/constants";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
@@ -21,6 +22,7 @@ export default function TeamPreviewSection({
       <Container>
         <ScrollReveal animation="fadeInUp">
           <div className="mx-auto max-w-xl text-center">
+            <DongsimSymbol className="mx-auto mb-5 h-7 w-auto text-slate-900 dark:text-white" />
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
               {copy.eyebrow}
             </p>

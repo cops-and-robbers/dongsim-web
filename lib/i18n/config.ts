@@ -32,6 +32,13 @@ export function stripLocale(pathname: string): string {
 }
 
 // 로케일별 브랜드 표기 - 로고 텍스트와 일치. 일본은 현지 명칭 ケイドロ.
+/** 회사 이름. 영어, 일본어는 "팀 동심"을 발음대로 쓴다. BRAND_NAME 은 게임 이름이다 */
+export const COMPANY_NAME: Record<Locale, string> = {
+  ko: "동심지키미",
+  en: "Team Dongsim",
+  ja: "チーム・トンシム",
+};
+
 export const BRAND_NAME: Record<Locale, string> = {
   ko: "경찰과 도둑",
   en: "Cops and Robbers",

@@ -314,34 +314,7 @@ const ko = {
     },
     records: {
       historyHeading: "걸어온 길",
-      history: [
-        { date: "2026.03.24", title: "경찰과 도둑 1차 QA 진행" },
-        { date: "2026.04.08", title: "동심지키미 설립" },
-        { date: "2026.04.28", title: "경찰과 도둑 2차 QA 진행" },
-        {
-          date: "2026.07.04",
-          title: "서울게임타운 박람회 ‘경찰과 도둑’ 부스 참여",
-        },
-      ],
       awardsHeading: "수상 및 선정 이력",
-      awards: [
-        { date: "2026.05.08", title: "세종 창업 아이디어 리그", award: "대상" },
-        {
-          date: "2026.03.06",
-          title: "세종대학교 아롬 데모데이",
-          award: "특별상",
-        },
-        {
-          date: "2026.07",
-          title: "세종대학교 하반기 입주공모전",
-          award: "우수 창업 아이템상",
-        },
-        {
-          date: "2026.07",
-          title: "세종대학교 창업 동아리 SSUP",
-          award: "선정",
-        },
-      ],
     },
     moments: {
       eyebrow: "현장에서",
@@ -699,38 +672,7 @@ const en: Messages = {
     },
     records: {
       historyHeading: "Our journey",
-      history: [
-        { date: "2026.03.24", title: "Cops and Robbers - first QA round" },
-        { date: "2026.04.08", title: "Team Dongsim founded" },
-        { date: "2026.04.28", title: "Cops and Robbers - second QA round" },
-        {
-          date: "2026.07.04",
-          title: "Seoul Game Town Expo - Cops and Robbers booth",
-        },
-      ],
       awardsHeading: "Awards & selections",
-      awards: [
-        {
-          date: "2026.05.08",
-          title: "Sejong Startup Idea League",
-          award: "Grand Prize",
-        },
-        {
-          date: "2026.03.06",
-          title: "Sejong University Arom Demo Day",
-          award: "Special Award",
-        },
-        {
-          date: "2026.07",
-          title: "Sejong University H2 Residency Contest",
-          award: "Outstanding Startup Project",
-        },
-        {
-          date: "2026.07",
-          title: "Sejong University startup club SSUP",
-          award: "Accepted",
-        },
-      ],
     },
     moments: {
       eyebrow: "Tested in the real world",
@@ -1085,38 +1027,7 @@ const ja: Messages = {
     },
     records: {
       historyHeading: "これまでの歩み",
-      history: [
-        { date: "2026.03.24", title: "ケイドロ 第1回QA実施" },
-        { date: "2026.04.08", title: "チーム・トンシム設立" },
-        { date: "2026.04.28", title: "ケイドロ 第2回QA実施" },
-        {
-          date: "2026.07.04",
-          title: "ソウルゲームタウン博覧会「ケイドロ」ブース出展",
-        },
-      ],
       awardsHeading: "受賞・選定歴",
-      awards: [
-        {
-          date: "2026.05.08",
-          title: "世宗 創業アイデアリーグ",
-          award: "大賞",
-        },
-        {
-          date: "2026.03.06",
-          title: "世宗大学 アロム・デモデー",
-          award: "特別賞",
-        },
-        {
-          date: "2026.07",
-          title: "世宗大学 下半期入居コンペ",
-          award: "優秀創業アイテム賞",
-        },
-        {
-          date: "2026.07",
-          title: "世宗大学 創業サークルSSUP",
-          award: "選定",
-        },
-      ],
     },
     moments: {
       eyebrow: "実際のフィールドで",
