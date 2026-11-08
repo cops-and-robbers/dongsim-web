@@ -5,19 +5,45 @@ import { ChangeDialog } from "@/components/admin/ChangeDialog";
 import { CheckIcon } from "@/components/admin/icons";
 import { sendStoreDrafts } from "@/lib/admin/storePageClient";
 import { LANGS, type Platform } from "@/lib/store-page/fields";
-import { CONFIRM_WORD, needsConfirm, signature, type Change } from "@/lib/store-page/send";
+import { itemId, slotById, type ImageItem } from "@/lib/store-page/images";
+import { CONFIRM_WORD, needsConfirm, signature, type Change, type ImageChange } from "@/lib/store-page/send";
 
-// 초안을 스토어로 보내기 전 확인창 (docs/admin-ui.md "스토어 페이지").
+// 초안 문구와 이미지를 스토어로 보내기 전 확인창 (docs/admin-ui.md "스토어 페이지").
 // 무엇이 어떻게 바뀌고 언제 사용자에게 보이는지 보여 준다. 사용자에게 닿는 변경은 입력까지 받는다.
 
 const NAME: Record<Platform, string> = { ios: "App Store", android: "Google Play" };
 
-export function SendDialog({ platform, changes, version, onClose, onDone }: { platform: Platform; changes: Change[]; version: string | null; onClose: () => void; onDone: (message: string) => void }) {
+function Strip({ label, items, video }: { label: string; items: ImageItem[]; video: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-[42px] flex-none text-[12px] text-sd-fg-subtle">{label}</span>
+      {items.length === 0 ? (
+        <span className="text-[12.5px] text-sd-fg-subtle">비어 있어요</span>
+      ) : (
+        <div className="flex gap-1 overflow-x-auto">
+          {items.map((i) =>
+            !i.url ? (
+              <span key={itemId(i)} className="h-14 w-7 flex-none rounded bg-sd-surface" />
+            ) : video && i.kind === "new" ? (
+              <video key={itemId(i)} src={i.url} muted playsInline preload="metadata" className="h-14 flex-none rounded" />
+            ) : (
+              // 스토어와 저장소의 이미지를 그대로 보여 준다
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={itemId(i)} src={i.url} alt="" className="h-14 flex-none rounded" />
+            ),
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function SendDialog({ platform, changes, images, version, onClose, onDone }: { platform: Platform; changes: Change[]; images: ImageChange[]; version: string | null; onClose: () => void; onDone: (message: string) => void }) {
   const [typed, setTyped] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
   const [check, setCheck] = useState<"checking" | "ok" | string>("checking");
-  const expect = signature(changes);
+  const expect = signature(changes, images);
   const lock = needsConfirm(platform, changes);
   const promo = changes.some((c) => c.field === "promotionalText");
 
@@ -35,6 +61,7 @@ export function SendDialog({ platform, changes, version, onClose, onDone }: { pl
     platform === "ios"
       ? [version ? `${version}에 저장돼요. 심사에 내기 전까지 사용자에게 보이지 않아요.` : "다음 버전에 저장돼요.", ...(promo ? ["프로모션 문구는 심사 없이 바로 사용자에게 보여요."] : [])]
       : ["구글 심사를 받은 뒤, 게시 개요에서 게시해야 사용자에게 보여요.", "심사 중인 변경이 있으면 보내지 않아요."];
+  const steps = images.length ? [...facts, "파일이 많으면 몇 분 걸릴 수 있어요. 끝날 때까지 이 창을 닫지 말아 주세요."] : facts;
 
   const send = () => {
     setPending(true);
@@ -48,7 +75,7 @@ export function SendDialog({ platform, changes, version, onClose, onDone }: { pl
   return (
     <ChangeDialog title={`${NAME[platform]}로 보내기`} size="lg" confirmText="보내기" pendingText="보내는 중..." confirmDisabled={check !== "ok" || (lock && typed.trim() !== CONFIRM_WORD)} pending={pending} error={error} onConfirm={send} onClose={onClose}>
       <div className="max-h-[40vh] space-y-4 overflow-y-auto">
-        {LANGS.filter((l) => changes.some((c) => c.lang === l.id)).map((l) => (
+        {LANGS.filter((l) => changes.some((c) => c.lang === l.id) || images.some((c) => c.lang === l.id)).map((l) => (
           <section key={l.id} aria-label={l.label}>
             <h3 className="text-[13px] font-bold text-sd-fg">{l.label}</h3>
             <ul className="mt-1.5 space-y-2">
@@ -63,12 +90,21 @@ export function SendDialog({ platform, changes, version, onClose, onDone }: { pl
                     <p className="mt-0.5 line-clamp-4 whitespace-pre-line break-words text-[13px] font-medium leading-relaxed text-sd-fg">{c.after || "비워요"}</p>
                   </li>
                 ))}
+              {images
+                .filter((c) => c.lang === l.id)
+                .map((c) => (
+                  <li key={c.slot} className="space-y-1.5 rounded-[10px] bg-sd-fill px-3 py-2">
+                    <p className="text-[12.5px] font-semibold text-sd-fg-muted">{c.label}</p>
+                    <Strip label="지금" items={c.before} video={!!slotById(platform, c.slot)?.video} />
+                    <Strip label="보낸 뒤" items={c.after} video={!!slotById(platform, c.slot)?.video} />
+                  </li>
+                ))}
             </ul>
           </section>
         ))}
       </div>
       <ul className="mt-4 space-y-1">
-        {facts.map((f) => (
+        {steps.map((f) => (
           <li key={f} className="text-[13px] leading-relaxed text-sd-fg-muted">
             {f}
           </li>

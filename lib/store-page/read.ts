@@ -61,31 +61,34 @@ export async function readIosPage(now = new Date()): Promise<IosPage> {
 
 const emptyImages = (): LiveImages => ({ ko: {}, en: {}, ja: {} });
 
-/** 버전의 언어마다 올라간 스크린샷과 미리보기 영상. 스토어가 정한 순서 그대로 */
+/** 버전의 언어마다 올라간 스크린샷과 미리보기 영상. 스토어가 정한 순서 그대로. id 는 그 자리(placement)의 값이다 */
 async function readIosImages(token: string, locales: Map<string, Row>): Promise<LiveImages> {
   const out = emptyImages();
   await Promise.all(
     LANGS.map(async (l) => {
       const id = locales.get(l.ios)?.id;
       if (!id) return;
-      const sets = await asc(`/appStoreVersionLocalizations/${id}/appScreenshotSets?limit=30&include=appScreenshots&fields[appScreenshots]=imageAsset&limit[appScreenshots]=10`, token);
-      const byId = new Map((sets.included ?? []).map((r) => [r.id, r]));
-      const list = (type: string): LiveImage[] => {
-        const set = sets.data?.find((s) => s.attributes?.screenshotDisplayType === type);
-        return ((set?.relationships?.appScreenshots?.data ?? []) as unknown as { id: string }[]).flatMap((ref) => {
-          const asset = byId.get(ref.id)?.attributes?.imageAsset as { templateUrl?: string; width?: number; height?: number } | undefined;
-          if (!asset?.templateUrl || !asset.width || !asset.height) return [];
-          const w = 600;
-          return [{ kind: "live" as const, id: ref.id, url: ascImageUrl(asset.templateUrl, w, Math.round((w * asset.height) / asset.width)) }];
-        });
-      };
-      out[l.id] = { iphone: list("APP_IPHONE_67"), ipad: list("APP_IPAD_PRO_3GEN_129"), preview: [] };
+      const placed = await asc(`/appStoreVersionLocalizations/${id}/placements?limit=50&sort=placementGroupPosition&include=image,video&fields[appAssetLibraryImages]=imageAsset,state&fields[appAssetLibraryVideos]=previewFrameImage,state`, token);
+      const byId = new Map((placed.included ?? []).map((r) => [r.id, r.attributes]));
+      type Pic = { templateUrl?: string; width?: number; height?: number };
+      const list = (type: string, group: string): LiveImage[] =>
+        (placed.data ?? [])
+          .filter((p) => p.attributes?.placementType === type && p.attributes?.placementGroup === group)
+          .map((p) => {
+            const rel = p.relationships as unknown as { image?: { data?: { id: string } | null }; video?: { data?: { id: string } | null } };
+            const asset = byId.get(rel.image?.data?.id ?? rel.video?.data?.id ?? "");
+            const pic = (asset?.imageAsset ?? (asset?.previewFrameImage as { image?: Pic } | undefined)?.image) as Pic | undefined;
+            const w = 600;
+            const url = pic?.templateUrl && pic.width && pic.height ? ascImageUrl(pic.templateUrl, w, Math.round((w * pic.height) / pic.width)) : "";
+            return { kind: "live" as const, id: p.id, url, ...(asset?.state === "FAILED" ? { status: "failed" as const } : url ? {} : { status: "processing" as const }) };
+          });
+      out[l.id] = { iphone: list("APP_SCREENSHOT", "IPHONE_DYNAMIC_ISLAND_LARGE_PROFILE"), ipad: list("APP_SCREENSHOT", "IPAD_13_PROFILE"), preview: list("APP_PREVIEW", "IPHONE_DYNAMIC_ISLAND_LARGE_PROFILE") };
     }),
   );
   return out;
 }
 
-const PLAY_IMAGE_TYPES = [
+export const PLAY_IMAGE_TYPES = [
   ["icon", "icon"],
   ["feature", "featureGraphic"],
   ["phone", "phoneScreenshots"],

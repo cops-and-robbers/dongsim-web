@@ -60,7 +60,7 @@ type ImageRow = { platform: ImageDraft["platform"]; lang: Lang; slot: ImageSlotI
 const toImageDraft = (r: ImageRow): ImageDraft => ({ platform: r.platform, lang: r.lang, slot: r.slot, items: r.items, updatedBy: r.updated_by, updatedAt: r.updated_at });
 
 /** 표가 아직 없으면 null */
-async function readImageDrafts(): Promise<ImageDraft[] | null> {
+export async function readImageDrafts(): Promise<ImageDraft[] | null> {
   try {
     const { data, error } = await db().from(IMAGE_TABLE).select(IMAGE_COLUMNS);
     if (error) throw new Error(error.message);
@@ -102,6 +102,14 @@ export async function storePage(): Promise<StorePage> {
 export async function deleteDrafts(platform: Draft["platform"], changes: { lang: Lang; field: FieldId }[]): Promise<void> {
   for (const c of changes) {
     const { error } = await db().from(TABLE).delete().match({ platform, lang: c.lang, field: c.field });
+    if (error) throw new Error(error.message);
+  }
+}
+
+/** 스토어로 보낸 이미지 칸의 초안을 지운다 */
+export async function deleteImageDrafts(platform: ImageDraft["platform"], changes: { lang: Lang; slot: ImageSlotId }[]): Promise<void> {
+  for (const c of changes) {
+    const { error } = await db().from(IMAGE_TABLE).delete().match({ platform, lang: c.lang, slot: c.slot });
     if (error) throw new Error(error.message);
   }
 }
