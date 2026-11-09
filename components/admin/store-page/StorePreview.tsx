@@ -220,6 +220,23 @@ function AppStoreSearch({ v, art, spot, go }: ScreenProps) {
           <Shots art={art} width={111} height={241} gap={9.5} left={0} radius={14} />
         </div>
       </div>
+      {[0, 1].map((i) => (
+        <div key={i} aria-hidden style={{ padding: "28px 20px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ width: 60, height: 60, borderRadius: 13, background: "#eceff3", flex: "none" }} />
+            <div style={{ flex: 1 }}>
+              <span style={{ display: "block", width: 150, height: 13, borderRadius: 4, background: "#eceff3" }} />
+              <span style={{ display: "block", width: 100, height: 10, borderRadius: 4, background: "#f1f3f6", marginTop: 8 }} />
+            </div>
+            <span style={{ width: 72, height: 32, borderRadius: 16, background: "#f1f3f6", flex: "none" }} />
+          </div>
+          <div style={{ display: "flex", gap: 9.5, marginTop: 16 }}>
+            {[0, 1, 2].map((k) => (
+              <span key={k} style={{ width: 111, height: 241, borderRadius: 14, background: "#f1f3f6", flex: "none" }} />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -391,7 +408,7 @@ function PlaySearch({ v, art, spot, go }: ScreenProps) {
           <Shots art={art} width={93} height={165.7} gap={13} left={24} radius={8} first={<PlayVideo url={v.video} on={spot === "video"} />} />
         </div>
       )}
-      {[0, 1].map((i) => (
+      {[0, 1, 2, 3].map((i) => (
         <div key={i} aria-hidden style={{ display: "flex", alignItems: "center", gap: 16.7, padding: `${i === 0 && open ? 34.5 : 24}px 24px 0` }}>
           <span style={{ width: 56, height: 56, borderRadius: 12, background: "#eceff3", flex: "none" }} />
           <div style={{ flex: 1 }}>
