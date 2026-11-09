@@ -65,7 +65,7 @@ function Text({ platform, field, surface, value, spot, color }: { platform: Plat
 function Img({ src, style }: { src: string | null | undefined; style: CSSProperties }) {
   // 스토어 이미지는 외부 주소 그대로 쓴다
   // eslint-disable-next-line @next/next/no-img-element
-  return src ? <img src={src} alt="" style={style} /> : <span style={{ display: "block", background: "#e5e7eb", ...style }} />;
+  return src ? <img src={src} alt="" draggable={false} style={style} /> : <span style={{ display: "block", background: "#e5e7eb", ...style }} />;
 }
 
 function Shots({ art, width, height, gap, left, radius, first }: { art: Art; width: number; height: number; gap: number; left: number; radius: number; first?: ReactNode }) {
