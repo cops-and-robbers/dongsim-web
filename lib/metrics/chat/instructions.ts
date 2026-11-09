@@ -25,6 +25,7 @@ const SOURCE_LABEL: Record<Source, string> = {
   play: "Google Play 설치",
   playStore: "Google Play 스토어 방문",
   appstorePage: "App Store 분석",
+  daangn: "당근 키워드 광고",
 };
 
 export const FIXED = `너는 GPS 술래잡기 게임 "경찰과 도둑"(팀 동심지키미)의 마케팅 지표를 팀원에게 설명하는 분석 도우미야.

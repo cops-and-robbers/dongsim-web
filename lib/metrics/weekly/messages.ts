@@ -52,6 +52,8 @@ export function buildWeeklyReport(
   const firstBefore = before.installs.firstOpenAndroid + before.installs.firstOpenIos;
   const perGame = now.game.playerFinishes > 0 ? (now.ads.impressions / now.game.playerFinishes).toFixed(1) : null;
   const showRate = pct(now.ads.impressions, now.ads.matchedRequests);
+  const ad = now.daangnAds;
+  const adBefore = before.daangnAds;
 
   const blocks: (string | null)[][] = [
     [
@@ -89,6 +91,17 @@ export function buildWeeklyReport(
       perGame ? `- 게임을 끝낸 ${formatCount(now.game.playerFinishes)}회, 1회당 광고 노출 ${perGame}회` : null,
       `- 예상 광고 수익 ${usd(now.ads.earningsMicros)} (전주 ${usd(before.ads.earningsMicros)})`,
     ],
+    ...(ad.impressions > 0 || adBefore.impressions > 0
+      ? [
+          [
+            "**당근 키워드 광고**",
+            line("노출", ad.impressions, adBefore.impressions, "회"),
+            line("클릭", ad.clicks, adBefore.clicks, "회"),
+            `- 비용 ${formatCount(Math.round(ad.costWon))}원 (전주 ${formatCount(Math.round(adBefore.costWon))}원)`,
+            ad.visits > 0 ? `- 광고로 온 사이트 방문 ${formatCount(ad.visits)}회, 방문 1회당 ${formatCount(Math.round(ad.costWon / ad.visits))}원` : null,
+          ],
+        ]
+      : []),
     [
       // 테스트 기기는 뺀다(#157). 뺀 몫을 밝혀 GA4 콘솔 숫자와 다른 이유를 알 수 있게 한다
       now.installs.firstOpenTest > 0

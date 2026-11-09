@@ -43,6 +43,13 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
 
   // 전부 끝까지 쪽을 넘겨 읽는다(db.ts selectAll). Supabase 는 한 번에 1,000줄까지만 주고,
   // 잘려도 오류가 없어 합계가 조용히 틀린다. GA4 는 2주만 읽어도 1,000줄 가까이 된다
+  // 테이블이 없거나 읽기가 실패해도 주간 리포트는 나가야 한다. 그때는 당근 줄만 빠진다
+  const daangnAds = await selectAll<{ day: string; impressions: number; clicks: number; cost_won: number }>(
+    (a, b) => client.from("daangn_ads_daily").select("day, impressions, clicks, cost_won").gte("day", from).lte("day", to).order("day").order("material_id").range(a, b),
+    "당근 광고 읽기",
+  )
+    .then((rows) => rows.map((r) => ({ day: r.day, impressions: Number(r.impressions), clicks: Number(r.clicks), costWon: Number(r.cost_won) })))
+    .catch(() => []);
   const [igDays, igPosts, ga4, sales, admob, play] = await Promise.all([
     selectAll<{ day: string; views: number | null; profile_views: number | null; website_clicks: number | null }>(
       (a, b) =>
@@ -145,6 +152,7 @@ export async function runWeekly(opts: { dry: boolean; now?: Date; webhookUrl?: s
       matchedRequests: Number(r.matched_requests),
       impressions: Number(r.impressions),
     })),
+    daangnAds,
     play,
   };
   const thisWeek = weeklyNumbers(input, current);
