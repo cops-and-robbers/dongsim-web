@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import { PhoneFrame } from "@/components/game/PhoneMockup";
 import { PREVIEW_FONT, slotOf, STAGE_WIDTH, type Slot, type Surface } from "@/lib/store-page/display";
 import { videoThumb, type Art, type FieldId, type Platform, type Values } from "@/lib/store-page/fields";
+import { MATERIAL, PHOSPHOR } from "./storeIcons";
 
 // 스토어 페이지 화면 오른쪽의 폰 (docs/admin-ui.md "스토어 페이지"). 운영진만 보는 미리보기다.
 // 실제 스토어 앱 캡처(iPhone App Store, Galaxy Google Play, 2026-11-07)를 픽셀로 잰 값으로 앱 화면과 같게 그리고,
@@ -70,24 +71,26 @@ const Icon = ({ d, size = 24, color = "currentColor", width = 2 }: { d: string; 
   </svg>
 );
 
+/** Material Symbols 는 면 하나로 된 원본이라 선 굵기를 따로 주지 않는다 */
+const Material = ({ d, size = 24, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
+  <svg viewBox="0 -960 960 960" width={size} height={size} fill={color} aria-hidden>
+    <path d={d} />
+  </svg>
+);
+
+const Phosphor = ({ d, size = 24, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
+  <svg viewBox="0 0 256 256" width={size} height={size} fill={color} aria-hidden>
+    <path d={d} />
+  </svg>
+);
+
 const PATH = {
   download: "M12 4v11M7 11l5 5 5-5M5 20h14",
   back: "M15 5l-7 7 7 7",
   share: "M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7",
   chevron: "M9 5l7 7-7 7",
-  arrowBack: "M20 12H5M11 5l-7 7 7 7",
-  arrow: "M4 12h15M13 5l7 7-7 7",
-  down: "M6 9l6 6 6-6",
   search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3",
   close: "M6 6l12 12M18 6L6 18",
-  today: "M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8 8h8M8 12h8",
-  rocket: "M5 19c1-3 2-4 4-5l1 1c-1 2-2 3-5 4zM9 12c1-5 5-9 11-9 0 6-4 10-9 11z",
-  layers: "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5",
-  arcade: "M12 11V5M9 3.5a3 3 0 1 0 6 0M4 15l8-4 8 4-8 4z",
-  game: "M7 7h10a5 5 0 0 1 5 5v3a3 3 0 0 1-5.5 1.6L15 14H9l-1.5 2.6A3 3 0 0 1 2 15v-3a5 5 0 0 1 5-5z",
-  apps: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
-  book: "M6 3h12v18l-6-4-6 4z",
-  user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
 };
 
 function Stars({ size }: { size: number }) {
@@ -171,6 +174,9 @@ function AppStoreSearch({ v, art, spot }: ScreenProps) {
         <div style={{ flex: 1, height: 40, borderRadius: 20, background: "#f2f2f4", display: "flex", alignItems: "center", gap: 8, padding: "0 14px", fontSize: 15, color: "#000" }}>
           <Icon d={PATH.search} size={18} color="#000" />
           경찰과 도둑
+          <span style={{ marginLeft: "auto", width: 20, height: 20, borderRadius: 10, background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon d={PATH.close} size={13} color="#fff" width={3} />
+          </span>
         </div>
         <span style={{ width: 40, height: 40, borderRadius: 20, background: "#f2f2f4", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Icon d={PATH.close} size={18} color="#000" />
@@ -204,9 +210,11 @@ function AppStoreSearch({ v, art, spot }: ScreenProps) {
 function PlayBar({ title }: { title?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", height: 56, padding: "0 20px", gap: 20, color: PLAY.text }}>
-      <Icon d={PATH.arrowBack} size={24} color={PLAY.text} />
+      <Material d={MATERIAL.arrowBack} size={24} color={PLAY.text} />
       {title && <span style={{ fontSize: 16 }}>{title}</span>}
-      <span style={{ marginLeft: "auto", fontSize: 22, lineHeight: "22px" }}>⋮</span>
+      <span style={{ marginLeft: "auto", display: "flex" }}>
+        <Material d={MATERIAL.moreVert} size={24} color={PLAY.text} />
+      </span>
     </div>
   );
 }
@@ -308,7 +316,7 @@ function PlayPage({ v, art, spot, go }: ScreenProps) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "28px 24px 0" }}>
         <p style={{ fontSize: 16.3, lineHeight: "24px", fontWeight: 500, color: PLAY.text }}>앱 정보</p>
         <button type="button" aria-label="세부정보 보기" onClick={() => go("details")} style={{ width: 28, height: 32, borderRadius: 16, border: 0, cursor: "pointer", background: PLAY.tint, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon d={PATH.arrow} size={16} color={PLAY.text} />
+          <Material d={MATERIAL.arrowForward} size={16} color={PLAY.text} />
         </button>
       </div>
       <div style={{ padding: "26px 24px 0" }}>
@@ -354,7 +362,7 @@ function PlaySearch({ v, art, spot }: ScreenProps) {
           )}
         </div>
         <button type="button" aria-expanded={open} aria-label={open ? "접기" : "펼치기"} onClick={() => setOpen((o) => !o)} style={{ ...round, marginTop: 10, border: 0, cursor: "pointer", transform: open ? "rotate(180deg)" : undefined }}>
-          <Icon d={PATH.down} size={16} color={PLAY.text} />
+          <Material d={MATERIAL.down} size={16} color={PLAY.text} />
         </button>
       </div>
       {open && (
@@ -370,7 +378,7 @@ function PlaySearch({ v, art, spot }: ScreenProps) {
             <span style={{ display: "block", width: 100, height: 10, borderRadius: 4, background: "#f1f3f6", marginTop: 8 }} />
           </div>
           <span style={round}>
-            <Icon d={PATH.down} size={16} color={PLAY.gray} />
+            <Material d={MATERIAL.down} size={16} color={PLAY.gray} />
           </span>
         </div>
       ))}
@@ -384,7 +392,7 @@ function PlayDetails({ v, art, spot, go }: ScreenProps) {
     <div style={{ background: "#fff", minHeight: "100%", paddingBottom: 60 }}>
       <div style={{ display: "flex", alignItems: "center", height: 50, borderBottom: `1px solid ${PLAY.line}`, padding: "0 0 0 20px" }}>
         <button type="button" aria-label="앱 상세로 돌아가기" onClick={() => go("page")} style={{ border: 0, background: "none", padding: 0, cursor: "pointer", display: "flex" }}>
-          <Icon d={PATH.arrowBack} size={20} color={PLAY.text} />
+          <Material d={MATERIAL.arrowBack} size={20} color={PLAY.text} />
         </button>
         <Img src={art.icon} style={{ width: 31, height: 31, borderRadius: 7, flex: "none", marginLeft: 18 }} />
         <div style={{ marginLeft: 22, minWidth: 0 }}>
@@ -407,17 +415,17 @@ function PlayDetails({ v, art, spot, go }: ScreenProps) {
 
 function IosTabs() {
   const items = [
-    ["투데이", PATH.today],
-    ["게임", PATH.rocket],
-    ["앱", PATH.layers],
-    ["Arcade", PATH.arcade],
-    ["검색", PATH.search],
+    ["투데이", PHOSPHOR.today],
+    ["게임", PHOSPHOR.rocket],
+    ["앱", PHOSPHOR.layers],
+    ["Arcade", PHOSPHOR.arcade],
+    ["검색", PHOSPHOR.search],
   ] as const;
   return (
     <div style={{ margin: "0 21px 22px", height: 61, borderRadius: 31, background: "rgba(250,250,252,.95)", boxShadow: "0 2px 12px rgba(0,0,0,.14)", display: "flex", alignItems: "center", padding: "0 4px" }}>
       {items.map(([label, d], i) => (
         <div key={label} style={{ flex: 1, height: 53, borderRadius: 27, background: i === 4 ? "#e3e3e8" : "transparent", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: i === 4 ? IOS.blue : "#000", fontSize: 10, fontWeight: 600 }}>
-          <Icon d={d} size={23} color={i === 4 ? IOS.blue : "#000"} />
+          <Phosphor d={d} size={25} color={i === 4 ? IOS.blue : "#000"} />
           {label}
         </div>
       ))}
@@ -427,18 +435,18 @@ function IosTabs() {
 
 function PlayTabs() {
   const items = [
-    ["게임", PATH.game],
-    ["앱", PATH.apps],
-    ["검색", PATH.search],
-    ["도서", PATH.book],
-    ["내 페이지", PATH.user],
+    ["게임", MATERIAL.game],
+    ["앱", MATERIAL.apps],
+    ["검색", MATERIAL.search],
+    ["도서", MATERIAL.book],
+    ["내 페이지", MATERIAL.person],
   ] as const;
   return (
     <div style={{ background: "#eff1f7", height: 112, display: "flex", padding: "6px 0 0" }}>
       {items.map(([label, d], i) => (
         <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", fontSize: 12, lineHeight: "20px", color: i === 2 ? PLAY.blue : PLAY.gray, fontWeight: i === 2 ? 600 : 500 }}>
           <span style={{ width: 56, height: 32, borderRadius: 16, background: i === 2 ? "#c2e7ff" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon d={d} size={22} color={i === 2 ? PLAY.blue : PLAY.gray} />
+            <Material d={d} size={24} color={i === 2 ? PLAY.blue : PLAY.gray} />
           </span>
           {label}
         </div>
