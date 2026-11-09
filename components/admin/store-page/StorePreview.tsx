@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 import { PhoneFrame } from "@/components/game/PhoneMockup";
 import { PREVIEW_FONT, slotOf, STAGE_WIDTH, type Slot, type Surface } from "@/lib/store-page/display";
 import { videoThumb, type Art, type FieldId, type Platform, type Values } from "@/lib/store-page/fields";
+import { MATERIAL, PHOSPHOR } from "./storeIcons";
 
 // 스토어 페이지 화면 오른쪽의 폰 (docs/admin-ui.md "스토어 페이지"). 운영진만 보는 미리보기다.
 // 실제 스토어 앱 캡처(iPhone App Store, Galaxy Google Play, 2026-11-07)를 픽셀로 잰 값으로 앱 화면과 같게 그리고,
@@ -13,6 +14,9 @@ const IOS = { text: "#000", gray: "#8a8a8e", blue: "#007aff", line: "#e5e5ea" };
 const PLAY = { text: "#1f1f1f", gray: "#444746", blue: "#0b57d0", line: "#c4c7c5", tint: "#e9eef6" };
 
 const SPOT: CSSProperties = { outline: "3px solid #339DFF", outlineOffset: 3, borderRadius: 6 };
+
+/** 폰의 글자를 누르면 왼쪽 입력칸으로 간다 */
+const PickField = createContext<((field: FieldId) => void) | null>(null);
 
 function slotStyle(slot: Slot): CSSProperties {
   return {
@@ -29,19 +33,31 @@ function slotStyle(slot: Slot): CSSProperties {
 
 function Text({ platform, field, surface, value, spot, color }: { platform: Platform; field: FieldId; surface: Surface; value: string; spot: FieldId | null; color: string }) {
   const slot = slotOf(platform, field, surface);
+  const pick = useContext(PickField);
   const ref = useRef<HTMLDivElement>(null);
   const [cut, setCut] = useState(false);
+  const [open, setOpen] = useState(false);
   useLayoutEffect(() => {
     if (ref.current) setCut(ref.current.scrollHeight > ref.current.clientHeight + 1);
-  }, [value, slot]);
+  }, [value, slot, open]);
   if (!slot) return null;
   const on = spot === field;
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      pick?.(field);
+    }
+  };
   return (
     <div style={{ position: "relative", width: slot.width }}>
-      <div ref={ref} data-spot={on ? "on" : undefined} data-slot={`${field}-${surface}`} style={{ ...slotStyle(slot), color, ...(on ? SPOT : {}) }}>
+      <div ref={ref} role="button" tabIndex={0} aria-label={`${slot.where} 고치기`} onClick={() => pick?.(field)} onKeyDown={onKey} className="cursor-pointer rounded-[3px] outline-offset-[3px] outline-[#339DFF]/60 hover:outline-2 focus-visible:outline-2" data-spot={on ? "on" : undefined} data-slot={`${field}-${surface}`} style={{ ...slotStyle(open ? { ...slot, maxLines: null } : slot), color, ...(on ? SPOT : {}) }}>
         {value}
       </div>
-      {cut && slot.more && <span style={{ position: "absolute", right: 0, bottom: 0, paddingLeft: 24, background: "linear-gradient(90deg,transparent,#fff 18px)", color: IOS.blue, fontSize: slot.fontSize, lineHeight: `${slot.lineHeight}px` }}>더 보기</span>}
+      {cut && !open && slot.more && (
+        <button type="button" onClick={() => setOpen(true)} style={{ position: "absolute", right: 0, bottom: 0, paddingLeft: 24, border: 0, cursor: "pointer", background: "linear-gradient(90deg,transparent,#fff 18px)", color: platform === "ios" ? IOS.blue : PLAY.blue, fontSize: slot.fontSize, lineHeight: `${slot.lineHeight}px` }}>
+          더 보기
+        </button>
+      )}
     </div>
   );
 }
@@ -49,13 +65,13 @@ function Text({ platform, field, surface, value, spot, color }: { platform: Plat
 function Img({ src, style }: { src: string | null | undefined; style: CSSProperties }) {
   // 스토어 이미지는 외부 주소 그대로 쓴다
   // eslint-disable-next-line @next/next/no-img-element
-  return src ? <img src={src} alt="" style={style} /> : <span style={{ display: "block", background: "#e5e7eb", ...style }} />;
+  return src ? <img src={src} alt="" draggable={false} style={style} /> : <span style={{ display: "block", background: "#e5e7eb", ...style }} />;
 }
 
 function Shots({ art, width, height, gap, left, radius, first }: { art: Art; width: number; height: number; gap: number; left: number; radius: number; first?: ReactNode }) {
   const urls: (string | null)[] = art.screenshots.length ? art.screenshots : [null, null, null];
   return (
-    <div style={{ display: "flex", gap, paddingLeft: left, overflow: "hidden" }}>
+    <div data-hscroll style={{ display: "flex", gap, paddingLeft: left, paddingRight: left, overflowX: "auto", scrollbarWidth: "none" }}>
       {first}
       {urls.map((u, i) => (
         <Img key={`${i}-${u}`} src={u} style={{ width, height, flex: "none", objectFit: "cover", borderRadius: radius }} />
@@ -70,24 +86,26 @@ const Icon = ({ d, size = 24, color = "currentColor", width = 2 }: { d: string; 
   </svg>
 );
 
+/** Material Symbols 는 면 하나로 된 원본이라 선 굵기를 따로 주지 않는다 */
+const Material = ({ d, size = 24, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
+  <svg viewBox="0 -960 960 960" width={size} height={size} fill={color} aria-hidden>
+    <path d={d} />
+  </svg>
+);
+
+const Phosphor = ({ d, size = 24, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
+  <svg viewBox="0 0 256 256" width={size} height={size} fill={color} aria-hidden>
+    <path d={d} />
+  </svg>
+);
+
 const PATH = {
   download: "M12 4v11M7 11l5 5 5-5M5 20h14",
   back: "M15 5l-7 7 7 7",
   share: "M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7",
   chevron: "M9 5l7 7-7 7",
-  arrowBack: "M20 12H5M11 5l-7 7 7 7",
-  arrow: "M4 12h15M13 5l7 7-7 7",
-  down: "M6 9l6 6 6-6",
   search: "M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3",
   close: "M6 6l12 12M18 6L6 18",
-  today: "M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8 8h8M8 12h8",
-  rocket: "M5 19c1-3 2-4 4-5l1 1c-1 2-2 3-5 4zM9 12c1-5 5-9 11-9 0 6-4 10-9 11z",
-  layers: "M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5",
-  arcade: "M12 11V5M9 3.5a3 3 0 1 0 6 0M4 15l8-4 8 4-8 4z",
-  game: "M7 7h10a5 5 0 0 1 5 5v3a3 3 0 0 1-5.5 1.6L15 14H9l-1.5 2.6A3 3 0 0 1 2 15v-3a5 5 0 0 1 5-5z",
-  apps: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
-  book: "M6 3h12v18l-6-4-6 4z",
-  user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
 };
 
 function Stars({ size }: { size: number }) {
@@ -100,7 +118,7 @@ function GetButton() {
 
 type ScreenProps = { v: Values; art: Art; spot: FieldId | null; go: (m: Surface) => void };
 
-function AppStorePage({ v, art, spot }: ScreenProps) {
+function AppStorePage({ v, art, spot, go }: ScreenProps) {
   const circle: CSSProperties = { width: 44, height: 44, borderRadius: 22, background: "rgba(255,255,255,.9)", boxShadow: "0 1px 6px rgba(0,0,0,.12)", display: "flex", alignItems: "center", justifyContent: "center" };
   const stat = (label: string, big: ReactNode, small: ReactNode, last = false) => (
     <div style={{ width: 105, flex: "none", textAlign: "center", borderRight: last ? "none" : `1px solid ${IOS.line}` }}>
@@ -112,9 +130,9 @@ function AppStorePage({ v, art, spot }: ScreenProps) {
   return (
     <div style={{ background: "#fff", paddingBottom: 110 }}>
       <div style={{ display: "flex", justifyContent: "space-between", padding: "0 16px", height: 44 }}>
-        <span style={circle}>
+        <button type="button" aria-label="검색 결과로 돌아가기" onClick={() => go("search")} style={{ ...circle, border: 0, cursor: "pointer" }}>
           <Icon d={PATH.back} size={22} color="#000" />
-        </span>
+        </button>
         <span style={circle}>
           <Icon d={PATH.share} size={20} color="#000" />
         </span>
@@ -164,13 +182,16 @@ function AppStorePage({ v, art, spot }: ScreenProps) {
   );
 }
 
-function AppStoreSearch({ v, art, spot }: ScreenProps) {
+function AppStoreSearch({ v, art, spot, go }: ScreenProps) {
   return (
     <div style={{ background: "#fff", minHeight: "100%", paddingBottom: 110 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 20px 0" }}>
         <div style={{ flex: 1, height: 40, borderRadius: 20, background: "#f2f2f4", display: "flex", alignItems: "center", gap: 8, padding: "0 14px", fontSize: 15, color: "#000" }}>
           <Icon d={PATH.search} size={18} color="#000" />
           경찰과 도둑
+          <span style={{ marginLeft: "auto", width: 20, height: 20, borderRadius: 10, background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon d={PATH.close} size={13} color="#fff" width={3} />
+          </span>
         </div>
         <span style={{ width: 40, height: 40, borderRadius: 20, background: "#f2f2f4", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Icon d={PATH.close} size={18} color="#000" />
@@ -178,7 +199,9 @@ function AppStoreSearch({ v, art, spot }: ScreenProps) {
       </div>
       <div style={{ padding: "24px 20px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Img src={art.icon} style={{ width: 60, height: 60, borderRadius: 13, flex: "none", border: "1px solid rgba(0,0,0,.06)" }} />
+          <button type="button" aria-label="제품 페이지 열기" onClick={() => go("page")} style={{ border: 0, padding: 0, background: "none", cursor: "pointer", flex: "none" }}>
+            <Img src={art.icon} style={{ width: 60, height: 60, borderRadius: 13, display: "block", border: "1px solid rgba(0,0,0,.06)" }} />
+          </button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <Text platform="ios" field="name" surface="search" value={v.name ?? ""} spot={spot} color={IOS.text} />
             <Text platform="ios" field="subtitle" surface="search" value={v.subtitle ?? ""} spot={spot} color={IOS.gray} />
@@ -197,16 +220,37 @@ function AppStoreSearch({ v, art, spot }: ScreenProps) {
           <Shots art={art} width={111} height={241} gap={9.5} left={0} radius={14} />
         </div>
       </div>
+      {[0, 1].map((i) => (
+        <div key={i} aria-hidden style={{ padding: "28px 20px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ width: 60, height: 60, borderRadius: 13, background: "#eceff3", flex: "none" }} />
+            <div style={{ flex: 1 }}>
+              <span style={{ display: "block", width: 150, height: 13, borderRadius: 4, background: "#eceff3" }} />
+              <span style={{ display: "block", width: 100, height: 10, borderRadius: 4, background: "#f1f3f6", marginTop: 8 }} />
+            </div>
+            <span style={{ width: 72, height: 32, borderRadius: 16, background: "#f1f3f6", flex: "none" }} />
+          </div>
+          <div style={{ display: "flex", gap: 9.5, marginTop: 16 }}>
+            {[0, 1, 2].map((k) => (
+              <span key={k} style={{ width: 111, height: 241, borderRadius: 14, background: "#f1f3f6", flex: "none" }} />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-function PlayBar({ title }: { title?: string }) {
+function PlayBar({ title, onBack }: { title?: string; onBack?: () => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", height: 56, padding: "0 20px", gap: 20, color: PLAY.text }}>
-      <Icon d={PATH.arrowBack} size={24} color={PLAY.text} />
+      <button type="button" aria-label="뒤로" onClick={onBack} style={{ border: 0, background: "none", padding: 0, display: "flex", cursor: onBack ? "pointer" : "default" }}>
+        <Material d={MATERIAL.arrowBack} size={24} color={PLAY.text} />
+      </button>
       {title && <span style={{ fontSize: 16 }}>{title}</span>}
-      <span style={{ marginLeft: "auto", fontSize: 22, lineHeight: "22px" }}>⋮</span>
+      <span style={{ marginLeft: "auto", display: "flex" }}>
+        <Material d={MATERIAL.moreVert} size={24} color={PLAY.text} />
+      </span>
     </div>
   );
 }
@@ -274,7 +318,7 @@ function PlayPage({ v, art, spot, go }: ScreenProps) {
   return (
     <div style={{ background: "#fff", paddingBottom: 130, position: "relative" }}>
       {probe}
-      <PlayBar />
+      <PlayBar onBack={() => go("search")} />
       {wraps ? (
         <PlayLongHead v={v} art={art} spot={spot} />
       ) : (
@@ -308,7 +352,7 @@ function PlayPage({ v, art, spot, go }: ScreenProps) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "28px 24px 0" }}>
         <p style={{ fontSize: 16.3, lineHeight: "24px", fontWeight: 500, color: PLAY.text }}>앱 정보</p>
         <button type="button" aria-label="세부정보 보기" onClick={() => go("details")} style={{ width: 28, height: 32, borderRadius: 16, border: 0, cursor: "pointer", background: PLAY.tint, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon d={PATH.arrow} size={16} color={PLAY.text} />
+          <Material d={MATERIAL.arrowForward} size={16} color={PLAY.text} />
         </button>
       </div>
       <div style={{ padding: "26px 24px 0" }}>
@@ -322,7 +366,7 @@ function PlayPage({ v, art, spot, go }: ScreenProps) {
   );
 }
 
-function PlaySearch({ v, art, spot }: ScreenProps) {
+function PlaySearch({ v, art, spot, go }: ScreenProps) {
   // 앱에서 검색 결과의 화살표를 연 화면이 기본이다. 영상과 스크린샷까지 보여서 고칠 때 더 쓸모 있다
   const [open, setOpen] = useState(true);
   const chip: CSSProperties = { flex: "none", height: 32, lineHeight: "30px", padding: "0 14px", border: `1px solid ${PLAY.line}`, borderRadius: 9, fontSize: 13, color: PLAY.gray };
@@ -339,7 +383,9 @@ function PlaySearch({ v, art, spot }: ScreenProps) {
         ))}
       </div>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16.7, padding: "29px 24px 0" }}>
-        <Img src={art.icon} style={{ width: 56, height: 56, borderRadius: 12, flex: "none", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+        <button type="button" aria-label="앱 상세 열기" onClick={() => go("page")} style={{ border: 0, padding: 0, background: "none", cursor: "pointer", flex: "none" }}>
+          <Img src={art.icon} style={{ width: 56, height: 56, borderRadius: 12, display: "block", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+        </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <Text platform="android" field="title" surface="search" value={v.title ?? ""} spot={spot} color={PLAY.text} />
           <p style={{ fontSize: 11.5, lineHeight: "18px", color: PLAY.gray }}>
@@ -354,7 +400,7 @@ function PlaySearch({ v, art, spot }: ScreenProps) {
           )}
         </div>
         <button type="button" aria-expanded={open} aria-label={open ? "접기" : "펼치기"} onClick={() => setOpen((o) => !o)} style={{ ...round, marginTop: 10, border: 0, cursor: "pointer", transform: open ? "rotate(180deg)" : undefined }}>
-          <Icon d={PATH.down} size={16} color={PLAY.text} />
+          <Material d={MATERIAL.down} size={16} color={PLAY.text} />
         </button>
       </div>
       {open && (
@@ -362,7 +408,7 @@ function PlaySearch({ v, art, spot }: ScreenProps) {
           <Shots art={art} width={93} height={165.7} gap={13} left={24} radius={8} first={<PlayVideo url={v.video} on={spot === "video"} />} />
         </div>
       )}
-      {[0, 1].map((i) => (
+      {[0, 1, 2, 3].map((i) => (
         <div key={i} aria-hidden style={{ display: "flex", alignItems: "center", gap: 16.7, padding: `${i === 0 && open ? 34.5 : 24}px 24px 0` }}>
           <span style={{ width: 56, height: 56, borderRadius: 12, background: "#eceff3", flex: "none" }} />
           <div style={{ flex: 1 }}>
@@ -370,7 +416,7 @@ function PlaySearch({ v, art, spot }: ScreenProps) {
             <span style={{ display: "block", width: 100, height: 10, borderRadius: 4, background: "#f1f3f6", marginTop: 8 }} />
           </div>
           <span style={round}>
-            <Icon d={PATH.down} size={16} color={PLAY.gray} />
+            <Material d={MATERIAL.down} size={16} color={PLAY.gray} />
           </span>
         </div>
       ))}
@@ -384,7 +430,7 @@ function PlayDetails({ v, art, spot, go }: ScreenProps) {
     <div style={{ background: "#fff", minHeight: "100%", paddingBottom: 60 }}>
       <div style={{ display: "flex", alignItems: "center", height: 50, borderBottom: `1px solid ${PLAY.line}`, padding: "0 0 0 20px" }}>
         <button type="button" aria-label="앱 상세로 돌아가기" onClick={() => go("page")} style={{ border: 0, background: "none", padding: 0, cursor: "pointer", display: "flex" }}>
-          <Icon d={PATH.arrowBack} size={20} color={PLAY.text} />
+          <Material d={MATERIAL.arrowBack} size={20} color={PLAY.text} />
         </button>
         <Img src={art.icon} style={{ width: 31, height: 31, borderRadius: 7, flex: "none", marginLeft: 18 }} />
         <div style={{ marginLeft: 22, minWidth: 0 }}>
@@ -407,17 +453,17 @@ function PlayDetails({ v, art, spot, go }: ScreenProps) {
 
 function IosTabs() {
   const items = [
-    ["투데이", PATH.today],
-    ["게임", PATH.rocket],
-    ["앱", PATH.layers],
-    ["Arcade", PATH.arcade],
-    ["검색", PATH.search],
+    ["투데이", PHOSPHOR.today],
+    ["게임", PHOSPHOR.rocket],
+    ["앱", PHOSPHOR.layers],
+    ["Arcade", PHOSPHOR.arcade],
+    ["검색", PHOSPHOR.search],
   ] as const;
   return (
     <div style={{ margin: "0 21px 22px", height: 61, borderRadius: 31, background: "rgba(250,250,252,.95)", boxShadow: "0 2px 12px rgba(0,0,0,.14)", display: "flex", alignItems: "center", padding: "0 4px" }}>
       {items.map(([label, d], i) => (
         <div key={label} style={{ flex: 1, height: 53, borderRadius: 27, background: i === 4 ? "#e3e3e8" : "transparent", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: i === 4 ? IOS.blue : "#000", fontSize: 10, fontWeight: 600 }}>
-          <Icon d={d} size={23} color={i === 4 ? IOS.blue : "#000"} />
+          <Phosphor d={d} size={25} color={i === 4 ? IOS.blue : "#000"} />
           {label}
         </div>
       ))}
@@ -427,18 +473,18 @@ function IosTabs() {
 
 function PlayTabs() {
   const items = [
-    ["게임", PATH.game],
-    ["앱", PATH.apps],
-    ["검색", PATH.search],
-    ["도서", PATH.book],
-    ["내 페이지", PATH.user],
+    ["게임", MATERIAL.game],
+    ["앱", MATERIAL.apps],
+    ["검색", MATERIAL.search],
+    ["도서", MATERIAL.book],
+    ["내 페이지", MATERIAL.person],
   ] as const;
   return (
     <div style={{ background: "#eff1f7", height: 112, display: "flex", padding: "6px 0 0" }}>
       {items.map(([label, d], i) => (
         <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", fontSize: 12, lineHeight: "20px", color: i === 2 ? PLAY.blue : PLAY.gray, fontWeight: i === 2 ? 600 : 500 }}>
           <span style={{ width: 56, height: 32, borderRadius: 16, background: i === 2 ? "#c2e7ff" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon d={d} size={22} color={i === 2 ? PLAY.blue : PLAY.gray} />
+            <Material d={d} size={24} color={i === 2 ? PLAY.blue : PLAY.gray} />
           </span>
           {label}
         </div>
@@ -447,11 +493,16 @@ function PlayTabs() {
   );
 }
 
+type Drag = { x: number; y: number; top: number; left: number; row: HTMLElement | null; axis: "x" | "y" | null };
+
 /** 앱 폭의 무대를 폰 폭에 맞춰 통째로 줄인다. 고치는 칸이 보이도록 알아서 스크롤한다. 아래 탭은 앱처럼 화면에 붙어 있다 */
 function Stage({ width, spot, watch, tabs, children }: { width: number; spot: FieldId | null; watch: string; tabs: ReactNode; children: ReactNode }) {
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
+  const drag = useRef<Drag | null>(null);
+  const dragged = useRef(false);
   const [scale, setScale] = useState(0.68);
+  const [height, setHeight] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     const el = box.current;
@@ -463,6 +514,17 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
     return () => ro.disconnect();
   }, [width]);
 
+  // transform 은 보이는 크기만 줄이고 레이아웃 높이는 그대로 둔다. 줄인 높이로 감싸야 내용 아래 빈 공간이 스크롤되지 않는다
+  useLayoutEffect(() => {
+    const el = inner.current;
+    if (!el) return;
+    const measure = () => setHeight(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   useEffect(() => {
     const el = box.current;
     const on = inner.current?.querySelector<HTMLElement>('[data-spot="on"]');
@@ -471,11 +533,44 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
     el.scrollTo({ top: Math.max(top - el.clientHeight / 3, 0), behavior: "smooth" });
   }, [spot, watch]);
 
+  // 터치는 브라우저가 스크롤한다. 마우스도 폰처럼 끌어서 넘기게 한다
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse" || e.button !== 0 || !box.current) return;
+    const row = (e.target as HTMLElement).closest<HTMLElement>("[data-hscroll]");
+    drag.current = { x: e.clientX, y: e.clientY, top: box.current.scrollTop, left: row?.scrollLeft ?? 0, row, axis: null };
+    dragged.current = false;
+  };
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || !box.current) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (!d.axis) {
+      if (Math.hypot(dx, dy) < 4) return;
+      d.axis = d.row && Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      dragged.current = true;
+      box.current.setPointerCapture(e.pointerId);
+    }
+    if (d.axis === "x" && d.row) d.row.scrollLeft = d.left - dx / scale;
+    else box.current.scrollTop = d.top - dy;
+  };
+  const endDrag = () => {
+    drag.current = null;
+  };
+  const onClickCapture = (e: MouseEvent) => {
+    if (!dragged.current) return;
+    dragged.current = false;
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
   return (
     <>
-      <div ref={box} className="absolute inset-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none]">
-        <div ref={inner} style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-          {children}
+      <div ref={box} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag} onClickCapture={onClickCapture} className="absolute inset-0 cursor-grab select-none overflow-y-auto overflow-x-hidden [scrollbar-width:none] active:cursor-grabbing">
+        <div style={{ height: height === null ? undefined : height * scale, overflow: "clip" }}>
+          <div ref={inner} style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+            {children}
+          </div>
         </div>
       </div>
       <div aria-hidden className="pointer-events-none absolute bottom-0 left-0" style={{ width, transform: `scale(${scale})`, transformOrigin: "bottom left" }}>
@@ -485,16 +580,18 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
   );
 }
 
-export function StorePreview({ platform, mode, values, art, spot, onMode }: { platform: Platform; mode: Surface; values: Values; art: Art; spot: FieldId | null; onMode: (m: Surface) => void }) {
+export function StorePreview({ platform, mode, values, art, spot, onMode, onPick }: { platform: Platform; mode: Surface; values: Values; art: Art; spot: FieldId | null; onMode: (m: Surface) => void; onPick: (field: FieldId) => void }) {
   const Screen = platform === "ios" ? (mode === "search" ? AppStoreSearch : AppStorePage) : mode === "search" ? PlaySearch : mode === "details" ? PlayDetails : PlayPage;
   const tabs = mode === "details" ? null : platform === "ios" ? <IosTabs /> : <PlayTabs />;
   return (
     <div className="mx-auto w-full max-w-[300px] lg:max-w-[clamp(220px,calc((100svh_-_250px)*9/19),300px)]">
       <PhoneFrame clock="9:41" unbounded>
         <div className="relative h-full" style={{ fontFamily: PREVIEW_FONT }}>
-          <Stage width={STAGE_WIDTH[platform]} spot={spot} watch={`${platform}-${mode}`} tabs={tabs}>
-            <Screen v={values} art={art} spot={spot} go={onMode} />
-          </Stage>
+          <PickField.Provider value={onPick}>
+            <Stage width={STAGE_WIDTH[platform]} spot={spot} watch={`${platform}-${mode}`} tabs={tabs}>
+              <Screen v={values} art={art} spot={spot} go={onMode} />
+            </Stage>
+          </PickField.Provider>
         </div>
       </PhoneFrame>
     </div>

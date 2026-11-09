@@ -29,6 +29,8 @@ export type Slot = {
   preLine: boolean;
   /** 앱이 아니라 웹 스토어에서 본 줄 제한 */
   fromWeb?: boolean;
+  /** App Store Connect Device Preview 에서 본 줄 제한 */
+  fromConsole?: boolean;
   /** 접히면 끝에 "더 보기"가 붙는다 */
   more?: boolean;
   /** 한 줄을 넘으면 화면 구성이 바뀐다 */
@@ -38,7 +40,7 @@ export type Slot = {
 export const SLOTS: Record<Platform, Partial<Record<FieldId, Slot[]>>> = {
   ios: {
     name: [
-      { surface: "page", where: "제품 페이지", width: 218.7, fontSize: 19.4, lineHeight: 24, fontWeight: 700, maxLines: 3, confirmed: false, fromWeb: true, preLine: false },
+      { surface: "page", where: "제품 페이지", width: 218.7, fontSize: 19.4, lineHeight: 24, fontWeight: 700, maxLines: 2, confirmed: false, fromConsole: true, preLine: false },
       { surface: "search", where: "검색 결과", width: 246, fontSize: 12.85, lineHeight: 21, fontWeight: 600, maxLines: 1, confirmed: false, fromWeb: true, preLine: false },
     ],
     subtitle: [{ surface: "search", where: "검색 결과", width: 246, fontSize: 10.5, lineHeight: 18, fontWeight: 400, maxLines: 1, confirmed: false, fromWeb: true, preLine: false }],
