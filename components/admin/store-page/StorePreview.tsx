@@ -507,7 +507,8 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
   useLayoutEffect(() => {
     const el = box.current;
     if (!el) return;
-    const measure = () => setScale(el.clientWidth / width);
+    // clientWidth 는 스크롤바만큼 줄어든다. 그 값으로 줄이면 스크롤바가 생겼다 사라지며 배율이 계속 오간다
+    const measure = () => setScale(el.offsetWidth / width);
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -566,7 +567,7 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
 
   return (
     <>
-      <div ref={box} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag} onClickCapture={onClickCapture} className="absolute inset-0 cursor-grab select-none overflow-y-auto overflow-x-hidden [scrollbar-width:none] active:cursor-grabbing">
+      <div ref={box} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag} onClickCapture={onClickCapture} className="absolute inset-0 cursor-grab select-none overflow-y-auto overflow-x-hidden [scrollbar-width:none]! [&::-webkit-scrollbar]:hidden active:cursor-grabbing">
         <div style={{ height: height === null ? undefined : height * scale, overflow: "clip" }}>
           <div ref={inner} style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
             {children}
