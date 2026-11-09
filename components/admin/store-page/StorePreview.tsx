@@ -550,7 +550,7 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
   return (
     <>
       <div ref={box} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag} onClickCapture={onClickCapture} className="absolute inset-0 cursor-grab select-none overflow-y-auto overflow-x-hidden [scrollbar-width:none] active:cursor-grabbing">
-        <div style={{ height: height === null ? undefined : height * scale, overflow: "hidden" }}>
+        <div style={{ height: height === null ? undefined : height * scale, overflow: "clip" }}>
           <div ref={inner} style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
             {children}
           </div>
