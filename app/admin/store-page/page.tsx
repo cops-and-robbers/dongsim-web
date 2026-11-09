@@ -63,6 +63,11 @@ export default function StorePageScreen() {
   const [lang, setLang] = useState<Lang>("ko");
   const [mode, setMode] = useState<Surface>("page");
   const [spot, setSpot] = useState<FieldId | null>(null);
+  const pickField = (field: FieldId) => {
+    const input = document.getElementById(`store-${field}`);
+    input?.scrollIntoView({ behavior: "smooth", block: "center" });
+    input?.focus({ preventScroll: true });
+  };
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [conflicts, setConflicts] = useState<Record<string, Draft | null>>({});
@@ -388,7 +393,7 @@ export default function StorePageScreen() {
                 <div className="mb-3 flex justify-center">
                   <SegmentedControl<Surface> value={mode} onChange={setMode} options={[{ value: "page", label: platform === "ios" ? "제품 페이지" : "앱 상세" }, { value: "search", label: "검색 결과" }, ...(platform === "android" ? [{ value: "details" as const, label: "세부정보" }] : [])]} />
                 </div>
-                <StorePreview platform={platform} mode={mode} values={values} art={{ ...page.art, icon: icon ?? page.art.icon, screenshots: screenshots.length ? screenshots : page.art.screenshots }} spot={spot} onMode={setMode} />
+                <StorePreview onPick={pickField} platform={platform} mode={mode} values={values} art={{ ...page.art, icon: icon ?? page.art.icon, screenshots: screenshots.length ? screenshots : page.art.screenshots }} spot={spot} onMode={setMode} />
                 <p className="mt-2.5 text-center text-[12px] leading-relaxed text-sd-fg-subtle">
                   {spot === "keywords" ? "키워드는 사용자에게 보이지 않아요." : spot === "subtitle" && mode === "page" ? "부제는 검색 결과에 보여요." : "실제 스토어 앱 캡처로 잰 화면이에요."}
                 </p>

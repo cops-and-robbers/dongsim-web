@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 import { PhoneFrame } from "@/components/game/PhoneMockup";
 import { PREVIEW_FONT, slotOf, STAGE_WIDTH, type Slot, type Surface } from "@/lib/store-page/display";
 import { videoThumb, type Art, type FieldId, type Platform, type Values } from "@/lib/store-page/fields";
@@ -14,6 +14,9 @@ const IOS = { text: "#000", gray: "#8a8a8e", blue: "#007aff", line: "#e5e5ea" };
 const PLAY = { text: "#1f1f1f", gray: "#444746", blue: "#0b57d0", line: "#c4c7c5", tint: "#e9eef6" };
 
 const SPOT: CSSProperties = { outline: "3px solid #339DFF", outlineOffset: 3, borderRadius: 6 };
+
+/** 폰의 글자를 누르면 왼쪽 입력칸으로 간다 */
+const PickField = createContext<((field: FieldId) => void) | null>(null);
 
 function slotStyle(slot: Slot): CSSProperties {
   return {
@@ -30,19 +33,31 @@ function slotStyle(slot: Slot): CSSProperties {
 
 function Text({ platform, field, surface, value, spot, color }: { platform: Platform; field: FieldId; surface: Surface; value: string; spot: FieldId | null; color: string }) {
   const slot = slotOf(platform, field, surface);
+  const pick = useContext(PickField);
   const ref = useRef<HTMLDivElement>(null);
   const [cut, setCut] = useState(false);
+  const [open, setOpen] = useState(false);
   useLayoutEffect(() => {
     if (ref.current) setCut(ref.current.scrollHeight > ref.current.clientHeight + 1);
-  }, [value, slot]);
+  }, [value, slot, open]);
   if (!slot) return null;
   const on = spot === field;
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      pick?.(field);
+    }
+  };
   return (
     <div style={{ position: "relative", width: slot.width }}>
-      <div ref={ref} data-spot={on ? "on" : undefined} data-slot={`${field}-${surface}`} style={{ ...slotStyle(slot), color, ...(on ? SPOT : {}) }}>
+      <div ref={ref} role="button" tabIndex={0} aria-label={`${slot.where} 고치기`} onClick={() => pick?.(field)} onKeyDown={onKey} className="cursor-pointer rounded-[3px] outline-offset-[3px] outline-[#339DFF]/60 hover:outline-2 focus-visible:outline-2" data-spot={on ? "on" : undefined} data-slot={`${field}-${surface}`} style={{ ...slotStyle(open ? { ...slot, maxLines: null } : slot), color, ...(on ? SPOT : {}) }}>
         {value}
       </div>
-      {cut && slot.more && <span style={{ position: "absolute", right: 0, bottom: 0, paddingLeft: 24, background: "linear-gradient(90deg,transparent,#fff 18px)", color: IOS.blue, fontSize: slot.fontSize, lineHeight: `${slot.lineHeight}px` }}>더 보기</span>}
+      {cut && !open && slot.more && (
+        <button type="button" onClick={() => setOpen(true)} style={{ position: "absolute", right: 0, bottom: 0, paddingLeft: 24, border: 0, cursor: "pointer", background: "linear-gradient(90deg,transparent,#fff 18px)", color: platform === "ios" ? IOS.blue : PLAY.blue, fontSize: slot.fontSize, lineHeight: `${slot.lineHeight}px` }}>
+          더 보기
+        </button>
+      )}
     </div>
   );
 }
@@ -56,7 +71,7 @@ function Img({ src, style }: { src: string | null | undefined; style: CSSPropert
 function Shots({ art, width, height, gap, left, radius, first }: { art: Art; width: number; height: number; gap: number; left: number; radius: number; first?: ReactNode }) {
   const urls: (string | null)[] = art.screenshots.length ? art.screenshots : [null, null, null];
   return (
-    <div style={{ display: "flex", gap, paddingLeft: left, overflow: "hidden" }}>
+    <div data-hscroll style={{ display: "flex", gap, paddingLeft: left, paddingRight: left, overflowX: "auto", scrollbarWidth: "none" }}>
       {first}
       {urls.map((u, i) => (
         <Img key={`${i}-${u}`} src={u} style={{ width, height, flex: "none", objectFit: "cover", borderRadius: radius }} />
@@ -103,7 +118,7 @@ function GetButton() {
 
 type ScreenProps = { v: Values; art: Art; spot: FieldId | null; go: (m: Surface) => void };
 
-function AppStorePage({ v, art, spot }: ScreenProps) {
+function AppStorePage({ v, art, spot, go }: ScreenProps) {
   const circle: CSSProperties = { width: 44, height: 44, borderRadius: 22, background: "rgba(255,255,255,.9)", boxShadow: "0 1px 6px rgba(0,0,0,.12)", display: "flex", alignItems: "center", justifyContent: "center" };
   const stat = (label: string, big: ReactNode, small: ReactNode, last = false) => (
     <div style={{ width: 105, flex: "none", textAlign: "center", borderRight: last ? "none" : `1px solid ${IOS.line}` }}>
@@ -115,9 +130,9 @@ function AppStorePage({ v, art, spot }: ScreenProps) {
   return (
     <div style={{ background: "#fff", paddingBottom: 110 }}>
       <div style={{ display: "flex", justifyContent: "space-between", padding: "0 16px", height: 44 }}>
-        <span style={circle}>
+        <button type="button" aria-label="검색 결과로 돌아가기" onClick={() => go("search")} style={{ ...circle, border: 0, cursor: "pointer" }}>
           <Icon d={PATH.back} size={22} color="#000" />
-        </span>
+        </button>
         <span style={circle}>
           <Icon d={PATH.share} size={20} color="#000" />
         </span>
@@ -167,7 +182,7 @@ function AppStorePage({ v, art, spot }: ScreenProps) {
   );
 }
 
-function AppStoreSearch({ v, art, spot }: ScreenProps) {
+function AppStoreSearch({ v, art, spot, go }: ScreenProps) {
   return (
     <div style={{ background: "#fff", minHeight: "100%", paddingBottom: 110 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 20px 0" }}>
@@ -184,7 +199,9 @@ function AppStoreSearch({ v, art, spot }: ScreenProps) {
       </div>
       <div style={{ padding: "24px 20px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Img src={art.icon} style={{ width: 60, height: 60, borderRadius: 13, flex: "none", border: "1px solid rgba(0,0,0,.06)" }} />
+          <button type="button" aria-label="제품 페이지 열기" onClick={() => go("page")} style={{ border: 0, padding: 0, background: "none", cursor: "pointer", flex: "none" }}>
+            <Img src={art.icon} style={{ width: 60, height: 60, borderRadius: 13, display: "block", border: "1px solid rgba(0,0,0,.06)" }} />
+          </button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <Text platform="ios" field="name" surface="search" value={v.name ?? ""} spot={spot} color={IOS.text} />
             <Text platform="ios" field="subtitle" surface="search" value={v.subtitle ?? ""} spot={spot} color={IOS.gray} />
@@ -207,10 +224,12 @@ function AppStoreSearch({ v, art, spot }: ScreenProps) {
   );
 }
 
-function PlayBar({ title }: { title?: string }) {
+function PlayBar({ title, onBack }: { title?: string; onBack?: () => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", height: 56, padding: "0 20px", gap: 20, color: PLAY.text }}>
-      <Material d={MATERIAL.arrowBack} size={24} color={PLAY.text} />
+      <button type="button" aria-label="뒤로" onClick={onBack} style={{ border: 0, background: "none", padding: 0, display: "flex", cursor: onBack ? "pointer" : "default" }}>
+        <Material d={MATERIAL.arrowBack} size={24} color={PLAY.text} />
+      </button>
       {title && <span style={{ fontSize: 16 }}>{title}</span>}
       <span style={{ marginLeft: "auto", display: "flex" }}>
         <Material d={MATERIAL.moreVert} size={24} color={PLAY.text} />
@@ -282,7 +301,7 @@ function PlayPage({ v, art, spot, go }: ScreenProps) {
   return (
     <div style={{ background: "#fff", paddingBottom: 130, position: "relative" }}>
       {probe}
-      <PlayBar />
+      <PlayBar onBack={() => go("search")} />
       {wraps ? (
         <PlayLongHead v={v} art={art} spot={spot} />
       ) : (
@@ -330,7 +349,7 @@ function PlayPage({ v, art, spot, go }: ScreenProps) {
   );
 }
 
-function PlaySearch({ v, art, spot }: ScreenProps) {
+function PlaySearch({ v, art, spot, go }: ScreenProps) {
   // 앱에서 검색 결과의 화살표를 연 화면이 기본이다. 영상과 스크린샷까지 보여서 고칠 때 더 쓸모 있다
   const [open, setOpen] = useState(true);
   const chip: CSSProperties = { flex: "none", height: 32, lineHeight: "30px", padding: "0 14px", border: `1px solid ${PLAY.line}`, borderRadius: 9, fontSize: 13, color: PLAY.gray };
@@ -347,7 +366,9 @@ function PlaySearch({ v, art, spot }: ScreenProps) {
         ))}
       </div>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16.7, padding: "29px 24px 0" }}>
-        <Img src={art.icon} style={{ width: 56, height: 56, borderRadius: 12, flex: "none", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+        <button type="button" aria-label="앱 상세 열기" onClick={() => go("page")} style={{ border: 0, padding: 0, background: "none", cursor: "pointer", flex: "none" }}>
+          <Img src={art.icon} style={{ width: 56, height: 56, borderRadius: 12, display: "block", boxShadow: "0 1px 3px rgba(0,0,0,.2)" }} />
+        </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <Text platform="android" field="title" surface="search" value={v.title ?? ""} spot={spot} color={PLAY.text} />
           <p style={{ fontSize: 11.5, lineHeight: "18px", color: PLAY.gray }}>
@@ -455,10 +476,14 @@ function PlayTabs() {
   );
 }
 
+type Drag = { x: number; y: number; top: number; left: number; row: HTMLElement | null; axis: "x" | "y" | null };
+
 /** 앱 폭의 무대를 폰 폭에 맞춰 통째로 줄인다. 고치는 칸이 보이도록 알아서 스크롤한다. 아래 탭은 앱처럼 화면에 붙어 있다 */
 function Stage({ width, spot, watch, tabs, children }: { width: number; spot: FieldId | null; watch: string; tabs: ReactNode; children: ReactNode }) {
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
+  const drag = useRef<Drag | null>(null);
+  const dragged = useRef(false);
   const [scale, setScale] = useState(0.68);
   const [height, setHeight] = useState<number | null>(null);
 
@@ -491,9 +516,40 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
     el.scrollTo({ top: Math.max(top - el.clientHeight / 3, 0), behavior: "smooth" });
   }, [spot, watch]);
 
+  // 터치는 브라우저가 스크롤한다. 마우스도 폰처럼 끌어서 넘기게 한다
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse" || e.button !== 0 || !box.current) return;
+    const row = (e.target as HTMLElement).closest<HTMLElement>("[data-hscroll]");
+    drag.current = { x: e.clientX, y: e.clientY, top: box.current.scrollTop, left: row?.scrollLeft ?? 0, row, axis: null };
+    dragged.current = false;
+  };
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || !box.current) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (!d.axis) {
+      if (Math.hypot(dx, dy) < 4) return;
+      d.axis = d.row && Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      dragged.current = true;
+      box.current.setPointerCapture(e.pointerId);
+    }
+    if (d.axis === "x" && d.row) d.row.scrollLeft = d.left - dx / scale;
+    else box.current.scrollTop = d.top - dy;
+  };
+  const endDrag = () => {
+    drag.current = null;
+  };
+  const onClickCapture = (e: MouseEvent) => {
+    if (!dragged.current) return;
+    dragged.current = false;
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
   return (
     <>
-      <div ref={box} className="absolute inset-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none]">
+      <div ref={box} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag} onClickCapture={onClickCapture} className="absolute inset-0 cursor-grab select-none overflow-y-auto overflow-x-hidden [scrollbar-width:none] active:cursor-grabbing">
         <div style={{ height: height === null ? undefined : height * scale, overflow: "hidden" }}>
           <div ref={inner} style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
             {children}
@@ -507,16 +563,18 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
   );
 }
 
-export function StorePreview({ platform, mode, values, art, spot, onMode }: { platform: Platform; mode: Surface; values: Values; art: Art; spot: FieldId | null; onMode: (m: Surface) => void }) {
+export function StorePreview({ platform, mode, values, art, spot, onMode, onPick }: { platform: Platform; mode: Surface; values: Values; art: Art; spot: FieldId | null; onMode: (m: Surface) => void; onPick: (field: FieldId) => void }) {
   const Screen = platform === "ios" ? (mode === "search" ? AppStoreSearch : AppStorePage) : mode === "search" ? PlaySearch : mode === "details" ? PlayDetails : PlayPage;
   const tabs = mode === "details" ? null : platform === "ios" ? <IosTabs /> : <PlayTabs />;
   return (
     <div className="mx-auto w-full max-w-[300px] lg:max-w-[clamp(220px,calc((100svh_-_250px)*9/19),300px)]">
       <PhoneFrame clock="9:41" unbounded>
         <div className="relative h-full" style={{ fontFamily: PREVIEW_FONT }}>
-          <Stage width={STAGE_WIDTH[platform]} spot={spot} watch={`${platform}-${mode}`} tabs={tabs}>
-            <Screen v={values} art={art} spot={spot} go={onMode} />
-          </Stage>
+          <PickField.Provider value={onPick}>
+            <Stage width={STAGE_WIDTH[platform]} spot={spot} watch={`${platform}-${mode}`} tabs={tabs}>
+              <Screen v={values} art={art} spot={spot} go={onMode} />
+            </Stage>
+          </PickField.Provider>
         </div>
       </PhoneFrame>
     </div>
