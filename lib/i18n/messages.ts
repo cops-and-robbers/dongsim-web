@@ -357,6 +357,97 @@ const ko = {
     viewCurrent: "현재 버전 보기",
     archivedTitle: "{title} (이전 버전, {from} 시행)",
   },
+  accountDeletion: {
+    metaTitle: "계정 삭제",
+    metaDescription:
+      "경찰과 도둑 계정을 웹에서 바로 삭제할 수 있어요. 지워지는 정보와 남는 정보도 확인해 보세요.",
+    homeLabel: "홈",
+    title: "계정 삭제",
+    lead: "경찰과 도둑 계정을 지울 수 있어요. 앱을 다시 설치하지 않아도 돼요.",
+    web: {
+      title: "웹에서 삭제하기",
+      body: "가입할 때 쓴 방법으로 로그인해 주세요. 계정을 확인한 다음 바로 삭제해요.",
+    },
+    flow: {
+      signIn: { GOOGLE: "Google로 로그인", APPLE: "Apple로 로그인" },
+      signingIn: "로그인하는 중",
+      inAppBrowser:
+        "지금 브라우저에서는 로그인이 안 될 수 있어요. Safari나 Chrome에서 이 페이지를 열어 주세요.",
+      confirm: {
+        title: "{nickname} 계정을 삭제할까요?",
+        body: "삭제하면 되돌릴 수 없어요.",
+        cancel: "취소",
+        delete: "삭제하기",
+        deleting: "삭제하는 중",
+      },
+      done: {
+        title: "계정을 삭제했어요",
+        body: "그동안 함께 뛰어 줘서 고마워요.",
+        home: "홈으로 가기",
+      },
+      errors: {
+        session: "로그인이 만료됐어요. 다시 로그인해 주세요.",
+        notFound:
+          "이 계정으로 가입한 기록이 없어요. 가입할 때 쓴 방법으로 로그인했는지 확인해 주세요.",
+        activeGame:
+          "참여 중인 게임이 있어서 아직 삭제할 수 없어요. 게임을 끝내거나 나간 뒤 다시 시도해 주세요.",
+        browser:
+          "로그인 창을 열 수 없어요. 팝업 차단을 풀거나 Safari, Chrome에서 이 페이지를 열어 주세요.",
+        otherProvider:
+          "이 이메일은 다른 방법으로 가입되어 있어요. 가입할 때 쓴 방법으로 로그인해 주세요.",
+        failed: "삭제를 끝내지 못했어요. 잠시 뒤 다시 시도해 주세요. 계속 안 되면 메일로 알려 주세요.",
+      },
+    },
+    app: {
+      title: "앱에서 삭제하기",
+      body: "앱이 설치되어 있다면 세 번만 누르면 돼요. 단계를 누르면 화면이 바뀌어요.",
+      steps: [
+        {
+          label: "마이페이지",
+          title: "마이페이지로 가요",
+          body: "앱을 열고 화면 아래 맨 오른쪽 마이페이지를 눌러 주세요.",
+        },
+        {
+          label: "회원 탈퇴",
+          title: "맨 아래 회원 탈퇴를 눌러요",
+          body: "설정 화면을 끝까지 내리면 기타 항목에 회원 탈퇴가 있어요.",
+        },
+        {
+          label: "delete 입력",
+          title: "delete를 입력하고 탈퇴를 눌러요",
+          body: "입력칸에 delete를 적고 탈퇴를 누르면 바로 삭제돼요.",
+        },
+      ],
+      note: "참여 중인 게임이 있으면 탈퇴할 수 없어요. 게임을 끝내거나 나간 뒤에 해 주세요.",
+      dialog: {
+        title: "회원 탈퇴",
+        message: "탈퇴하면 모든 데이터가 사라지고\n되돌릴 수 없어요\n\n계속하려면 \"delete\"를 입력하세요",
+        confirm: "탈퇴",
+      },
+    },
+    data: {
+      title: "지워지는 정보와 남는 정보",
+      groups: [
+        {
+          label: "바로 지워져요",
+          body: "소셜 계정 식별자와 이메일, 닉네임 같은 회원 정보, 기기 정보, 로그인 토큰을 지워요.",
+        },
+        {
+          label: "누구인지 알 수 없게 바뀌어요",
+          body: "게임 기록은 회원 번호를 지우고 닉네임을 \"알수없음\"으로 바꿔요. 커뮤니티 글, 댓글, 채팅은 그대로 남고 작성자만 익명으로 표시돼요. 지우고 싶은 글은 삭제하기 전에 앱에서 직접 지워 주세요.",
+        },
+        {
+          label: "법령에 따라 보관해요",
+          body: "접속에 관한 기록은 3개월, 소비자 불만과 분쟁 처리에 관한 기록은 3년 동안 보관한 뒤 파기해요.",
+        },
+      ],
+      privacyLink: "개인정보 처리방침 보기",
+    },
+    help: {
+      title: "로그인할 수 없다면",
+      body: "가입할 때 쓴 로그인 방법과 닉네임을 메일로 보내 주세요. 본인인지 확인한 뒤 삭제해 드려요.",
+    },
+  },
 };
 
 const en: Messages = {
@@ -714,6 +805,97 @@ const en: Messages = {
     viewCurrent: "View the current version",
     archivedTitle: "{title} (previous version, effective {from})",
   },
+  accountDeletion: {
+    metaTitle: "Delete Your Account",
+    metaDescription:
+      "Delete your Cops and Robbers account on the web, and see which data is deleted and which is kept.",
+    homeLabel: "Home",
+    title: "Delete your account",
+    lead: "You can delete your Cops and Robbers account here. No need to reinstall the app.",
+    web: {
+      title: "Delete on the web",
+      body: "Sign in the same way you signed up. We'll confirm the account, then delete it right away.",
+    },
+    flow: {
+      signIn: { GOOGLE: "Sign in with Google", APPLE: "Sign in with Apple" },
+      signingIn: "Signing in",
+      inAppBrowser:
+        "Sign-in may not work in this browser. Please open this page in Safari or Chrome.",
+      confirm: {
+        title: "Delete the account {nickname}?",
+        body: "This can't be undone.",
+        cancel: "Cancel",
+        delete: "Delete",
+        deleting: "Deleting",
+      },
+      done: {
+        title: "Your account has been deleted",
+        body: "Thanks for playing with us.",
+        home: "Back to home",
+      },
+      errors: {
+        session: "Your sign-in has expired. Please sign in again.",
+        notFound:
+          "We couldn't find an account for this sign-in. Make sure you're using the method you signed up with.",
+        activeGame:
+          "You're still in a game, so the account can't be deleted yet. Finish or leave the game, then try again.",
+        browser:
+          "We couldn't open the sign-in window. Allow pop-ups, or open this page in Safari or Chrome.",
+        otherProvider:
+          "This email is registered with a different sign-in method. Please use the one you signed up with.",
+        failed: "We couldn't delete the account. Please try again in a moment. If it keeps failing, email us at",
+      },
+    },
+    app: {
+      title: "Delete in the app",
+      body: "Still have the app? It only takes three taps. Pick a step to see the screen.",
+      steps: [
+        {
+          label: "My Page",
+          title: "Go to My Page",
+          body: "Open the app and tap My Page, the last tab at the bottom.",
+        },
+        {
+          label: "Delete account",
+          title: "Tap Delete account at the bottom",
+          body: "Scroll to the end of Settings. You'll find it under Others.",
+        },
+        {
+          label: "Enter delete",
+          title: "Enter delete, then tap Delete",
+          body: "Type delete in the box and tap Delete. Your account is deleted right away.",
+        },
+      ],
+      note: "You can't delete your account while you're in a game. Finish or leave the game first.",
+      dialog: {
+        title: "Delete account",
+        message: "Deleting your account will erase all data\nand cannot be undone\n\nTo continue, enter \"delete\"",
+        confirm: "Delete",
+      },
+    },
+    data: {
+      title: "What's deleted and what's kept",
+      groups: [
+        {
+          label: "Deleted right away",
+          body: "Your account details (social login ID, email, nickname), device information, and sign-in tokens.",
+        },
+        {
+          label: "Made anonymous",
+          body: "Game records lose your member number and your nickname becomes \"알수없음\" (\"unknown\"). Community posts, comments, and chats stay, but the author is shown as anonymous. If you want a post gone, delete it in the app first.",
+        },
+        {
+          label: "Kept as required by law",
+          body: "Access logs are kept for 3 months, and consumer complaint and dispute records for 3 years. They are destroyed after that.",
+        },
+      ],
+      privacyLink: "Read the Privacy Policy",
+    },
+    help: {
+      title: "Can't sign in?",
+      body: "Email us the sign-in method you used and your nickname. We'll verify it's you and delete the account.",
+    },
+  },
 };
 
 const ja: Messages = {
@@ -1068,6 +1250,97 @@ const ja: Messages = {
     archivedNotice: "{from}から{until}まで適用されていた過去のバージョンです。",
     viewCurrent: "現在のバージョンを見る",
     archivedTitle: "{title}（過去のバージョン、{from}施行）",
+  },
+  accountDeletion: {
+    metaTitle: "アカウントの削除",
+    metaDescription:
+      "ケイドロのアカウントをWebから削除できます。削除される情報と残る情報もご確認いただけます。",
+    homeLabel: "ホーム",
+    title: "アカウントの削除",
+    lead: "ケイドロのアカウントを削除できます。アプリを入れ直す必要はありません。",
+    web: {
+      title: "Webで削除する",
+      body: "登録時と同じ方法でログインしてください。アカウントを確認したうえで、すぐに削除します。",
+    },
+    flow: {
+      signIn: { GOOGLE: "Googleでログイン", APPLE: "Appleでログイン" },
+      signingIn: "ログイン中",
+      inAppBrowser:
+        "このブラウザではログインできない場合があります。SafariまたはChromeでこのページを開いてください。",
+      confirm: {
+        title: "{nickname} のアカウントを削除しますか？",
+        body: "削除すると元に戻せません。",
+        cancel: "キャンセル",
+        delete: "削除する",
+        deleting: "削除中",
+      },
+      done: {
+        title: "アカウントを削除しました",
+        body: "これまで一緒に走ってくれて、ありがとうございました。",
+        home: "ホームへ",
+      },
+      errors: {
+        session: "ログインの有効期限が切れました。もう一度ログインしてください。",
+        notFound:
+          "このアカウントの登録が見つかりません。登録時と同じ方法でログインしているかご確認ください。",
+        activeGame:
+          "参加中のゲームがあるため、まだ削除できません。ゲームを終了するか退出してから、もう一度お試しください。",
+        browser:
+          "ログイン画面を開けませんでした。ポップアップを許可するか、SafariまたはChromeでこのページを開いてください。",
+        otherProvider:
+          "このメールアドレスは別の方法で登録されています。登録時の方法でログインしてください。",
+        failed: "削除を完了できませんでした。少し時間をおいてお試しください。解決しない場合はメールでご連絡ください。",
+      },
+    },
+    app: {
+      title: "アプリで削除する",
+      body: "アプリが入っていれば、3回タップするだけです。ステップを押すと画面が切り替わります。",
+      steps: [
+        {
+          label: "マイページ",
+          title: "マイページを開く",
+          body: "アプリを開き、画面下のいちばん右にあるマイページをタップしてください。",
+        },
+        {
+          label: "退会",
+          title: "いちばん下の退会をタップ",
+          body: "設定画面を最後までスクロールすると、その他の項目に退会があります。",
+        },
+        {
+          label: "deleteを入力",
+          title: "deleteと入力して退会をタップ",
+          body: "入力欄にdeleteと入力して退会をタップすると、すぐに削除されます。",
+        },
+      ],
+      note: "参加中のゲームがあると退会できません。ゲームを終了するか退出してから行ってください。",
+      dialog: {
+        title: "退会",
+        message: "退会するとすべてのデータが削除され\n元に戻すことはできません\n\n続けるには「delete」と入力してください",
+        confirm: "退会",
+      },
+    },
+    data: {
+      title: "削除される情報と残る情報",
+      groups: [
+        {
+          label: "すぐに削除されます",
+          body: "ソーシャルアカウントの識別子、メールアドレス、ニックネームなどの会員情報、端末情報、ログイントークンを削除します。",
+        },
+        {
+          label: "匿名化されます",
+          body: "ゲーム記録は会員番号を削除し、ニックネームを「알수없음」（「不明」の意）に変更します。コミュニティの投稿、コメント、チャットは残り、投稿者は匿名で表示されます。消したい投稿は、削除の前にアプリで消してください。",
+        },
+        {
+          label: "法令に基づき保管します",
+          body: "アクセス記録は3か月、消費者の苦情や紛争処理に関する記録は3年間保管し、その後破棄します。",
+        },
+      ],
+      privacyLink: "プライバシーポリシーを見る",
+    },
+    help: {
+      title: "ログインできない場合",
+      body: "登録時のログイン方法とニックネームをメールでお送りください。ご本人であることを確認のうえ、削除します。",
+    },
   },
 };
 
