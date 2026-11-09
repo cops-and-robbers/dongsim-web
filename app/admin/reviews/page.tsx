@@ -10,7 +10,7 @@ import { ReviewCard } from "@/components/admin/reviews/ReviewCard";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { fetchInbox, fetchTemplates } from "@/lib/admin/reviewsClient";
 import { listFor, stateOf, waitingCount, type Inbox, type Platform, type Review, type Tab } from "@/lib/reviews/model";
-import type { TemplateList } from "@/lib/reviews/templates";
+import type { ReplyLang, TemplateList } from "@/lib/reviews/templates";
 
 // 어드민 리뷰 받은편지함 (docs/admin-ui.md "리뷰"). 무엇에 답해야 하는지부터 보여 준다.
 
@@ -24,6 +24,7 @@ export default function ReviewsPage() {
   const [store, setStore] = useState<Platform | "all">("all");
   const [view, setView] = useState<"inbox" | "templates">("inbox");
   const [templates, setTemplates] = useState<TemplateList>({ templates: [], writable: false });
+  const [focus, setFocus] = useState<{ id: number; lang: ReplyLang } | null>(null);
   const seq = useRef(0);
 
   const load = useCallback((fresh = false) => {
@@ -44,6 +45,11 @@ export default function ReviewsPage() {
 
   const change = (next: Review) => setData((d) => d && { ...d, reviews: d.reviews.map((r) => (r.platform === next.platform && r.id === next.id ? next : r)) });
 
+  const manage = (id?: number, lang?: ReplyLang) => {
+    if (id !== undefined && lang) setFocus({ id, lang });
+    setView("templates");
+  };
+
   const reviews = data?.reviews ?? [];
   const list = listFor(tab, reviews, store);
   const waiting = waitingCount(reviews);
@@ -52,23 +58,35 @@ export default function ReviewsPage() {
   return (
     <MotionConfig reducedMotion="user">
       <ScrollPage>
-        <div className="mx-auto max-w-3xl">
+        <div className={`mx-auto transition-[max-width] duration-200 ${view === "templates" ? "max-w-5xl" : "max-w-3xl"}`}>
           <PageHeader
             title="리뷰"
-            description="두 스토어에 글로 남긴 리뷰를 보고 답글을 쓸 수 있어요."
+            description={view === "templates" ? "상황별로 써 두면 팀 누구나 답글을 쓸 때 골라서 시작할 수 있어요." : "두 스토어에 글로 남긴 리뷰를 보고 답글을 쓸 수 있어요."}
             actions={
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => {
-                  setLoading(true);
-                  load(true);
-                }}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-sd-gray-200 px-3 text-[13px] font-semibold text-sd-fg-muted transition hover:bg-sd-gray-300 disabled:opacity-60"
-              >
-                <RefreshIcon className={`size-4 ${loading ? "animate-spin" : ""}`} />
-                다시 확인
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <SegmentedControl<"inbox" | "templates">
+                  value={view}
+                  onChange={setView}
+                  options={[
+                    { value: "inbox", label: "받은 리뷰" },
+                    { value: "templates", label: `답변 문구 ${templates.templates.length}` },
+                  ]}
+                />
+                {view === "inbox" && (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => {
+                      setLoading(true);
+                      load(true);
+                    }}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-sd-gray-200 px-3 text-[13px] font-semibold text-sd-fg-muted transition hover:bg-sd-gray-300 disabled:opacity-60"
+                  >
+                    <RefreshIcon className={`size-4 ${loading ? "animate-spin" : ""}`} />
+                    다시 확인
+                  </button>
+                )}
+              </div>
             }
           />
 
@@ -81,19 +99,12 @@ export default function ReviewsPage() {
               ))}
             </div>
           ) : (
-            <div className="space-y-3">
-              <SegmentedControl<"inbox" | "templates">
-                value={view}
-                onChange={setView}
-                options={[
-                  { value: "inbox", label: "받은 리뷰" },
-                  { value: "templates", label: `답변 문구 ${templates.templates.length}` },
-                ]}
-              />
-              {view === "templates" ? (
-                <ReplyTemplates data={templates} onChange={(next) => setTemplates((d) => ({ ...d, templates: next }))} />
-              ) : (
-                <>
+            <>
+              {/* 쓰던 답글과 고치던 문구가 사라지지 않게 둘 다 띄워 두고 가린다 */}
+              <div className={view === "templates" ? "" : "hidden"}>
+                <ReplyTemplates data={templates} focus={focus} onChange={(next) => setTemplates((d) => ({ ...d, templates: next }))} />
+              </div>
+              <div className={view === "inbox" ? "space-y-3" : "hidden"}>
               <div className="flex flex-wrap items-center justify-between gap-2.5">
                 <SegmentedControl<Tab>
                   value={tab}
@@ -125,16 +136,15 @@ export default function ReviewsPage() {
                 <AnimatePresence initial={false} mode="popLayout">
                   {list.map((r) => (
                     <motion.div key={`${r.platform}-${r.id}`} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.16 }}>
-                      <ReviewCard review={r} disabled={!data.writable} templates={templates.templates} onManage={() => setView("templates")} onChange={change} />
+                      <ReviewCard review={r} disabled={!data.writable} templates={templates.templates} onManage={manage} onChange={change} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
               )}
 
               <p className="pt-2 text-[12.5px] leading-relaxed text-sd-fg-subtle">별점만 남긴 평가는 스토어가 알려 주지 않아요. Google Play 는 최근 7일치만 받을 수 있어서 연결한 날부터 쌓여요.</p>
-                </>
-              )}
-            </div>
+              </div>
+            </>
           )}
         </div>
       </ScrollPage>
