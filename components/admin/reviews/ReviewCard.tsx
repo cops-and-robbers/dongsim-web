@@ -1,10 +1,10 @@
 "use client";
 
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/admin/Button";
 import { ChangeDialog } from "@/components/admin/ChangeDialog";
-import { AppStoreMark, GooglePlayMark, StarIcon } from "@/components/admin/icons";
+import { AppStoreMark, ChevronDownIcon, GooglePlayMark, StarIcon } from "@/components/admin/icons";
 import { ReplyStarters } from "@/components/admin/reviews/ReplyStarters";
 import { useToast } from "@/components/admin/Toast";
 import { postReply, reopen, saveDraft, skip } from "@/lib/admin/reviewsClient";
@@ -44,7 +44,7 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-export function ReviewCard({ review: r, disabled, templates, onManage, onChange }: { review: Review; disabled: boolean; templates: ReplyTemplate[]; onManage: () => void; onChange: (next: Review) => void }) {
+export function ReviewCard({ review: r, disabled, templates, onManage, onChange }: { review: Review; disabled: boolean; templates: ReplyTemplate[]; onManage: (id?: number, lang?: ReplyLang) => void; onChange: (next: Review) => void }) {
   const toast = useToast();
   const state = stateOf(r);
   const [writing, setWriting] = useState(!!r.draft);
@@ -58,7 +58,9 @@ export function ReviewCard({ review: r, disabled, templates, onManage, onChange 
   const area = useRef<HTMLTextAreaElement>(null);
   const detected = replyLangOf(r);
   const [lang, setLang] = useState<ReplyLang>(detected ?? "ko");
-  const [before, setBefore] = useState<string | null>(null);
+  const [picked, setPicked] = useState<{ title: string; before: string; filled: string } | null>(null);
+  // null 이면 답글이 빈 동안만 문구를 펼친다. 직접 쓰기 시작하면 저절로 접힌다
+  const [panel, setPanel] = useState<boolean | null>(null);
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const key = { platform: r.platform, id: r.id };
@@ -66,6 +68,11 @@ export function ReviewCard({ review: r, disabled, templates, onManage, onChange 
   const over = max !== null && countOf(text) > max;
   const problem = replyProblem(r.platform, text);
   const editing = !!r.reply;
+  const hasBlank = text.includes(CUSTOM_BLANK);
+  // 직접 고치기 시작한 뒤에 되돌리면 쓴 글이 사라져서, 맞춤 문장을 채우는 동안까지만 둔다
+  const canUndo = !!picked && (hasBlank || text === picked.filled);
+  const canPick = !editing && templates.length > 0;
+  const panelOpen = canPick && (panel ?? !text.trim());
 
   const write = (next: string) => {
     setText(next);
@@ -80,19 +87,24 @@ export function ReviewCard({ review: r, disabled, templates, onManage, onChange 
     }, SAVE_DELAY);
   };
 
-  const pickTemplate = (t: ReplyTemplate) => {
-    const filled = fillTemplate(t.bodies[lang], r.author, lang);
-    setBefore(text);
-    write(filled);
-    // 맞춤 문장 자리를 잡아 두어 바로 덮어쓸 수 있게 한다
+  // 맞춤 문장 자리를 잡아 두어 바로 덮어쓸 수 있게 한다
+  const toBlank = (value: string) => {
     requestAnimationFrame(() => {
       const el = area.current;
       if (!el) return;
       el.focus();
-      const at = filled.indexOf(CUSTOM_BLANK);
+      const at = value.indexOf(CUSTOM_BLANK);
       if (at >= 0) el.setSelectionRange(at, at + CUSTOM_BLANK.length);
-      else el.setSelectionRange(filled.length, filled.length);
+      else el.setSelectionRange(value.length, value.length);
     });
+  };
+
+  const pickTemplate = (t: ReplyTemplate) => {
+    const filled = fillTemplate(t.bodies[lang], r.author, lang);
+    setPicked({ title: t.title, before: text, filled });
+    setPanel(null);
+    write(filled);
+    toBlank(filled);
   };
 
   const run = (work: Promise<Review>, message: string) => {
@@ -175,32 +187,61 @@ export function ReviewCard({ review: r, disabled, templates, onManage, onChange 
 
       {writing ? (
         <div className="mt-3">
-          {!editing && (
-            <ReplyStarters
-              templates={templates}
-              rating={r.rating}
-              lang={lang}
-              detected={detected}
-              onLang={setLang}
-              onPick={pickTemplate}
-              onManage={onManage}
-              canUndo={before !== null}
-              onUndo={() => {
-                write(before ?? "");
-                setBefore(null);
-              }}
-              disabled={disabled || pending}
-            />
-          )}
-          <textarea ref={area} value={text} onChange={(e) => write(e.target.value)} disabled={disabled || pending} autoFocus={!r.draft} rows={3} aria-label="답글" placeholder="이 분께 남길 답글을 써 주세요" className={`block w-full resize-y rounded-xl border bg-sd-surface px-3.5 py-2.5 text-[14px] leading-relaxed text-sd-fg outline-none placeholder:text-sd-fg-subtle ${over ? "border-sd-critical" : "border-sd-line focus:border-accent"}`} />
-          <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 text-[12.5px] text-sd-fg-subtle">
-            <span>모두에게 공개돼요. 연락처 같은 개인정보와 광고는 쓸 수 없어요.</span>
-            <span className={`tabular-nums ${over ? "font-semibold text-sd-critical" : ""}`}>
-              {savedDraft && !over ? "초안에 저장했어요" : ""}
-              {max !== null ? `${savedDraft && !over ? " · " : ""}${countOf(text)} / ${max}` : ""}
-            </span>
+          <div className={`overflow-hidden rounded-xl border bg-sd-surface transition-colors ${over ? "border-sd-critical" : "border-sd-line focus-within:border-accent"}`}>
+            <textarea ref={area} value={text} onChange={(e) => write(e.target.value)} disabled={disabled || pending} autoFocus={!r.draft} rows={3} aria-label="답글" placeholder="이 분께 남길 답글을 써 주세요" className="block max-h-80 min-h-[76px] w-full resize-none bg-transparent px-3.5 pt-3 pb-2 text-[14px] leading-relaxed text-sd-fg outline-none field-sizing-content placeholder:text-sd-fg-subtle" />
+            {(hasBlank || canUndo) && (
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3.5 pb-2 text-[12.5px]">
+                <span className={hasBlank ? "font-medium text-accent" : "text-sd-fg-muted"}>{hasBlank ? "대괄호 자리를 이 리뷰에 맞는 말로 바꾸면 올릴 수 있어요." : `"${picked?.title}" 문구를 넣었어요.`}</span>
+                <span className="flex gap-3 font-semibold">
+                  {hasBlank && (
+                    <button type="button" onClick={() => toBlank(text)} className="text-accent hover:underline">
+                      그 자리로 가기
+                    </button>
+                  )}
+                  {canUndo && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        write(picked?.before ?? "");
+                        setPicked(null);
+                      }}
+                      className="text-sd-fg-muted hover:underline"
+                    >
+                      되돌리기
+                    </button>
+                  )}
+                </span>
+              </div>
+            )}
+            <div className="flex min-h-10 items-center justify-between gap-3 border-t border-sd-line px-1.5 py-1 text-[12.5px]">
+              {canPick ? (
+                <button type="button" aria-expanded={panelOpen} onClick={() => setPanel(!panelOpen)} className={`inline-flex h-8 items-center gap-1 rounded-lg px-2 font-semibold transition-colors hover:bg-sd-fill ${panelOpen ? "text-accent" : "text-sd-fg-muted"}`}>
+                  답변 문구
+                  <ChevronDownIcon className={`size-3.5 transition-transform ${panelOpen ? "rotate-180" : ""}`} />
+                </button>
+              ) : !editing ? (
+                <button type="button" onClick={() => onManage()} className="h-8 rounded-lg px-2 font-semibold text-sd-fg-muted transition-colors hover:bg-sd-fill">
+                  자주 쓰는 답변 만들기
+                </button>
+              ) : (
+                <span />
+              )}
+              <span className={`px-2 tabular-nums ${over ? "font-semibold text-sd-critical" : "text-sd-fg-subtle"}`}>
+                {savedDraft && !over ? "초안에 저장했어요" : ""}
+                {max !== null ? `${savedDraft && !over ? " · " : ""}${countOf(text)} / ${max}` : ""}
+              </span>
+            </div>
+            <AnimatePresence initial={false}>
+              {panelOpen && (
+                <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} transition={{ duration: 0.16, ease: "easeOut" }} className="overflow-hidden">
+                  <ReplyStarters templates={templates} rating={r.rating} author={r.author} lang={lang} detected={detected} onLang={setLang} onPick={pickTemplate} onManage={onManage} disabled={disabled || pending} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <div className="mt-2.5 flex justify-end gap-2">
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <p className="min-w-0 flex-1 basis-56 text-[12.5px] leading-snug text-sd-fg-subtle">모두에게 공개돼요. 연락처 같은 개인정보와 광고는 쓸 수 없어요.</p>
+            <div className="ml-auto flex gap-2">
             <Button
               variant="neutral"
               size="sm"
@@ -216,6 +257,7 @@ export function ReviewCard({ review: r, disabled, templates, onManage, onChange 
             <Button size="sm" disabled={disabled || pending || !!problem || (editing && text.trim() === r.reply)} onClick={() => setConfirming(true)}>
               {editing ? "고치기" : "답글 올리기"}
             </Button>
+            </div>
           </div>
         </div>
       ) : (

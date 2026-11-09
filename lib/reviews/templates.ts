@@ -6,10 +6,12 @@ import { countOf, CUSTOM_BLANK, DRAFT_MAX, REPLY_MAX, type Review } from "./mode
 export const REPLY_LANGS = ["ko", "en", "ja"] as const;
 export type ReplyLang = (typeof REPLY_LANGS)[number];
 export const LANG_LABEL: Record<ReplyLang, string> = { ko: "한국어", en: "영어", ja: "일본어" };
+export const LANG_SHORT: Record<ReplyLang, string> = { ko: "한", en: "영", ja: "일" };
 
 /** 어울리는 별점. 낮음은 3점 이하다 */
 export type Fit = "low" | "high" | "any";
 export const FIT_LABEL: Record<Fit, string> = { low: "낮은 별점", high: "높은 별점", any: "모든 별점" };
+export const FIT_ORDER: Fit[] = ["low", "high", "any"];
 
 export type Bodies = Record<ReplyLang, string>;
 export type ReplyTemplate = { id: number; title: string; fit: Fit; bodies: Bodies; updatedBy: string; updatedAt: string };
@@ -40,9 +42,22 @@ export function replyLangOf(r: Pick<Review, "platform" | "place" | "body">): Rep
   return (REPLY_LANGS as readonly string[]).includes(code) ? (code as ReplyLang) : null;
 }
 
+/** 이름이 없는 리뷰도 있어서 언어에 맞는 말로 대신한다 */
+export const nameFor = (author: string, lang: ReplyLang) => author.trim() || NAMELESS[lang];
+
 /** 넣기 전 문구를 답글로 바꾼다. 맞춤 문장 자리는 채우기 전까지 올릴 수 없다 */
 export function fillTemplate(body: string, author: string, lang: ReplyLang): string {
-  return body.split(NAME_TOKEN).join(author.trim() || NAMELESS[lang]).split(CUSTOM_TOKEN).join(CUSTOM_BLANK).trim();
+  return body.split(NAME_TOKEN).join(nameFor(author, lang)).split(CUSTOM_TOKEN).join(CUSTOM_BLANK).trim();
+}
+
+export type TokenPart = { kind: "text" | "name" | "custom"; text: string };
+
+/** 미리보기에서 토큰만 다르게 그리려고 문구를 조각낸다 */
+export function tokenParts(body: string): TokenPart[] {
+  return body
+    .split(/(\{이름\}|\{맞춤 문장\})/)
+    .filter(Boolean)
+    .map((text) => ({ kind: text === NAME_TOKEN ? "name" : text === CUSTOM_TOKEN ? "custom" : "text", text }));
 }
 
 export const fits = (fit: Fit, rating: number) => fit === "any" || (fit === "low" ? rating <= 3 : rating >= 4);
