@@ -228,6 +228,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.3,
       })),
     ),
+    ...LOCALES.map((locale) => ({
+      url: `${BASE_URL}${localizedPath("/delete-account", locale)}`,
+      lastModified: now,
+      changeFrequency: "yearly" as const,
+      priority: 0.3,
+      alternates: {
+        languages: alternateLanguages(BASE_URL, "/delete-account"),
+      },
+    })),
     ...meetupPages,
   ];
 }
