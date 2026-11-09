@@ -5,10 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/admin/Button";
 import { ChangeDialog } from "@/components/admin/ChangeDialog";
 import { AppStoreMark, GooglePlayMark, StarIcon } from "@/components/admin/icons";
+import { ReplyStarters } from "@/components/admin/reviews/ReplyStarters";
 import { useToast } from "@/components/admin/Toast";
 import { postReply, reopen, saveDraft, skip } from "@/lib/admin/reviewsClient";
 import { refreshPendingCounts } from "@/lib/admin/usePendingCounts";
-import { countOf, editedAfter, REPLY_MAX, replyProblem, stateOf, type Review } from "@/lib/reviews/model";
+import { countOf, CUSTOM_BLANK, editedAfter, REPLY_MAX, replyProblem, stateOf, type Review } from "@/lib/reviews/model";
+import { fillTemplate, replyLangOf, type ReplyLang, type ReplyTemplate } from "@/lib/reviews/templates";
 
 // 리뷰 한 장 (docs/admin-ui.md "리뷰"). 리뷰가 짧고 적어서 목록에서 바로 읽고 그 자리에서 답글을 쓴다.
 
@@ -42,7 +44,7 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-export function ReviewCard({ review: r, disabled, onChange }: { review: Review; disabled: boolean; onChange: (next: Review) => void }) {
+export function ReviewCard({ review: r, disabled, templates, onManage, onChange }: { review: Review; disabled: boolean; templates: ReplyTemplate[]; onManage: () => void; onChange: (next: Review) => void }) {
   const toast = useToast();
   const state = stateOf(r);
   const [writing, setWriting] = useState(!!r.draft);
@@ -53,6 +55,10 @@ export function ReviewCard({ review: r, disabled, onChange }: { review: Review; 
   const [error, setError] = useState<string>();
   const [savedDraft, setSavedDraft] = useState(false);
   const timer = useRef<number>(undefined);
+  const area = useRef<HTMLTextAreaElement>(null);
+  const detected = replyLangOf(r);
+  const [lang, setLang] = useState<ReplyLang>(detected ?? "ko");
+  const [before, setBefore] = useState<string | null>(null);
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const key = { platform: r.platform, id: r.id };
@@ -72,6 +78,21 @@ export function ReviewCard({ review: r, disabled, onChange }: { review: Review; 
         .then(() => setSavedDraft(true))
         .catch((e: Error) => toast(e.message));
     }, SAVE_DELAY);
+  };
+
+  const pickTemplate = (t: ReplyTemplate) => {
+    const filled = fillTemplate(t.bodies[lang], r.author, lang);
+    setBefore(text);
+    write(filled);
+    // 맞춤 문장 자리를 잡아 두어 바로 덮어쓸 수 있게 한다
+    requestAnimationFrame(() => {
+      const el = area.current;
+      if (!el) return;
+      el.focus();
+      const at = filled.indexOf(CUSTOM_BLANK);
+      if (at >= 0) el.setSelectionRange(at, at + CUSTOM_BLANK.length);
+      else el.setSelectionRange(filled.length, filled.length);
+    });
   };
 
   const run = (work: Promise<Review>, message: string) => {
@@ -154,7 +175,24 @@ export function ReviewCard({ review: r, disabled, onChange }: { review: Review; 
 
       {writing ? (
         <div className="mt-3">
-          <textarea value={text} onChange={(e) => write(e.target.value)} disabled={disabled || pending} autoFocus={!r.draft} rows={3} aria-label="답글" placeholder="이 분께 남길 답글을 써 주세요" className={`block w-full resize-y rounded-xl border bg-sd-surface px-3.5 py-2.5 text-[14px] leading-relaxed text-sd-fg outline-none placeholder:text-sd-fg-subtle ${over ? "border-sd-critical" : "border-sd-line focus:border-accent"}`} />
+          {!editing && (
+            <ReplyStarters
+              templates={templates}
+              rating={r.rating}
+              lang={lang}
+              detected={detected}
+              onLang={setLang}
+              onPick={pickTemplate}
+              onManage={onManage}
+              canUndo={before !== null}
+              onUndo={() => {
+                write(before ?? "");
+                setBefore(null);
+              }}
+              disabled={disabled || pending}
+            />
+          )}
+          <textarea ref={area} value={text} onChange={(e) => write(e.target.value)} disabled={disabled || pending} autoFocus={!r.draft} rows={3} aria-label="답글" placeholder="이 분께 남길 답글을 써 주세요" className={`block w-full resize-y rounded-xl border bg-sd-surface px-3.5 py-2.5 text-[14px] leading-relaxed text-sd-fg outline-none placeholder:text-sd-fg-subtle ${over ? "border-sd-critical" : "border-sd-line focus:border-accent"}`} />
           <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 text-[12.5px] text-sd-fg-subtle">
             <span>모두에게 공개돼요. 연락처 같은 개인정보와 광고는 쓸 수 없어요.</span>
             <span className={`tabular-nums ${over ? "font-semibold text-sd-critical" : ""}`}>

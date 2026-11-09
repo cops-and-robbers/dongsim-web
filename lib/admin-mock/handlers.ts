@@ -9,7 +9,7 @@ import { mockCompany, mockRemovePerson, mockRemoveRecord, mockSavePerson, mockSa
 import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
 import { mockRelease, mockRunAction } from "./release";
 import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockSend, mockStorePage } from "./storePage";
-import { mockInbox, mockPatchReview, mockReply, mockWaiting } from "./reviews";
+import { mockCreateTemplate, mockDeleteTemplate, mockInbox, mockPatchReview, mockReply, mockTemplates, mockUpdateTemplate, mockWaiting } from "./reviews";
 import { mockPatchCheck, mockStoreCheck } from "./storeCheck";
 import {
   queryUsers,
@@ -502,6 +502,26 @@ export const handlers = [
   http.post("/api/admin/reviews", async ({ request }) => {
     await delay(500);
     return HttpResponse.json(mockReply((await request.json()) as Parameters<typeof mockReply>[0]));
+  }),
+
+  http.get("/api/admin/reviews/templates", async () => {
+    await delay(200);
+    return HttpResponse.json(mockTemplates());
+  }),
+
+  http.post("/api/admin/reviews/templates", async ({ request }) => {
+    await delay(300);
+    return HttpResponse.json(mockCreateTemplate((await request.json()) as Parameters<typeof mockCreateTemplate>[0]));
+  }),
+
+  http.put("/api/admin/reviews/templates", async ({ request }) => {
+    await delay(300);
+    return HttpResponse.json(mockUpdateTemplate((await request.json()) as Parameters<typeof mockUpdateTemplate>[0]));
+  }),
+
+  http.delete("/api/admin/reviews/templates", async ({ request }) => {
+    await delay(200);
+    return HttpResponse.json(mockDeleteTemplate(Number(new URL(request.url).searchParams.get("id"))));
   }),
 
   // 스토어 페이지. 로컬에서는 실제 스토어와 Supabase 에 닿지 않는다

@@ -5,10 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Callout } from "@/components/admin/Callout";
 import { RefreshIcon } from "@/components/admin/icons";
 import { EmptyBlock, ErrorBlock, PageHeader, ScrollPage } from "@/components/admin/Parts";
+import { ReplyTemplates } from "@/components/admin/reviews/ReplyTemplates";
 import { ReviewCard } from "@/components/admin/reviews/ReviewCard";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
-import { fetchInbox } from "@/lib/admin/reviewsClient";
+import { fetchInbox, fetchTemplates } from "@/lib/admin/reviewsClient";
 import { listFor, stateOf, waitingCount, type Inbox, type Platform, type Review, type Tab } from "@/lib/reviews/model";
+import type { TemplateList } from "@/lib/reviews/templates";
 
 // 어드민 리뷰 받은편지함 (docs/admin-ui.md "리뷰"). 무엇에 답해야 하는지부터 보여 준다.
 
@@ -20,6 +22,8 @@ export default function ReviewsPage() {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<Tab>("waiting");
   const [store, setStore] = useState<Platform | "all">("all");
+  const [view, setView] = useState<"inbox" | "templates">("inbox");
+  const [templates, setTemplates] = useState<TemplateList>({ templates: [], writable: false });
   const seq = useRef(0);
 
   const load = useCallback((fresh = false) => {
@@ -34,6 +38,9 @@ export default function ReviewsPage() {
       .finally(() => id === seq.current && setLoading(false));
   }, []);
   useEffect(() => load(), [load]);
+  useEffect(() => {
+    fetchTemplates().then(setTemplates).catch(() => undefined);
+  }, []);
 
   const change = (next: Review) => setData((d) => d && { ...d, reviews: d.reviews.map((r) => (r.platform === next.platform && r.id === next.id ? next : r)) });
 
@@ -75,6 +82,18 @@ export default function ReviewsPage() {
             </div>
           ) : (
             <div className="space-y-3">
+              <SegmentedControl<"inbox" | "templates">
+                value={view}
+                onChange={setView}
+                options={[
+                  { value: "inbox", label: "받은 리뷰" },
+                  { value: "templates", label: `답변 문구 ${templates.templates.length}` },
+                ]}
+              />
+              {view === "templates" ? (
+                <ReplyTemplates data={templates} onChange={(next) => setTemplates((d) => ({ ...d, templates: next }))} />
+              ) : (
+                <>
               <div className="flex flex-wrap items-center justify-between gap-2.5">
                 <SegmentedControl<Tab>
                   value={tab}
@@ -106,13 +125,15 @@ export default function ReviewsPage() {
                 <AnimatePresence initial={false} mode="popLayout">
                   {list.map((r) => (
                     <motion.div key={`${r.platform}-${r.id}`} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.16 }}>
-                      <ReviewCard review={r} disabled={!data.writable} onChange={change} />
+                      <ReviewCard review={r} disabled={!data.writable} templates={templates.templates} onManage={() => setView("templates")} onChange={change} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
               )}
 
               <p className="pt-2 text-[12.5px] leading-relaxed text-sd-fg-subtle">별점만 남긴 평가는 스토어가 알려 주지 않아요. Google Play 는 최근 7일치만 받을 수 있어서 연결한 날부터 쌓여요.</p>
+                </>
+              )}
             </div>
           )}
         </div>

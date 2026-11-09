@@ -1,6 +1,7 @@
 // 로컬에서 리뷰 받은편지함을 보는 가짜 값. 실제 스토어와 Supabase 에 닿지 않는다.
 import type { Inbox, Platform, Review } from "@/lib/reviews/model";
 import { waitingCount } from "@/lib/reviews/model";
+import type { ReplyTemplate, TemplateInput, TemplateList } from "@/lib/reviews/templates";
 
 const base = { title: "", translated: null, appVersion: null, device: null, reply: null, replyAt: null, replyState: null, replyBy: null, skippedBy: null, skippedAt: null, draft: null, draftBy: null } as const;
 
@@ -29,4 +30,30 @@ export function mockPatchReview(body: { platform: Platform; id: string; action: 
 
 export function mockReply(body: { platform: Platform; id: string; text: string }): { review: Review } {
   return change(body.platform, body.id, { reply: body.text, replyAt: new Date().toISOString(), replyState: body.platform === "ios" ? "pending" : "published", replyBy: "로컬 관리자", draft: null, draftBy: null, skippedAt: null, skippedBy: null });
+}
+
+let templates: ReplyTemplate[] = [
+  { id: 1, title: "위치가 끊긴다는 리뷰", fit: "low", bodies: { ko: "{이름}님, 불편을 드려 죄송해요. {맞춤 문장} 위치 권한을 항상 허용으로 바꾸면 나아질 수 있어요.", en: "Hi {이름}, sorry for the trouble. {맞춤 문장}", ja: "" }, updatedBy: "로컬 관리자", updatedAt: "2026-11-10T00:00:00.000Z" },
+  { id: 2, title: "칭찬에 고마움 전하기", fit: "high", bodies: { ko: "{이름}님, 좋은 리뷰 고마워요. {맞춤 문장}", en: "Thanks for the kind words, {이름}. {맞춤 문장}", ja: "{이름}さん、ありがとうございます。{맞춤 문장}" }, updatedBy: "로컬 관리자", updatedAt: "2026-11-10T00:00:00.000Z" },
+];
+
+let nextTemplate = 3;
+
+export const mockTemplates = (): TemplateList => ({ templates, writable: true });
+
+export function mockCreateTemplate(input: TemplateInput): { template: ReplyTemplate } {
+  const template = { ...input, id: nextTemplate++, updatedBy: "로컬 관리자", updatedAt: new Date().toISOString() };
+  templates = [...templates, template];
+  return { template };
+}
+
+export function mockUpdateTemplate(body: TemplateInput & { id: number }): { template: ReplyTemplate } {
+  const template = { id: body.id, title: body.title, fit: body.fit, bodies: body.bodies, updatedBy: "로컬 관리자", updatedAt: new Date().toISOString() };
+  templates = templates.map((t) => (t.id === body.id ? template : t));
+  return { template };
+}
+
+export function mockDeleteTemplate(id: number): { ok: true } {
+  templates = templates.filter((t) => t.id !== id);
+  return { ok: true };
 }
