@@ -17,39 +17,39 @@ export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: "경찰과 도둑 온라인 게임",
-  description: "친구에게 링크를 보내 폰이나 컴퓨터에서 같이 하는 경찰과 도둑 온라인 게임이에요. 최대 8명, 한 판 3분이에요.",
+  description: "밖에 나가지 않고 온라인으로 즐기는 경찰과 도둑이에요. 최대 8명, 한 판 3분이에요.",
   alternates: { canonical: "/online" },
   openGraph: {
     title: "경찰과 도둑 온라인 게임",
-    description: "친구에게 링크를 보내 폰이나 컴퓨터에서 같이 하는 경찰과 도둑 온라인 게임이에요. 최대 8명, 한 판 3분이에요.",
+    description: "밖에 나가지 않고 온라인으로 즐기는 경찰과 도둑이에요. 최대 8명, 한 판 3분이에요.",
     url: "/online",
   },
   twitter: {
     card: "summary_large_image",
     title: "경찰과 도둑 온라인 게임",
-    description: "친구에게 링크를 보내 폰이나 컴퓨터에서 같이 하는 경찰과 도둑 온라인 게임이에요. 최대 8명, 한 판 3분이에요.",
+    description: "밖에 나가지 않고 온라인으로 즐기는 경찰과 도둑이에요. 최대 8명, 한 판 3분이에요.",
   },
 };
 
 const FEATURES = [
   {
-    title: "링크 하나로 모여요",
-    body: "방을 만들고 링크나 방 코드를 보내면 친구가 들어와요. 대기실에서 경찰 칸이나 도둑 칸으로 걸어가면 그 편이 돼요. 최대 8명이에요.",
+    title: "팀을 선택하세요",
+    body: "대기실에서 경찰 칸이나 도둑 칸으로 들어가세요.",
     scene: <LobbyScene />,
   },
   {
-    title: "바라보는 쪽만 보여요",
-    body: "바라보는 쪽만 멀리 보여요. 도둑은 수풀에 숨고, 경찰은 시야를 돌려 가며 찾아요.",
+    title: "숨거나 찾으세요",
+    body: "수풀에 들어가면 멀리서는 보이지 않아요. 밖으로 나오면 들켜요.",
     scene: <HideScene />,
   },
   {
-    title: "35초마다 위치가 드러나요",
-    body: "도둑 자리가 지도에 잠깐 빨간 표시로 떠요. 경찰은 그쪽으로 달려가고, 도둑은 얼른 자리를 옮겨요.",
+    title: "35초마다 위치가 공개돼요",
+    body: "도둑 위치가 경찰 지도에 잠깐 표시돼요.",
     scene: <RevealScene />,
   },
   {
-    title: "같은 편이 감옥에서 꺼내 줘요",
-    body: "잡힌 도둑은 감옥으로 가요. 같은 편이 감옥 문 앞에 잠깐 서 있으면 풀려나요. 경찰은 그전에 막아야 해요.",
+    title: "동료를 구출하세요",
+    body: "잡히면 감옥으로 가요. 같은 편이 문 앞에 잠깐 서 있으면 풀려나요.",
     scene: <JailScene />,
   },
 ];
@@ -122,7 +122,7 @@ export default async function OnlinePage() {
                 온라인 게임
               </h1>
               <p className="mt-6 max-w-md text-pretty text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-                친구에게 링크를 보내 폰이나 컴퓨터에서 같이 하는 게임이에요.
+                밖에 나가지 않고 온라인으로 즐겨 보세요.
               </p>
               <div className="mt-8 w-full">
                 <Play status={status} medium="online_hero" />
@@ -178,7 +178,7 @@ export default async function OnlinePage() {
           {/* 열려 있을 때만 끝에서 다시 부른다. 공개 전에는 같은 누를 수 없는 버튼을 두 번 보여 주지 않는다 */}
           {status.mode === "open" && (
             <div className="mb-20 flex flex-col items-center border-t border-slate-200 pt-16 text-center dark:border-white/10">
-              <h2 className="text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">친구를 불러 한 판 해요</h2>
+              <h2 className="text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">친구와 함께 즐겨 보세요</h2>
               <div className="mt-8 flex justify-center">
                 <Play status={status} medium="online_bottom" />
               </div>
@@ -195,9 +195,9 @@ export default async function OnlinePage() {
                 className="h-16 w-16 shrink-0 rounded-[22%] shadow-[0_6px_16px_-6px_rgba(15,23,42,0.35)] ring-1 ring-black/5 sm:h-20 sm:w-20"
               />
               <div>
-                <h2 className="text-balance text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">오프라인으로 경찰과 도둑 즐기기</h2>
+                <h2 className="text-balance text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">오프라인으로도 즐겨 보세요</h2>
                 <p className="mt-2 text-pretty text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-300">
-                  공원이나 운동장에서 친구들과 진짜로 뛰어요. 앱이 지도와 감옥을 맡아요.{" "}
+                  공원이나 운동장에서 친구들과 직접 뛰어요.{" "}
                   <Link href="/game" className="whitespace-nowrap font-semibold text-brand-blue underline-offset-4 hover:underline dark:text-brand-green">
                     어떻게 하는지 보기
                   </Link>
