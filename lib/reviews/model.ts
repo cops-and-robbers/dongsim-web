@@ -32,6 +32,8 @@ export type Inbox = { reviews: Review[]; syncError: string | null; writable: boo
 
 /** Google Play 답글 한도. App Store 는 공식 문서에 한도가 없어 서버 오류로 알린다 */
 export const REPLY_MAX: Record<Platform, number | null> = { ios: null, android: 350 };
+/** 답변 문구의 맞춤 문장 자리. 채우기 전에는 올릴 수 없다 */
+export const CUSTOM_BLANK = "[이 리뷰에 맞는 한 문장을 적어 주세요]";
 /** 저장소를 지키는 값. 스토어 한도가 아니다 */
 export const DRAFT_MAX = 6000;
 
@@ -62,6 +64,7 @@ export const countOf = (text: string) => [...text].length;
 /** 답글을 등록할 수 없는 이유. 없으면 null */
 export function replyProblem(platform: Platform, text: string): string | null {
   if (!text.trim()) return "답글을 써 주세요.";
+  if (text.includes(CUSTOM_BLANK)) return "맞춤 문장 자리를 이 리뷰에 맞게 채워 주세요.";
   const max = REPLY_MAX[platform];
   if (max !== null && countOf(text) > max) return `Google Play 답글은 ${max}자까지 쓸 수 있어요.`;
   if (countOf(text) > DRAFT_MAX) return "답글이 너무 길어요.";
