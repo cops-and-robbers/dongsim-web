@@ -452,6 +452,7 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.68);
+  const [height, setHeight] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     const el = box.current;
@@ -462,6 +463,17 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
     ro.observe(el);
     return () => ro.disconnect();
   }, [width]);
+
+  // transform 은 보이는 크기만 줄이고 레이아웃 높이는 그대로 둔다. 줄인 높이로 감싸야 내용 아래 빈 공간이 스크롤되지 않는다
+  useLayoutEffect(() => {
+    const el = inner.current;
+    if (!el) return;
+    const measure = () => setHeight(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const el = box.current;
@@ -474,8 +486,10 @@ function Stage({ width, spot, watch, tabs, children }: { width: number; spot: Fi
   return (
     <>
       <div ref={box} className="absolute inset-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none]">
-        <div ref={inner} style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-          {children}
+        <div style={{ height: height === null ? undefined : height * scale, overflow: "hidden" }}>
+          <div ref={inner} style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+            {children}
+          </div>
         </div>
       </div>
       <div aria-hidden className="pointer-events-none absolute bottom-0 left-0" style={{ width, transform: `scale(${scale})`, transformOrigin: "bottom left" }}>
