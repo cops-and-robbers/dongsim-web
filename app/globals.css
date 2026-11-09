@@ -48,6 +48,9 @@
   /* 치즈 펫 노랑(scripts/pet/cheese.py). 치즈가 고른 표정, 진행 중 표시처럼 치즈 몫에만 쓴다 */
   --cheese: #ffcc3e;
   --cheese-weak: #fff4d1;
+  /* 당근 채널 표시. 흰 바탕에서 그림 대비 3:1 이 되게 당근 주황보다 조금 진하다 */
+  --daangn: #e8590c;
+  --daangn-leaf: #2f9e44;
   /* 답 평가 신선도(lib/metrics/chat/feedback.ts). 글자는 진하게, 바탕은 옅게 */
   --fresh: #a8780a;
   --fresh-weak: #fff4d1;
@@ -111,6 +114,8 @@
   --sd-warning-weak: rgba(229, 184, 79, 0.16);
   --cheese: #ffcc3e;
   --cheese-weak: rgba(255, 204, 62, 0.14);
+  --daangn: #ff8a3d;
+  --daangn-leaf: #51cf66;
   --fresh: #f2c447;
   --fresh-weak: rgba(255, 204, 62, 0.14);
   --ripe: #d6a066;
@@ -190,6 +195,8 @@
   --color-sd-warning-weak: var(--sd-warning-weak);
   --color-cheese: var(--cheese);
   --color-cheese-weak: var(--cheese-weak);
+  --color-daangn: var(--daangn);
+  --color-daangn-leaf: var(--daangn-leaf);
   --color-fresh: var(--fresh);
   --color-fresh-weak: var(--fresh-weak);
   --color-ripe: var(--ripe);

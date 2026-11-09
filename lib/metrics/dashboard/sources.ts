@@ -12,7 +12,7 @@ import type { DailyPoint } from "./data.ts";
  * 하나로 보면 6월 전 앱 숫자가 "0"으로 읽혀 이전 기간 비교가 크게 부풀려진다.
  * play 는 Google Play 설치 통계, playStore 는 Play 스토어 등록정보, appstorePage 는 App Store 분석 리포트(노출, 조회)
  */
-export type Source = "instagram" | "ga4web" | "ga4app" | "appstore" | "admob" | "play" | "playStore" | "appstorePage";
+export type Source = "instagram" | "ga4web" | "ga4app" | "appstore" | "admob" | "play" | "playStore" | "appstorePage" | "daangn";
 
 /** 숫자가 없는 날(수집 전, 아직 안 들어옴)을 가를 때 쓴다 */
 export const SOURCE_OF: Record<Exclude<keyof DailyPoint, "day">, Source> = {

@@ -40,6 +40,11 @@ export function fromInstagram(source: string): boolean {
   return s === "ig" || s.includes("instagram") || s === "linktr.ee";
 }
 
+/** 당근 키워드 광고를 눌러 온 방문인가. 광고 링크에 붙인 UTM 으로만 가른다. 비즈프로필 링크나 그냥 넘어온 방문은 광고비로 나누면 안 된다 */
+export function fromDaangnKeywordAd(source: string, medium: string): boolean {
+  return source.toLowerCase() === "daangn" && medium.toLowerCase() === "keyword";
+}
+
 /**
  * 당근에서 온 방문인가 (#207).
  * - daangn: 당근 키워드 광고(utm_medium=keyword)와 비즈프로필 홈페이지 링크(utm_medium=bizprofile)에 우리가 붙인 UTM

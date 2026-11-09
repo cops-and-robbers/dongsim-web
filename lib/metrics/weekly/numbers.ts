@@ -22,7 +22,7 @@
 
 import { addDays, ymdRange } from "../dates.ts";
 import { splitKey } from "../ga4/run.ts";
-import { fromInstagram, isInternal } from "../channels.ts";
+import { fromInstagram, isInternal, fromDaangnKeywordAd } from "../channels.ts";
 import { MARK, splitFunnelKey } from "../funnel.ts";
 
 export type Week = { start: string; end: string }; // YYYY-MM-DD, 월요일과 일요일
@@ -33,6 +33,8 @@ export type WeeklyInput = {
   ga4: { property: string; day: string; breakdown: string; key: string; metric: string; value: number }[];
   appstoreSales: { day: string; productType: string; units: number }[];
   admob: { day: string; earningsMicros: number; matchedRequests: number; impressions: number }[];
+  /** 당근 키워드 광고(daangn_ads_daily). 없으면 0 으로 센다 */
+  daangnAds?: { day: string; impressions: number; clicks: number; costWon: number }[];
   /** Google Play 리포트(play_daily). day 는 PT 날짜 그대로 - 여기서 shiftPt 로 옮긴다. 없으면 0 으로 센다 */
   play?: { day: string; report: string; dim: string; key: string; metric: string; value: number }[];
   /** App Store 분석 리포트의 다운로드 경로, 설치와 삭제(downloads, install_delete). 화면만 쓴다 */
@@ -92,6 +94,8 @@ export type WeeklyNumbers = {
    */
   cohort: { d1: Ratio; d7: Ratio; activation: Ratio };
   ads: { impressions: number; matchedRequests: number; earningsMicros: number };
+  /** 앱에 붙는 AdMob(ads)과 달리 우리가 돈을 내는 당근 키워드 광고. visits 는 GA4 의 광고 UTM 방문 */
+  daangnAds: { impressions: number; clicks: number; costWon: number; visits: number };
   /**
    * Google Play (#147). 3~7일 늦게 들어와서 화면과 주간 리포트는 들어온 날까지만 잘라 같은 날 수로 비교한다(playWindow).
    * - installs: 그날 처음 설치한 사람(Daily User Installs). 다시 설치, 구글 출시 전 테스트 기기는 들어가지 않는다
@@ -187,6 +191,9 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
       (r) => r.value,
     );
   const ads = input.admob.filter((r) => inWeek(r.day, w));
+  const daangn = (input.daangnAds ?? []).filter((r) => inWeek(r.day, w));
+  // 광고가 안 나간 날의 같은 UTM 방문은 심사나 팀 확인이다(2026-11-06~08 에 5회). 광고비로 나누면 안 된다
+  const daangnDays = new Set(daangn.filter((r) => r.impressions > 0).map((r) => r.day));
   // /download 에서 남은 스토어 이동(출처|매체|페이지). 우리 팀 방문은 뺀다
   const linkRows = (metric: string) =>
     ga.filter(
@@ -297,6 +304,18 @@ export function weeklyNumbers(input: WeeklyInput, w: Week): WeeklyNumbers {
       impressions: sum(ads, (r) => r.impressions),
       matchedRequests: sum(ads, (r) => r.matchedRequests),
       earningsMicros: sum(ads, (r) => r.earningsMicros),
+    },
+    daangnAds: {
+      impressions: sum(daangn, (r) => r.impressions),
+      clicks: sum(daangn, (r) => r.clicks),
+      costWon: sum(daangn, (r) => r.costWon),
+      visits: sum(
+        ga.filter((r) => {
+          const [source = "", medium = ""] = splitKey(r.key);
+          return daangnDays.has(r.day) && r.property === "web" && r.breakdown === "session_campaign" && r.metric === "sessions" && fromDaangnKeywordAd(source, medium);
+        }),
+        (r) => r.value,
+      ),
     },
     play: playNumbers(input.play ?? [], w),
     appStorePage: (() => {

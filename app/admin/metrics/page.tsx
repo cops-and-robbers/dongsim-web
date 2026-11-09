@@ -21,7 +21,7 @@ import { reissue } from "@/lib/admin/auth/session";
 import type { Dashboard, DailyPoint, PostRow } from "@/lib/metrics/dashboard/data";
 import { SOURCE_OF } from "@/lib/metrics/dashboard/sources";
 import { MIN_REACH, engagementOf, smallReach } from "@/lib/metrics/dashboard/engagement";
-import { ChevronRightIcon } from "@/components/admin/icons";
+import { CarrotFillIcon, ChevronRightIcon } from "@/components/admin/icons";
 import { Tooltip } from "@/components/admin/Tooltip";
 import { SmallReachNote } from "@/components/admin/metrics/PostDrawer";
 import { compareParam, parseCompare, rangeLabel } from "@/lib/metrics/dashboard/calendar";
@@ -513,11 +513,14 @@ function Cells({ children, cols = 4 }: { children: ReactNode; cols?: 2 | 3 | 4 |
 }
 
 /** 탭 안의 묶음 제목. 무엇을 묻는 묶음인지 한 줄로 */
-function Group({ title, note, children }: { title: string; note?: ReactNode; children: ReactNode }) {
+function Group({ title, icon, note, children }: { title: string; icon?: ReactNode; note?: ReactNode; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
       <div>
-        <h2 className="text-[16px] font-bold text-sd-fg">{title}</h2>
+        <h2 className="flex items-center gap-1.5 text-[16px] font-bold text-sd-fg">
+          {icon}
+          {title}
+        </h2>
         {note && <p className="mt-1 text-[12px] leading-relaxed text-sd-fg-subtle">{note}</p>}
       </div>
       {children}
@@ -592,6 +595,14 @@ function MetricsBody({
     <SectionCard title={title}>
       <TrendChart days={days} series={[{ label, values: col(k) }]} previous={prev(k)} markers={markers} unit={unit} />
     </SectionCard>
+  );
+  // 비용은 늘고 주는 것이 좋고 나쁨이 아니라서 증감 색 없이 이전 금액만 적는다
+  const won = (label: string, now: number, before: number) => (
+    <Cell
+      label={label}
+      value={none("daangn") ? "-" : `${fmt(now)}원`}
+      lines={none("daangn") ? ["이 기간엔 숫자가 없어요"] : !compare ? [] : noPrev("daangn") ? [`${cw} 숫자 없음`] : [`${cw} ${fmt(before)}원`]}
+    />
   );
   // 사이트 전환율: 사이트에 들어와 다운로드 버튼으로 스토어에 간 방문의 비율.
   // - 한 방문에서 여러 번 눌러도 한 번으로 센다(storeSessions). 클릭 수로 나누면 100% 를 넘을 수 있다
@@ -795,6 +806,39 @@ function MetricsBody({
           <FadeIn>
             <ChannelTable d={d} />
           </FadeIn>
+          {d.since.daangn && (
+            <Group title="당근 키워드 광고" icon={<CarrotFillIcon className="size-5" />} note="노출, 클릭, 비용은 당근 기준이에요. 방문은 GA4 기준이라 클릭 수와 다를 수 있어요.">
+              <Cells cols={3}>
+                {won("광고 비용", c.daangnAds.costWon, p.daangnAds.costWon)}
+                <Step label="노출" now={c.daangnAds.impressions} before={p.daangnAds.impressions} noPrev={noPrev("daangn")} none={none("daangn")} />
+                <Step
+                  label="클릭"
+                  now={c.daangnAds.clicks}
+                  before={p.daangnAds.clicks}
+                  sub={c.daangnAds.clicks > 0 ? `클릭 1회당 ${fmt(c.daangnAds.costWon / c.daangnAds.clicks)}원` : undefined}
+                  noPrev={noPrev("daangn")}
+                  none={none("daangn")}
+                />
+                {none("daangn") ? (
+                  <Cell label="클릭률" value="-" lines={["이 기간엔 숫자가 없어요"]} />
+                ) : (
+                  <RatioCell
+                    label="클릭률"
+                    now={{ num: c.daangnAds.clicks, den: c.daangnAds.impressions }}
+                    before={{ num: p.daangnAds.clicks, den: p.daangnAds.impressions }}
+                    of="노출 중 클릭한 횟수"
+                    noPrev={noPrev("daangn")}
+                  />
+                )}
+                <Step label="광고로 온 사이트 방문" now={c.daangnAds.visits} before={p.daangnAds.visits} noPrev={noPrev("daangn")} none={none("daangn")} />
+                <Cell
+                  label="방문 1회당 비용"
+                  value={c.daangnAds.visits > 0 ? `${fmt(c.daangnAds.costWon / c.daangnAds.visits)}원` : "-"}
+                  lines={none("daangn") ? ["이 기간엔 숫자가 없어요"] : c.daangnAds.visits > 0 && c.daangnAds.visits < MIN_SAMPLE ? ["숫자가 적어 참고만 해요"] : []}
+                />
+              </Cells>
+            </Group>
+          )}
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <FadeIn delay={0.04}>{chart("사이트 방문", "webSessions", "회", "사이트 방문")}</FadeIn>
             <FadeIn delay={0.08}>{chart("스토어로 이동", "downloadClicks", "회", "스토어로 이동")}</FadeIn>

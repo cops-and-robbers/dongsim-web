@@ -367,6 +367,16 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
       return null;
     }
   };
+  // 0022 마이그레이션 전이면 테이블이 없다. 당근 칸만 안 보이고 화면은 그대로 그린다
+  const daangnRows = await optional(() =>
+    selectAll<{ day: string; impressions: number; clicks: number; cost_won: number }>(
+      (a, b) => client.from("daangn_ads_daily").select("day, impressions, clicks, cost_won").gte("day", from).lte("day", to).order("day").order("material_id").range(a, b),
+      "당근 광고 읽기",
+    ),
+  );
+  const daangnEdge = (ascending: boolean) =>
+    optional(async () => (await client.from("daangn_ads_daily").select("day").order("day", { ascending }).limit(1).maybeSingle()).data?.day ?? null);
+  const [daangnFirst, daangnLast] = await Promise.all([daangnEdge(true), daangnEdge(false)]);
   // Play 는 PT 날짜를 하루 뒤로 옮겨 쓰고, 기간 첫날 전날의 설치 기기 수도 보므로 이틀 앞부터 읽는다
   const playFrom = addDays(from, -2);
   const [igDays, igMedia, ga4, sales, admob, fresh, followerRows, eventRows, playRows, playCountryRows, engagementRows, waysRows] = await Promise.all([
@@ -518,6 +528,7 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
       matchedRequests: Number(r.matched_requests),
       impressions: Number(r.impressions),
     })),
+    daangnAds: (daangnRows ?? []).map((r) => ({ day: r.day, impressions: Number(r.impressions), clicks: Number(r.clicks), costWon: Number(r.cost_won) })),
     play: playRows ?? [],
     appstoreDownloads: waysRows,
     appstoreEngagement: engagementRows.map((r) => ({ day: r.day, event: r.dims.Event ?? "", counts: Number(r.counts ?? 0), uniqueCounts: Number(r.unique_counts ?? 0) })),
@@ -653,8 +664,8 @@ export async function loadDashboard(client: SupabaseClient, range: Week, previou
     events: eventRows,
     games: null,
     funnel: { current: funnelData(input.ga4, range, fApp), previous: funnelData(input.ga4, previous, fApp) },
-    freshness: { instagram: kst(fIg), ga4web: fWeb, ga4app: fApp, appstore: fAs, admob: fAd, play: kst(playLast), playStore: kst(storeLast), appstorePage: asaLast },
-    since: { instagram: kst(sIg), ga4web: sWeb, ga4app: sApp, appstore: sAs, admob: sAd, play: kst(playFirst), playStore: kst(storeFirst), appstorePage: asaFirst },
+    freshness: { instagram: kst(fIg), ga4web: fWeb, ga4app: fApp, appstore: fAs, admob: fAd, play: kst(playLast), playStore: kst(storeLast), appstorePage: asaLast, daangn: daangnLast },
+    since: { instagram: kst(sIg), ga4web: sWeb, ga4app: sApp, appstore: sAs, admob: sAd, play: kst(playFirst), playStore: kst(storeFirst), appstorePage: asaFirst, daangn: daangnFirst },
   };
 }
 
