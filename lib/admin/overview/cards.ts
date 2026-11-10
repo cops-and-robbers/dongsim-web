@@ -75,6 +75,14 @@ export function presetCards(lists: string[][]): CardKey[] {
   return out.length ? out : TEAM_CARDS;
 }
 
+/** 역할 기본 카드로 저장할 수 없는 이유. 없으면 null */
+export function cardsProblem(keys: string[]): string | null {
+  if (keys.some((k) => !isCardKey(k))) return "모르는 카드가 있어요.";
+  if (new Set(keys).size !== keys.length) return "같은 카드가 두 번 들어 있어요.";
+  if (cellsOf(keys as CardKey[]) > MAX_CELLS) return `카드는 ${MAX_CELLS}칸까지 놓을 수 있어요.`;
+  return null;
+}
+
 export type Placed = { key: CardKey; span: number };
 
 /**
@@ -120,6 +128,15 @@ export function pack(keys: CardKey[], cols: number): Placed[] {
   }
   return rows.flat();
 }
+
+/** 화면이 백엔드에서 바로 읽는 카드 값 */
+export type LiveValues = {
+  weeklyGames: number;
+  win: { police: number; robber: number };
+  ends: { endReason: string; count: number }[];
+  games: { id: string; inviteCode: string; status: string; participantCount: number; maxParticipants: number }[];
+  pending: { reports: number; bugs: number; reviews: number } | null;
+};
 
 // 개요 요약 API 가 돌려주는 카드 값. 카드 하나를 못 읽어도 나머지는 보인다
 

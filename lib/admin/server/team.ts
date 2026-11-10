@@ -87,7 +87,7 @@ export async function createRole(key: string, input: RoleInput, actor: string): 
   const position = (await readRoles()).length;
   const { data, error } = await db()
     .from(ROLES)
-    .insert({ key, name: input.name.trim(), description: input.description.trim(), icon: input.icon, position, updated_by: actor })
+    .insert({ key, name: input.name.trim(), description: input.description.trim(), icon: input.icon, cards: input.cards, position, updated_by: actor })
     .select(ROLE_COLUMNS)
     .single();
   if (error) throw new Error(error.message);
@@ -96,7 +96,7 @@ export async function createRole(key: string, input: RoleInput, actor: string): 
 
 export async function updateRole(key: string, updatedAt: string, input: RoleInput | null, actor: string): Promise<Role | null> {
   const now = new Date().toISOString();
-  const patch = input ? { name: input.name.trim(), description: input.description.trim(), icon: input.icon } : { archived_at: now };
+  const patch = input ? { name: input.name.trim(), description: input.description.trim(), icon: input.icon, cards: input.cards } : { archived_at: now };
   const { data, error } = await db()
     .from(ROLES)
     .update({ ...patch, updated_by: actor, updated_at: now })

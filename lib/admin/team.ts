@@ -26,7 +26,7 @@ export const DESC_MAX = 24;
 export type Role = { key: string; name: string; description: string; icon: string; cards: string[]; position: number; updatedBy: string; updatedAt: string };
 export type Member = { userId: string; nickname: string; roleKeys: string[]; onboardedAt: string | null; lastSeenAt: string; updatedAt: string };
 export type Team = { me: Member; members: Member[]; roles: Role[]; writable: boolean; canManage: boolean; readOnlyReason?: string };
-export type RoleInput = { name: string; description: string; icon: string };
+export type RoleInput = { name: string; description: string; icon: string; cards: string[] };
 
 const length = (s: string) => [...s.trim()].length;
 
