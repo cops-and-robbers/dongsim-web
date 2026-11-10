@@ -15,10 +15,11 @@ import { EventGamePicker } from "./EventGamePicker";
 import { TimeSelect } from "./TimeSelect";
 
 /**
- * 일정 달력 (#145, #165). 지표 화면 요약 탭 맨 아래.
+ * 일정 달력 (#145, #165). 어드민 "일정" 화면(#302). 예전엔 지표 화면 요약 탭 맨 아래에 있었다.
  *
- * 일정은 차트에 마름모로 겹쳐 "그날 왜 숫자가 바뀌었나"를 설명한다. 넣고 보는 곳은 이 달력이다.
- * - 한 달씩 본다. 처음엔 지금 보는 기간의 마지막 달
+ * 일정은 지표 차트에 마름모로 겹쳐 "그날 왜 숫자가 바뀌었나"를 설명한다. 넣고 고치는 곳은 이 달력 하나다.
+ * 지표 화면은 그 기간 일정을 읽기만 한다(ScheduleList).
+ * - 한 달씩 본다. 처음엔 이번 달, 주소에 날짜가 있으면(?day=) 그날을 열어 둔다
  * - 일정은 성격(행사, 홍보, 테스트, 기타)을 골라 넣는다. 성격마다 점 색이 다르고 이름도 같이 적는다(색만으로 구분하지 않는다).
  *   행사는 시간을 넣어 두면, 행사가 끝난 뒤 성적표에서 그날 게임을 고를 때 그 시간의 게임이 미리 체크된다(EventReport).
  *   시간은 기본 시간 입력 대신 30분 간격 목록에서 고른다(TimeSelect)
@@ -29,12 +30,12 @@ import { TimeSelect } from "./TimeSelect";
  * - 앞으로 있을 행사도 미리 넣을 수 있다(1년 뒤까지). 넣은 일정은 "고치기"로 바꾼다
  * - 폰에서는 칸이 좁아 이름 대신 점만 찍고, 내용은 날짜를 눌러 아래에서 본다
  * - 일정이 있는 지난 날을 누르면 "이날부터 7일을 그 전 7일과 비교"로 바로 넘어간다(#152). 행사를 적어 두는 이유가
- *   "그 뒤 숫자가 어땠나"를 보려는 것이라, 기간과 비교를 따로 맞추지 않아도 되게 했다
+ *   "그 뒤 숫자가 어땠나"를 보려는 것이라, 기간과 비교를 따로 맞추지 않아도 되게 했다. 누르면 지표 화면으로 간다
  * - 행사 날을 누르면 그 행사 아래에 그날 게임이 열려 우리 행사 게임을 고른다(EventGamePicker). 성적표가 고른 게임으로 센다
  * - 키보드: 화살표 하루, 위아래 한 주, PageUp/PageDown 한 달, Enter 로 그날 열기, Esc 로 닫기
  *
  * 일정은 전부 한 번에 읽는다(GET /api/admin/metrics/events). 넣거나 고치거나 지우면 다시 읽고,
- * 지표 화면도 다시 불러 차트의 마름모를 맞춘다(onChanged).
+ * 성적표도 다시 읽는다(onChanged).
  */
 
 type Event = MetricsEvent;
@@ -61,11 +62,14 @@ const inputClass = "h-9 min-w-0 rounded-xl border border-sd-line bg-sd-surface p
 
 export function EventsCalendar({
   initialMonth,
+  initialDay,
   today,
   onChanged,
   onCompare,
 }: {
   initialMonth: string;
+  /** 처음부터 열어 둘 날 */
+  initialDay?: string;
   today: string;
   onChanged: () => void;
   /** 그날부터 7일을 그 전 7일과 비교하는 화면으로 바꾼다(#152). 행사 효과를 한 번에 보려고 */
@@ -74,8 +78,8 @@ export function EventsCalendar({
   const [events, setEvents] = useState<Event[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [view, setView] = useState(monthStart(initialMonth));
-  const [selected, setSelected] = useState<string | null>(null);
-  const [focus, setFocus] = useState(initialMonth);
+  const [selected, setSelected] = useState<string | null>(initialDay ?? null);
+  const [focus, setFocus] = useState(initialDay ?? initialMonth);
   const [showUpdates, setShowUpdates] = useState(true);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [editing, setEditing] = useState<number | null>(null);
