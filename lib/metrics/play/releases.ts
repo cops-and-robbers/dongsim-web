@@ -20,20 +20,34 @@ import { addDays, todayIn } from "../dates.ts";
 
 export const androidReleaseLabel = (name: string) => `Android ${name} 출시`;
 
+/**
+ * Play 출시 이름 "400 (4.0.1)" 에서 버전. 앞 번호가 실제 빌드와 다르면 이전 출시 이름이 남은 것이라 믿지 않고 null 이다.
+ * 2026-11-09 빌드 400(4.0.1)이 Play Console 에서 "382 (3.2.7)" 이름으로 나가 어드민에 3.2.7 로 보였다(#292).
+ * 괄호가 없는 이름(사람이 "4.0.1" 처럼 적은 것)은 그대로 쓰고, 숫자만 있으면 빌드 번호라 버전이 아니다
+ */
+export function versionFromPlayName(name: string | undefined, code: number): string | null {
+  const s = (name ?? "").trim();
+  const full = s.match(/^(\d+)\s*\(([^)]+)\)$/);
+  if (full) return Number(full[1]) === code ? full[2].trim() : null;
+  const inner = s.match(/\(([^)]+)\)/)?.[1]?.trim();
+  if (inner) return inner;
+  return s && !/^\d+$/.test(s) ? s : null;
+}
+
 type FilterOptions = {
   tracks?: { displayName?: string; type?: string; servingReleases?: { displayName?: string; versionCodes?: string[] }[] }[];
 };
 
 /**
  * 프로덕션 트랙에 나가 있는 버전. 단계적 출시 중이면 두 버전이 함께 나가므로 코드가 큰 쪽.
- * 이름은 "365 (3.1.24)" 의 괄호 안. 괄호가 없으면 코드를 그대로 쓴다
+ * 이름은 "365 (3.1.24)" 의 괄호 안. 이름을 믿을 수 없으면(versionFromPlayName) 코드를 그대로 쓴다
  */
 export function productionRelease(opts: FilterOptions): { code: string; name: string } | null {
   const track = opts.tracks?.find((t) => t.displayName === "production");
   const releases = (track?.servingReleases ?? [])
     .map((r) => {
       const code = [...(r.versionCodes ?? [])].sort((a, b) => Number(b) - Number(a))[0];
-      const name = r.displayName?.match(/\(([^)]+)\)/)?.[1]?.trim() ?? code;
+      const name = (code && versionFromPlayName(r.displayName, Number(code))) ?? code;
       return code ? { code, name } : null;
     })
     .filter((r): r is { code: string; name: string } => !!r);
@@ -51,7 +65,9 @@ export function releaseToRecord(
 ): { record: { code: string; name: string; day: string } | null; event: { day: string; label: string } | null } {
   if (!current || seen.includes(current.code)) return { record: null, event: null };
   const day = addDays(todaySeoul, -1);
-  return { record: { ...current, day }, event: seen.length > 0 ? { day, label: androidReleaseLabel(current.name) } : null };
+  // 버전을 알 수 없으면(이름이 빌드 번호뿐) 일정에는 넣지 않고 기록만 남긴다
+  const known = current.name !== current.code;
+  return { record: { ...current, day }, event: seen.length > 0 && known ? { day, label: androidReleaseLabel(current.name) } : null };
 }
 
 /** 매일 수집 끝에 부른다. 넣은 일정 수를 돌려준다. 실패해도 수집은 성공으로 둔다(부르는 쪽이 잡는다) */

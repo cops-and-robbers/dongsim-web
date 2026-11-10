@@ -12,6 +12,7 @@
  * 색(Tone) 원칙: 노랑(turn)은 "우리가 지금 할 수 있는 일"에만, 남을 기다리는 일은 파랑(wait), 빨강(bad)은 반려와 읽기 실패만, 초록(done)은 끝남.
  */
 
+import { versionFromPlayName } from "../metrics/play/releases.ts";
 import { consoleLinks } from "./links.ts";
 import type { Option } from "./options.ts";
 import { kstShort, since } from "./time.ts";
@@ -174,7 +175,19 @@ export function versionGt(a: string, b: string): boolean {
 }
 
 /** "382 (3.2.7)" → 3.2.7. 괄호가 없으면 이름 그대로 */
-export const playVersionName = (name: string) => name.match(/\(([^)]+)\)/)?.[1]?.trim() ?? name.trim();
+/**
+ * Play 출시의 버전. 출시 이름이 실제 빌드와 맞으면 그 이름, 아니면 같은 빌드 번호로 나간 iOS 버전(두 스토어가 같은 빌드 번호를 쓴다),
+ * 그것도 없으면 빌드 번호로 부른다(#292)
+ */
+export function playVersion(r: Pick<PlayRelease, "name" | "codes">, iosByBuild: Map<string, string> = new Map()): string {
+  const code = maxCode(r as PlayRelease);
+  return versionFromPlayName(r.name, code) ?? iosByBuild.get(String(code)) ?? `빌드 ${code}`;
+}
+
+/** 빌드 번호별 iOS 버전. Play 출시 이름을 믿을 수 없을 때 쓴다 */
+export function iosVersionsByBuild(raw: Pick<IosRaw, "versions">): Map<string, string> {
+  return new Map(raw.versions.filter((v) => v.build?.number).map((v) => [v.build!.number, v.version]));
+}
 const maxCode = (r: PlayRelease) => Math.max(0, ...r.codes);
 
 /** 애플 단계적 출시 날짜별 비율(7일). 멈춘 날은 세지 않는다 */
@@ -414,16 +427,16 @@ export function pickAndroid(raw: AndroidRaw) {
 
 export const maxCodeOf = maxCode;
 
-export function androidTrack(raw: AndroidRaw, now = Date.now()): Track {
+export function androidTrack(raw: AndroidRaw, now = Date.now(), iosByBuild: Map<string, string> = new Map()): Track {
   const links = consoleLinks();
   const { published, liveRel, liveCode, pending, rolling, candidate } = pickAndroid(raw);
   const rel = pending ?? rolling;
 
   // 단계적 출시 중이면 대부분의 사람은 이전 버전을 받는다. "지금 나가 있는" 버전은 그 이전 버전으로 보여 준다
   const shown = rolling ? (published.find((r) => r !== rolling) ?? rolling) : liveRel;
-  const live: Live | null = shown ? { version: playVersionName(shown.name), build: String(maxCode(shown)) } : null;
+  const live: Live | null = shown ? { version: playVersion(shown, iosByBuild), build: String(maxCode(shown)) } : null;
   // 내부 테스트 출시 이름(예: "1.1.31")은 CI 가 붙인 것이라 스토어 버전이 아니다. 버전은 비워 두고 빌드 번호로 부른다
-  const inflight = rel ? { version: playVersionName(rel.name), build: String(maxCode(rel)) } : candidate ? { version: "", build: String(maxCode(candidate)) } : null;
+  const inflight = rel ? { version: playVersion(rel, iosByBuild), build: String(maxCode(rel)) } : candidate ? { version: "", build: String(maxCode(candidate)) } : null;
   const code = inflight?.build ?? (liveRel ? String(liveCode) : null);
   const l = pending?.lifecycle;
   const settled = !pending && !candidate;
@@ -526,7 +539,7 @@ export function buildBoard(input: BoardInput): ReleaseBoard {
   const links = consoleLinks();
   const now = Date.parse(input.now);
   const ios: Track = isError(input.ios) ? { platform: "ios", ok: false, error: input.ios.error, href: links.iosVersions } : iosTrack(input.ios, input.lookup, now);
-  const android: Track = isError(input.android) ? { platform: "android", ok: false, error: input.android.error, href: links.playPublishing } : androidTrack(input.android, now);
+  const android: Track = isError(input.android) ? { platform: "android", ok: false, error: input.android.error, href: links.playPublishing } : androidTrack(input.android, now, isError(input.ios) ? new Map() : iosVersionsByBuild(input.ios));
 
   // 두 스토어를 통틀어 가장 먼저 할 일. 같은 급이면 iOS 먼저(심사가 더 오래 걸린다)
   const actions = [ios, android]

@@ -1,6 +1,6 @@
 // 로컬에서 출시 보드를 상황마다 보는 가짜 값(#229). 실제 스토어에 닿지 않는다.
 // 실제 판단 함수(buildBoard)를 그대로 거쳐서, 화면이 운영과 같은 말을 한다. 상황은 화면 위 "상황 고르기"로 바꾼다
-import { buildBoard, type ReleaseBoard } from "@/lib/release/board";
+import { buildBoard, iosVersionsByBuild, type ReleaseBoard } from "@/lib/release/board";
 import { SCENARIOS } from "@/lib/release/fixtures";
 import { androidOptions, iosOptions } from "@/lib/release/options";
 
@@ -11,7 +11,7 @@ export function mockRelease(scenario: string | null): ReleaseBoard {
   // 읽은 시각은 지금으로. 상대 시각("3시간째")은 상황의 시각과 견주므로 그대로 둔다
   const board = { ...buildBoard(s.input), readAt: new Date().toISOString(), writable: true, actions: mockLog };
   if (board.ios.ok && !("error" in s.input.ios)) board.ios.options = iosOptions(s.input.ios);
-  if (board.android.ok && !("error" in s.input.android)) board.android.options = androidOptions(s.input.android);
+  if (board.android.ok && !("error" in s.input.android)) board.android.options = androidOptions(s.input.android, "error" in s.input.ios ? undefined : iosVersionsByBuild(s.input.ios));
   return board;
 }
 

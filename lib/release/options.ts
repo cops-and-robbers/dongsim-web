@@ -10,7 +10,7 @@
  *
  * 관리형 게시의 "게시"와 반려 사유 보기는 API 가 없어 콘솔 바로가기로 둔다.
  */
-import { maxCodeOf, obj, pickAndroid, pickIos, playVersionName, ro, subj, type AndroidRaw, type IosRaw, type Platform, type PlayRelease } from "./board.ts";
+import { maxCodeOf, obj, pickAndroid, pickIos, playVersion, ro, subj, type AndroidRaw, type IosRaw, type Platform, type PlayRelease } from "./board.ts";
 
 export type ActionId =
   | "ios.renameVersion"
@@ -256,7 +256,8 @@ export const ROLLOUT_STEPS = [0.01, 0.05, 0.1, 0.2, 0.5];
 const pct = (f: number) => `${Math.round(f * 1000) / 10}%`;
 const relSig = (r: PlayRelease) => `${maxCodeOf(r)}|${r.lifecycle}|${r.status ?? "-"}|${r.fraction ?? "-"}`;
 
-export function androidOptions(raw: AndroidRaw): Option[] {
+/** iosByBuild 는 Play 출시 이름을 믿을 수 없을 때 버전을 부르는 데 쓴다(board.ts playVersion) */
+export function androidOptions(raw: AndroidRaw, iosByBuild: Map<string, string> = new Map()): Option[] {
   const { pending, rolling, candidate, liveRel } = pickAndroid(raw);
   const out: Option[] = [];
 
@@ -279,7 +280,7 @@ export function androidOptions(raw: AndroidRaw): Option[] {
 
   if (rolling && !pending) {
     const code = maxCodeOf(rolling);
-    const name = playVersionName(rolling.name) || String(code);
+    const name = playVersion(rolling, iosByBuild);
     const f = rolling.fraction ?? 0;
     const base = { platform: "android" as const, confirmWord: name, expect: `rolling|${relSig(rolling)}`, params: { code, fraction: f } };
     if (rolling.status === "inProgress") {
@@ -328,7 +329,9 @@ export function androidOptions(raw: AndroidRaw): Option[] {
     });
   }
 
-  const liveName = liveRel ? `${playVersionName(liveRel.name)} (${maxCodeOf(liveRel)})` : "-";
+  const liveVersion = liveRel ? playVersion(liveRel, iosByBuild) : "";
+  // 버전을 몰라 "빌드 400" 으로 부를 때는 빌드 번호를 두 번 쓰지 않는다
+  const liveName = liveRel ? (liveVersion.startsWith("빌드") ? liveVersion : `${liveVersion} (${maxCodeOf(liveRel)})`) : "-";
   const rPct = rolling ? pct(rolling.fraction ?? 0) : "";
   const extra: Record<string, Extra> = {
     "android.createRelease": {
