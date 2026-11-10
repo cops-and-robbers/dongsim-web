@@ -24,8 +24,11 @@ import {
 
 const PRETENDARD = '"Pretendard Variable"';
 const PRETENDARD_CSS = "/fonts/pretendard/1.3.9/pretendardvariable-dynamic-subset.css";
-/** 디자이너가 쓴 제목 글꼴(카페24 아네모네). 상업용, 웹폰트, 서버 탑재가 허용된 무료 글꼴이다 */
-export const TITLE_FONT_URL = "/fonts/cafe24-ohsquare.ttf";
+/**
+ * 디자이너가 쓴 제목 글꼴(카페24 아네모네 v2.0). SIL OFL 1.1, 웹과 인쇄물 모두 허용(public/fonts/cafe24-ohsquare/OFL.txt).
+ * 카페24 공식 묶음의 웹폰트 파일을 고치지 않고 그대로 둔다
+ */
+export const TITLE_FONT_URL = "/fonts/cafe24-ohsquare/Cafe24Ohsquare-v2.0.woff2";
 const TITLE_FAMILY = '"Cafe24 Ohsquare"';
 
 export type Fonts = { title: string; caption: string; titleFallback: boolean };
