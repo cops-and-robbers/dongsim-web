@@ -1,5 +1,6 @@
 // 로컬에서 운영진과 역할을 보는 가짜 값. Supabase 에 닿지 않는다.
 // 새로고침해도 고른 역할이 남도록 브라우저에 둔다. 지우면 첫 로그인 화면을 다시 볼 수 있다.
+import { cardsProblem } from "@/lib/admin/overview/cards";
 import { canManage, cleanKeys, isBuiltin, newRoleKey, type Member, type Role, type RoleInput, type Team } from "@/lib/admin/team";
 
 const KEY = "mock_admin_team";
@@ -61,8 +62,10 @@ export function mockSaveRoles(body: { userId: string; updatedAt: string; roleKey
 export function mockSaveRole(body: RoleInput & { key?: string; updatedAt?: string; archive?: boolean }): { status: number; body: Record<string, unknown> } {
   const s = load();
   const now = new Date().toISOString();
+  const bad = !body.archive && cardsProblem(body.cards ?? []);
+  if (bad) return { status: 400, body: { error: bad } };
   if (!body.key) {
-    const created: Role = { key: newRoleKey(Date.now()), name: body.name.trim(), description: body.description.trim(), icon: body.icon, cards: [], position: s.roles.length, updatedBy: "로컬 관리자", updatedAt: now };
+    const created: Role = { key: newRoleKey(Date.now()), name: body.name.trim(), description: body.description.trim(), icon: body.icon, cards: body.cards ?? [], position: s.roles.length, updatedBy: "로컬 관리자", updatedAt: now };
     s.roles = [...s.roles, created];
     save(s);
     return { status: 200, body: { role: created } };
@@ -76,7 +79,7 @@ export function mockSaveRole(body: RoleInput & { key?: string; updatedAt?: strin
     save(s);
     return { status: 200, body: { ok: true } };
   }
-  const next: Role = { ...target, name: body.name.trim(), description: body.description.trim(), icon: isBuiltin(target.key) ? target.key : body.icon, updatedBy: "로컬 관리자", updatedAt: now };
+  const next: Role = { ...target, name: body.name.trim(), description: body.description.trim(), icon: isBuiltin(target.key) ? target.key : body.icon, cards: body.cards ?? target.cards, updatedBy: "로컬 관리자", updatedAt: now };
   s.roles = s.roles.map((r) => (r.key === target.key ? next : r));
   save(s);
   return { status: 200, body: { role: next } };

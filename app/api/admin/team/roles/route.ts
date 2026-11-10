@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { actorName } from "@/lib/admin/server/remoteConfig";
 import { createRole, isTeamWritable, listRoleNames, readManager, TeamConflict, updateRole, userIdOf } from "@/lib/admin/server/team";
+import { cardsProblem } from "@/lib/admin/overview/cards";
 import { isBuiltin, newRoleKey, roleProblem, type RoleInput } from "@/lib/admin/team";
 import { guard, noStore } from "@/lib/event/adminApi";
 
 /**
  * 어드민 역할 목록 (docs/admin-ui.md "운영진"). 운영 역할을 맡은 분만 고친다.
  *
- * POST { name, description, icon }                       { role }
- * PUT  { key, updatedAt, name, description, icon }       { role }
+ * POST { name, description, icon, cards }                { role }
+ * PUT  { key, updatedAt, name, description, icon, cards } { role }. cards 는 개요 기본 카드 키, 8칸까지
  * PUT  { key, updatedAt, archive: true }                  { ok: true }. 처음부터 있던 역할은 지울 수 없다
  */
 const bad = (error: string) => NextResponse.json({ error }, { status: 400 });
@@ -19,7 +20,9 @@ const failed = (e: unknown) => {
 };
 
 const inputOf = (b: Record<string, unknown>): RoleInput | null =>
-  typeof b.name === "string" && typeof b.description === "string" && typeof b.icon === "string" ? { name: b.name, description: b.description, icon: b.icon } : null;
+  typeof b.name === "string" && typeof b.description === "string" && typeof b.icon === "string" && Array.isArray(b.cards) && b.cards.every((c) => typeof c === "string")
+    ? { name: b.name, description: b.description, icon: b.icon, cards: b.cards as string[] }
+    : null;
 
 async function allowed(req: Request): Promise<{ token: string; body: Record<string, unknown> } | NextResponse> {
   const checked = await guard(req);
@@ -35,7 +38,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const input = inputOf(ok.body);
   if (!input) return bad("역할 내용을 읽지 못했어요.");
   try {
-    const problem = roleProblem(input, await listRoleNames(), false);
+    const problem = roleProblem(input, await listRoleNames(), false) ?? cardsProblem(input.cards);
     if (problem) return bad(problem);
     return NextResponse.json({ role: await createRole(newRoleKey(Date.now()), input, await actorName(ok.token)) }, noStore);
   } catch (e) {
@@ -56,7 +59,7 @@ export async function PUT(req: Request): Promise<NextResponse> {
     }
     const input = inputOf(ok.body);
     if (!input) return bad("역할 내용을 읽지 못했어요.");
-    const problem = roleProblem(input, (await listRoleNames()).filter((r) => r.key !== key), isBuiltin(key));
+    const problem = roleProblem(input, (await listRoleNames()).filter((r) => r.key !== key), isBuiltin(key)) ?? cardsProblem(input.cards);
     if (problem) return bad(problem);
     // 처음부터 있던 역할은 그림이 정해져 있어 아이콘을 바꾸지 않는다
     return NextResponse.json({ role: await updateRole(key, updatedAt, isBuiltin(key) ? { ...input, icon: key } : input, await actorName(ok.token)) }, noStore);
