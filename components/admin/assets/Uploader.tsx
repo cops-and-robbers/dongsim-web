@@ -10,7 +10,7 @@ import { loadImage } from "@/components/photobooth/image";
 import { useSamplePhotos } from "@/components/photobooth/samplePhotos";
 import type { FrameDef } from "@/components/photobooth/frames";
 import { uploadAsset } from "@/lib/admin/assetsClient";
-import { CHARACTER_TYPES, MAX_BYTES, checkFrame, edgeColor, findSlots, type Asset, type FrameCheck, type Side, type Slot } from "@/lib/event/assets";
+import { CHARACTER_TYPES, ICON_MIN_PX, ICON_TYPES, MAX_BYTES, checkFrame, edgeColor, findSlots, type Asset, type FrameCheck, type Side, type Slot } from "@/lib/event/assets";
 
 // 그림 올리기 (#224, docs/admin-ui.md "그림 보관함"). 디자이너가 개발자 없이 프레임과 캐릭터를 넣는다.
 // 프레임은 고르는 즉시 브라우저가 투명한 사진 칸을 재고 검사한다. 칸을 파란 상자로 겹쳐 보여 주고,
@@ -214,6 +214,86 @@ export function CharacterUploader({ onDone, onCancel, disabled }: { onDone: (a: 
   );
 }
 
+/**
+ * QR 인쇄물 아이콘 올리기(#296). 디자이너가 올려 두면 QR 인쇄물 아이콘 고르기의 "보관함"에서 누구나 계속 쓴다.
+ * 인쇄물에서 약 10mm 칸에 600dpi 로 그리니, 비트맵은 긴 변 240px 이상이어야 흐리지 않다. 배경은 있어도 된다
+ */
+export function IconUploader({ onDone, onCancel, disabled }: { onDone: (a: Asset) => void; onCancel: () => void; disabled: boolean }) {
+  const [file, setFile] = useState<{ file: File; url: string; width: number; height: number } | null>(null);
+  const [label, setLabel] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  const svg = file?.file.type === "image/svg+xml";
+  const okType = file ? (ICON_TYPES as readonly string[]).includes(file.file.type) : false;
+  const okSize = file ? file.file.size <= MAX_BYTES.icon : false;
+  const okPx = file ? svg || Math.max(file.width, file.height) >= ICON_MIN_PX : false;
+
+  useEffect(() => () => (file ? URL.revokeObjectURL(file.url) : undefined), [file]);
+
+  const pick = async (f: File) => {
+    setError(undefined);
+    const url = URL.createObjectURL(f);
+    let width = 0;
+    let height = 0;
+    try {
+      const img = await loadImage(url);
+      width = img.naturalWidth;
+      height = img.naturalHeight;
+    } catch {
+      setError("그림을 읽지 못했어요.");
+    }
+    setFile({ file: f, url, width, height });
+    setLabel((l) => l || baseName(f));
+  };
+
+  const submit = async () => {
+    if (!file) return;
+    setBusy(true);
+    setError(undefined);
+    try {
+      const form = new FormData();
+      form.set("kind", "icon");
+      form.set("file", file.file);
+      form.set("label", label.trim());
+      onDone(await uploadAsset(form));
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog title="QR 아이콘 올리기" onClose={onCancel} busy={busy} narrow>
+      {!file ? (
+        <Drop accept="image/png,image/webp,image/svg+xml,.svg" hint={`PNG, WebP, SVG, 1MB 아래. 비트맵은 긴 변 ${ICON_MIN_PX}px 이상`} onFile={pick} />
+      ) : (
+        <div className="space-y-4">
+          <div className="flex justify-center rounded-xl bg-white p-6 ring-1 ring-sd-line">
+            <img src={file.url} alt="" className="max-h-32 w-auto" />
+          </div>
+          <ul className="space-y-1.5 text-[13px]">
+            <Check ok={okType} text={svg ? "SVG (올릴 때 그리는 데 필요한 것만 남겨요)" : "PNG, WebP, SVG"} />
+            <Check ok={okSize} text={`파일 크기 ${Math.round(file.file.size / 1024)}KB (1MB 까지)`} />
+            <Check ok={okPx} text={svg ? "SVG 라 크기와 상관없이 또렷해요" : `${file.width} x ${file.height}px (긴 변 ${ICON_MIN_PX}px 이상이어야 인쇄해도 흐리지 않아요)`} />
+          </ul>
+          <p className="text-[12px] leading-relaxed text-sd-fg-subtle">인쇄물에서 가로 117, 세로 112 칸(약 10mm)에 비율대로 맞춰 들어가요. 위의 흰 바탕이 인쇄되는 종이예요.</p>
+          <Name value={label} onChange={setLabel} placeholder="예: 카카오 채널" hint="QR 인쇄물에서 고를 때 보여요" />
+          {error && <p className="text-[13px] text-sd-critical">{error}</p>}
+          <div className="flex gap-2">
+            <Button variant="neutral" size="sm" onClick={() => setFile(null)} disabled={busy}>
+              다른 파일
+            </Button>
+            <Button size="sm" className="flex-1" onClick={submit} disabled={disabled || !okType || !okSize || !okPx || !label.trim() || busy}>
+              {busy ? "올리는 중…" : "보관함에 올리기"}
+            </Button>
+          </div>
+        </div>
+      )}
+      {!file && error && <p className="mt-3 text-[13px] text-sd-critical">{error}</p>}
+    </Dialog>
+  );
+}
+
 // ── 조각 ──
 
 function Dialog({ title, onClose, busy, narrow = false, children }: { title: string; onClose: () => void; busy: boolean; narrow?: boolean; children: ReactNode }) {
@@ -275,14 +355,14 @@ function Drop({ accept, hint, onFile }: { accept: string; hint: string; onFile: 
   );
 }
 
-function Name({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function Name({ value, onChange, placeholder = "예: 겨울 축제", hint = "행사에서 고를 때 보여요" }: { value: string; onChange: (v: string) => void; placeholder?: string; hint?: string }) {
   return (
     <div>
       <label htmlFor="asset-name" className="mb-1.5 block text-[13px] font-semibold text-sd-fg-subtle">
-        이름 <span className="font-normal">(행사에서 고를 때 보여요)</span>
+        이름 <span className="font-normal">({hint})</span>
       </label>
       <div className="flex items-center rounded-xl border border-sd-line bg-sd-surface focus-within:border-accent">
-        <input id="asset-name" value={value} maxLength={20} onChange={(e) => onChange(e.target.value)} placeholder="예: 겨울 축제" className="min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-[14px] text-sd-fg outline-none" />
+        <input id="asset-name" value={value} maxLength={20} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-[14px] text-sd-fg outline-none" />
         <span className="pr-3.5 text-[12px] tabular-nums text-sd-fg-subtle">{value.length}/20</span>
       </div>
     </div>

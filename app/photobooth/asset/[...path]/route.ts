@@ -16,7 +16,7 @@ export async function GET(_req: Request, ctx: Ctx): Promise<Response> {
   if (!KEY_RE.test(key)) return new NextResponse("Not found", { status: 404 });
   // 로컬 어드민 목(lib/admin-mock/assets.ts)의 예시 그림은 기본 그림으로 돌려준다. 운영에는 이런 키가 없다
   if (process.env.NODE_ENV !== "production" && key.includes("/dev-sample")) {
-    const file = key.startsWith("assets/frame/") ? "/photobooth/frame-green.png" : "/photobooth/cop-search.svg";
+    const file = key.startsWith("assets/frame/") ? "/photobooth/frame-green.png" : key.startsWith("assets/icon/") ? "/qr-print/icons/kakao.svg" : "/photobooth/cop-search.svg";
     return NextResponse.redirect(new URL(file, _req.url), 302);
   }
   const res = await fetch(`${PHOTOBOOTH_PUBLIC_BASE}/${key}`, { cache: "no-store" });

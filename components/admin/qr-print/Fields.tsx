@@ -5,6 +5,8 @@ import { useId, useRef, useState } from "react";
 import { Dropdown } from "@/components/admin/Dropdown";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { Field, INPUT, inputBorder } from "@/components/admin/company/fields";
+import { IconUploader } from "@/components/admin/assets/Uploader";
+import { assetUrl, type Asset } from "@/lib/event/assets";
 import { BUILTIN_ICONS, ICON_GROUPS, isOpenableUrl, linkUrl, type Caption, type IconChoice, type LinkChoice } from "@/lib/qr-print/layout";
 import type { MetricsLink } from "@/lib/download/links";
 
@@ -116,16 +118,27 @@ const ICON_TILE = "flex h-14 w-full items-center justify-center rounded-xl borde
 // 아이콘은 흰 종이에 인쇄되니 다크 모드에서도 흰 바탕에 보여 준다. 검은 마크(틱톡, X, 스레드)가 어두운 칸에 묻히지 않게
 const PAPER = "!bg-white";
 
-/** 두 개짜리 왼쪽 아이콘. 자주 쓰는 마크와 캐릭터, 직접 올린 그림 */
-export function IconFields({ value, onChange }: { value: IconChoice; onChange: (v: IconChoice) => void }) {
+/** 그림 보관함의 QR 아이콘(#296) */
+export type IconLibrary = { state: "loading" | "ready" | "failed"; icons: Asset[]; writable: boolean };
+
+/**
+ * 두 개짜리 왼쪽 아이콘. 자주 쓰는 마크와 캐릭터, 그림 보관함에 올려 둔 아이콘.
+ * 올리기는 보관함에 저장해 누구나 계속 쓴다. 보관함에 올릴 수 없는 환경(로컬, 미리보기)이면 이 화면에서만 잠깐 쓴다
+ */
+export function IconFields({ value, onChange, library, onUploaded }: { value: IconChoice; onChange: (v: IconChoice) => void; library: IconLibrary; onUploaded: (a: Asset) => void }) {
   const file = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
   const on = (active: boolean) => (active ? "border-accent ring-2 ring-accent/30" : "border-sd-line hover:border-sd-gray-400");
   // 처음엔 지금 고른 아이콘이 있는 묶음을 연다
-  const current = value.kind === "builtin" ? BUILTIN_ICONS.find((i) => i.id === value.id)?.group : undefined;
+  const current: IconGroup | undefined = value.kind === "builtin" ? BUILTIN_ICONS.find((i) => i.id === value.id)?.group : value.kind === "library" ? "library" : undefined;
   const [group, setGroup] = useState<IconGroup>(current ?? "sns");
-  const shown = BUILTIN_ICONS.filter((i) => i.group === group);
+  const tiles =
+    group === "library"
+      ? library.icons.map((a) => ({ id: a.key, label: a.label, src: assetUrl(a.key), choice: { kind: "library", key: a.key, label: a.label } as IconChoice }))
+      : BUILTIN_ICONS.filter((i) => i.group === group).map((i) => ({ id: i.id, label: i.label, src: i.src, choice: { kind: "builtin", id: i.id } as IconChoice }));
+  const isActive = (c: IconChoice) => (c.kind === "builtin" && value.kind === "builtin" && c.id === value.id) || (c.kind === "library" && value.kind === "library" && c.key === value.key);
 
-  const upload = (f: File | undefined) => {
+  const keepForNow = (f: File | undefined) => {
     if (!f || !f.type.startsWith("image/")) return;
     const reader = new FileReader();
     reader.onload = () => typeof reader.result === "string" && onChange({ kind: "upload", dataUrl: reader.result, name: f.name });
@@ -133,7 +146,14 @@ export function IconFields({ value, onChange }: { value: IconChoice; onChange: (
   };
 
   return (
-    <Field label="아이콘" hint="원하는 게 없으면 PNG, SVG 그림을 올려요. 배경이 투명하면 더 깔끔해요.">
+    <Field
+      label="아이콘"
+      hint={
+        library.writable
+          ? "원하는 게 없으면 올려요. 그림 보관함에 저장돼서 다음에도, 다른 사람도 보관함 묶음에서 골라 써요."
+          : "원하는 게 없으면 올려요. 이 환경에서는 보관함에 저장되지 않아 이 화면에서만 써요."
+      }
+    >
       <div className="mb-2 flex flex-wrap gap-1.5" role="tablist" aria-label="아이콘 종류">
         {ICON_GROUPS.map((g) => (
           <button
@@ -145,19 +165,31 @@ export function IconFields({ value, onChange }: { value: IconChoice; onChange: (
             className={`rounded-full px-3 py-1 text-[12px] font-semibold transition ${group === g.id ? "bg-sd-fg text-sd-surface" : "bg-sd-fill text-sd-fg-subtle hover:text-sd-fg"}`}
           >
             {g.label}
+            {g.id === "library" && library.icons.length > 0 && <span className="ml-1 tabular-nums opacity-70">{library.icons.length}</span>}
           </button>
         ))}
       </div>
+      {group === "library" && tiles.length === 0 && (
+        <p className="mb-2 text-[12px] text-sd-fg-subtle">
+          {library.state === "loading" ? "보관함을 불러오고 있어요." : library.state === "failed" ? "보관함을 불러오지 못했어요. 새로고침해 주세요." : "아직 올린 아이콘이 없어요. 올리기로 보관함에 넣어요."}
+        </p>
+      )}
       <div role="radiogroup" aria-label="아이콘" className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-        {shown.map((i) => {
-          const active = value.kind === "builtin" && value.id === i.id;
+        {tiles.map((t) => {
+          const active = isActive(t.choice);
           return (
-            <button key={i.id} type="button" role="radio" aria-checked={active} title={i.label} onClick={() => onChange({ kind: "builtin", id: i.id })} className={`${ICON_TILE} ${PAPER} ${on(active)}`}>
-              <img src={i.src} alt={i.label} className="h-8 w-8 object-contain" />
+            <button key={t.id} type="button" role="radio" aria-checked={active} title={t.label} onClick={() => onChange(t.choice)} className={`${ICON_TILE} ${PAPER} ${on(active)}`}>
+              <img src={t.src} alt={t.label} className="h-8 w-8 object-contain" />
             </button>
           );
         })}
-        <button type="button" role="radio" aria-checked={value.kind === "upload"} onClick={() => file.current?.click()} className={`${ICON_TILE} ${on(value.kind === "upload")} flex-col gap-0.5`}>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={value.kind === "upload"}
+          onClick={() => (library.writable ? setUploading(true) : file.current?.click())}
+          className={`${ICON_TILE} ${on(value.kind === "upload")} flex-col gap-0.5`}
+        >
           {value.kind === "upload" ? <img src={value.dataUrl} alt={value.name} className="h-8 w-8 object-contain" /> : <span className="text-[20px] leading-none text-sd-fg-subtle">+</span>}
           <span className="text-[11px] font-semibold text-sd-fg-subtle">{value.kind === "upload" ? "바꾸기" : "올리기"}</span>
         </button>
@@ -170,11 +202,23 @@ export function IconFields({ value, onChange }: { value: IconChoice; onChange: (
           accept="image/png,image/svg+xml,image/jpeg,image/webp"
           className="hidden"
           onChange={(e) => {
-            upload(e.target.files?.[0]);
+            keepForNow(e.target.files?.[0]);
             e.target.value = "";
           }}
         />
       </div>
+      {uploading && (
+        <IconUploader
+          disabled={!library.writable}
+          onCancel={() => setUploading(false)}
+          onDone={(a) => {
+            setUploading(false);
+            onUploaded(a);
+            setGroup("library");
+            onChange({ kind: "library", key: a.key, label: a.label });
+          }}
+        />
+      )}
     </Field>
   );
 }

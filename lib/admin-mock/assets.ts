@@ -15,6 +15,16 @@ let assets: Asset[] = [
     createdAt: "2026-11-07T10:00:00Z",
   },
   {
+    id: 3,
+    kind: "icon",
+    key: "assets/icon/dev-sample-kakao.svg",
+    label: "카카오 채널(예시)",
+    meta: { width: 512, height: 512 },
+    archived: false,
+    createdBy: "테스트 관리자",
+    createdAt: "2026-11-08T10:00:00Z",
+  },
+  {
     id: 1,
     kind: "character",
     key: "assets/character/dev-sample-cop.png",
@@ -29,17 +39,20 @@ let assets: Asset[] = [
 export const mockAssets = (): AssetsList => ({ assets, usage: {}, writable: true });
 
 export function mockUploadAsset(form: FormData): { status: number; body: unknown } {
-  const kind = form.get("kind") === "character" ? "character" : "frame";
+  const raw = form.get("kind");
+  const kind = raw === "character" || raw === "icon" ? raw : "frame";
   const id = Math.max(0, ...assets.map((a) => a.id)) + 1;
   const asset: Asset = {
     id,
     kind,
-    key: `assets/${kind}/dev-sample-${id}.png`,
+    key: `assets/${kind}/dev-sample-${id}.${kind === "icon" ? "svg" : "png"}`,
     label: String(form.get("label") ?? "새 그림"),
     meta:
       kind === "frame"
         ? { width: 1800, height: 5400, slots: JSON.parse(String(form.get("slots") ?? "[]")), swatch: String(form.get("swatch") ?? "#FFFFFF") }
-        : { width: 400, height: 400, side: form.get("side") === "thief" ? "thief" : "cop" },
+        : kind === "icon"
+          ? { width: 512, height: 512 }
+          : { width: 400, height: 400, side: form.get("side") === "thief" ? "thief" : "cop" },
     archived: false,
     createdBy: "테스트 관리자",
     createdAt: new Date().toISOString(),
