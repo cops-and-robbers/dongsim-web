@@ -181,10 +181,9 @@ function LiveViz({ k, live }: { k: CardKey; live: LiveValues }) {
   }
 }
 
-export function OverviewCards({ keys, live }: { keys: CardKey[]; live: LiveValues }) {
-  const cols = useCols();
-  const serverKeys = keys.filter((k) => CARDS[k].source === "server");
-  const want = serverKeys.join(",");
+/** 서버 카드 값을 한 번에 읽는다. 카드와 지금 할 일이 같이 쓴다 */
+export function useServerCards(keys: CardKey[]): { cards: Partial<Record<CardKey, CardResult>>; failed: string | null; loading: boolean } {
+  const want = [...new Set(keys.filter((k) => CARDS[k].source === "server"))].sort().join(",");
   const [data, setData] = useState<{ want: string; value: OverviewData } | null>(null);
   const [error, setError] = useState<{ want: string; message: string } | null>(null);
 
@@ -201,7 +200,11 @@ export function OverviewCards({ keys, live }: { keys: CardKey[]; live: LiveValue
 
   const cards = data?.want === want ? data.value.cards : {};
   const failed = error?.want === want ? error.message : null;
+  return { cards, failed, loading: !!want && data?.want !== want && !failed };
+}
 
+export function OverviewCards({ keys, live, cards, failed }: { keys: CardKey[]; live: LiveValues; cards: Partial<Record<CardKey, CardResult>>; failed: string | null }) {
+  const cols = useCols();
   return (
     <div className="grid auto-rows-[172px] gap-3" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
       {pack(keys, cols).map(({ key, span }) => (

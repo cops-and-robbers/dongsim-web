@@ -146,7 +146,8 @@ export type TrendData = { kind: "trend"; total: number; previous: number | null;
 export type RatioData = { kind: "ratio"; num: number; den: number; previous: { num: number; den: number } | null; unit: "visits" | "people" };
 export type LimitData = { kind: "limit"; rate: number | null; limit: number };
 export type PostData = { kind: "post"; rate: number | null; reach: number | null; postedAt: string; permalink: string; small: boolean };
-export type StageData = { kind: "stage"; tracks: { platform: "ios" | "android"; label: string; tone: string; live: string | null }[] };
+/** next 는 우리 차례이거나 막혔을 때 할 일. 그 밖에는 null 이다 */
+export type StageData = { kind: "stage"; tracks: { platform: "ios" | "android"; label: string; tone: string; live: string | null }[]; next: { title: string; reason?: string; tone: string } | null };
 export type DueData = { kind: "due"; title: string | null; due: string | null; daysLeft: number | null; open: number };
 export type EventData = { kind: "event"; label: string | null; day: string | null; done: number; total: number; next: string | null; frames: number; builtinFrame: boolean };
 export type CountData = { kind: "count"; count: number; detail: string | null };

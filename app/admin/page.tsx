@@ -17,10 +17,13 @@ import { LAST_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
 import { GameStatusBadge } from "@/components/admin/StatusBadge";
 import { InviteCode } from "@/components/admin/InviteCode";
 import QueryBoundary from "@/components/admin/QueryBoundary";
-import { OverviewCards } from "@/components/admin/overview/OverviewCards";
+import { NowTasks } from "@/components/admin/overview/NowTasks";
+import { OverviewCards, useServerCards } from "@/components/admin/overview/OverviewCards";
 import { useTeam } from "@/components/admin/team/TeamProvider";
-import { ArrowRightIcon, InfoIcon } from "@/components/admin/icons";
-import { presetCards } from "@/lib/admin/overview/cards";
+import { ArrowRightIcon } from "@/components/admin/icons";
+import { isCardKey, presetCards, type CardKey, type LiveValues } from "@/lib/admin/overview/cards";
+import { splitTasks, TASK_SOURCES, tasksOf } from "@/lib/admin/overview/tasks";
+import { todayIn } from "@/lib/metrics/dates";
 import { formatDate } from "@/lib/admin/format";
 
 // 개요 (docs/admin-ui.md "개요 카드"). 모두에게 같은 공통 띠, 맡은 역할의 카드, 최근 게임과 가입 순서다.
@@ -42,7 +45,6 @@ function Overview() {
   const fresh = { fetchKey: live, fetchPolicy: "store-and-network" } as const;
   const dashboard = useLazyLoadQuery<AdminDashboard>(AdminDashboardQuery, {}, fresh);
   const d = dashboard.adminDashboard;
-  const pendingReports = dashboard.adminAllReports.totalElements;
   const games = useLazyLoadQuery<AdminGames>(AdminGamesQuery, {
     page: 0, size: 6, sortDirection: "DESC",
   }, fresh);
@@ -52,24 +54,24 @@ function Overview() {
   const counts = usePendingCounts();
   const { team, error: teamError } = useTeam();
 
-  const pending = pendingReports + d.pendingBugReportCount;
   const mine = team ? team.roles.filter((r) => team.me.roleKeys.includes(r.key)) : [];
   const keys = presetCards(mine.map((r) => r.cards));
+  const liveValues: LiveValues = {
+    weeklyGames: d.weeklyGameCount,
+    win: { police: d.winRateByTeam.policeWinRate, robber: d.winRateByTeam.robberWinRate },
+    ends: [...d.endReasonDistribution],
+    games: games.adminGames.content.map((g) => ({ id: g.id, inviteCode: g.inviteCode, status: g.status, participantCount: g.participantCount, maxParticipants: g.maxParticipants })),
+    pending: counts,
+  };
+  // 카드와 지금 할 일이 같은 값을 쓴다. 할 일에 필요한 값은 화면에 카드가 없어도 읽는다
+  const server = useServerCards(team || teamError ? [...keys, ...TASK_SOURCES] : []);
+  const tasks = tasksOf(server.cards, counts, todayIn("Asia/Seoul"));
+  // 내 역할의 카드 전체(8칸에 다 못 들어간 것까지)와 이어진 일을 내 일로 본다
+  const me = mine.length ? { cards: [...new Set(mine.flatMap((r) => r.cards).filter(isCardKey))] as CardKey[], roles: mine.map((r) => r.key) } : null;
+  const split = splitTasks(tasks, me);
 
   return (
     <>
-      {/* 처리 대기 알림 - 조치가 필요할 때만 */}
-      {pending > 0 && (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-sd-critical/25 bg-sd-critical-weak px-4 py-3.5">
-          <InfoIcon className="h-5 w-5 shrink-0 text-sd-critical" />
-          <p className="text-[14px] font-medium text-sd-fg">
-            처리를 기다리는 신고{" "}
-            <b className="font-bold text-sd-critical">{pendingReports}</b>건, 버그{" "}
-            <b className="font-bold text-sd-critical">{d.pendingBugReportCount}</b>건이 있어요.
-          </p>
-        </div>
-      )}
-
       {/* 1. 공통 띠. 누구에게나 같은 지금 숫자다 */}
       <FadeIn>
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-sd-line bg-sd-hairline lg:grid-cols-4">
@@ -80,7 +82,10 @@ function Overview() {
         </div>
       </FadeIn>
 
-      {/* 2. 내 지표. 맡은 역할의 기본 카드를 합친다 */}
+      {/* 2. 지금 할 일. 처리를 기다리는 것만 모은다 */}
+      <NowTasks mine={split.mine} others={split.others} loading={server.loading || counts === null} hasRoles={!!me} />
+
+      {/* 3. 내 지표. 맡은 역할의 기본 카드를 합친다 */}
       <section className="mt-7">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
           <div className="min-w-0">
@@ -93,16 +98,7 @@ function Overview() {
           </Link>
         </div>
         {team || teamError ? (
-          <OverviewCards
-            keys={keys}
-            live={{
-              weeklyGames: d.weeklyGameCount,
-              win: { police: d.winRateByTeam.policeWinRate, robber: d.winRateByTeam.robberWinRate },
-              ends: [...d.endReasonDistribution],
-              games: games.adminGames.content.map((g) => ({ id: g.id, inviteCode: g.inviteCode, status: g.status, participantCount: g.participantCount, maxParticipants: g.maxParticipants })),
-              pending: counts,
-            }}
-          />
+          <OverviewCards keys={keys} live={liveValues} cards={server.cards} failed={server.failed} />
         ) : (
           <div aria-busy className="grid auto-rows-[172px] grid-cols-2 gap-3 xl:grid-cols-4">
             {[0, 1, 2, 3].map((i) => <div key={i} className="animate-pulse rounded-2xl bg-sd-gray-200" />)}
@@ -110,7 +106,7 @@ function Overview() {
         )}
       </section>
 
-      {/* 3. 최근 게임 + 최근 가입 유저 */}
+      {/* 4. 최근 게임 + 최근 가입 유저 */}
       <div className="mt-7 grid grid-cols-1 gap-5 lg:grid-cols-2">
         <FadeIn delay={0.2}>
           <SectionCard title="최근 게임" right={<MoreLink href="/admin/games" />} flush>
