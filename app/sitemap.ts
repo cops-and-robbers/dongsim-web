@@ -1,4 +1,3 @@
-import { LEGAL_DOCS } from "@/lib/legal/documents";
 import type { MetadataRoute } from "next";
 import { getAllPosts } from "@/lib/blog/store";
 import { allPostsByLatest, isOpen, listScopeOf, postPath } from "@/lib/community/api";
@@ -18,11 +17,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const allPosts = await getAllPosts();
   const posts = allPosts.filter((post) => post.locale === "ko");
 
-  // 모집글 상세 전량. 글마다 지역·장소 이름이 들어가 지역 검색 유입 경로가
+  // 열린 모집글만 넣는다. 글마다 지역·장소 이름이 들어가 지역 검색 유입 경로가
   // 된다(#107). 글 하나에 주소도 하나라(postPath - 국가가 언어를 정한다)
-  // 중복 색인이 없다. 종료 글도 넣는다 - 페이지가 영구히 존재하는 실제
-  // 콘텐츠이고, 오래된 지역 글이 롱테일 검색에 걸리는 게 노리는 유입이다.
-  // 열린 글만 모집 상태가 바뀔 수 있어 주기·우선순위를 높게 준다.
+  // 중복 색인이 없다. 마감된 글은 장소와 시간만 남은 얇은 페이지라 넣었던 8개가
+  // 모두 색인되지 않았고, 사이트 전체 평가만 끌어내려 빼고 noindex 를 준다(#299).
   const meetupNow = Date.now();
   const meetupPages = (
     await Promise.all(
@@ -30,13 +28,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     )
   )
     .flat()
+    .filter((post) => isOpen(post, meetupNow))
     .map((post) => ({
       url: `${BASE_URL}${postPath(post)}`,
       lastModified: new Date(post.updatedAt),
-      changeFrequency: isOpen(post, meetupNow)
-        ? ("daily" as const)
-        : ("monthly" as const),
-      priority: isOpen(post, meetupNow) ? 0.6 : 0.4,
+      changeFrequency: "daily" as const,
+      priority: 0.6,
     }));
 
   return [
@@ -105,30 +102,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
       alternates: {
         languages: alternateLanguages(BASE_URL, "/game"),
-      },
-    },
-    {
-      url: `${BASE_URL}/demo`,
-      changeFrequency: "monthly",
-      priority: 0.8,
-      alternates: {
-        languages: alternateLanguages(BASE_URL, "/demo"),
-      },
-    },
-    {
-      url: `${BASE_URL}/en/demo`,
-      changeFrequency: "monthly",
-      priority: 0.6,
-      alternates: {
-        languages: alternateLanguages(BASE_URL, "/demo"),
-      },
-    },
-    {
-      url: `${BASE_URL}/ja/demo`,
-      changeFrequency: "monthly",
-      priority: 0.6,
-      alternates: {
-        languages: alternateLanguages(BASE_URL, "/demo"),
       },
     },
     {
@@ -202,15 +175,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.7,
         })),
     ]),
-    // 법적 문서는 언어별로 낸다. 앱 웹뷰용 /legal/*/embed 는 같은 내용이 두 주소로
-    // 잡히지 않도록 빼둔다(robots.ts 도 같은 경로를 막는다).
-    ...LOCALES.flatMap((locale) =>
-      LEGAL_DOCS.map((doc) => ({
-        url: `${BASE_URL}${localizedPath(`/${doc}`, locale)}`,
-          changeFrequency: "yearly" as const,
-        priority: 0.3,
-      })),
-    ),
+    // 법적 문서(#299)와 체험 페이지는 넣지 않는다. 검색으로 찾아올 페이지가 아니고,
+    // 사이트맵에 넣으면 "검색에 내보낼 주소"라고 알리는 셈이라 사이트 평가를 끌어내린다.
+    // 페이지는 그대로 열리고 푸터·링크로 크롤링된다.
     ...meetupPages,
   ];
 }
