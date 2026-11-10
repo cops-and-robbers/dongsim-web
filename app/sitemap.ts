@@ -41,8 +41,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE_URL}/`,
       changeFrequency: "weekly",
       priority: 1,
+      // 공유 이미지(opengraph-image)는 Next 가 주소를 정해서 적지 않는다. 적어 둔 .png 주소는 404였다(#299)
       images: [
-        `${BASE_URL}/opengraph-image.png`,
         `${BASE_URL}/brand/logo.svg`,
         `${BASE_URL}/brand/app-icon.png`,
         `${BASE_URL}/characters/police.svg`,
