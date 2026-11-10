@@ -9,7 +9,8 @@
  * 이 파일은 순수 함수만 둔다(화면, 서버, 테스트가 같이 쓴다).
  */
 
-export type AssetKind = "frame" | "character";
+/** 프레임, 캐릭터는 포토부스가, 아이콘은 QR 인쇄물(#296)이 쓴다 */
+export type AssetKind = "frame" | "character" | "icon";
 export type Side = "cop" | "thief";
 export type Slot = { x: number; y: number; w: number; h: number };
 
@@ -21,7 +22,7 @@ export type Asset = {
   kind: AssetKind;
   key: string;
   label: string;
-  /** 프레임: 크기, 칸, 대표색. 캐릭터: 어느 쪽인지 */
+  /** 프레임: 크기, 칸, 대표색. 캐릭터: 어느 쪽인지. 아이콘: 크기만 */
   meta: { width: number; height: number; slots?: Slot[]; swatch?: string; side?: Side };
   createdBy: string;
   createdAt: string;
@@ -30,13 +31,20 @@ export type Asset = {
 
 /** 지금 부스 인쇄(엽서 반쪽, 2x6 스트립)가 1:3 세로 그림을 전제한다. 크기를 하나로 고정한다 */
 export const FRAME_SIZE = { width: 1800, height: 5400 } as const;
-export const MAX_BYTES = { frame: 4 * 1024 * 1024, character: 1024 * 1024 } as const;
+export const MAX_BYTES = { frame: 4 * 1024 * 1024, character: 1024 * 1024, icon: 1024 * 1024 } as const;
 export const FRAME_TYPES = ["image/png"] as const;
 /** 캐릭터는 SVG 도 받는다(#227). 서버가 그리는 데 필요한 것만 남겨 새로 짓고(lib/event/svgSafe.ts), 내줄 때 스크립트를 막는다 */
 export const CHARACTER_TYPES = ["image/png", "image/webp", "image/svg+xml"] as const;
 
-/** 프레임은 PNG 만(투명 칸을 재고 사진과 합성한다), 캐릭터는 PNG, WebP, SVG */
-export const KEY_RE = /^assets\/(frame\/[a-z0-9-]+\.png|character\/[a-z0-9-]+\.(png|webp|svg))$/;
+/**
+ * QR 인쇄물 아이콘(#296). 캐릭터와 같은 형식을 받는다. 인쇄물에서 약 10mm 칸에 600dpi 로 그려서 비트맵은 한 변 240px 이상이어야 흐리지 않다.
+ * 배경이 있어도 된다(앱 아이콘처럼 꽉 찬 네모가 흔하다)
+ */
+export const ICON_TYPES = CHARACTER_TYPES;
+export const ICON_MIN_PX = 240;
+
+/** 프레임은 PNG 만(투명 칸을 재고 사진과 합성한다), 캐릭터와 아이콘은 PNG, WebP, SVG */
+export const KEY_RE = /^assets\/(frame\/[a-z0-9-]+\.png|(character|icon)\/[a-z0-9-]+\.(png|webp|svg))$/;
 export const assetUrl = (key: string) => `/photobooth/${key.replace(/^assets\//, "asset/")}`;
 
 /** 기본으로 들어 있는 그림. 보관함에 늘 보이고 지울 수 없다 */
