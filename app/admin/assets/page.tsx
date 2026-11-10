@@ -8,15 +8,19 @@ import { Callout } from "@/components/admin/Callout";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { useToast } from "@/components/admin/Toast";
 import { DownloadIcon } from "@/components/admin/icons";
-import { CharacterUploader, FrameUploader, SlotOverlay } from "@/components/admin/assets/Uploader";
+import { CharacterUploader, FrameUploader, IconUploader, SlotOverlay } from "@/components/admin/assets/Uploader";
 import { fetchAssets, patchAsset } from "@/lib/admin/assetsClient";
 import { formatDateTime } from "@/lib/admin/format";
 import type { AssetsList } from "@/lib/event/adminApi";
 import { BUILTIN_CHARACTERS, BUILTIN_CHARACTER_SET, BUILTIN_FRAME, FRAME_SIZE, assetUrl, frameSrc, type Asset, type AssetKind } from "@/lib/event/assets";
+import { BUILTIN_ICONS } from "@/lib/qr-print/layout";
 
 // 그림 보관함 (#224, docs/admin-ui.md "그림 보관함").
 // 디자이너가 프레임과 캐릭터를 올려 두면, 행사 포토부스 탭에서 골라 쓴다. 기본 그림은 늘 맨 앞에 있고 지울 수 없다.
 // 쓰는 행사가 있는 그림은 숨기지 못한다(부스가 계속 쓰니까). 파일은 지우지 않고 숨기기만 한다.
+// QR 아이콘(#296)은 QR 인쇄물 아이콘 고르기의 "보관함"에 나온다. 인쇄물을 저장하지 않으니 언제든 숨길 수 있다.
+
+const UPLOAD_LABEL: Record<AssetKind, string> = { frame: "프레임 올리기", character: "캐릭터 올리기", icon: "아이콘 올리기" };
 
 export default function AssetsPage() {
   const toast = useToast();
@@ -54,10 +58,10 @@ export default function AssetsPage() {
     <ScrollPage>
       <PageHeader
         title="그림 보관함"
-        description="포토부스 프레임과 캐릭터를 올려 두고, 행사 포토부스 탭에서 골라 써요."
+        description="포토부스 프레임과 캐릭터, QR 인쇄물 아이콘을 올려 두고 골라 써요."
         actions={
           <Button onClick={() => setUploading(kind)} disabled={!data || !writable}>
-            {kind === "frame" ? "프레임 올리기" : "캐릭터 올리기"}
+            {UPLOAD_LABEL[kind]}
           </Button>
         }
       />
@@ -74,6 +78,7 @@ export default function AssetsPage() {
           options={[
             { value: "frame", label: "프레임" },
             { value: "character", label: "캐릭터" },
+            { value: "icon", label: "QR 아이콘" },
           ]}
         />
         {hiddenCount > 0 && (
@@ -98,7 +103,7 @@ export default function AssetsPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {kind === "frame" ? (
             <Card thumb={<img src={frameSrc(BUILTIN_FRAME)} alt="" className="h-56 w-auto" />} title={BUILTIN_FRAME.label} meta={`${BUILTIN_FRAME.slots.length}컷 · 코드에 든 기본 그림`} usage="고른 프레임이 없는 행사는 이 프레임" />
-          ) : (
+          ) : kind === "icon" ? null : (
             // 코드에 든 냥파, 도둥이. 경찰 쪽을 먼저, 기본 짝을 맨 앞에
             [
               ...(["cop", "thief"] as const).map((s) => ({ key: `default-${s}`, side: s, label: BUILTIN_CHARACTERS[s].label, src: BUILTIN_CHARACTERS[s].src, usage: "고른 캐릭터가 없는 행사는 이 그림" })),
@@ -115,16 +120,23 @@ export default function AssetsPage() {
               <Card
                 key={a.id}
                 dim={a.archived}
+                paper={a.kind === "icon"}
                 thumb={
                   a.kind === "frame" && a.meta.slots ? (
                     <SlotOverlay src={assetUrl(a.key)} width={a.meta.width} height={a.meta.height} slots={a.meta.slots} h={224} />
                   ) : (
-                    <img src={assetUrl(a.key)} alt="" className="h-32 w-auto" />
+                    <img src={assetUrl(a.key)} alt="" className={a.kind === "icon" ? "h-20 w-auto" : "h-32 w-auto"} />
                   )
                 }
                 title={a.label}
-                meta={a.kind === "frame" ? `${a.meta.slots?.length ?? 0}컷 · ${a.createdBy} · ${formatDateTime(a.createdAt).slice(0, 10)}` : `${a.meta.side === "thief" ? "도둑" : "경찰"} 쪽 · ${a.createdBy}`}
-                usage={users.length ? `${users.join(", ")}에서 써요` : "쓰는 행사가 없어요"}
+                meta={
+                  a.kind === "frame"
+                    ? `${a.meta.slots?.length ?? 0}컷 · ${a.createdBy} · ${formatDateTime(a.createdAt).slice(0, 10)}`
+                    : a.kind === "icon"
+                      ? `${a.createdBy} · ${formatDateTime(a.createdAt).slice(0, 10)}`
+                      : `${a.meta.side === "thief" ? "도둑" : "경찰"} 쪽 · ${a.createdBy}`
+                }
+                usage={a.kind === "icon" ? (a.archived ? "QR 인쇄물에서 고를 수 없어요" : "QR 인쇄물에서 골라 써요") : users.length ? `${users.join(", ")}에서 써요` : "쓰는 행사가 없어요"}
                 action={
                   writable ? (
                     <button
@@ -145,13 +157,31 @@ export default function AssetsPage() {
             <button
               type="button"
               onClick={() => setUploading(kind)}
-              className="flex min-h-72 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-sd-line text-sd-fg-subtle transition-colors hover:bg-sd-fill"
+              className={`flex ${kind === "icon" ? "min-h-52" : "min-h-72"} flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-sd-line text-sd-fg-subtle transition-colors hover:bg-sd-fill`}
             >
               <span className="text-[24px]">+</span>
-              <span className="text-[13px] font-semibold">{kind === "frame" ? "프레임 올리기" : "캐릭터 올리기"}</span>
+              <span className="text-[13px] font-semibold">{UPLOAD_LABEL[kind]}</span>
             </button>
           )}
         </div>
+      )}
+
+      {kind === "icon" && data && (
+        // 코드에 든 QR 아이콘. 올린 아이콘을 먼저 보이고, 무엇이 이미 있는지는 아래에서 보고 겹치지 않게 올린다
+        <section className="mt-8">
+          <h2 className="mb-1 text-[14px] font-bold text-sd-fg">코드에 든 아이콘 {BUILTIN_ICONS.length}개</h2>
+          <p className="mb-3 text-[12px] text-sd-fg-subtle">올리지 않아도 QR 인쇄물에서 골라요. 여기 없는 것만 올려 주세요.</p>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {BUILTIN_ICONS.map((i) => (
+              <div key={i.id} className="flex flex-col items-center gap-2 rounded-2xl border border-sd-line bg-sd-surface p-3">
+                <div className="flex h-20 w-full items-center justify-center rounded-xl bg-white ring-1 ring-sd-hairline">
+                  <img src={i.src} alt="" className="h-12 w-auto" />
+                </div>
+                <p className="w-full truncate text-center text-[12px] font-semibold text-sd-fg-muted">{i.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {uploading === "frame" && (
@@ -162,6 +192,17 @@ export default function AssetsPage() {
             setUploading(null);
             setData((d) => (d ? { ...d, assets: [a, ...d.assets] } : d));
             toast(`“${a.label}” 프레임을 올렸어요. 행사 포토부스 탭의 고르기 화면에서 고를 수 있어요.`);
+          }}
+        />
+      )}
+      {uploading === "icon" && (
+        <IconUploader
+          disabled={!writable}
+          onCancel={() => setUploading(null)}
+          onDone={(a) => {
+            setUploading(null);
+            setData((d) => (d ? { ...d, assets: [a, ...d.assets] } : d));
+            toast(`“${a.label}” 아이콘을 올렸어요. QR 인쇄물의 아이콘 고르기 보관함에서 고를 수 있어요.`);
           }}
         />
       )}
@@ -180,10 +221,11 @@ export default function AssetsPage() {
   );
 }
 
-function Card({ thumb, title, meta, usage, action, dim = false }: { thumb: React.ReactNode; title: string; meta: string; usage: string; action?: React.ReactNode; dim?: boolean }) {
+function Card({ thumb, title, meta, usage, action, dim = false, paper = false }: { thumb: React.ReactNode; title: string; meta: string; usage: string; action?: React.ReactNode; dim?: boolean; paper?: boolean }) {
+  // QR 아이콘은 흰 종이에 인쇄되니 다크 모드에서도 흰 바탕에 보여 준다
   return (
     <div className={`flex flex-col rounded-2xl border border-sd-line bg-sd-surface p-3 ${dim ? "opacity-60" : ""}`}>
-      <div className="flex h-60 items-center justify-center rounded-xl bg-sd-fill">{thumb}</div>
+      <div className={`flex items-center justify-center rounded-xl ${paper ? "h-36 bg-white ring-1 ring-sd-hairline" : "h-60 bg-sd-fill"}`}>{thumb}</div>
       <div className="mt-3 flex items-start justify-between gap-2">
         <p className="min-w-0 truncate text-[14px] font-semibold text-sd-fg">{title}</p>
         {action}
