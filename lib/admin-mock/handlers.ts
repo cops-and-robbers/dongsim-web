@@ -11,6 +11,7 @@ import { mockRelease, mockRunAction } from "./release";
 import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockSend, mockStorePage } from "./storePage";
 import { mockCreateTemplate, mockDeleteTemplate, mockInbox, mockPatchReview, mockReply, mockTemplates, mockUpdateTemplate, mockWaiting } from "./reviews";
 import { mockPatchCheck, mockStoreCheck } from "./storeCheck";
+import { mockSaveRole, mockSaveRoles, mockTeam } from "./team";
 import {
   queryUsers,
   getUser,
@@ -502,6 +503,30 @@ export const handlers = [
   http.post("/api/admin/reviews", async ({ request }) => {
     await delay(500);
     return HttpResponse.json(mockReply((await request.json()) as Parameters<typeof mockReply>[0]));
+  }),
+
+  // 운영진과 역할. 브라우저에 남겨 새로고침해도 고른 역할이 그대로다
+  http.get("/api/admin/team", async () => {
+    await delay(200);
+    return HttpResponse.json(mockTeam());
+  }),
+
+  http.put("/api/admin/team", async ({ request }) => {
+    await delay(300);
+    const r = mockSaveRoles((await request.json()) as Parameters<typeof mockSaveRoles>[0]);
+    return HttpResponse.json(r.body, { status: r.status });
+  }),
+
+  http.post("/api/admin/team/roles", async ({ request }) => {
+    await delay(300);
+    const r = mockSaveRole((await request.json()) as Parameters<typeof mockSaveRole>[0]);
+    return HttpResponse.json(r.body, { status: r.status });
+  }),
+
+  http.put("/api/admin/team/roles", async ({ request }) => {
+    await delay(300);
+    const r = mockSaveRole((await request.json()) as Parameters<typeof mockSaveRole>[0]);
+    return HttpResponse.json(r.body, { status: r.status });
   }),
 
   http.get("/api/admin/reviews/templates", async () => {
