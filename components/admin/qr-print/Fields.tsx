@@ -112,7 +112,9 @@ export function LinkFields({ value, onChange, links, siteUrl }: { value: LinkCho
 
 type IconGroup = (typeof ICON_GROUPS)[number]["id"];
 
-const ICON_TILE ="flex h-14 w-full items-center justify-center rounded-xl border bg-sd-surface transition";
+const ICON_TILE = "flex h-14 w-full items-center justify-center rounded-xl border bg-sd-surface transition";
+// 아이콘은 흰 종이에 인쇄되니 다크 모드에서도 흰 바탕에 보여 준다. 검은 마크(틱톡, X, 스레드)가 어두운 칸에 묻히지 않게
+const PAPER = "!bg-white";
 
 /** 두 개짜리 왼쪽 아이콘. 자주 쓰는 마크와 캐릭터, 직접 올린 그림 */
 export function IconFields({ value, onChange }: { value: IconChoice; onChange: (v: IconChoice) => void }) {
@@ -150,7 +152,7 @@ export function IconFields({ value, onChange }: { value: IconChoice; onChange: (
         {shown.map((i) => {
           const active = value.kind === "builtin" && value.id === i.id;
           return (
-            <button key={i.id} type="button" role="radio" aria-checked={active} title={i.label} onClick={() => onChange({ kind: "builtin", id: i.id })} className={`${ICON_TILE} ${on(active)}`}>
+            <button key={i.id} type="button" role="radio" aria-checked={active} title={i.label} onClick={() => onChange({ kind: "builtin", id: i.id })} className={`${ICON_TILE} ${PAPER} ${on(active)}`}>
               <img src={i.src} alt={i.label} className="h-8 w-8 object-contain" />
             </button>
           );
