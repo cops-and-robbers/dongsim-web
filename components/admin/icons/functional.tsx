@@ -499,6 +499,19 @@ export function ClockIcon({ className }: IconProps) {
   );
 }
 
+export function TeamIcon({ className }: IconProps) {
+  // Lucide 'id-card'. 운영진. 유저(사람들)와 헷갈리지 않게 명찰로 둔다. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M16 10h2" />
+      <path d="M16 14h2" />
+      <path d="M6.17 15a3 3 0 0 1 5.66 0" />
+      <circle cx="9" cy="11" r="2" />
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+    </Line>
+  );
+}
+
 export function GlobeIcon({ className }: IconProps) {
   // Lucide 'globe'. 나라별 스토어 반영. 원본 path 그대로.
   return (
