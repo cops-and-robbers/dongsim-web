@@ -39,3 +39,8 @@ export async function updateRole(role: Pick<Role, "key" | "updatedAt">, input: R
 export async function archiveRole(role: Pick<Role, "key" | "updatedAt">): Promise<void> {
   await json(await send(`${API}/roles`, { method: "PUT", body: JSON.stringify({ key: role.key, updatedAt: role.updatedAt, archive: true }) }), SAVE_FAIL);
 }
+
+/** 내 개요 구성. cards 가 null 이면 역할 기본값으로 돌아간다 */
+export async function saveLayout(cards: string[] | null, roleKeys: string[]): Promise<Member> {
+  return (await json<{ member: Member }>(await send(`${API}/layout`, { method: "PUT", body: JSON.stringify({ cards, roleKeys }) }), SAVE_FAIL)).member;
+}

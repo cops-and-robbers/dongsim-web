@@ -7,14 +7,14 @@ const KEY = "mock_admin_team";
 const ME = "1";
 const at = (daysAgo: number) => new Date(Date.now() - daysAgo * 86_400_000).toISOString();
 const role = (key: string, name: string, description: string, cards: string[], position: number): Role => ({ key, name, description, icon: key, cards, position, updatedBy: "", updatedAt: "2026-11-10T00:00:00.000Z" });
-const member = (userId: string, nickname: string, roleKeys: string[], seen: number): Member => ({ userId, nickname, roleKeys, onboardedAt: at(30), lastSeenAt: at(seen), updatedAt: at(30) });
+const member = (userId: string, nickname: string, roleKeys: string[], seen: number): Member => ({ userId, nickname, roleKeys, onboardedAt: at(30), lastSeenAt: at(seen), updatedAt: at(30), overviewCards: null, overviewRoles: null });
 
 type Store = { roles: Role[]; members: Member[] };
 
 const initial = (): Store => ({
   roles: [role("dev", "개발", "출시, 안정성, 버그", ["crash", "anr", "rel", "bug"], 0), role("des", "디자인", "프레임, 스토어 이미지", ["frame", "draft", "post", "views"], 1), role("mkt", "마케팅", "유입, 스토어, 인스타", ["fun", "newu", "ig", "site"], 2), role("ops", "운영", "행사, 신고, 고객 응대", ["rep", "ev", "ret", "chk"], 3)],
   members: [
-    { userId: ME, nickname: "테스터", roleKeys: [], onboardedAt: null, lastSeenAt: at(0), updatedAt: at(40) },
+    { userId: ME, nickname: "테스터", roleKeys: [], onboardedAt: null, lastSeenAt: at(0), updatedAt: at(40), overviewCards: null, overviewRoles: null },
     member("2", "민첩한괴도", ["ops", "dev"], 0.2),
     member("3", "재빠른고양이", ["mkt"], 1),
     member("4", "조용한경찰", ["des"], 6),
@@ -25,7 +25,8 @@ const initial = (): Store => ({
 function load(): Store {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? "null") as Store | null;
-    if (saved?.roles && saved.members) return saved;
+    // 구성 칸이 생기기 전에 저장한 값도 읽는다
+    if (saved?.roles && saved.members) return { ...saved, members: saved.members.map((m) => ({ ...m, overviewCards: m.overviewCards ?? null, overviewRoles: m.overviewRoles ?? null })) };
   } catch {}
   return initial();
 }
@@ -43,7 +44,7 @@ export function mockTeam(): Team {
   s.members = s.members.map((m) => (m.userId === ME ? { ...m, lastSeenAt: new Date().toISOString() } : m));
   save(s);
   const me = s.members.find((m) => m.userId === ME)!;
-  return { me, members: s.members, roles: s.roles, writable: true, canManage: canManage(me.roleKeys, s.members) };
+  return { me, members: s.members, roles: s.roles, writable: true, canManage: canManage(me.roleKeys, s.members), layoutReady: true };
 }
 
 export function mockSaveRoles(body: { userId: string; updatedAt: string; roleKeys: string[]; onboard?: boolean }): { status: number; body: Record<string, unknown> } {
@@ -83,4 +84,15 @@ export function mockSaveRole(body: RoleInput & { key?: string; updatedAt?: strin
   s.roles = s.roles.map((r) => (r.key === target.key ? next : r));
   save(s);
   return { status: 200, body: { role: next } };
+}
+
+export function mockSaveLayout(body: { cards: string[] | null; roleKeys: string[] }): { status: number; body: Record<string, unknown> } {
+  const bad = body.cards && cardsProblem(body.cards);
+  if (bad) return { status: 400, body: { error: bad } };
+  const s = load();
+  const me = s.members.find((m) => m.userId === ME)!;
+  const next: Member = { ...me, overviewCards: body.cards, overviewRoles: body.cards ? cleanKeys(body.roleKeys, s.roles) : null };
+  s.members = s.members.map((m) => (m.userId === ME ? next : m));
+  save(s);
+  return { status: 200, body: { member: next } };
 }

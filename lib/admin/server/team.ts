@@ -8,12 +8,15 @@ const ROLES = "admin_roles";
 const MEMBERS = "admin_members";
 const ROLE_COLUMNS = "key,name,description,icon,cards,position,updated_by,updated_at";
 const MEMBER_COLUMNS = "user_id,nickname,role_keys,onboarded_at,last_seen_at,updated_at";
+const LAYOUT_COLUMNS = `${MEMBER_COLUMNS},overview_cards,overview_roles`;
+/** 0025 SQL 을 실행하기 전이면 구성 칸이 없다. 그때도 운영진 화면은 그대로 보여 준다 */
+const noLayout = (message: string) => /overview_(cards|roles)/.test(message);
 
 type RoleRow = { key: string; name: string; description: string; icon: string; cards: string[]; position: number; updated_by: string; updated_at: string };
-type MemberRow = { user_id: string; nickname: string; role_keys: string[]; onboarded_at: string | null; last_seen_at: string; updated_at: string };
+type MemberRow = { user_id: string; nickname: string; role_keys: string[]; onboarded_at: string | null; last_seen_at: string; updated_at: string; overview_cards?: string[] | null; overview_roles?: string[] | null };
 
 const toRole = (r: RoleRow): Role => ({ key: r.key, name: r.name, description: r.description, icon: r.icon, cards: r.cards ?? [], position: r.position, updatedBy: r.updated_by, updatedAt: r.updated_at });
-const toMember = (r: MemberRow, roles: Role[]): Member => ({ userId: r.user_id, nickname: r.nickname, roleKeys: cleanKeys(r.role_keys ?? [], roles), onboardedAt: r.onboarded_at, lastSeenAt: r.last_seen_at, updatedAt: r.updated_at });
+const toMember = (r: MemberRow, roles: Role[]): Member => ({ userId: r.user_id, nickname: r.nickname, roleKeys: cleanKeys(r.role_keys ?? [], roles), onboardedAt: r.onboarded_at, lastSeenAt: r.last_seen_at, updatedAt: r.updated_at, overviewCards: r.overview_cards ?? null, overviewRoles: r.overview_roles ?? null });
 
 export class TeamConflict extends Error {}
 
@@ -44,15 +47,21 @@ export async function readTeam(me: { id: string; nickname: string }): Promise<Te
       if (error) throw new Error(error.message);
     }
     const roles = await readRoles();
-    const { data, error } = await db().from(MEMBERS).select(MEMBER_COLUMNS).order("last_seen_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    const members = ((data ?? []) as MemberRow[]).map((r) => toMember(r, roles));
-    const mine = members.find((m) => m.userId === me.id) ?? { userId: me.id, nickname: me.nickname, roleKeys: [], onboardedAt: null, lastSeenAt: new Date().toISOString(), updatedAt: "" };
-    return { me: mine, members, roles, writable, canManage: canManage(mine.roleKeys, members), readOnlyReason: writable ? undefined : "역할은 운영 어드민에서만 저장돼요." };
+    const read = (columns: string) => db().from(MEMBERS).select(columns).order("last_seen_at", { ascending: false });
+    let layoutReady = true;
+    let res = await read(LAYOUT_COLUMNS);
+    if (res.error && noLayout(res.error.message)) {
+      layoutReady = false;
+      res = await read(MEMBER_COLUMNS);
+    }
+    if (res.error) throw new Error(res.error.message);
+    const members = ((res.data ?? []) as unknown as MemberRow[]).map((r) => toMember(r, roles));
+    const mine = members.find((m) => m.userId === me.id) ?? { userId: me.id, nickname: me.nickname, roleKeys: [], onboardedAt: null, lastSeenAt: new Date().toISOString(), updatedAt: "", overviewCards: null, overviewRoles: null };
+    return { me: mine, members, roles, writable, canManage: canManage(mine.roleKeys, members), layoutReady, readOnlyReason: writable ? undefined : "역할은 운영 어드민에서만 저장돼요." };
   } catch (e) {
     console.error("[team] 읽기", e instanceof Error ? e.message : e);
-    const empty: Member = { userId: me.id, nickname: me.nickname, roleKeys: [], onboardedAt: null, lastSeenAt: "", updatedAt: "" };
-    return { me: empty, members: [], roles: [], writable: false, canManage: false, readOnlyReason: "운영진 표가 아직 없어요. 0024 SQL 을 실행해 주세요." };
+    const empty: Member = { userId: me.id, nickname: me.nickname, roleKeys: [], onboardedAt: null, lastSeenAt: "", updatedAt: "", overviewCards: null, overviewRoles: null };
+    return { me: empty, members: [], roles: [], writable: false, canManage: false, layoutReady: false, readOnlyReason: "운영진 표가 아직 없어요. 0024 SQL 을 실행해 주세요." };
   }
 }
 
@@ -68,7 +77,31 @@ export async function saveMemberRoles(userId: string, updatedAt: string, roleKey
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new TeamConflict();
-  return toMember(data as MemberRow, roles);
+  return withLayout(toMember(data as MemberRow, roles));
+}
+
+/** 역할을 바꾼 뒤 돌려줄 때 구성 칸도 같이 채운다. 칸이 없으면 비운 채로 둔다 */
+async function withLayout(m: Member): Promise<Member> {
+  const { data, error } = await db().from(MEMBERS).select("overview_cards,overview_roles").eq("user_id", m.userId).maybeSingle();
+  if (error || !data) return m;
+  const r = data as Pick<MemberRow, "overview_cards" | "overview_roles">;
+  return { ...m, overviewCards: r.overview_cards ?? null, overviewRoles: r.overview_roles ?? null };
+}
+
+export class LayoutMissing extends Error {}
+
+/** 내 개요 구성. 나만 고치므로 다른 사람과 부딪히지 않는다. cards 가 null 이면 역할 기본값으로 돌아간다 */
+export async function saveLayout(userId: string, cards: string[] | null, roleKeys: string[]): Promise<Member> {
+  const roles = await readRoles();
+  const { data, error } = await db()
+    .from(MEMBERS)
+    .update({ overview_cards: cards, overview_roles: cards ? cleanKeys(roleKeys, roles) : null })
+    .eq("user_id", userId)
+    .select(LAYOUT_COLUMNS)
+    .maybeSingle();
+  if (error) throw noLayout(error.message) ? new LayoutMissing() : new Error(error.message);
+  if (!data) throw new Error("구성원을 찾지 못했어요.");
+  return toMember(data as unknown as MemberRow, roles);
 }
 
 export async function readManager(id: string): Promise<boolean> {
