@@ -11,8 +11,9 @@ const BASE_URL = "https://copsandrobbers.app";
 // 목록·RSS와 같은 결의 주기. 사이트맵은 크롤러만 읽으므로 더 길게 잡아도 무방하다.
 export const revalidate = 600;
 
+// 수정일(lastmod)은 정확히 아는 주소에만 넣는다. 고정 페이지에 만드는 시각을 넣으면
+// 매번 "오늘 바뀜"이 되고, 구글은 계속 틀리는 lastmod 를 사이트 전체에서 무시한다(#299).
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   // 언어 구분 없이 받아 각 글을 자기 언어 경로로 넣는다. 연동 미설정·오류 시 빈 배열.
   const allPosts = await getAllPosts();
   const posts = allPosts.filter((post) => post.locale === "ko");
@@ -41,7 +42,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     {
       url: `${BASE_URL}/`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 1,
       images: [
@@ -57,7 +57,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/en`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
       alternates: {
@@ -66,7 +65,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/ja`,
-      lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
       alternates: {
@@ -75,13 +73,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/online`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
       url: `${BASE_URL}/game`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.9,
       images: [
@@ -97,7 +93,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/en/game`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
       alternates: {
@@ -106,7 +101,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/ja/game`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.7,
       alternates: {
@@ -115,7 +109,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/demo`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,
       alternates: {
@@ -124,7 +117,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/en/demo`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
       alternates: {
@@ -133,7 +125,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/ja/demo`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
       alternates: {
@@ -142,7 +133,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/team`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,
       alternates: {
@@ -151,7 +141,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/en/team`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
       alternates: {
@@ -160,7 +149,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/ja/team`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
       alternates: {
@@ -169,7 +157,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/team/members`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
       images: [
@@ -183,7 +170,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/blog`,
-      lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.8,
     },
@@ -191,13 +177,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // 나라마다 목록이 다르므로 언어별 경로를 모두 넣는다
     ...(["", "/en", "/ja"] as const).map((prefix) => ({
       url: `${BASE_URL}${prefix}/community`,
-      lastModified: now,
       changeFrequency: "daily" as const,
       priority: 0.8,
     })),
     ...posts.map((post) => ({
       url: `${BASE_URL}/blog/${post.slug}`,
-      lastModified: post.date ? new Date(post.date) : now,
+      ...(post.date ? { lastModified: new Date(post.date) } : {}),
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
@@ -205,15 +190,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...(["en", "ja"] as const).flatMap((locale) => [
       {
         url: `${BASE_URL}${localizedPath("/blog", locale)}`,
-        lastModified: now,
-        changeFrequency: "weekly" as const,
+          changeFrequency: "weekly" as const,
         priority: 0.6,
       },
       ...allPosts
         .filter((post) => post.locale === locale)
         .map((post) => ({
           url: `${BASE_URL}${localizedPath(`/blog/${post.slug}`, locale)}`,
-          lastModified: post.date ? new Date(post.date) : now,
+          ...(post.date ? { lastModified: new Date(post.date) } : {}),
           changeFrequency: "monthly" as const,
           priority: 0.7,
         })),
@@ -223,8 +207,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...LOCALES.flatMap((locale) =>
       LEGAL_DOCS.map((doc) => ({
         url: `${BASE_URL}${localizedPath(`/${doc}`, locale)}`,
-        lastModified: now,
-        changeFrequency: "yearly" as const,
+          changeFrequency: "yearly" as const,
         priority: 0.3,
       })),
     ),
