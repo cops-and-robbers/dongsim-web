@@ -38,6 +38,7 @@ pnpm build                 # 검증 기준은 이 빌드의 "Compiled successful
 | 지표 일정 성격, 운영진 거르기, 행사 성적표 | `docs/metrics-events.md` |
 | 회사 소개 이력, 수상, 고마운 분들, 앱 크레딧 명단 | `docs/admin-ui.md` "동심지키미 소개" |
 | 행사 링크 짧은 주소 /q/, QR, 링크별 결과 | `docs/metrics-links.md` |
+| QR 인쇄물(어드민 "QR 인쇄물", 디자이너 틀, PDF) | `docs/qr-print.md` |
 | 빌드·배포·환경 문제가 생겼을 때 | `docs/gotchas.md` |
 | 어드민 웹 애플 로그인 설정·문제 해결 | `docs/apple-signin-web.md` |
 | 온라인 게임 입구(`/online`)와 어드민 "온라인 게임" | `docs/online-game.md` |
