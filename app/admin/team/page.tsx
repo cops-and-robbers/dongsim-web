@@ -3,21 +3,19 @@
 import { useState } from "react";
 import { Avatar } from "@/components/admin/Avatar";
 import { Callout } from "@/components/admin/Callout";
-import { ChangeDialog } from "@/components/admin/ChangeDialog";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { ErrorBlock, PageHeader, ScrollPage } from "@/components/admin/Parts";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { useToast } from "@/components/admin/Toast";
 import { RoleArt } from "@/components/admin/team/RoleArt";
-import { RoleTile } from "@/components/admin/team/RolePicker";
+import { RoleSheet } from "@/components/admin/team/RoleSheet";
 import { useTeam, withMember } from "@/components/admin/team/TeamProvider";
-import { DESC_MAX, ICON_GROUPS, isBuiltin, NAME_MAX, roleProblem, seenLabel, type Member, type Role, type RoleInput, type Team } from "@/lib/admin/team";
-import { archiveRole, createRole, saveRoles, updateRole } from "@/lib/admin/teamClient";
+import { isCardKey } from "@/lib/admin/overview/cards";
+import { seenLabel, type Member, type Role, type Team } from "@/lib/admin/team";
+import { saveRoles } from "@/lib/admin/teamClient";
 
 // 운영진 (docs/admin-ui.md "운영진"). 누가 무슨 일을 맡는지 보고, 역할 목록을 고친다.
 
 type Tab = "members" | "roles";
-const FIELD = "h-10 w-full rounded-xl border border-sd-line bg-sd-surface px-3.5 text-[14px] text-sd-fg outline-none transition-colors placeholder:text-sd-placeholder focus:border-accent";
 
 function MemberRow({ m, team, now, onSaved }: { m: Member; team: Team; now: number; onSaved: (m: Member) => void }) {
   const toast = useToast();
@@ -74,100 +72,6 @@ function MemberRow({ m, team, now, onSaved }: { m: Member; team: Team; now: numb
   );
 }
 
-function RoleEditor({ role, team, onClose, onSaved }: { role: Role | null; team: Team; onClose: () => void; onSaved: (next: Team) => void }) {
-  const toast = useToast();
-  const builtin = !!role && isBuiltin(role.key);
-  const [draft, setDraft] = useState<RoleInput>(role ? { name: role.name, description: role.description, icon: role.icon } : { name: "", description: "", icon: "sparkles" });
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string>();
-  const [removing, setRemoving] = useState(false);
-  const problem = roleProblem(draft, team.roles.filter((r) => r.key !== role?.key), builtin);
-  const dirty = !role || draft.name !== role.name || draft.description !== role.description || draft.icon !== role.icon;
-  const holders = role ? team.members.filter((m) => m.roleKeys.includes(role.key)).length : 0;
-
-  const save = () => {
-    setPending(true);
-    setError(undefined);
-    (role ? updateRole(role, draft) : createRole(draft))
-      .then((saved) => {
-        onSaved({ ...team, roles: role ? team.roles.map((r) => (r.key === saved.key ? saved : r)) : [...team.roles, saved] });
-        toast(`${saved.name} 역할을 저장했어요.`);
-        onClose();
-      })
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setPending(false));
-  };
-
-  const remove = () => {
-    if (!role) return;
-    setPending(true);
-    archiveRole(role)
-      .then(() => {
-        onSaved({ ...team, roles: team.roles.filter((r) => r.key !== role.key), members: team.members.map((m) => ({ ...m, roleKeys: m.roleKeys.filter((k) => k !== role.key) })), me: { ...team.me, roleKeys: team.me.roleKeys.filter((k) => k !== role.key) } });
-        toast(`${role.name} 역할을 지웠어요.`);
-        onClose();
-      })
-      .catch((e: Error) => {
-        setError(e.message);
-        setRemoving(false);
-      })
-      .finally(() => setPending(false));
-  };
-
-  const preview: Role = { key: role?.key ?? "new", name: draft.name.trim() || "역할 이름", description: draft.description.trim() || "이 역할이 주로 하는 일", icon: draft.icon, cards: [], position: 0, updatedBy: "", updatedAt: "" };
-
-  return (
-    <>
-      <ChangeDialog title={role ? `${role.name} 역할 고치기` : "새 역할"} size={builtin ? "lg" : "xl"} confirmText="저장" pendingText="저장하는 중..." pending={pending} confirmDisabled={!!problem || !dirty} error={error ?? (dirty && draft.name.trim() ? (problem ?? undefined) : undefined)} onConfirm={save} onClose={onClose}>
-        <div className="mt-4 grid gap-5 md:grid-cols-[minmax(0,1fr)_240px]">
-          <div className="min-w-0 space-y-4">
-            <label className="block">
-              <span className="mb-1 block text-[13px] font-bold text-sd-fg">역할 이름</span>
-              <input value={draft.name} maxLength={NAME_MAX} autoFocus onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="커뮤니티" className={FIELD} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[13px] font-bold text-sd-fg">한 줄 설명</span>
-              <input value={draft.description} maxLength={DESC_MAX} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="디스코드와 오픈채팅 응대" className={FIELD} />
-            </label>
-            {!builtin && (
-              <div role="radiogroup" aria-label="아이콘">
-                <span className="mb-1.5 block text-[13px] font-bold text-sd-fg">아이콘</span>
-                {/* 일의 종류로 묶어서 64개 중에서도 찾기 쉽게 한다 */}
-                <div className="space-y-2.5">
-                  {ICON_GROUPS.map((g) => (
-                    <div key={g.label} className="sm:flex sm:gap-3">
-                      <span className="mb-1 block shrink-0 text-[12px] font-semibold text-sd-fg-subtle sm:mb-0 sm:w-16 sm:pt-2.5">{g.label}</span>
-                      <div className="grid flex-1 grid-cols-6 gap-1 sm:grid-cols-10">
-                        {g.icons.map((i) => (
-                          <button key={i.key} type="button" role="radio" aria-checked={draft.icon === i.key} aria-label={i.label} title={i.label} onClick={() => setDraft({ ...draft, icon: i.key })} className={`grid h-10 place-items-center rounded-xl transition-colors ${draft.icon === i.key ? "bg-accent text-accent-fg" : "bg-sd-fill text-sd-fg-muted hover:bg-accent-weak hover:text-accent"}`}>
-                            <RoleArt icon={i.key} className="size-5 [stroke-width:1.8]" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="md:sticky md:top-0 md:self-start">
-            <span className="mb-1.5 block text-[13px] font-bold text-sd-fg">처음 고르는 화면에서는 이렇게 보여요</span>
-            <div aria-hidden className="pointer-events-none max-w-[300px]">
-              <RoleTile role={preview} on={false} onToggle={() => undefined} />
-            </div>
-            {role && !builtin && (
-              <button type="button" onClick={() => setRemoving(true)} className="mt-4 text-[13px] font-semibold text-sd-critical hover:underline">
-                이 역할 지우기
-              </button>
-            )}
-          </div>
-        </div>
-      </ChangeDialog>
-      <ConfirmDialog open={removing} danger pending={pending} title={`${role?.name ?? ""} 역할을 지울까요?`} message={holders ? `맡고 있는 ${holders}명의 역할에서도 빠져요.` : "맡고 있는 분은 없어요."} confirmText="지우기" onConfirm={remove} onClose={() => setRemoving(false)} />
-    </>
-  );
-}
-
 function Members({ team, onSaved }: { team: Team; onSaved: (m: Member) => void }) {
   // 나를 맨 위에 두고 나머지는 최근에 들어온 순서다
   const list = [team.me, ...team.members.filter((m) => m.userId !== team.me.userId)];
@@ -195,7 +99,9 @@ function Roles({ team, onSaved }: { team: Team; onSaved: (t: Team) => void }) {
               <RoleArt icon={r.icon} className="absolute right-4 top-4 size-14 text-accent" />
               <b className="block pr-16 text-[17px] font-bold tracking-tight text-sd-fg">{r.name}</b>
               <span className="mt-0.5 block pr-16 text-[13.5px] text-sd-fg-muted">{r.description}</span>
-              <span className="mt-4 block text-[12.5px] text-sd-fg-subtle">{count ? `${count}명이 맡고 있어요` : "맡은 분이 없어요"}</span>
+              <span className="mt-4 block text-[12.5px] text-sd-fg-subtle">
+                {count ? `${count}명이 맡고 있어요` : "맡은 분이 없어요"} · 기본 카드 {r.cards.filter(isCardKey).length}장
+              </span>
             </>
           );
           const box = "relative block min-h-[124px] w-full rounded-2xl border border-sd-line bg-sd-surface p-5 text-left";
@@ -215,7 +121,7 @@ function Roles({ team, onSaved }: { team: Team; onSaved: (t: Team) => void }) {
           </button>
         )}
       </div>
-      {editing && <RoleEditor role={editing === "new" ? null : editing} team={team} onClose={() => setEditing(null)} onSaved={onSaved} />}
+      {editing && <RoleSheet role={editing === "new" ? null : editing} team={team} onClose={() => setEditing(null)} onSaved={onSaved} />}
     </>
   );
 }
