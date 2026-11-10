@@ -3,6 +3,8 @@
 // 틀, 무늬, QR 뒤를 비운 칸, 캐릭터, 로고는 바탕 그림(public/qr-print/bg-*.png)에 이미 그려져 있고,
 // 여기서는 그 위에 얹는 글자, 아이콘, QR 의 자리만 정한다.
 
+import { assetUrl } from "../event/assets.ts";
+
 export const PAGE = { width: 1241, height: 1754, dpi: 300, mmWidth: 105, mmHeight: 148.5 } as const;
 
 /** 가운데 축(흰 카드 가운데) */
@@ -65,6 +67,9 @@ export type Caption = { first: string; highlight: string; rest: string };
 
 export type IconChoice =
   | { kind: "builtin"; id: BuiltinIconId }
+  /** 그림 보관함에 올려 둔 QR 아이콘(#296). 누구나 계속 쓴다 */
+  | { kind: "library"; key: string; label: string }
+  /** 이 화면에서만 잠깐 쓰는 그림(보관함에 올릴 수 없는 환경) */
   | { kind: "upload"; dataUrl: string; name: string }
   | { kind: "none" };
 
@@ -95,6 +100,7 @@ export const ICON_GROUPS = [
   { id: "store", label: "스토어, 앱" },
   { id: "basic", label: "기본" },
   { id: "character", label: "캐릭터" },
+  { id: "library", label: "보관함" },
 ] as const;
 
 const icon = (id: string, label: string, group: (typeof ICON_GROUPS)[number]["id"], src = `/qr-print/icons/${id}.svg`) => ({ id, label, group, src }) as const;
@@ -128,8 +134,18 @@ export const BUILTIN_ICONS = [
 
 export type BuiltinIconId = (typeof BUILTIN_ICONS)[number]["id"];
 
-export const iconSrc = (icon: IconChoice): string | null =>
-  icon.kind === "builtin" ? (BUILTIN_ICONS.find((i) => i.id === icon.id)?.src ?? null) : icon.kind === "upload" ? icon.dataUrl : null;
+export function iconSrc(icon: IconChoice): string | null {
+  switch (icon.kind) {
+    case "builtin":
+      return BUILTIN_ICONS.find((i) => i.id === icon.id)?.src ?? null;
+    case "library":
+      return assetUrl(icon.key);
+    case "upload":
+      return icon.dataUrl;
+    default:
+      return null;
+  }
+}
 
 /** 캐릭터 그림은 둘레 여백이 넓어 같은 칸에 넣으면 작아 보인다. 칸을 이만큼 키운다 */
 export const CHARACTER_SCALE = 1.5;

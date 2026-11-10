@@ -7,7 +7,9 @@ import { Callout } from "@/components/admin/Callout";
 import { useToast } from "@/components/admin/Toast";
 import { DownloadIcon } from "@/components/admin/icons";
 import { Chips } from "@/components/admin/company/fields";
-import { CaptionFields, IconFields, LinkFields, TitleFields, type LinksState } from "@/components/admin/qr-print/Fields";
+import { CaptionFields, IconFields, LinkFields, TitleFields, type IconLibrary, type LinksState } from "@/components/admin/qr-print/Fields";
+import { fetchAssets } from "@/lib/admin/assetsClient";
+import type { Asset } from "@/lib/event/assets";
 import { Preview } from "@/components/admin/qr-print/Preview";
 import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
@@ -45,6 +47,7 @@ export default function QrPrintPage() {
   const [presetId, setPresetId] = useState<PresetId>("event");
   const [sheet, setSheet] = useState<Sheet>(() => preset("event", URLS));
   const [links, setLinks] = useState<LinksState>({ state: "loading" });
+  const [library, setLibrary] = useState<IconLibrary>({ state: "loading", icons: [], writable: false });
   const [fonts, setFonts] = useState<Fonts | null>(null);
   const [busy, setBusy] = useState<"pdf" | "png" | null>(null);
   const [bleed, setBleed] = useState<Bleed>("0");
@@ -63,6 +66,18 @@ export default function QrPrintPage() {
       alive = false;
     };
   }, []);
+
+  // 그림 보관함의 QR 아이콘(#296). 숨긴 것은 빼고 새것부터
+  useEffect(() => {
+    let alive = true;
+    fetchAssets()
+      .then((d) => alive && setLibrary({ state: "ready", icons: d.assets.filter((a) => a.kind === "icon" && !a.archived), writable: d.writable }))
+      .catch(() => alive && setLibrary({ state: "failed", icons: [], writable: false }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const onUploaded = useCallback((a: Asset) => setLibrary((l) => ({ ...l, icons: [a, ...l.icons] })), []);
 
   const onFonts = useCallback((f: Fonts) => setFonts(f), []);
   const onReport = useCallback((r: DrawReport) => setReport(r), []);
@@ -164,7 +179,7 @@ export default function QrPrintPage() {
               return (
                 <SectionCard key={i} title={i === 0 ? "위 칸" : "아래 칸"}>
                   <div className="space-y-5">
-                    <IconFields value={row.icon} onChange={(icon) => setRow(i, { ...row, icon })} />
+                    <IconFields value={row.icon} onChange={(icon) => setRow(i, { ...row, icon })} library={library} onUploaded={onUploaded} />
                     <TitleFields value={row.title} onChange={(title) => setRow(i, { ...row, title })} />
                     <LinkFields value={row.link} onChange={(link) => setRow(i, { ...row, link })} links={links} siteUrl={SITE_URL} />
                     <CaptionFields value={row.caption} onChange={(caption) => setRow(i, { ...row, caption })} />
