@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ToastProvider } from "@/components/admin/Toast";
+import { TeamProvider } from "@/components/admin/team/TeamProvider";
 import CommandPalette from "@/components/admin/CommandPalette";
 import { AccountRow } from "@/components/admin/AccountRow";
 import { MobileTabBar } from "@/components/admin/MobileNav";
@@ -135,6 +136,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   return (
     <ToastProvider>
+      <TeamProvider>
       <div className="admin-shell fixed inset-0 z-50 flex flex-col overscroll-none bg-sd-fill text-sd-fg md:flex-row">
         {/* 데스크톱 사이드바. 로고와 계정 줄은 고정하고 가운데 메뉴만 스크롤한다(docs/admin-ui.md "내비게이션") */}
         <aside className="hidden w-60 shrink-0 flex-col border-r border-sd-line bg-sd-surface md:flex">
@@ -212,6 +214,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         <MobileTabBar pathname={pathname} countOf={countOf} noticeOf={noticeOf} />
       </div>
       <CommandPalette />
+      </TeamProvider>
     </ToastProvider>
   );
 }
