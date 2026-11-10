@@ -12,6 +12,7 @@ import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockSend, mockStorePage
 import { mockCreateTemplate, mockDeleteTemplate, mockInbox, mockPatchReview, mockReply, mockTemplates, mockUpdateTemplate, mockWaiting } from "./reviews";
 import { mockPatchCheck, mockStoreCheck } from "./storeCheck";
 import { mockSaveRole, mockSaveRoles, mockTeam } from "./team";
+import { mockOverview } from "./overview";
 import {
   queryUsers,
   getUser,
@@ -503,6 +504,12 @@ export const handlers = [
   http.post("/api/admin/reviews", async ({ request }) => {
     await delay(500);
     return HttpResponse.json(mockReply((await request.json()) as Parameters<typeof mockReply>[0]));
+  }),
+
+  // 개요의 서버 카드. 화면에 놓인 카드만 돌려준다
+  http.get("/api/admin/overview", async ({ request }) => {
+    await delay(500);
+    return HttpResponse.json(mockOverview(request.url));
   }),
 
   // 운영진과 역할. 브라우저에 남겨 새로고침해도 고른 역할이 그대로다

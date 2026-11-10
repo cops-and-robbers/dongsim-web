@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useLazyLoadQuery } from "react-relay";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
+import { usePendingCounts } from "@/lib/admin/usePendingCounts";
 import type { AdminDashboard } from "@/__generated__/AdminDashboard.graphql";
 import type { AdminUsers } from "@/__generated__/AdminUsers.graphql";
 import type { AdminGames } from "@/__generated__/AdminGames.graphql";
@@ -11,28 +12,18 @@ import { AdminDashboardQuery } from "@/lib/admin/gql/AdminDashboard";
 import { AdminUsersQuery } from "@/lib/admin/gql/AdminUsers";
 import { AdminGamesQuery } from "@/lib/admin/gql/AdminGames";
 import { PageHeader, SectionCard, ScrollPage } from "@/components/admin/Parts";
-import { Donut } from "@/components/admin/charts";
-import { Stagger, StaggerItem, FadeIn } from "@/components/admin/motion";
+import { FadeIn } from "@/components/admin/motion";
 import { LAST_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
 import { GameStatusBadge } from "@/components/admin/StatusBadge";
 import { InviteCode } from "@/components/admin/InviteCode";
 import QueryBoundary from "@/components/admin/QueryBoundary";
-import {
-  ArrowRightIcon,
-  GamesIcon,
-  ReportIcon,
-  BugIcon,
-  InfoIcon,
-} from "@/components/admin/icons";
-import { END_REASON_LABEL, formatDate, formatDuration, labelOf } from "@/lib/admin/format";
+import { OverviewCards } from "@/components/admin/overview/OverviewCards";
+import { useTeam } from "@/components/admin/team/TeamProvider";
+import { ArrowRightIcon, InfoIcon } from "@/components/admin/icons";
+import { presetCards } from "@/lib/admin/overview/cards";
+import { formatDate } from "@/lib/admin/format";
 
-// 디자인 시스템 시맨틱 토큰(라이트/다크 자동 대응). 하드코딩 hex 대신 var() 사용.
-const REASON_COLOR: Record<string, string> = {
-  ALL_ARRESTED: "var(--sd-info)",
-  TIME_OVER: "var(--sd-positive)",
-  ROBBER_FORFEITED: "var(--sd-warning)",
-  POLICE_FORFEITED: "var(--sd-critical)",
-};
+// 개요 (docs/admin-ui.md "개요 카드"). 모두에게 같은 공통 띠, 맡은 역할의 카드, 최근 게임과 가입 순서다.
 
 export default function AdminOverviewPage() {
   return (
@@ -58,14 +49,12 @@ function Overview() {
   const users = useLazyLoadQuery<AdminUsers>(AdminUsersQuery, {
     page: 0, size: 6, sortDirection: "DESC",
   }, fresh);
+  const counts = usePendingCounts();
+  const { team, error: teamError } = useTeam();
 
-  const reasonSegments = d.endReasonDistribution.map((r) => ({
-    label: labelOf(END_REASON_LABEL, r.endReason),
-    value: r.count,
-    color: REASON_COLOR[r.endReason] ?? "#868e96",
-  }));
-  const reasonTotal = d.endReasonDistribution.reduce((a, r) => a + r.count, 0);
   const pending = pendingReports + d.pendingBugReportCount;
+  const mine = team ? team.roles.filter((r) => team.me.roleKeys.includes(r.key)) : [];
+  const keys = presetCards(mine.map((r) => r.cards));
 
   return (
     <>
@@ -81,52 +70,48 @@ function Overview() {
         </div>
       )}
 
-      {/* 1. 지금 챙길 것 */}
-      <Stagger className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StaggerItem className="h-full">
-          <ActionCard icon={<GamesIcon className="h-5 w-5" />} label="진행중 게임" value={d.inProgressGameCount} sub="실시간 플레이 중" accent href="/admin/games?status=IN_PROGRESS" />
-        </StaggerItem>
-        <StaggerItem className="h-full">
-          <ActionCard icon={<ReportIcon className="h-5 w-5" />} label="미처리 신고" value={pendingReports} href="/admin/reports?status=PENDING" warn />
-        </StaggerItem>
-        <StaggerItem className="h-full">
-          <ActionCard icon={<BugIcon className="h-5 w-5" />} label="미처리 버그" value={d.pendingBugReportCount} href="/admin/bugs?status=PENDING" warn />
-        </StaggerItem>
-      </Stagger>
-
-      {/* 2. 오늘의 지표 스트립 (gap-px 구분선 - 줄바꿈에도 안정) */}
-      <FadeIn delay={0.08} className="mt-4">
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-sd-line bg-sd-hairline sm:grid-cols-3 lg:grid-cols-5">
-          <MiniStat label="오늘 게임" value={d.todayGameCount} href="/admin/games" />
-          <MiniStat label="주간 게임" value={d.weeklyGameCount} href="/admin/games" />
-          <MiniStat label="평균 게임 시간" value={formatDuration(d.averageGameDurationSeconds)} />
-          <MiniStat label="전체 유저" value={d.totalUserCount.toLocaleString()} href="/admin/users" />
-          <MiniStat label="오늘 신규 유저" value={d.todayNewUserCount} href="/admin/users" />
+      {/* 1. 공통 띠. 누구에게나 같은 지금 숫자다 */}
+      <FadeIn>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-sd-line bg-sd-hairline lg:grid-cols-4">
+          <BandStat label="진행 중 게임" value={d.inProgressGameCount} href="/admin/games?status=IN_PROGRESS" live={d.inProgressGameCount > 0} />
+          <BandStat label="오늘 게임" value={d.todayGameCount} href="/admin/games" />
+          <BandStat label="오늘 새 사용자" value={d.todayNewUserCount} href="/admin/users" />
+          <BandStat label="전체 사용자" value={d.totalUserCount.toLocaleString()} href="/admin/users" />
         </div>
       </FadeIn>
 
-      {/* 3. 분포 그래프 */}
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <FadeIn delay={0.12}>
-          <SectionCard title="게임 종료 사유">
-            {reasonTotal === 0 ? (
-              <EmptyInline text="종료된 게임이 없어요." />
-            ) : (
-              <div className="py-1">
-                <Donut segments={reasonSegments} centerLabel="종료 게임" centerValue={reasonTotal} />
-              </div>
-            )}
-          </SectionCard>
-        </FadeIn>
-        <FadeIn delay={0.16}>
-          <SectionCard title="팀별 승률">
-            <WinVersus police={d.winRateByTeam.policeWinRate} robber={d.winRateByTeam.robberWinRate} />
-          </SectionCard>
-        </FadeIn>
-      </div>
+      {/* 2. 내 지표. 맡은 역할의 기본 카드를 합친다 */}
+      <section className="mt-7">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+          <div className="min-w-0">
+            <h2 className="text-[17px] font-bold tracking-tight text-sd-fg">내 지표</h2>
+            <p className="mt-0.5 text-[13px] text-sd-fg-subtle">{mine.length ? `${mine.map((r) => r.name).join(", ")} 역할의 기본 카드예요.` : "역할을 고르면 맡은 일에 맞는 카드부터 보여 드려요."}</p>
+          </div>
+          <Link href="/admin/team" className="inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-accent transition hover:opacity-70">
+            {mine.length ? "역할 바꾸기" : "역할 고르기"}
+            <ArrowRightIcon className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        {team || teamError ? (
+          <OverviewCards
+            keys={keys}
+            live={{
+              weeklyGames: d.weeklyGameCount,
+              win: { police: d.winRateByTeam.policeWinRate, robber: d.winRateByTeam.robberWinRate },
+              ends: [...d.endReasonDistribution],
+              games: games.adminGames.content.map((g) => ({ id: g.id, inviteCode: g.inviteCode, status: g.status, participantCount: g.participantCount, maxParticipants: g.maxParticipants })),
+              pending: counts,
+            }}
+          />
+        ) : (
+          <div aria-busy className="grid auto-rows-[172px] grid-cols-2 gap-3 xl:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => <div key={i} className="animate-pulse rounded-2xl bg-sd-gray-200" />)}
+          </div>
+        )}
+      </section>
 
-      {/* 4. 최근 게임 + 최근 가입 유저 */}
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+      {/* 3. 최근 게임 + 최근 가입 유저 */}
+      <div className="mt-7 grid grid-cols-1 gap-5 lg:grid-cols-2">
         <FadeIn delay={0.2}>
           <SectionCard title="최근 게임" right={<MoreLink href="/admin/games" />} flush>
             <div className="min-h-[192px]">
@@ -178,101 +163,19 @@ function Overview() {
   );
 }
 
-function ActionCard({
-  icon, label, value, sub, accent = false, warn = false, href,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: number;
-  sub?: string;
-  accent?: boolean;
-  warn?: boolean;
-  href?: string;
-}) {
-  const has = value > 0;
-  const isWarn = warn && has; // 처리 대기 - 레드(critical)로 또렷하게 강조
-  const isClear = warn && !has; // 모두 처리됨 - 블루(안심) 신호
-  // 카드는 중립, 숫자·아이콘·상태문구 색으로만 상태를 표현.
-  const tone = accent
-    ? "bg-accent text-accent-fg"
-    : "border border-sd-line bg-sd-surface";
-  const labelCls = accent ? "text-accent-fg opacity-85" : "text-sd-fg-subtle";
-  const valueCls = accent ? "text-accent-fg" : isWarn ? "text-sd-critical" : "text-sd-fg";
-  // 아이콘은 컨테이너 없이 상태색만. 카드 색과 이중으로 튀지 않게.
-  const iconCls = accent
-    ? "text-accent-fg opacity-90"
-    : isWarn
-      ? "text-sd-critical"
-      : isClear
-        ? "text-sd-info"
-        : "text-sd-fg-subtle";
-  const subCls = accent
-    ? "text-accent-fg opacity-85"
-    : isWarn
-      ? "text-sd-critical"
-      : isClear
-        ? "text-sd-info"
-        : "text-sd-fg-subtle";
 
-  const inner = (
-    <div className={`flex h-full flex-col rounded-2xl px-5 py-4 ${tone} ${href ? "transition hover:-translate-y-0.5" : ""}`}>
-      <div className="flex items-center justify-between">
-        <p className={`text-[13px] font-semibold ${labelCls}`}>{label}</p>
-        <span className={iconCls}>{icon}</span>
-      </div>
-      <p className={`mt-3 text-[32px] font-bold leading-none tracking-tight tabular-nums ${valueCls}`}>{value}</p>
-      <p className={`mt-auto flex items-center gap-1 pt-3 text-[12px] font-semibold ${subCls}`}>
-        {warn ? (has ? "확인이 필요해요" : "모두 처리됐어요") : sub}
-        {href && <ArrowRightIcon className="h-3 w-3" />}
-      </p>
-    </div>
-  );
-  return href ? (
-    <Link href={href} className="block h-full">
-      {inner}
-    </Link>
-  ) : (
-    inner
-  );
-}
-
-function MiniStat({ label, value, href }: { label: string; value: ReactNode; href?: string }) {
-  const inner = (
-    <div className={`h-full bg-sd-surface px-5 py-4 ${href ? "transition hover:bg-sd-pressed" : ""}`}>
-      <p className="text-[12px] font-medium text-sd-fg-subtle">{label}</p>
-      <p className="mt-1.5 text-[20px] font-bold leading-none tabular-nums text-sd-fg">{value}</p>
-    </div>
-  );
-  return href ? <Link href={href} className="block h-full">{inner}</Link> : inner;
-}
-
-function WinVersus({ police, robber }: { police: number; robber: number }) {
-  if (police + robber <= 0) {
-    return <EmptyInline text="집계된 게임 결과가 없어요." />;
-  }
-  // BE는 이미 0~100 퍼센트로 내려줌(policeWins/total*100). 다시 곱하지 않는다.
-  const p = Math.round(police);
-  const r = Math.round(robber);
+function BandStat({ label, value, href, live = false }: { label: string; value: ReactNode; href: string; live?: boolean }) {
   return (
-    <div className="pt-1">
-      <div className="mb-2 flex items-end justify-between">
-        <div>
-          <p className="text-[13px] font-semibold text-sd-info">경찰</p>
-          <p className="text-[22px] font-bold tabular-nums text-sd-info">{p}%</p>
-        </div>
-        <span className="pb-1 text-[12px] font-medium text-sd-fg-subtle">승률</span>
-        <div className="text-right">
-          <p className="text-[13px] font-semibold text-sd-positive">도둑</p>
-          <p className="text-[22px] font-bold tabular-nums text-sd-positive">{r}%</p>
-        </div>
-      </div>
-      <div className="flex h-3 gap-0.5 overflow-hidden rounded-full">
-        <div className="h-full rounded-l-full bg-sd-info" style={{ width: `${p}%` }} />
-        <div className="h-full flex-1 rounded-r-full bg-sd-positive" />
-      </div>
-    </div>
+    <Link href={href} className="block h-full bg-sd-surface px-5 py-4 transition hover:bg-sd-pressed">
+      <p className="flex items-center gap-1.5 text-[12.5px] font-medium text-sd-fg-subtle">
+        {live && <span aria-hidden className="size-1.5 animate-pulse rounded-full bg-sd-positive" />}
+        {label}
+      </p>
+      <p className={`mt-1.5 text-[24px] font-bold leading-none tabular-nums ${live ? "text-accent" : "text-sd-fg"}`}>{value}</p>
+    </Link>
   );
 }
+
 
 function EmptyInline({ text }: { text: string }) {
   return (
