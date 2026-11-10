@@ -32,6 +32,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     description,
     // 글의 국가가 주소를 정한다. 다른 언어 경로로 들어와도 정본은 하나다
     alternates: { canonical: `${SITE_URL}${postPath(post)}` },
+    // 마감된 모임은 장소와 시간만 남은 얇은 페이지라 검색에 내보내지 않는다. 링크는 따라가게 둔다(#299)
+    ...(isOpen(post) ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       title: post.title,
       description,
