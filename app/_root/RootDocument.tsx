@@ -2,15 +2,16 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import "./globals.css";
-import "./a11y.css";
-import "./i18n.css";
+import "@/app/globals.css";
+import "@/app/a11y.css";
+import "@/app/i18n.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
 import LocaleProvider from "@/components/i18n/LocaleProvider";
 import SkipLink from "@/components/i18n/SkipLink";
 import { SITE_URL } from "@/lib/constants";
+import { HTML_LANG, type Locale } from "@/lib/i18n/config";
 
 const GTM_ID = "GTM-WG4J7BXL";
 
@@ -18,7 +19,11 @@ const SITE_NAME = "경찰과 도둑";
 const SITE_DESCRIPTION =
   "경찰과 도둑(경도) - GPS 기반 오프라인 술래잡기 게임. 친구들과 밖에서 직접 뛰며 놀던 그 놀이를 이제 앱과 함께 즐기세요.";
 
-export const metadata: Metadata = {
+// 언어별 루트 레이아웃 셋((ko)·(en)·(ja))이 함께 쓰는 문서 껍데기다(#301).
+// 루트 레이아웃이 하나면 서버가 언어를 몰라 <html lang> 을 ko 로만 보내서,
+// 언어마다 루트 레이아웃을 두고 lang 만 넘긴다. 메타데이터도 세 곳이 같은 값을 쓴다.
+
+export const rootMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_NAME,
@@ -101,7 +106,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = {
+export const rootViewport: Viewport = {
   colorScheme: "light dark",
 };
 
@@ -124,14 +129,16 @@ const organizationSchema = {
 // WebSite 스키마는 언어마다 이름·설명이 달라야 해서 각 언어 홈(WebsiteJsonLd)에서 렌더한다.
 // Organization은 언어와 무관한 팀 정보라 여기 둔다.
 
-export default function RootLayout({
+export default function RootDocument({
+  lang,
   children,
 }: Readonly<{
+  lang: Locale;
   children: React.ReactNode;
 }>) {
   return (
     <html
-      lang="ko"
+      lang={HTML_LANG[lang]}
       className="h-full antialiased"
       suppressHydrationWarning
     >
@@ -143,7 +150,7 @@ export default function RootLayout({
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname;var lg=(p==='/ja'||p.indexOf('/ja/')===0)?'ja':(p==='/en'||p.indexOf('/en/')===0)?'en':'ko';document.documentElement.lang=lg;var s=localStorage.getItem('team');var d=s==='robber'||(s!=='police'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#080a0c';}var l=document.createElement('link');l.rel='icon';l.type='image/svg+xml';l.href=d?'/favicon-dark.svg':'/favicon-light.svg';document.head.appendChild(l);if(localStorage.getItem('blog-view')==='list'){document.documentElement.dataset.blogView='list';}}catch(e){}})();`,
+            __html: `(function(){try{var s=localStorage.getItem('team');var d=s==='robber'||(s!=='police'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(m)m.content='#080a0c';}var l=document.createElement('link');l.rel='icon';l.type='image/svg+xml';l.href=d?'/favicon-dark.svg':'/favicon-light.svg';document.head.appendChild(l);if(localStorage.getItem('blog-view')==='list'){document.documentElement.dataset.blogView='list';}}catch(e){}})();`,
           }}
         />
         <Script id="gtm-init" strategy="afterInteractive">

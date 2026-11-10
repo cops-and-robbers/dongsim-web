@@ -7,7 +7,7 @@
 | 자리 | 하는 일 |
 | --- | --- |
 | 홈 소개 칸(`components/home/OnlineGameTeaserSection.tsx`) | "만들고 있어요"와 `/online` 링크. 게임이 한국어만 있어 한국어 홈에만 둬요 |
-| `/online`(`app/online/page.tsx`) | 게임의 `GET /status` 를 30초마다 서버에서 읽어 버튼을 바꿔요. 한국어 전용(`KO_ONLY_PATHS`) |
+| `/online`(`app/(ko)/online/page.tsx`) | 게임의 `GET /status` 를 30초마다 서버에서 읽어 버튼을 바꿔요. 한국어 전용(`KO_ONLY_PATHS`) |
 | 어드민 "온라인 게임" | 상태를 바꿔요. `docs/admin-ui.md` |
 
 ## 게임 장면은 실제 게임과 같게 배치해요

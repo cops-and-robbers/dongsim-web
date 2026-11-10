@@ -212,7 +212,7 @@
 
 신고 건수는 통합 신고(`adminAllReports`)에서 세요. `adminDashboard.pendingReportCount` 는 게임 채팅 신고만 세서 모집글, 커뮤니티 채팅 신고가 빠져요. 개요 화면도 같은 값으로 바꿨어요.
 
-## 앱 설정 (`app/admin/app-config/page.tsx`)
+## 앱 설정 (`app/(ko)/admin/app-config/page.tsx`)
 
 앱을 다시 배포하지 않고 바꾸는 Firebase Remote Config 값을 어드민에서 다뤄요. 값 이름과 규칙은 `lib/admin/appConfig.ts`, Firebase 호출은 `lib/admin/server/remoteConfig.ts` 예요. 콘솔을 없애는 게 아니라 평소 쓰는 11개만 안전하게 옮긴 거예요. 조건, 단계별 출시, 되돌리기는 콘솔에서 해요.
 
@@ -288,7 +288,7 @@ Firebase 프로젝트가 하나뿐이라 잘못하면 개발 중에 실제 값�
 2. 그 계정에 Firebase Remote Config 관리자(`roles/cloudconfig.admin`) 역할을 주고, Storage 버킷에는 저장소 개체 생성자(`roles/storage.objectCreator`)만 있으면 돼요. 지금 계정에는 저장소 개체 뷰어도 들어가 있는데, 그대로 둬도 괜찮아요. 지우는 권한은 주지 않아요.
 3. JSON 키를 Vercel 환경변수 `REMOTE_CONFIG_SERVICE_ACCOUNT_JSON` 에 넣어요(Production 만). `.env.local` 에는 넣지 않아요.
 
-## 온라인 게임 (`app/admin/webgame/page.tsx`, #209)
+## 온라인 게임 (`app/(ko)/admin/webgame/page.tsx`, #209)
 
 브라우저에서 하는 경찰과 도둑 온라인 게임(저장소 `cops-and-robbers-web-game`)을 공개 전, 누구나, 점검 중으로 바꿔요. 게임 서버가 상태를 들고 있고 어드민은 서버 경로(`app/api/admin/webgame`)를 거쳐 바꾸기만 해요. 게임 쪽 동작은 그 저장소 `docs/ops.md`.
 
@@ -308,7 +308,7 @@ Firebase 프로젝트가 하나뿐이라 잘못하면 개발 중에 실제 값�
 
 연결: Vercel 환경변수 `WEBGAME_ADMIN_KEY`(Production 만, 게임 서버의 `ADMIN_KEY` 와 같은 값)를 넣어요. 게임 주소가 `pages.dev` 가 아니면 `WEBGAME_URL` 도 넣어요. `.env.local` 에는 넣지 않아요.
 
-### 온라인 게임 모니터링 (`app/admin/webgame/monitor/page.tsx`, #223)
+### 온라인 게임 모니터링 (`app/(ko)/admin/webgame/monitor/page.tsx`, #223)
 
 "운영 상태"와 "모니터링" 두 탭으로 나눠요. 상태를 바꾸는 일과 판을 지켜보는 일은 하는 순간이 달라서예요(게임 메뉴의 열린 방, 지난 게임과 같은 모양).
 
@@ -349,7 +349,7 @@ Firebase 프로젝트가 하나뿐이라 잘못하면 개발 중에 실제 값�
 
 연결: Vercel Production 환경 변수 `CLOUDFLARE_ANALYTICS_TOKEN`(Cloudflare 사용자 지정 토큰, 권한은 "계정 > 계정 분석 > 읽기" 하나)과 `CLOUDFLARE_ACCOUNT_ID`(계정 번호)를 넣어요. 없으면 사용량 칸에 연결 안내만 떠요. 판 결과는 이미 있는 `WEBGAME_ADMIN_KEY` 로 읽어요.
 
-## 행사 (`app/admin/events`, #219)
+## 행사 (`app/(ko)/admin/events`, #219)
 
 행사 때 사용자가 보는 곳(포토부스 `/photobooth`, 홈 팝업, 행사 이야기 페이지 `/event`, 홈 미니게임 칸)의 값을 행사 하나로 묶어 재배포 없이 바꿔요.
 예전에는 Vercel 환경 변수(`NEXT_PUBLIC_PHOTOBOOTH_*`)와 코드에 흩어져 있어 행사마다 고치고 다시 배포했어요.
@@ -407,7 +407,7 @@ Firebase 프로젝트가 하나뿐이라 잘못하면 개발 중에 실제 값�
 
 키오스크는 하루 종일 켜 두니, 시작 화면과 닫힘 화면에 있을 때 30초마다 서버에서 설정을 다시 읽어요(`router.refresh`). 저장한 값과 "부스 지금 닫기"는 다음 손님부터 들어가고, 찍는 도중에는 바뀌지 않아요.
 
-### 그림 보관함 (`app/admin/assets`, #224)
+### 그림 보관함 (`app/(ko)/admin/assets`, #224)
 
 포토부스 프레임과 캐릭터를 디자이너가 직접 올리고, 행사 포토부스 탭에서 골라요. 예전에는 개발자가 그림을 `public/photobooth` 에 넣고 `scripts/render-frame.mjs` 로 칸을 재서 다시 배포했어요.
 
@@ -442,7 +442,7 @@ Firebase 프로젝트가 하나뿐이라 잘못하면 개발 중에 실제 값�
 Supabase SQL Editor 에서 `supabase/migrations/0013_event_settings.sql` 을 한 번 실행해요. 그 전에는 부스와 홈이 지난 값으로 돌고, 어드민은 "표가 아직 없어요"라고 알려요.
 Vercel 의 `NEXT_PUBLIC_PHOTOBOOTH_*` 환경 변수는 더 읽지 않아요. 지워도 돼요.
 
-## 동심지키미 소개 (`app/admin/company`, #250)
+## 동심지키미 소개 (`app/(ko)/admin/company`, #250)
 
 회사 소개의 걸어온 길, 수상 이력, 고마운 분들을 재배포 없이 고쳐요. 예전에는 코드에 적혀 있어 세 언어를 고치고 배포했고, 앱 크레딧과 웹 명단이 따로 있어 어긋났어요(3차 QA 참가자 5명이 앱에 빠졌어요).
 
@@ -517,7 +517,7 @@ Vercel 의 `NEXT_PUBLIC_PHOTOBOOTH_*` 환경 변수는 더 읽지 않아요. 지
 
 처음 연결: Supabase SQL Editor 에서 `supabase/migrations/0021_company_profile.sql` 을 한 번 실행해요. 명단 첫 값은 공개 저장소에 남지 않게 SQL Editor 에 따로 넣어요. **머지하기 전에 해요.** 표가 없으면 소개 페이지는 이전 페이지로 버티지만, 새로 빌드할 때 명단이 비어요.
 
-## 출시 (`app/admin/release`, #229)
+## 출시 (`app/(ko)/admin/release`, #229)
 
 App Store Connect 와 Play Console 을 오가며 맞춰 보던 출시 상태를 한 화면에서 봐요. 버튼으로 하는 조작은 아래 "출시 조작"이에요.
 
@@ -657,7 +657,7 @@ Android 버전은 Play 출시 이름("400 (4.0.1)")의 괄호 안에서 읽어�
 
 검증 스크립트(읽기와 미리 확인만, 스토어는 바뀌지 않아요): `node --env-file=.env.local scripts/release-dryrun.mjs`
 
-## 리뷰 (`app/admin/reviews`, #255)
+## 리뷰 (`app/(ko)/admin/reviews`, #255)
 
 두 스토어의 리뷰를 한곳에서 보고 답글을 써요. 2026-11-08 실제 값은 App Store 글 리뷰 4개(모두 5점, 26자 이하), Google Play 최근 7일 0개라서, 전문 도구의 담당자 배정, 태그, 자동 답글은 넣지 않았어요.
 
@@ -697,7 +697,7 @@ Android 버전은 Play 출시 이름("400 (4.0.1)")의 괄호 안에서 읽어�
 
 `supabase/migrations/0019_store_reviews.sql` 을 SQL Editor 에서 실행해요. 키는 출시 조작에 쓰는 `ASC_RELEASE_*`, `PLAY_RELEASE_SERVICE_ACCOUNT_JSON` 을 그대로 써요. Google Play 답글에는 서비스 계정에 "리뷰에 답글 달기" 권한이 있어야 해요.
 
-## 스토어 점검 (`app/admin/store-check`)
+## 스토어 점검 (`app/(ko)/admin/store-check`)
 
 콘솔마다 흩어진 경고와 기한을 지금 할 일부터 보여 줘요. 스토어에는 쓰지 않아요.
 
@@ -998,7 +998,7 @@ Supabase SQL Editor 에서 `supabase/migrations/0017_store_page_drafts.sql` 을 
 
 근거 문서: 애플 App Store Connect 도움말, 심사 지침, 제품 페이지, 검색 안내와 구글 Play Console 도움말(2026-11-08 확인). 화면의 "공식 안내" 링크가 원문이에요.
 
-## 운영진 (`app/admin/team`, #282)
+## 운영진 (`app/(ko)/admin/team`, #282)
 
 누가 어떤 일을 맡는지 적어 두고, 다음 단계에서 역할에 맞는 지표를 개요에 먼저 보여 주려고 만들었어요.
 

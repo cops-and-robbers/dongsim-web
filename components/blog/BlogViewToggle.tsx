@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 // 고른 값은 <html data-blog-view> 로 심고 CSS가 어느 쪽을 보여줄지 정한다(globals.css).
 // 이 컴포넌트는 목록을 직접 그리지 않는다. 목록을 React 상태로 고르면
 // 서버가 그린 카드형이 먼저 보였다가 목록형으로 튀기 때문.
-// 첫 페인트 값은 app/layout.tsx 의 <head> 스크립트가 이미 심어둔다.
+// 첫 페인트 값은 app/_root/RootDocument.tsx 의 <head> 스크립트가 이미 심어둔다.
 //
 // 그래서 여기서는 <html> 속성을 하나의 외부 저장소로 보고 구독한다.
 // React 상태를 따로 두면 진짜 값(DOM)과 두 벌이 되어 어긋날 수 있다.

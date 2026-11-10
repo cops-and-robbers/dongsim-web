@@ -92,7 +92,7 @@
 - `lib/constants.ts` -> `SITE_URL = "https://copsandrobbers.app"`
 - `app/sitemap.ts` -> `BASE_URL`
 - `app/robots.ts` -> `BASE_URL`
-- `app/page.tsx` -> 구조화 데이터(JSON-LD)의 url 값 여러 곳
+- `app/(ko)/page.tsx` -> 구조화 데이터(JSON-LD)의 url 값 여러 곳
 - README, docs의 링크는 선택(문서용).
 
 ### 3-3. 배포
@@ -152,6 +152,6 @@
 | BE | `common/config/WebConfig.java` | CORS origins(2블록) | 쉬움 |
 | BE | nginx/docker 호스트 설정 | server_name 등 | 중간(ops) |
 | 웹 | `.env.local` (NEXT_PUBLIC_API_BASE_URL 등) | 신 주소 | 쉬움 |
-| 웹 | `lib/constants.ts`, `app/sitemap.ts`, `app/robots.ts`, `app/page.tsx` | 자기 도메인 | 쉬움 |
+| 웹 | `lib/constants.ts`, `app/sitemap.ts`, `app/robots.ts`, `app/(ko)/page.tsx` | 자기 도메인 | 쉬움 |
 | 콘솔 | Firebase 승인 도메인, Maps 리퍼러 | 신 도메인 추가 | 쉬움 |
 | 인프라 | DNS, SSL(와일드카드), nginx, 301 리다이렉트 | 신 도메인 | 중간(ops) |

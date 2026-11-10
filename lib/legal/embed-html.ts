@@ -2,7 +2,7 @@
 //
 // React 컴포넌트가 아니라 문자열로 만드는 이유:
 //
-// app/layout.tsx 는 모든 라우트를 감싸고 Header·Footer·GTM 을 넣는다. page.tsx 로
+// 루트 레이아웃(app/_root/RootDocument.tsx)은 모든 페이지를 감싸고 Header·Footer·GTM 을 넣는다. page.tsx 로
 // 만들면 이걸 벗어날 수 없어서, 앱 안에서 약관을 열 때마다 GTM 이 웹 페이지뷰를
 // 쏘고 쓰지도 않는 헤더·푸터 JS 가 따라온다(실측 111KB, JS 7청크). Route Handler 는
 // 레이아웃을 타지 않으므로 응답을 통째로 우리가 정한다.
