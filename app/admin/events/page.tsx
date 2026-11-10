@@ -5,12 +5,13 @@ import { useCallback, useEffect, useState } from "react";
 import { ErrorBlock, PageHeader, ScrollPage, SectionCard } from "@/components/admin/Parts";
 import { Pill } from "@/components/admin/StatusBadge";
 import { ChevronRightIcon } from "@/components/admin/icons";
+import { SCHEDULE_HREF } from "@/components/admin/nav";
 import { fetchEvents } from "@/lib/admin/eventsClient";
 import type { EventsList, EventsListItem } from "@/lib/event/adminApi";
 import { boothState, dateLabelOf, kstNow, readiness, toMs } from "@/lib/event/settings";
 
 // 어드민 "행사" 목록 (#219, docs/admin-ui.md "행사").
-// 행사는 지표 일정에서 성격을 행사로 둔 날이다. 여기서 새로 만들지 않는다(일정 하나를 두 곳에서 만들면 갈린다).
+// 행사는 일정(#302)에서 성격을 행사로 둔 날이다. 여기서 새로 만들지 않는다(일정 하나를 두 곳에서 만들면 갈린다).
 // 오늘 행사가 있으면 맨 위에 크게 둔다. 행사 날 현장에서 폰으로 들어와 바로 누르게.
 
 export default function EventsPage() {
@@ -38,7 +39,7 @@ export default function EventsPage() {
     <ScrollPage>
       <PageHeader
         title="행사"
-        description="포토부스, 홈 팝업, 행사 페이지를 행사 하나로 정해요. 행사는 지표 일정에서 성격을 “행사”로 둔 날이에요."
+        description="포토부스, 홈 팝업, 행사 페이지를 행사 하나로 정해요. 행사는 일정에서 성격을 “행사”로 둔 날이에요."
       />
       {error ? (
         <ErrorBlock message={error} onRetry={load} />
@@ -57,9 +58,9 @@ export default function EventsPage() {
               <Rows items={upcoming} today={today} />
             ) : (
               <p className="px-5 py-6 text-[14px] leading-relaxed text-sd-fg-subtle">
-                다가오는 행사가 없어요. 지표 화면 아래 일정 달력에서 날짜를 누르고 성격을 “행사”로 넣으면 여기 생겨요.{" "}
-                <Link href="/admin/metrics" className="font-semibold text-accent hover:underline">
-                  지표 일정으로 가기
+                다가오는 행사가 없어요. 일정 달력에서 날짜를 누르고 성격을 “행사”로 넣으면 여기 생겨요.{" "}
+                <Link href={SCHEDULE_HREF} className="font-semibold text-accent hover:underline">
+                  일정으로 가기
                 </Link>
               </p>
             )}

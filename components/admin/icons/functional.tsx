@@ -296,7 +296,7 @@ export function HistoryIcon({ className }: IconProps) {
 }
 
 export function CalendarIcon({ className }: IconProps) {
-  // Lucide 'calendar'. 지표 화면(#145) 기간 직접 고르기. 원본 path 그대로.
+  // Lucide 'calendar'. 지표 화면(#145) 기간 직접 고르기, 메뉴 "일정"(#302). 원본 path 그대로.
   return (
     <Line className={className}>
       <path d="M8 2v4" />

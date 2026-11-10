@@ -11,6 +11,7 @@ import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { Pill } from "@/components/admin/StatusBadge";
 import { useToast } from "@/components/admin/Toast";
 import { CheckIcon } from "@/components/admin/icons";
+import { SCHEDULE_HREF } from "@/components/admin/nav";
 import { PreviewPane } from "@/components/admin/ops/PreviewPane";
 import { HttpsUrlInput } from "@/components/admin/appConfig/fields";
 import { BoothTab } from "@/components/admin/events/BoothTab";
@@ -233,14 +234,14 @@ function Loaded({
             <PhasePill event={event} settings={detail.settings} now={now} />
           </span>
         }
-        description={`${dateLabelOf(event)} · 지표 일정 "${event.label}"`}
+        description={`${dateLabelOf(event)} · 일정 "${event.label}"`}
       />
 
       <div className="mb-5 space-y-3">
         {!writable && <Callout variant="warning">이 환경에서는 볼 수만 있어요. 저장소는 실제 부스, 홈과 같이 쓰여서 운영 어드민에서만 바꿔요.</Callout>}
         {detail.version === 0 && (
           <Callout variant="info" title="아직 저장한 적 없는 행사예요">
-            지표 일정에서 이름과 날짜를 가져와 채워 두었어요. 저장해야 부스와 홈에 나가요.
+            일정에서 이름과 날짜를 가져와 채워 두었어요. 저장해야 부스와 홈에 나가요.
           </Callout>
         )}
         {conflict && (
@@ -442,7 +443,7 @@ function Overview({
       : state === "closed"
         ? { dot: "bg-sd-critical", title: "부스를 닫아 두었어요", sub: "운영 시간이 와도 열리지 않아요. 손님에게는 준비 중 화면이 보여요.", action: <Button disabled={!writable || dirty || saving} onClick={() => setConfirm("open")}>부스 다시 열기</Button> }
         : state === "after"
-          ? { dot: "bg-sd-gray-400", title: "행사가 끝났어요", sub: "부스는 감사 인사를 보여요. 행사 게임 성적표는 지표 화면 아래에 있어요.", action: <Link href="/admin/metrics" className="inline-flex h-10 items-center rounded-xl bg-sd-gray-200 px-4 text-[14px] font-semibold text-sd-fg-muted hover:bg-sd-gray-300">성적표 보기</Link> }
+          ? { dot: "bg-sd-gray-400", title: "행사가 끝났어요", sub: "부스는 감사 인사를 보여요. 행사 게임 성적표는 일정 화면에 있어요.", action: <Link href={`${SCHEDULE_HREF}?day=${event.day}`} className="inline-flex h-10 items-center rounded-xl bg-sd-gray-200 px-4 text-[14px] font-semibold text-sd-fg-muted hover:bg-sd-gray-300">성적표 보기</Link> }
           : {
               dot: left ? "bg-sd-warning" : "bg-sd-info",
               title: left ? `준비할 것 ${left}개가 남았어요` : days > 0 ? `${days}일 남았어요, 준비는 다 됐어요` : "오늘이에요, 준비는 다 됐어요",
@@ -653,7 +654,7 @@ function InfoTab({ draft, set, problems, spot, onSpot, disabled, event }: TabPro
             error={problems.dateLabel}
             hint={
               draft.dateLabel === auto ? (
-                "지표 일정의 날짜와 시간으로 만들었어요. 비우면 그 줄을 빼요."
+                "일정의 날짜와 시간으로 만들었어요. 비우면 그 줄을 빼요."
               ) : (
                 <span className="inline-flex flex-wrap items-center gap-x-2">
                   일정으로 만들면 “{auto}”이에요.

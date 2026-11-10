@@ -10,7 +10,7 @@ import type { EventReport as Report, ReportGame } from "@/lib/metrics/eventRepor
 import type { MetricsEvent } from "@/lib/metrics/events";
 
 /**
- * 행사 성적표 (#165). 지표 화면 요약 탭, 일정 달력 위.
+ * 행사 성적표 (#165). 어드민 "일정" 화면(#302), 달력 위.
  *
  * 지표 화면은 "사용자가 늘고 있나"를 보려고 운영진을 뺀다. 여기는 "행사에서 무엇을 했나"를 보려고
  * 운영진을 빼지 않고 나눠 보여 준다(운영진끼리 한 시연 판도 따로 센다). 계산은 lib/metrics/eventReport.ts.
@@ -31,7 +31,7 @@ const num = (v: number | null, unit: string) => (v === null ? "-" : `${v.toLocal
 
 type Loaded = { status: "ok"; report: Report; gamesError: string | null } | { status: "upcoming"; event: MetricsEvent };
 
-export function EventReport({ today, refresh }: { today: string; refresh: unknown }) {
+export function EventReport({ today, refresh, initialDay }: { today: string; refresh: unknown; /** 이날 행사가 있으면 처음에 그 행사를 연다(행사 화면의 "성적표 보기") */ initialDay?: string }) {
   const [events, setEvents] = useState<MetricsEvent[] | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   const [data, setData] = useState<{ id: number; body: Loaded } | null>(null);
@@ -52,9 +52,10 @@ export function EventReport({ today, refresh }: { today: string; refresh: unknow
     };
   }, [refresh]);
 
-  // 처음엔 가장 가까운 행사: 앞으로 있을 행사 중 가장 이른 것, 없으면 가장 최근에 끝난 것
+  // 처음엔 주소로 넘어온 날의 행사, 없으면 가장 가까운 행사: 앞으로 있을 행사 중 가장 이른 것, 없으면 가장 최근에 끝난 것
   const upcoming = (events ?? []).filter((e) => e.day >= today);
-  const id = picked ?? (upcoming.at(-1) ?? events?.[0])?.id ?? null;
+  const asked = initialDay ? events?.find((e) => e.day === initialDay) : undefined;
+  const id = picked ?? (asked ?? upcoming.at(-1) ?? events?.[0])?.id ?? null;
 
   useEffect(() => {
     if (id === null) return;

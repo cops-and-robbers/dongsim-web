@@ -9,8 +9,7 @@ import { Table, Td, Th, Tr } from "@/components/admin/Table";
 import { FadeIn } from "@/components/admin/motion";
 import { TrendChart, type Marker } from "@/components/admin/metrics/TrendChart";
 import { DateRangePicker, type DayRange } from "@/components/admin/metrics/DateRangePicker";
-import { EventReport } from "@/components/admin/metrics/EventReport";
-import { EventsCalendar } from "@/components/admin/metrics/EventsCalendar";
+import { ScheduleList } from "@/components/admin/metrics/ScheduleList";
 import { LinksPanel } from "@/components/admin/metrics/LinksPanel";
 import { PostDrawer } from "@/components/admin/metrics/PostDrawer";
 import { FunnelCard } from "@/components/admin/metrics/FunnelCard";
@@ -37,7 +36,7 @@ import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
  * 지표 (#145). 매일 아침 모으는 인스타, 사이트, 스토어, 앱, 광고 숫자를 본다.
  *
  * 탭 다섯으로 나눈다. 매일 여는 사람은 요약만 보고, 맡은 일이 있는 사람은 그 탭으로 간다.
- * - 요약: 앱 첫 실행 큰 숫자, 모든 경로를 합친 흐름, 핵심 비율, 인스타그램에서 온 것, 일정
+ * - 요약: 앱 첫 실행 큰 숫자, 모든 경로를 합친 흐름, 핵심 비율, 인스타그램에서 온 것, 이 기간 일정(넣고 고치기는 어드민 "일정", #302)
  * - 인스타그램: 계정 지표와 비율, 팔로워, 게시물별 숫자(정렬)
  * - 유입 경로: 채널별 방문과 전환율, 소스별 표
  * - 스토어: 전체 / App Store / Google Play 를 골라 본다(#147). 스토어 화면에서 설치까지, 나라별,
@@ -332,7 +331,6 @@ export default function MetricsPage() {
                 store={store}
                 onStore={(v) => setParams({ store: v === "all" ? null : v })}
                 yesterday={yesterday}
-                onChanged={reload}
                 onCompareEvent={(day) => {
                   // 행사 효과: 그날부터 7일(어제까지)을 바로 앞 같은 길이와 비교한다
                   const to = addDays(day, 6) > yesterday ? yesterday : addDays(day, 6);
@@ -553,7 +551,6 @@ function MetricsBody({
   store,
   onStore,
   yesterday,
-  onChanged,
   onCompareEvent,
 }: {
   d: Dashboard;
@@ -562,7 +559,6 @@ function MetricsBody({
   store: Store;
   onStore: (s: Store) => void;
   yesterday: string;
-  onChanged: () => void;
   onCompareEvent: (day: string) => void;
 }) {
   const cw = useCompare().word;
@@ -738,13 +734,12 @@ function MetricsBody({
             </Group>
           </FadeIn>
 
-          <FadeIn delay={0.16}>
-            <EventReport today={addDays(yesterday, 1)} refresh={d.events} />
-          </FadeIn>
-
-          <FadeIn delay={0.2}>
-            <EventsCalendar initialMonth={d.range.end} today={addDays(yesterday, 1)} onChanged={onChanged} onCompare={onCompareEvent} />
-          </FadeIn>
+          {/* 일정은 어드민 "일정" 화면에서 넣고 고친다(#302). 여기는 이 기간 일정을 읽기만 */}
+          {d.events && (
+            <FadeIn delay={0.16}>
+              <ScheduleList events={d.events} range={d.range} yesterday={yesterday} onCompare={onCompareEvent} />
+            </FadeIn>
+          )}
         </>
       )}
 

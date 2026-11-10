@@ -13,6 +13,8 @@ import { mockCreateTemplate, mockDeleteTemplate, mockInbox, mockPatchReview, moc
 import { mockPatchCheck, mockStoreCheck } from "./storeCheck";
 import { mockSaveLayout, mockSaveRole, mockSaveRoles, mockTeam } from "./team";
 import { mockOverview } from "./overview";
+import { mockAddSchedule, mockEditSchedule, mockRemoveSchedule, mockSchedule, mockScheduleReport } from "./schedule";
+import { todayIn } from "@/lib/metrics/dates";
 import {
   queryUsers,
   getUser,
@@ -430,6 +432,45 @@ export const handlers = [
     await delay(500);
     const { status, body } = mockSaveEvent(Number(params.id), (await request.json()) as { settings?: unknown; version?: number });
     return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  // 일정(#302). 로컬에서는 실제 일정(metrics_events)에 닿지 않는다. 행사 게임과 성적표는 게임 기록, 지표 숫자가 없어 안내만
+  http.get("/api/admin/metrics/events", async () => {
+    await delay(300);
+    return HttpResponse.json(mockSchedule());
+  }),
+
+  http.post("/api/admin/metrics/events", async ({ request }) => {
+    await delay(400);
+    const { status, body } = mockAddSchedule((await request.json()) as Parameters<typeof mockAddSchedule>[0]);
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.patch("/api/admin/metrics/events", async ({ request }) => {
+    await delay(400);
+    const id = Number(new URL(request.url).searchParams.get("id"));
+    const { status, body } = mockEditSchedule(id, (await request.json()) as Parameters<typeof mockEditSchedule>[1]);
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.delete("/api/admin/metrics/events", async ({ request }) => {
+    await delay(300);
+    mockRemoveSchedule(Number(new URL(request.url).searchParams.get("id")));
+    return HttpResponse.json({ ok: true });
+  }),
+
+  http.get("/api/admin/metrics/event-report", async ({ request }) => {
+    await delay(400);
+    const { status, body } = mockScheduleReport(Number(new URL(request.url).searchParams.get("id")), todayIn("Asia/Seoul"));
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.get("/api/admin/metrics/event-games", async ({ request }) => {
+    await delay(300);
+    const id = Number(new URL(request.url).searchParams.get("id"));
+    const event = mockSchedule().find((e) => e.id === id);
+    if (event && event.day > todayIn("Asia/Seoul")) return HttpResponse.json({ status: "upcoming" });
+    return HttpResponse.json({ error: "로컬에서는 게임 기록이 없어 행사 게임을 고를 수 없어요." }, { status: 503 });
   }),
 
   // 회사 소개(#250). 로컬에서는 실제 소개 페이지가 읽는 저장소에 닿지 않는다
