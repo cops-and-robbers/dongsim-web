@@ -75,7 +75,7 @@
 | 묶음 | 아이콘 | 출처 |
 | --- | --- | --- |
 | SNS | 인스타그램, 유튜브, 틱톡, X, 스레드, 페이스북, 카카오톡, 네이버, 디스코드, 링크트리 | 인스타, 유튜브는 디자이너 원본에 맞춰 그림. 나머지는 [Simple Icons](https://simpleicons.org) 16.37.0(CC0) 원본 path 를 앱 아이콘처럼 둥근 네모에 올림 |
-| 스토어, 앱 | App Store, Google Play, 경찰과도둑 앱 | 어드민 브랜드 마크(`components/admin/icons/brand.tsx`). 앱 아이콘은 디자이너가 준 새 그림(2026-11-10, `public/qr-print/icons/app.png`, 1024px). 사이트 아이콘 `/brand/app-icon.png` 는 메타데이터와 사이트맵도 써서 따로 둬요 |
+| 스토어, 앱 | App Store, Google Play, 경찰과도둑 앱 | 어드민 브랜드 마크(`components/admin/icons/brand.tsx`). 앱 아이콘은 디자이너가 준 새 그림(2026-11-10, `public/qr-print/icons/app.png`, 1024px). 모서리는 디자이너의 둥근 앱 아이콘(발표, 포스터, 웹용)과 같은 비율(짧은 변의 22.3%)로 둥글게 깎았어요. 사이트 아이콘 `/brand/app-icon.png` 는 메타데이터와 사이트맵도 써서 따로 둬요 |
 | 기본 | 구글 폼, 신청서, 웹사이트, 행사, 경품, 일정, 장소 | 구글 폼은 Simple Icons, 나머지는 [Lucide](https://lucide.dev)(ISC) 원본 path 를 테두리 파랑 네모에 흰 선으로 |
 | 캐릭터 | 냥파, 도둥이, 냥파 추격, 도둥이 도망 | `public/characters`. 둘레 여백이 넓어 1.5배 칸에 넣어요. 두 진영은 같은 수로 둬요 |
 | 보관함 | 디자이너가 그림 보관함 > QR 아이콘에 올린 것(#296) | 숨긴 것은 빼고 새것부터. 화면에서 "올리기"를 누르면 여기로 올라가요 |
