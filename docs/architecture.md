@@ -37,6 +37,8 @@
 
 `/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 다국어 라우팅용 `proxy.ts`도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/en/*`·`app/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
 
+사이트맵에는 검색으로 찾아올 주소만 넣는다(#299). 법적 문서, 체험(`/demo`), 마감된 모집글은 빼고, 마감된 모집글 상세는 `noindex, follow`다. `lastModified` 는 블로그 글 날짜, 모집글 `updatedAt` 처럼 정확히 아는 값만 넣고 고정 페이지에는 넣지 않는다.
+
 ## 컴포넌트 (`components/`)
 
 | 폴더 | 내용 |
