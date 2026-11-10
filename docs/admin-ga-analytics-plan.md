@@ -122,7 +122,7 @@ GA4 대시보드를 iframe으로 임베드하는 방식은 별도 로그인이 �
 | --- | --- |
 | 쿼리 | `lib/admin/gql/AdminAnalytics.ts` |
 | 계약 타입 | `schema.graphql`의 `AdminAnalytics` 외 |
-| 분석 페이지 UI | `app/admin/analytics/page.tsx` |
+| 분석 페이지 UI | `app/(ko)/admin/analytics/page.tsx` |
 | 목 데이터 | `lib/admin-mock/data.ts` (현재는 MSW 목으로만 동작) |
 
 즉 백엔드가 `adminAnalytics`를 계약대로 구현하면, 프론트는 `GRAPHQL_ENDPOINT`만 실제 서버로 바꾸면 붙습니다.

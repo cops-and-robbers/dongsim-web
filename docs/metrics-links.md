@@ -15,7 +15,7 @@
 
 ```
 QR / 짧은 주소  copsandrobbers.app/q/nowon
-  -> /q/[code] (app/q/[code]/route.ts)  등록된 꼬리표를 붙여 302
+  -> /q/[code] (app/(ko)/q/[code]/route.ts)  등록된 꼬리표를 붙여 302
   -> /download?utm_source=booth&utm_medium=qr&utm_campaign=nowon-festival-2026
   -> 기기를 보고 스토어로. Play 는 referrer, App Store 는 캠페인 토큰 ct 로 꼬리표를 이어 넘김 (lib/download/campaign.ts)
 ```

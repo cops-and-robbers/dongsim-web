@@ -44,7 +44,7 @@ content/legal/<locale>/<doc>.json     ← 정본. 여기만 고친다
 
 ## embed 는 왜 Route Handler 인가
 
-`app/layout.tsx` 는 모든 라우트를 감싸고 Header·Footer·GTM 을 넣는다. `page.tsx` 로 만들면 이걸 벗어날 수 없다. 실측하면 이렇게 된다.
+루트 레이아웃(`app/_root/RootDocument.tsx`)은 모든 페이지를 감싸고 Header·Footer·GTM 을 넣는다. `page.tsx` 로 만들면 이걸 벗어날 수 없다. 실측하면 이렇게 된다.
 
 | | page.tsx | route.ts |
 | --- | --- | --- |

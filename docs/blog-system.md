@@ -8,7 +8,7 @@
 노션 DB (공개 체크된 글)
   → lib/blog/notion.ts (getPosts(locale) / getAllPosts / getBlocks)
   → components/blog/BlogList.tsx · BlogPost.tsx (언어 무관 공용 화면)
-  → app/blog · app/ja/blog · app/en/blog (얇은 로케일 라우트, 목록 ISR 60초 / 본문 300초)
+  → app/(ko)/blog · app/(ja)/ja/blog · app/(en)/en/blog (얇은 로케일 라우트, 목록 ISR 60초 / 본문 300초)
   → components/blog/NotionBlocks.tsx (블록 → 사이트 마크업)
 ```
 
@@ -67,7 +67,7 @@
 ## 부가 기능
 
 - 작성자 아바타·GitHub 링크: `lib/blog/authors.ts`가 `lib/constants.ts` 팀원과 이름 매칭
-- 글별 동적 OG 카드: `app/blog/[slug]/opengraph-image.tsx` (제목+작성자, 날짜·태그는 의도적 제외)
+- 글별 동적 OG 카드: `app/(ko)/blog/[slug]/opengraph-image.tsx` (제목+작성자, 날짜·태그는 의도적 제외)
 - SEO: Article JSON-LD(`components/seo/ArticleJsonLd.tsx`), sitemap 자동 등록, RSS(`/rss.xml`)
 - 페이지 타이틀은 이름만 (루트 레이아웃 템플릿이 `| 경찰과 도둑`을 붙인다 - 중복 금지)
 

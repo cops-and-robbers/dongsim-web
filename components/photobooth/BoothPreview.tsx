@@ -17,7 +17,7 @@ import { frameDefsOf, pickCount, type FrameDef } from "./frames";
 import { loadImage } from "./image";
 import { useSamplePhotos } from "./samplePhotos";
 
-// 어드민 미리보기용 부스 화면(#221, app/photobooth/preview). 진짜 화면 컴포넌트를 그대로 그리고, 사진만 샘플을 쓴다.
+// 어드민 미리보기용 부스 화면(#221, app/(ko)/photobooth/preview). 진짜 화면 컴포넌트를 그대로 그리고, 사진만 샘플을 쓴다.
 // 어드민이 보내는 값: 어느 화면인지, 고치는 중인 행사 설정, 짚을 자리(spot).
 
 export type PreviewMessage = { type: "booth-preview"; screen: Screen; settings: EventSettings; spot: string | null; theme: "light" | "dark" };
