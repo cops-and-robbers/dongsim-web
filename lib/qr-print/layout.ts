@@ -30,15 +30,17 @@ export type TextRule = {
   pitch: number;
   /** 줄 폭이 이보다 넓으면 글자를 줄인다 */
   maxWidth: number;
+  /** 자간(글자 크기 대비). 원본 줄 폭을 같은 글꼴 폭과 비교해 잰 값 */
+  tracking: number;
 };
 
 export const SINGLE = {
-  title: { ink: 72, pitch: 102, maxWidth: 940 } satisfies TextRule,
+  title: { ink: 72, pitch: 102, maxWidth: 940, tracking: 0.028 } satisfies TextRule,
   /** 제목 두 줄의 첫 줄 잉크 윗선. 한 줄이면 두 줄 묶음의 가운데에 둔다 */
   titleTop: 269,
   /** QR 점 영역(둘레 여백 없이). 뒤의 흰 칸은 바탕에 그려져 있다(사방 25px, 한 변의 4.6%) */
   qr: { cx: CENTER_X, cy: 823, size: 540 },
-  caption: { ink: 35, pitch: 47, maxWidth: 960 } satisfies TextRule,
+  caption: { ink: 35, pitch: 47, maxWidth: 960, tracking: 0.028 } satisfies TextRule,
   captionTop: 1152,
 } as const;
 
@@ -49,13 +51,13 @@ export const DOUBLE = {
   leftX: 364,
   /** 아이콘이 들어가는 칸. 비율을 지켜 이 안에 맞춘다 */
   icon: { width: 117, height: 112 },
-  /** 아이콘 아래와 제목 사이 */
-  iconGap: 45,
-  title: { ink: 70, pitch: 98, maxWidth: 450 } satisfies TextRule,
+  /** 아이콘 아래와 제목 한글 윗선 사이. 원본 유튜브 칸 47, 인스타 칸 53 의 가운데 */
+  iconGap: 48,
+  title: { ink: 70, pitch: 98, maxWidth: 450, tracking: 0 } satisfies TextRule,
   qr: { cx: 881, size: 340 },
   /** QR 아랫선에서 안내 첫 줄 잉크 윗선까지 */
   captionGap: 44,
-  caption: { ink: 22, pitch: 30, maxWidth: 400 } satisfies TextRule,
+  caption: { ink: 22, pitch: 30, maxWidth: 400, tracking: 0.028 } satisfies TextRule,
 } as const;
 
 /** 안내 문구 둘째 줄은 앞부분을 파랗게 강조한다. "이벤트용 게임방" + "으로 이동합니다." */
@@ -148,21 +150,24 @@ export function fitIcon(w: number, h: number, box: { width: number; height: numb
 /** 빈 줄을 빼고 남은 줄 */
 export const linesOf = (pair: readonly string[]): string[] => pair.map((l) => l.trim()).filter(Boolean);
 
-/** 글자 묶음의 잉크 높이: 첫 줄 윗선부터 마지막 줄 아랫선까지 */
-export const blockHeight = (lines: number, rule: TextRule): number => (lines <= 0 ? 0 : (lines - 1) * rule.pitch + rule.ink);
+/**
+ * 글자 묶음의 잉크 높이: 첫 줄 윗선부터 마지막 줄 아랫선까지.
+ * k 는 넘쳐서 줄인 비율. 글자와 줄 간격을 같은 비율로 줄인다(디자이너 원본의 인스타 제목이 이렇게 줄어 있다)
+ */
+export const blockHeight = (lines: number, rule: TextRule, k = 1): number => (lines <= 0 ? 0 : ((lines - 1) * rule.pitch + rule.ink) * k);
 
 /** 한 개짜리 제목 첫 줄 윗선. 한 줄이면 두 줄 자리의 가운데에 둔다 */
-export function singleTitleTop(lines: number): number {
+export function singleTitleTop(lines: number, k = 1): number {
   const full = blockHeight(2, SINGLE.title);
-  return SINGLE.titleTop + (full - blockHeight(lines, SINGLE.title)) / 2;
+  return SINGLE.titleTop + (full - blockHeight(lines, SINGLE.title, k)) / 2;
 }
 
 /**
  * 두 개짜리 왼쪽 묶음(아이콘 + 제목)의 세로 자리. 묶음 가운데가 그 칸 QR 가운데와 같다.
  * 원본 두 칸 모두 이 규칙으로 놓여 있다(인스타 묶음 360-680 가운데 520, QR 가운데 517)
  */
-export function doubleLeftBlock(rowCy: number, iconHeight: number, titleLines: number) {
-  const title = blockHeight(titleLines, DOUBLE.title);
+export function doubleLeftBlock(rowCy: number, iconHeight: number, titleLines: number, k = 1) {
+  const title = blockHeight(titleLines, DOUBLE.title, k);
   const gap = iconHeight > 0 && title > 0 ? DOUBLE.iconGap : 0;
   const total = iconHeight + gap + title;
   const top = rowCy - total / 2;

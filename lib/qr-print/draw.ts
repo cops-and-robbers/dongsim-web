@@ -125,20 +125,33 @@ export const SHRINK_WARN = 0.8;
 /** QR 한 칸이 이보다 작으면 알려 준다. 폰 카메라로 30cm 안쪽에서 읽히는 선(ISO/IEC 18004 권장 X 치수 0.5mm 근처) */
 export const MODULE_WARN_MM = 0.6;
 
-const widthOf = (ctx: Ctx, runs: Run[]) => runs.reduce((s, r) => s + ctx.measureText(r.text).width, 0);
+/** 자간을 넣은 폭. 캔버스 letterSpacing 은 마지막 글자 뒤에도 붙으니 하나 뺀다 */
+function widthOf(ctx: Ctx, runs: Run[], spacing: number): number {
+  return runs.reduce((s, r) => s + ctx.measureText(r.text).width, 0) - (runs.some((r) => r.text) ? spacing : 0);
+}
 
-/** 여러 색 조각으로 된 한 줄을 cx 가운데에 맞춰 그린다. 폭이 넘치면 그 줄 글자를 줄이고 비율을 돌려준다 */
-function drawLine(ctx: Ctx, runs: Run[], cx: number, inkTop: number, template: string, rule: TextRule): number {
+function setFont(ctx: Ctx, template: string, size: number, rule: TextRule): number {
+  ctx.font = template.replace("{size}", size.toFixed(2));
+  const spacing = size * rule.tracking;
+  ctx.letterSpacing = `${spacing.toFixed(2)}px`;
+  return spacing;
+}
+
+/**
+ * 여러 색 조각으로 된 한 줄을 cx 가운데에 맞춰 그린다. 폭이 넘치면 그 줄 글자를 줄이고 비율을 돌려준다.
+ * fixedK 를 주면 그 비율로 그리고 잉크 윗선을 inkTop 에 맞춘다(제목 묶음을 한꺼번에 줄일 때)
+ */
+function drawLine(ctx: Ctx, runs: Run[], cx: number, inkTop: number, template: string, rule: TextRule, fixedK?: number): number {
   const base = fontFor(ctx, template, rule.ink);
-  ctx.font = base.font;
-  let w = widthOf(ctx, runs);
-  // 넘치면 줄인다. 줄인 줄은 잉크가 낮아지니 원래 줄 자리의 세로 가운데에 둔다
-  const k = w > rule.maxWidth ? rule.maxWidth / w : 1;
+  let spacing = setFont(ctx, template, base.size, rule);
+  let w = widthOf(ctx, runs, spacing);
+  // 넘치면 줄인다. 혼자 줄인 줄은 잉크가 낮아지니 원래 줄 자리의 세로 가운데에 둔다
+  const k = fixedK ?? (w > rule.maxWidth ? rule.maxWidth / w : 1);
   if (k < 1) {
-    ctx.font = template.replace("{size}", (base.size * k).toFixed(2));
-    w = widthOf(ctx, runs);
+    spacing = setFont(ctx, template, base.size * k, rule);
+    w = widthOf(ctx, runs, spacing);
   }
-  const baseline = inkTop + (rule.ink * (1 - k)) / 2 + base.ascent * k;
+  const baseline = inkTop + (fixedK === undefined ? (rule.ink * (1 - k)) / 2 : 0) + base.ascent * k;
   ctx.textBaseline = "alphabetic";
   ctx.textAlign = "left";
   let x = cx - w / 2;
@@ -147,6 +160,7 @@ function drawLine(ctx: Ctx, runs: Run[], cx: number, inkTop: number, template: s
     ctx.fillText(r.text, x, baseline);
     x += ctx.measureText(r.text).width;
   }
+  ctx.letterSpacing = "0px";
   return k;
 }
 
@@ -156,9 +170,11 @@ function drawLine(ctx: Ctx, runs: Run[], cx: number, inkTop: number, template: s
  */
 export function wrapTitle(ctx: Ctx, lines: string[], template: string, rule: TextRule): string[] {
   if (lines.length !== 1) return lines;
-  ctx.font = fontFor(ctx, template, rule.ink).font;
+  const spacing = setFont(ctx, template, fontFor(ctx, template, rule.ink).size, rule);
   const one = lines[0];
-  if (ctx.measureText(one).width <= rule.maxWidth) return lines;
+  const fits = widthOf(ctx, [{ text: one, color: "" }], spacing) <= rule.maxWidth;
+  ctx.letterSpacing = "0px";
+  if (fits) return lines;
   const spaces = [...one.matchAll(/ /g)].map((m) => m.index!);
   if (spaces.length === 0) return lines;
   const mid = one.length / 2;
@@ -166,11 +182,17 @@ export function wrapTitle(ctx: Ctx, lines: string[], template: string, rule: Tex
   return [one.slice(0, at).trim(), one.slice(at + 1).trim()].filter(Boolean);
 }
 
-function drawTitle(ctx: Ctx, lines: string[], cx: number, top: number, fonts: Fonts, rule: TextRule, where: string, report: DrawReport) {
-  lines.forEach((l, i) => {
-    const k = drawLine(ctx, [{ text: l, color: COLORS.title }], cx, top + i * rule.pitch, fonts.title, rule);
-    if (k < SHRINK_WARN) report.shrunk.push({ where: `${where}제목 ${i + 1}줄`, text: l, k });
-  });
+/** 제목 묶음을 줄일 비율. 가장 넘치는 줄에 맞춰 모든 줄을 같은 크기로 줄인다(디자이너 원본의 인스타 제목이 이렇다) */
+export function titleScale(ctx: Ctx, lines: string[], template: string, rule: TextRule): number {
+  const spacing = setFont(ctx, template, fontFor(ctx, template, rule.ink).size, rule);
+  const widest = Math.max(0, ...lines.map((l) => widthOf(ctx, [{ text: l, color: "" }], spacing)));
+  ctx.letterSpacing = "0px";
+  return widest > rule.maxWidth ? rule.maxWidth / widest : 1;
+}
+
+function drawTitle(ctx: Ctx, lines: string[], k: number, cx: number, top: number, fonts: Fonts, rule: TextRule, where: string, report: DrawReport) {
+  lines.forEach((l, i) => drawLine(ctx, [{ text: l, color: COLORS.title }], cx, top + i * rule.pitch * k, fonts.title, rule, k));
+  if (k < SHRINK_WARN) report.shrunk.push({ where: `${where}제목`, text: lines.join(" "), k });
 }
 
 function drawCaption(ctx: Ctx, c: Caption, cx: number, top: number, fonts: Fonts, rule: TextRule, where: string, report: DrawReport) {
@@ -233,7 +255,8 @@ export async function drawSheet(ctx: Ctx, scale: number, { sheet, siteUrl, fonts
 
   if (sheet.layout === "single") {
     const title = wrapTitle(ctx, linesOf(sheet.title), fonts.title, SINGLE.title);
-    drawTitle(ctx, title, CENTER_X, singleTitleTop(title.length), fonts, SINGLE.title, "", report);
+    const k = titleScale(ctx, title, fonts.title, SINGLE.title);
+    drawTitle(ctx, title, k, CENTER_X, singleTitleTop(title.length, k), fonts, SINGLE.title, "", report);
     drawQr(ctx, linkUrl(sheet.link, siteUrl), SINGLE.qr.cx, SINGLE.qr.cy, SINGLE.qr.size, "QR", report);
     drawCaption(ctx, sheet.caption, CENTER_X, SINGLE.captionTop, fonts, SINGLE.caption, "", report);
   } else {
@@ -243,9 +266,10 @@ export async function drawSheet(ctx: Ctx, scale: number, { sheet, siteUrl, fonts
       const img = icons[i];
       const fit = img ? fitIcon(sizeOf(img).w, sizeOf(img).h, iconBox(row.icon)) : { width: 0, height: 0 };
       const title = wrapTitle(ctx, linesOf(row.title), fonts.title, DOUBLE.title);
-      const block = doubleLeftBlock(cy, fit.height, title.length);
+      const k = titleScale(ctx, title, fonts.title, DOUBLE.title);
+      const block = doubleLeftBlock(cy, fit.height, title.length, k);
       if (img) ctx.drawImage(img, DOUBLE.leftX - fit.width / 2, block.iconTop, fit.width, fit.height);
-      drawTitle(ctx, title, DOUBLE.leftX, block.titleTop, fonts, DOUBLE.title, where, report);
+      drawTitle(ctx, title, k, DOUBLE.leftX, block.titleTop, fonts, DOUBLE.title, where, report);
       drawQr(ctx, linkUrl(row.link, siteUrl), DOUBLE.qr.cx, cy, DOUBLE.qr.size, `${where}QR`, report);
       drawCaption(ctx, row.caption, DOUBLE.qr.cx, doubleCaptionTop(cy), fonts, DOUBLE.caption, where, report);
     });
