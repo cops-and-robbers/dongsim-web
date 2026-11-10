@@ -8,10 +8,10 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { ErrorBlock, PageHeader, ScrollPage } from "@/components/admin/Parts";
 import { SegmentedControl } from "@/components/admin/SegmentedControl";
 import { useToast } from "@/components/admin/Toast";
-import { ICON_LABEL, RoleArt } from "@/components/admin/team/RoleArt";
+import { RoleArt } from "@/components/admin/team/RoleArt";
 import { RoleTile } from "@/components/admin/team/RolePicker";
 import { useTeam, withMember } from "@/components/admin/team/TeamProvider";
-import { DESC_MAX, isBuiltin, NAME_MAX, ROLE_ICONS, roleProblem, seenLabel, type Member, type Role, type RoleInput, type Team } from "@/lib/admin/team";
+import { DESC_MAX, ICON_GROUPS, isBuiltin, NAME_MAX, roleProblem, seenLabel, type Member, type Role, type RoleInput, type Team } from "@/lib/admin/team";
 import { archiveRole, createRole, saveRoles, updateRole } from "@/lib/admin/teamClient";
 
 // 운영진 (docs/admin-ui.md "운영진"). 누가 무슨 일을 맡는지 보고, 역할 목록을 고친다.
@@ -118,39 +118,49 @@ function RoleEditor({ role, team, onClose, onSaved }: { role: Role | null; team:
 
   return (
     <>
-      <ChangeDialog title={role ? `${role.name} 역할 고치기` : "새 역할"} size="lg" confirmText="저장" pendingText="저장하는 중..." pending={pending} confirmDisabled={!!problem || !dirty} error={error ?? (dirty && draft.name.trim() ? (problem ?? undefined) : undefined)} onConfirm={save} onClose={onClose}>
-        <div className="mt-4 space-y-4">
-          <label className="block">
-            <span className="mb-1 block text-[13px] font-bold text-sd-fg">역할 이름</span>
-            <input value={draft.name} maxLength={NAME_MAX} autoFocus onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="커뮤니티" className={FIELD} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[13px] font-bold text-sd-fg">한 줄 설명</span>
-            <input value={draft.description} maxLength={DESC_MAX} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="디스코드와 오픈채팅 응대" className={FIELD} />
-          </label>
-          {!builtin && (
-            <div>
-              <span className="mb-1.5 block text-[13px] font-bold text-sd-fg">아이콘</span>
-              <div role="group" aria-label="아이콘" className="grid grid-cols-6 gap-1.5">
-                {ROLE_ICONS.map((i) => (
-                  <button key={i} type="button" aria-pressed={draft.icon === i} aria-label={ICON_LABEL[i]} onClick={() => setDraft({ ...draft, icon: i })} className={`grid h-11 place-items-center rounded-xl transition-colors ${draft.icon === i ? "bg-accent text-accent-fg" : "bg-sd-fill text-sd-fg-muted hover:text-sd-fg"}`}>
-                    <RoleArt icon={i} className="size-6 [stroke-width:1.8]" />
-                  </button>
-                ))}
+      <ChangeDialog title={role ? `${role.name} 역할 고치기` : "새 역할"} size={builtin ? "lg" : "xl"} confirmText="저장" pendingText="저장하는 중..." pending={pending} confirmDisabled={!!problem || !dirty} error={error ?? (dirty && draft.name.trim() ? (problem ?? undefined) : undefined)} onConfirm={save} onClose={onClose}>
+        <div className="mt-4 grid gap-5 md:grid-cols-[minmax(0,1fr)_240px]">
+          <div className="min-w-0 space-y-4">
+            <label className="block">
+              <span className="mb-1 block text-[13px] font-bold text-sd-fg">역할 이름</span>
+              <input value={draft.name} maxLength={NAME_MAX} autoFocus onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="커뮤니티" className={FIELD} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-[13px] font-bold text-sd-fg">한 줄 설명</span>
+              <input value={draft.description} maxLength={DESC_MAX} onChange={(e) => setDraft({ ...draft, description: e.target.value })} placeholder="디스코드와 오픈채팅 응대" className={FIELD} />
+            </label>
+            {!builtin && (
+              <div role="radiogroup" aria-label="아이콘">
+                <span className="mb-1.5 block text-[13px] font-bold text-sd-fg">아이콘</span>
+                {/* 일의 종류로 묶어서 64개 중에서도 찾기 쉽게 한다 */}
+                <div className="space-y-2.5">
+                  {ICON_GROUPS.map((g) => (
+                    <div key={g.label} className="sm:flex sm:gap-3">
+                      <span className="mb-1 block shrink-0 text-[12px] font-semibold text-sd-fg-subtle sm:mb-0 sm:w-16 sm:pt-2.5">{g.label}</span>
+                      <div className="grid flex-1 grid-cols-6 gap-1 sm:grid-cols-10">
+                        {g.icons.map((i) => (
+                          <button key={i.key} type="button" role="radio" aria-checked={draft.icon === i.key} aria-label={i.label} title={i.label} onClick={() => setDraft({ ...draft, icon: i.key })} className={`grid h-10 place-items-center rounded-xl transition-colors ${draft.icon === i.key ? "bg-accent text-accent-fg" : "bg-sd-fill text-sd-fg-muted hover:bg-accent-weak hover:text-accent"}`}>
+                            <RoleArt icon={i.key} className="size-5 [stroke-width:1.8]" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-          <div>
+            )}
+          </div>
+          <div className="md:sticky md:top-0 md:self-start">
             <span className="mb-1.5 block text-[13px] font-bold text-sd-fg">처음 고르는 화면에서는 이렇게 보여요</span>
             <div aria-hidden className="pointer-events-none max-w-[300px]">
               <RoleTile role={preview} on={false} onToggle={() => undefined} />
             </div>
+            {role && !builtin && (
+              <button type="button" onClick={() => setRemoving(true)} className="mt-4 text-[13px] font-semibold text-sd-critical hover:underline">
+                이 역할 지우기
+              </button>
+            )}
           </div>
-          {role && !builtin && (
-            <button type="button" onClick={() => setRemoving(true)} className="text-[13px] font-semibold text-sd-critical hover:underline">
-              이 역할 지우기
-            </button>
-          )}
         </div>
       </ChangeDialog>
       <ConfirmDialog open={removing} danger pending={pending} title={`${role?.name ?? ""} 역할을 지울까요?`} message={holders ? `맡고 있는 ${holders}명의 역할에서도 빠져요.` : "맡고 있는 분은 없어요."} confirmText="지우기" onConfirm={remove} onClose={() => setRemoving(false)} />

@@ -6,8 +6,19 @@
 export const BUILTIN_ROLES = ["dev", "des", "mkt", "ops"] as const;
 /** 이 역할을 맡은 사람이 다른 사람의 역할과 역할 목록을 고친다 */
 export const MANAGER_ROLE = "ops";
-/** 새로 만드는 역할에 고를 수 있는 아이콘 */
-export const ROLE_ICONS = ["headphones", "camera", "users", "gamepad", "shield", "sparkles", "flag", "pen", "pin", "message", "heart", "briefcase"] as const;
+/** 새로 만드는 역할에 고를 수 있는 아이콘. 어떤 일을 맡든 고를 수 있게 하는 일의 종류로 묶었다. 모양은 components/admin/team/roleIcons.tsx */
+export const ICON_GROUPS: { label: string; icons: { key: string; label: string }[] }[] = [
+  { label: "소통", icons: [{ key: "message", label: "말풍선" }, { key: "mail", label: "메일" }, { key: "phone", label: "전화" }, { key: "megaphone", label: "확성기" }, { key: "languages", label: "번역" }, { key: "newspaper", label: "신문" }, { key: "at", label: "골뱅이" }] },
+  { label: "사람", icons: [{ key: "users", label: "사람들" }, { key: "user", label: "사람" }, { key: "handshake", label: "악수" }, { key: "heart", label: "하트" }, { key: "smile", label: "웃는 얼굴" }, { key: "gift", label: "선물" }] },
+  { label: "만들기", icons: [{ key: "pen", label: "펜" }, { key: "palette", label: "팔레트" }, { key: "brush", label: "붓" }, { key: "image", label: "그림" }, { key: "camera", label: "카메라" }, { key: "video", label: "영상" }, { key: "film", label: "촬영" }, { key: "music", label: "음악" }, { key: "mic", label: "마이크" }, { key: "headphones", label: "헤드폰" }] },
+  { label: "개발", icons: [{ key: "code", label: "코드" }, { key: "terminal", label: "터미널" }, { key: "bug", label: "버그" }, { key: "database", label: "데이터베이스" }, { key: "server", label: "서버" }, { key: "cpu", label: "칩" }, { key: "smartphone", label: "휴대폰" }, { key: "monitor", label: "모니터" }, { key: "wrench", label: "렌치" }] },
+  { label: "숫자와 돈", icons: [{ key: "chart", label: "꺾은선 그래프" }, { key: "pie", label: "원 그래프" }, { key: "calculator", label: "계산기" }, { key: "wallet", label: "지갑" }, { key: "receipt", label: "영수증" }, { key: "store", label: "가게" }, { key: "bag", label: "쇼핑백" }, { key: "briefcase", label: "가방" }] },
+  { label: "운영과 행사", icons: [{ key: "calendar", label: "달력" }, { key: "clipboard", label: "체크리스트" }, { key: "ticket", label: "티켓" }, { key: "pin", label: "위치" }, { key: "truck", label: "트럭" }, { key: "package", label: "상자" }, { key: "flag", label: "깃발" }, { key: "trophy", label: "트로피" }, { key: "siren", label: "사이렌" }] },
+  { label: "안전과 문서", icons: [{ key: "shield", label: "방패" }, { key: "lock", label: "자물쇠" }, { key: "scale", label: "저울" }, { key: "file", label: "문서" }, { key: "book", label: "책" }, { key: "search", label: "돋보기" }] },
+  { label: "그 밖에", icons: [{ key: "sparkles", label: "반짝임" }, { key: "star", label: "별" }, { key: "rocket", label: "로켓" }, { key: "globe", label: "지구본" }, { key: "target", label: "과녁" }, { key: "lightbulb", label: "전구" }, { key: "graduation", label: "학사모" }, { key: "coffee", label: "커피" }, { key: "gamepad", label: "게임패드" }] },
+];
+export const ROLE_ICONS: string[] = ICON_GROUPS.flatMap((g) => g.icons.map((i) => i.key));
+export const ICON_LABEL: Record<string, string> = Object.fromEntries(ICON_GROUPS.flatMap((g) => g.icons.map((i) => [i.key, i.label])));
 
 export const NAME_MAX = 10;
 export const DESC_MAX = 24;
@@ -37,7 +48,7 @@ export function roleProblem(input: RoleInput, others: Pick<Role, "name">[], buil
   if (length(name) > NAME_MAX) return `역할 이름은 ${NAME_MAX}자까지 쓸 수 있어요.`;
   if (others.some((r) => r.name.trim() === name)) return "같은 이름의 역할이 있어요.";
   if (length(input.description) > DESC_MAX) return `설명은 ${DESC_MAX}자까지 쓸 수 있어요.`;
-  if (!builtin && !(ROLE_ICONS as readonly string[]).includes(input.icon)) return "아이콘을 골라 주세요.";
+  if (!builtin && !ROLE_ICONS.includes(input.icon)) return "아이콘을 골라 주세요.";
   return null;
 }
 
