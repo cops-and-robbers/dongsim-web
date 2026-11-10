@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // 루트 레이아웃이 언어마다 따로라(#301) 없는 주소의 404는
+    // app/global-not-found.tsx 가 문서 전체를 그린다.
+    globalNotFound: true,
+  },
   turbopack: {
     /*
       홈 디렉터리의 떠돌이 pnpm-workspace.yaml 때문에 루트를 명시한다.

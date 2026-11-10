@@ -17,9 +17,12 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const CONFIG = "lib/i18n/config.ts";
-const APP = "app";
+// 페이지는 언어별 묶음 아래에 있다(#301). 묶음 폴더 "(ko)" 는 주소에 들어가지 않는다.
+const KO_APP = "app/(ko)";
+const EN_APP = "app/(en)/en";
+const JA_APP = "app/(ja)/ja";
 // 어드민은 로케일 체계 밖이라(자체 레이아웃, 언어 전환 없음) 검사에서 뺀다.
-const SKIP_TOP = new Set(["en", "ja", "admin"]);
+const SKIP_TOP = new Set(["admin"]);
 
 function fail(lines) {
   console.error("KO_ONLY_PATHS 가 실제 페이지와 어긋납니다.\n");
@@ -45,7 +48,7 @@ function readList() {
  * page.tsx 가 있는 폴더만 센다. route.ts 만 있는 폴더는 화면이 아니라
  * 언어 전환 대상이 아니다(`/legal/[doc]/embed` 처럼).
  *
- * 한국어(app)와 번역(app/en·app/ja) 양쪽을 같은 규칙으로 모아야 한다 -
+ * 한국어(app/(ko))와 번역(app/(en)/en·app/(ja)/ja) 양쪽을 같은 규칙으로 모아야 한다 -
  * 번역 쪽만 문자 그대로 찾으면 `/en/g/[postId]` 처럼 번역본까지 동적인
  * 라우트가 없는 것으로 오탐된다(#92).
  */
@@ -55,8 +58,10 @@ function collectPages(dir, base = "", skipTop = new Set()) {
     if (base === "" && skipTop.has(name)) continue;
     const full = join(dir, name);
     if (!statSync(full).isDirectory()) continue;
+    // 동적 조각과 묶음 폴더 "(이름)" 은 주소에 넣지 않는다
     const dynamic = name.startsWith("[");
-    const path = dynamic ? base : `${base}/${name}`;
+    const group = name.startsWith("(") && name.endsWith(")");
+    const path = dynamic || group ? base : `${base}/${name}`;
     if (path !== "" && existsSync(join(full, "page.tsx"))) found.push(path);
     found.push(...collectPages(full, path, skipTop));
   }
@@ -64,10 +69,10 @@ function collectPages(dir, base = "", skipTop = new Set()) {
 }
 
 const list = readList();
-const koPages = collectPages(APP, "", SKIP_TOP);
+const koPages = collectPages(KO_APP, "", SKIP_TOP);
 const translatedPages = new Set([
-  ...collectPages(join(APP, "en")),
-  ...collectPages(join(APP, "ja")),
+  ...collectPages(EN_APP),
+  ...collectPages(JA_APP),
 ]);
 const translated = (path) => translatedPages.has(path);
 
