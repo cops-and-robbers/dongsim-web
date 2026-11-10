@@ -422,7 +422,7 @@ export function EventsCalendar({
       ) : (
         <div ref={rootRef} className="flex flex-col gap-4">
           <p className="text-[13px] leading-relaxed text-sd-fg-muted">
-            날짜를 누르고 일정 이름과 성격을 넣으면 모든 차트에 성격별 색 마름모로 표시돼서, 숫자가 왜 바뀌었는지 같이 볼 수 있어요. 앱 업데이트 날짜는 자동으로 들어와요.
+            날짜를 누르고 일정 이름과 성격을 넣으면 지표의 모든 차트에 성격별 색 마름모로 표시돼서, 숫자가 왜 바뀌었는지 같이 볼 수 있어요. 앱 업데이트 날짜는 자동으로 들어와요.
           </p>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
