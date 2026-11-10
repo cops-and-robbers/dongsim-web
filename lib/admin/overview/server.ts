@@ -131,6 +131,7 @@ async function stageCard(): Promise<CardResult> {
   return {
     kind: "stage",
     tracks: [board.ios, board.android].map((t) => (t.ok ? { platform: t.platform, label: t.status.label, tone: t.status.tone, live: t.live?.version ?? null } : { platform: t.platform, label: "읽지 못했어요", tone: "bad", live: null })),
+    next: board.next.tone === "turn" || board.next.tone === "bad" ? { title: board.next.title, reason: board.next.reason, tone: board.next.tone } : null,
   };
 }
 
