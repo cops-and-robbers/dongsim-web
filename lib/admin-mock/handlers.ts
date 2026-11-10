@@ -11,7 +11,7 @@ import { mockRelease, mockRunAction } from "./release";
 import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockSend, mockStorePage } from "./storePage";
 import { mockCreateTemplate, mockDeleteTemplate, mockInbox, mockPatchReview, mockReply, mockTemplates, mockUpdateTemplate, mockWaiting } from "./reviews";
 import { mockPatchCheck, mockStoreCheck } from "./storeCheck";
-import { mockSaveRole, mockSaveRoles, mockTeam } from "./team";
+import { mockSaveLayout, mockSaveRole, mockSaveRoles, mockTeam } from "./team";
 import { mockOverview } from "./overview";
 import {
   queryUsers,
@@ -521,6 +521,12 @@ export const handlers = [
   http.put("/api/admin/team", async ({ request }) => {
     await delay(300);
     const r = mockSaveRoles((await request.json()) as Parameters<typeof mockSaveRoles>[0]);
+    return HttpResponse.json(r.body, { status: r.status });
+  }),
+
+  http.put("/api/admin/team/layout", async ({ request }) => {
+    await delay(300);
+    const r = mockSaveLayout((await request.json()) as Parameters<typeof mockSaveLayout>[0]);
     return HttpResponse.json(r.body, { status: r.status });
   }),
 

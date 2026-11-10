@@ -24,8 +24,10 @@ export const NAME_MAX = 10;
 export const DESC_MAX = 24;
 
 export type Role = { key: string; name: string; description: string; icon: string; cards: string[]; position: number; updatedBy: string; updatedAt: string };
-export type Member = { userId: string; nickname: string; roleKeys: string[]; onboardedAt: string | null; lastSeenAt: string; updatedAt: string };
-export type Team = { me: Member; members: Member[]; roles: Role[]; writable: boolean; canManage: boolean; readOnlyReason?: string };
+/** overviewCards 가 null 이면 맡은 역할의 기본 카드를 본다. overviewRoles 는 구성을 고칠 때 맡고 있던 역할 */
+export type Member = { userId: string; nickname: string; roleKeys: string[]; onboardedAt: string | null; lastSeenAt: string; updatedAt: string; overviewCards: string[] | null; overviewRoles: string[] | null };
+/** layoutReady 는 개요 구성 칸(0025)이 있는지 */
+export type Team = { me: Member; members: Member[]; roles: Role[]; writable: boolean; canManage: boolean; layoutReady: boolean; readOnlyReason?: string };
 export type RoleInput = { name: string; description: string; icon: string; cards: string[] };
 
 const length = (s: string) => [...s.trim()].length;
