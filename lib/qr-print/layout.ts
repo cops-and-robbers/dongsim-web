@@ -118,7 +118,8 @@ export const BUILTIN_ICONS = [
   icon("linktree", "링크트리", "sns"),
   icon("appstore", "App Store", "store"),
   icon("googleplay", "Google Play", "store"),
-  icon("app", "경찰과도둑 앱", "store", "/brand/app-icon.png"),
+  // 디자이너가 준 새 앱 아이콘(2026-11-10). 사이트 아이콘(/brand/app-icon.png)과 따로 둔다
+  icon("app", "경찰과도둑 앱", "store", "/qr-print/icons/app.png"),
   icon("googleforms", "구글 폼", "basic"),
   icon("clipboard", "신청서", "basic"),
   icon("globe", "웹사이트", "basic"),
