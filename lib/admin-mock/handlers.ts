@@ -13,6 +13,7 @@ import { mockCreateTemplate, mockDeleteTemplate, mockInbox, mockPatchReview, moc
 import { mockPatchCheck, mockStoreCheck } from "./storeCheck";
 import { mockSaveLayout, mockSaveRole, mockSaveRoles, mockTeam } from "./team";
 import { mockOverview } from "./overview";
+import { mockChanges } from "./changes";
 import { mockAddSchedule, mockEditSchedule, mockRemoveSchedule, mockSchedule, mockScheduleReport } from "./schedule";
 import { mockMarkRequested, mockSearch } from "./search";
 import { todayIn } from "@/lib/metrics/dates";
@@ -433,6 +434,12 @@ export const handlers = [
     await delay(500);
     const { status, body } = mockSaveEvent(Number(params.id), (await request.json()) as { settings?: unknown; version?: number });
     return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  // 변경 기록(#313). 칸 모양마다 하나씩 담은 가짜 기록
+  http.get("/api/admin/changes", async ({ request }) => {
+    await delay(300);
+    return HttpResponse.json(mockChanges(Number(new URL(request.url).searchParams.get("days") ?? 30)));
   }),
 
   // 일정(#302). 로컬에서는 실제 일정(metrics_events)에 닿지 않는다. 행사 게임과 성적표는 게임 기록, 지표 숫자가 없어 안내만
