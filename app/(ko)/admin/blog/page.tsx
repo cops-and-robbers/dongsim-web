@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { Button } from "@/components/admin/Button";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { ScrollPage, PageHeader, SectionCard, DescriptionList } from "@/components/admin/Parts";
@@ -27,10 +28,14 @@ type SyncResult = {
   skipped?: { slug: string; reason: string }[];
   removed?: { slug: string; locale: string }[];
   unpublished?: { slug: string; locale: string }[];
-  failed?: { slug: string; reason: string }[];
+  failed?: { slug: string; error: string }[];
   imageFailures?: { slug: string; count: number }[];
   unknownTags?: { slug: string; tags: string[] }[];
   stillPublic?: string[];
+  /** 검색엔진 알림(#309). 새로 공개된 글이나 고친 글이 있을 때만 온다 */
+  search?:
+    | { urls: number; sitemap: "done" | "skipped" | "failed"; indexnow: "done" | "skipped" | "failed"; message?: string }
+    | { error: string };
   gc?: {
     scanned: number;
     referenced: number;
@@ -236,7 +241,7 @@ export default function AdminBlogPage() {
           )}
           {failed.map((f) => (
             <DetailRow key={f.slug} pill={<Pill tone="red">실패</Pill>}>
-              <span className="font-semibold text-sd-fg">{f.slug}</span> - {f.reason}
+              <span className="font-semibold text-sd-fg">{f.slug}</span> - {f.error}
             </DetailRow>
           ))}
           {(r?.imageFailures ?? []).map((f) => (
@@ -251,6 +256,7 @@ export default function AdminBlogPage() {
               블록: {t.tags.join(", ")}
             </DetailRow>
           ))}
+          {r?.search && <SearchRow search={r.search} />}
           {(r?.stillPublic?.length ?? 0) > 0 && (
             <DetailRow pill={<Pill tone="red">미닫힘</Pill>}>
               내렸는데 아직 열려 있는 주소: {r!.stillPublic!.join(", ")}
@@ -336,5 +342,26 @@ export default function AdminBlogPage() {
         onClose={() => setConfirmGc(false)}
       />
     </ScrollPage>
+  );
+}
+
+/**
+ * 동기화 뒤 검색엔진 알림 한 줄(#309). 글을 올린 그 자리에서 알려졌는지 보이게 한다.
+ * 색인될 때까지의 진행은 지표의 검색 탭이 맡는다.
+ */
+function SearchRow({ search }: { search: NonNullable<SyncResult["search"]> }) {
+  if ("error" in search) {
+    return <DetailRow pill={<Pill tone="amber">검색</Pill>}>검색엔진에 알리지 못했어요. {search.error}</DetailRow>;
+  }
+  const sent = [search.sitemap === "done" && "구글", search.indexnow === "done" && "빙·네이버"].filter(Boolean).join("과 ");
+  const failed = search.sitemap === "failed" || search.indexnow === "failed";
+  return (
+    <DetailRow pill={<Pill tone={failed ? "amber" : sent ? "green" : "slate"}>검색</Pill>}>
+      {sent ? `글 ${search.urls}개를 ${sent}에 알렸어요. ` : "검색엔진에는 알리지 않았어요. "}
+      {search.message && <span className="text-sd-fg-subtle">{search.message} </span>}
+      <Link href="/admin/metrics?tab=search" className="font-semibold text-accent hover:underline">
+        검색 현황 보기
+      </Link>
+    </DetailRow>
   );
 }

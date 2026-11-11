@@ -25,6 +25,7 @@ import { Tooltip } from "@/components/admin/Tooltip";
 import { SmallReachNote } from "@/components/admin/metrics/PostDrawer";
 import { compareParam, parseCompare, rangeLabel } from "@/lib/metrics/dashboard/calendar";
 import { CompareMenu } from "@/components/admin/metrics/CompareMenu";
+import { SearchTab } from "@/components/admin/metrics/SearchTab";
 import { AskPanel } from "@/components/admin/metrics/AskPanel";
 import { CheesePet } from "@/components/admin/pet/CheesePet";
 import { CompareContext, useCompare } from "@/components/admin/metrics/compareContext";
@@ -39,6 +40,7 @@ import type { Ratio, WeeklyNumbers } from "@/lib/metrics/weekly/numbers";
  * - 요약: 앱 첫 실행 큰 숫자, 모든 경로를 합친 흐름, 핵심 비율, 인스타그램에서 온 것, 이 기간 일정(넣고 고치기는 어드민 "일정", #302)
  * - 인스타그램: 계정 지표와 비율, 팔로워, 게시물별 숫자(정렬)
  * - 유입 경로: 채널별 방문과 전환율, 소스별 표
+ * - 검색(#309): 구글에 색인된 페이지, 단계별 페이지 목록, 검색 실적과 검색어. components/admin/metrics/SearchTab.tsx
  * - 스토어: 전체 / App Store / Google Play 를 골라 본다(#147). 스토어 화면에서 설치까지, 나라별,
  *   Google Play 는 남아 있는 설치와 안정성까지. 스토어 화면을 고치는 사람이 자기 스토어만 콘솔 순서대로 본다
  * - 앱과 광고: 첫 실행, 사용(활성 사용자, 실제 판 수), 남는 사람(활성화, 리텐션, 삭제), 광고
@@ -75,6 +77,7 @@ const TABS = [
   { value: "summary", label: "요약" },
   { value: "instagram", label: "인스타그램" },
   { value: "traffic", label: "유입 경로" },
+  { value: "search", label: "검색" },
   { value: "store", label: "스토어" },
   { value: "app", label: "앱과 광고" },
 ] as const;
@@ -244,7 +247,8 @@ export default function MetricsPage() {
   const cmpWord = cmpMode.kind === "custom" ? "비교 기간" : "이전 기간";
   const reload = () => setAttempt((n) => n + 1);
   // 질문할 때 같이 보내는 화면 상태. "이 기간"을 지금 걸린 기간으로 푼다
-  const view: View | null = shown ? { tab, range: shown.range, previous: compare ? shown.previous : null } : null;
+  // 검색 숫자는 아직 지표 챗봇이 모른다(#309 3단계). 검색 탭에서 물으면 가장 가까운 유입 경로를 보며 묻는다
+  const view: View | null = shown ? { tab: tab === "search" ? "traffic" : tab, range: shown.range, previous: compare ? shown.previous : null } : null;
 
   return (
     <ScrollPage>
@@ -271,7 +275,7 @@ export default function MetricsPage() {
               />
             </div>
             <CompareMenu range={showing} mode={cmpMode} min={MIN_DAY} onChange={(m) => setParams({ cmp: compareParam(m) })} />
-            <Button variant="neutral" size="sm" disabled={!current?.data} onClick={() => current?.data && downloadCsv(current.data)}>
+            <Button variant="neutral" size="sm" disabled={!current?.data || tab === "search"} onClick={() => current?.data && downloadCsv(current.data)}>
               CSV
             </Button>
             <Button size="sm" aria-expanded={askOpen} onClick={() => setAsk(!askOpen)}>
@@ -305,7 +309,24 @@ export default function MetricsPage() {
           );
         })}
       </div>
-      {current?.error && !shown ? (
+      {tab === "search" ? (
+        // 검색 탭은 자기 숫자를 따로 읽는다. 다른 지표가 오기를 기다리지 않고 보이는 기간으로 먼저 연다(#309).
+        // 지표가 오면 비교 기간과 일정 표시를 더한다. 같은 자리에 두어 다시 그리지 않는다
+        <CompareContext.Provider value={{ on: compare, word: cmpWord, days: shown ? ymdRange(shown.previous.start, shown.previous.end) : [] }}>
+          <SearchTab
+            range={shown ? shown.range : { start: showing.from, end: showing.to }}
+            previous={compare && shown ? shown.previous : null}
+            markers={
+              shown
+                ? [
+                    ...shown.posts.map((post) => ({ day: seoulDay(post.postedAt), label: firstLine(post.caption), kind: "post" as const })),
+                    ...(shown.events ?? []).map((e) => ({ day: e.day, label: e.label, kind: "event" as const, category: e.category })),
+                  ]
+                : []
+            }
+          />
+        </CompareContext.Provider>
+      ) : current?.error && !shown ? (
         <ErrorBlock message={current.error} onRetry={reload} />
       ) : !shown ? (
         <MetricsSkeleton />

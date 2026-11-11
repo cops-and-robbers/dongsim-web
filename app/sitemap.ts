@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getAllPosts } from "@/lib/blog/store";
+import { getAllPosts, type BlogPost } from "@/lib/blog/store";
 import { allPostsByLatest, isOpen, listScopeOf, postPath } from "@/lib/community/api";
 import { LOCALES, alternateLanguages, localizedPath } from "@/lib/i18n/config";
 
@@ -9,6 +9,15 @@ const BASE_URL = "https://copsandrobbers.app";
 // (기본값은 빌드 시 1회 생성이라, 배포 사이에 올린 글이 색인 대상에서 빠진다)
 // 목록·RSS와 같은 결의 주기. 사이트맵은 크롤러만 읽으므로 더 길게 잡아도 무방하다.
 export const revalidate = 600;
+
+/**
+ * 블로그 글의 lastmod. 글을 고친 시각을 쓰고, 없으면(수정 시각을 아직 안 읽은 글) 노션 날짜를 쓴다.
+ * 노션 날짜는 글을 고쳐도 그대로라, 그것만 쓰면 고친 글을 구글이 다시 읽을 신호가 없다(#309)
+ */
+function lastModifiedOf(post: BlogPost): { lastModified?: Date } {
+  const when = post.updatedAt || post.date;
+  return when ? { lastModified: new Date(when) } : {};
+}
 
 // 수정일(lastmod)은 정확히 아는 주소에만 넣는다. 고정 페이지에 만드는 시각을 넣으면
 // 매번 "오늘 바뀜"이 되고, 구글은 계속 틀리는 lastmod 를 사이트 전체에서 무시한다(#299).
@@ -155,7 +164,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...posts.map((post) => ({
       url: `${BASE_URL}/blog/${post.slug}`,
-      ...(post.date ? { lastModified: new Date(post.date) } : {}),
+      ...lastModifiedOf(post),
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
@@ -170,7 +179,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .filter((post) => post.locale === locale)
         .map((post) => ({
           url: `${BASE_URL}${localizedPath(`/blog/${post.slug}`, locale)}`,
-          ...(post.date ? { lastModified: new Date(post.date) } : {}),
+          ...lastModifiedOf(post),
           changeFrequency: "monthly" as const,
           priority: 0.7,
         })),

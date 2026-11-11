@@ -11,6 +11,7 @@ import { htmlToMarkdown } from "./html-to-markdown";
 import { migrateBodyImages, migrateImage } from "./images";
 import { resolveYouTubeTitles } from "./youtube-titles";
 import { youTubeId } from "./youtube-id";
+import { outcomeOf, withoutSignatures, type ChangeOutcome } from "./outcome";
 
 /**
  * 동기화는 로그인 세션이 아니라 토큰으로 인증된다.
@@ -38,6 +39,14 @@ export type SyncResult = {
    * 내려간 글은 그 주소가 정말 닫혔는지 봐야 한다.
    */
   unpublished: SyncedSlug[];
+  /**
+   * synced 중 이번에 처음 공개된 글과, 공개된 채로 내용이 바뀐 글 (#309).
+   *
+   * synced 에는 공개 전 초안을 고친 것도 들어 있어서 그대로는 "검색엔진에 알릴 주소"로
+   * 쓸 수 없다. 초안은 주소가 열려 있지 않다.
+   */
+  published: SyncedSlug[];
+  updated: SyncedSlug[];
   failed: { slug: string; error: string }[];
   /** 이미지 이관에 실패한 글. 글은 반영되지만 그 이미지는 곧 만료돼 깨진다. */
   imageFailures: { slug: string; count: number }[];
@@ -61,7 +70,7 @@ export type SyncResult = {
 
   **바뀐 것이 없으면 쓰지 않는다.** 동기화할 때마다 모든 글을 덮으면
   updated_at 트리거가 매번 돌아 "모든 글이 방금 수정됐다"가 된다.
-  사이트맵의 lastmod 와 JSON-LD 의 dateModified 가 그 값을 쓰므로,
+  사이트맵의 lastmod 가 그 값을 쓰므로(#309),
   크롤러에게 매 동기화마다 전부 바뀌었다고 거짓말하게 된다.
 
   **발행 시각도 한 번만 찍는다.** published_at 에 매번 now() 를 넣으면
@@ -100,10 +109,10 @@ function firstImageOf(body: string): string | undefined {
 }
 
 /** 두 행의 내용이 같은가 - 태그는 순서까지 본다(노션이 순서를 지킨다) */
-function sameContent(a: ExistingRow, b: Record<string, unknown>): boolean {
+function sameContent(a: ExistingRow, b: Record<string, unknown>, normalize: (v: unknown) => unknown = (v) => v): boolean {
   return CONTENT_FIELDS.every((k) => {
-    const x = a[k];
-    const y = b[k];
+    const x = normalize(a[k]);
+    const y = normalize(b[k]);
     if (Array.isArray(x) || Array.isArray(y)) {
       return JSON.stringify(x ?? []) === JSON.stringify(y ?? []);
     }
@@ -111,8 +120,11 @@ function sameContent(a: ExistingRow, b: Record<string, unknown>): boolean {
   });
 }
 
-/** 쓰기 결과. 발행이 내려간 경우를 따로 알려야 호출자가 그 주소를 확인할 수 있다. */
-type WriteOutcome = "unchanged" | "written" | "unpublished";
+/**
+ * 쓰기 결과. 발행이 내려간 경우를 따로 알려야 호출자가 그 주소를 확인할 수 있다.
+ * 처음 공개된 글(published)과 공개된 채로 고친 글(updated)도 나눈다. 검색엔진에 알릴 주소다(#309)
+ */
+type WriteOutcome = "unchanged" | ChangeOutcome;
 
 async function upsertPost(
   supabase: ReturnType<typeof db>,
@@ -148,6 +160,8 @@ async function upsertPost(
   };
 
   if (prev && sameContent(prev, content)) return "unchanged";
+  // 노션 서명만 바뀐 글(이미지 이관 실패)은 새 서명으로 다시 쓰되 "고친 글"로 알리지 않는다(#309)
+  const onlySignatures = !!prev && sameContent(prev, content, (v) => (typeof v === "string" ? withoutSignatures(v) : v));
 
   const row = {
     notion_page_id: post.pageId,
@@ -161,8 +175,8 @@ async function upsertPost(
   if (error) throw new Error(error.message);
 
   // 발행돼 있던 글이 draft 가 됐다면, 그 주소는 이제 닫혀야 한다
-  const pulled = prev?.status === "published" && content.status === "draft";
-  return pulled ? "unpublished" : "written";
+  const outcome = outcomeOf(prev?.status ?? null, content.status);
+  return onlySignatures && outcome === "updated" ? "written" : outcome;
 }
 
 /**
@@ -213,6 +227,8 @@ export async function syncFromNotion(
     skipped: [],
     removed: [],
     unpublished: [],
+    published: [],
+    updated: [],
     failed: [],
     imageFailures: [],
     unknownTags: [],
@@ -320,8 +336,12 @@ export async function syncFromNotion(
 
       const outcome = await upsertPost(supabase, post);
       const entry = { slug: post.slug, locale: post.locale };
-      if (outcome === "written") result.synced.push(entry);
-      else if (outcome === "unpublished") result.unpublished.push(entry);
+      if (outcome === "unpublished") result.unpublished.push(entry);
+      else if (outcome !== "unchanged") {
+        result.synced.push(entry);
+        if (outcome === "published") result.published.push(entry);
+        if (outcome === "updated") result.updated.push(entry);
+      }
       else result.skipped.push({ slug: post.slug, reason: "바뀐 것이 없음" });
     } catch (e) {
       result.failed.push({ slug, error: e instanceof Error ? e.message : String(e) });

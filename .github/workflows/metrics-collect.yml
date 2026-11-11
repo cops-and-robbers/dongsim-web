@@ -29,7 +29,7 @@ jobs:
       # 한 소스가 실패해도 나머지는 돈다
       fail-fast: false
       matrix:
-        source: [appstore, ga4, admob, play, reviews, daangn]
+        source: [appstore, ga4, admob, play, reviews, daangn, gsc]
     steps:
       - name: ${{ matrix.source }} 수집
         env:

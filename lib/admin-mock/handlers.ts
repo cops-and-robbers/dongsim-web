@@ -14,6 +14,7 @@ import { mockPatchCheck, mockStoreCheck } from "./storeCheck";
 import { mockSaveLayout, mockSaveRole, mockSaveRoles, mockTeam } from "./team";
 import { mockOverview } from "./overview";
 import { mockAddSchedule, mockEditSchedule, mockRemoveSchedule, mockSchedule, mockScheduleReport } from "./schedule";
+import { mockMarkRequested, mockSearch } from "./search";
 import { todayIn } from "@/lib/metrics/dates";
 import {
   queryUsers,
@@ -435,6 +436,19 @@ export const handlers = [
   }),
 
   // 일정(#302). 로컬에서는 실제 일정(metrics_events)에 닿지 않는다. 행사 게임과 성적표는 게임 기록, 지표 숫자가 없어 안내만
+  // 지표 "검색" 탭(#309). 서치 콘솔과 실제 기록에 닿지 않는다
+  http.get("/api/admin/search", async ({ request }) => {
+    await delay(400);
+    return HttpResponse.json(mockSearch(new URL(request.url).searchParams));
+  }),
+
+  http.post("/api/admin/search/requested", async ({ request }) => {
+    await delay(300);
+    const { url } = (await request.json()) as { url: string };
+    const { status, body } = mockMarkRequested(url);
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
   http.get("/api/admin/metrics/events", async () => {
     await delay(300);
     return HttpResponse.json(mockSchedule());
