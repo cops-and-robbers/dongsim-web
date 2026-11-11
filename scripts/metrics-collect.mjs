@@ -5,6 +5,7 @@
 //   node --env-file=.env.local scripts/metrics-collect.mjs admob --dry         저장하지 않고 세기만
 //   node --env-file=.env.local scripts/metrics-collect.mjs appstore --from 2026-04-01
 //   node --env-file=.env.local scripts/metrics-collect.mjs play --from all       Play 파일 2026-03 부터
+//   node --env-file=.env.local scripts/metrics-collect.mjs gsc --dry            구글 검색 색인 현황, 저장도 알림도 안 함
 //
 // 처음 채울 때(--from)는 Vercel 300초 한도에 걸리지 않게 이 스크립트로 돌린다.
 // Node 22.18 이상이 필요하다 (.ts 파일을 그대로 실행하는 타입 지우기).
@@ -13,6 +14,7 @@ import { runAdmob } from "../lib/metrics/admob/run.ts";
 import { runAppStore } from "../lib/metrics/appstore/run.ts";
 import { runGa4 } from "../lib/metrics/ga4/run.ts";
 import { runPlay } from "../lib/metrics/play/run.ts";
+import { runSearch } from "../lib/search/run.ts";
 
 const [source, ...args] = process.argv.slice(2);
 const dry = args.includes("--dry");
@@ -25,6 +27,8 @@ const runners = {
   admob: () => runAdmob({ dry, from }),
   // Play 는 달마다 파일이라 --from 은 그 달부터, all 은 2026-03 부터
   play: () => runPlay({ dry, from }),
+  // 검색 실적은 --from 부터 다시 받는다. 구글 판정과 새 주소는 늘 오늘 것이다(#309)
+  gsc: () => runSearch({ dry, from }),
 };
 if (!(source in runners)) {
   console.error(`사용법: metrics-collect.mjs <${Object.keys(runners).join(" | ")}> [--from YYYY-MM-DD | all] [--dry]`);
