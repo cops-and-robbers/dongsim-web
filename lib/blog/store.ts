@@ -31,6 +31,11 @@ export type BlogPost = {
   /** 목록 카드·OG에 쓸 커버 이미지 URL(R2). 없으면 null. */
   coverUrl: string | null;
   locale: Locale;
+  /**
+   * 글 내용이 마지막으로 바뀐 시각(ISO). 동기화는 바뀐 글만 쓰고 트리거가 이 값을 찍는다.
+   * 사이트맵 lastmod 가 쓴다(#309). 노션 날짜(date)는 글을 고쳐도 그대로라 구글이 다시 읽을 신호가 안 된다
+   */
+  updatedAt?: string;
 };
 
 export type BlogPostWithBody = BlogPost & {
@@ -61,6 +66,7 @@ type Row = {
   author: string | null;
   entry_date: string | null;
   tags: string[] | null;
+  updated_at?: string | null;
 };
 
 function toPost(row: Row): BlogPost {
@@ -74,10 +80,11 @@ function toPost(row: Row): BlogPost {
     tags: row.tags ?? [],
     coverUrl: row.cover_image,
     locale: row.locale as Locale,
+    ...(row.updated_at ? { updatedAt: row.updated_at } : {}),
   };
 }
 
-const LIST_COLUMNS = "id, slug, locale, title, excerpt, cover_image, author, entry_date, tags";
+const LIST_COLUMNS = "id, slug, locale, title, excerpt, cover_image, author, entry_date, tags, updated_at";
 
 /** 조회 오류를 어느 조회에서 났는지와 함께 던진다. */
 function fail(what: string, message: string): never {
