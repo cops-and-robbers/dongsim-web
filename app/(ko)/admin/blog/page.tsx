@@ -27,7 +27,7 @@ type SyncResult = {
   skipped?: { slug: string; reason: string }[];
   removed?: { slug: string; locale: string }[];
   unpublished?: { slug: string; locale: string }[];
-  failed?: { slug: string; reason: string }[];
+  failed?: { slug: string; error: string }[];
   imageFailures?: { slug: string; count: number }[];
   unknownTags?: { slug: string; tags: string[] }[];
   stillPublic?: string[];
@@ -236,7 +236,7 @@ export default function AdminBlogPage() {
           )}
           {failed.map((f) => (
             <DetailRow key={f.slug} pill={<Pill tone="red">실패</Pill>}>
-              <span className="font-semibold text-sd-fg">{f.slug}</span> - {f.reason}
+              <span className="font-semibold text-sd-fg">{f.slug}</span> - {f.error}
             </DetailRow>
           ))}
           {(r?.imageFailures ?? []).map((f) => (
