@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { collectGarbage, type GcReport } from "@/lib/blog/sync/gc";
 import { syncFromNotion, type SyncedSlug } from "@/lib/blog/sync/sync";
 import { SITE_URL } from "@/lib/constants";
+import { notifyUrls, recordSyncRun, type NotifyResult } from "@/lib/search/store";
 
 /**
  * 노션 → DB 동기화 트리거 (#109).
@@ -160,8 +161,39 @@ export async function POST(req: Request) {
       result.imageFailures.length === 0 &&
       stillPublic.length === 0 &&
       !result.removalBlocked;
+
+    /*
+      새로 공개된 글과 고친 글을 검색엔진에 알리고, 새 글은 색인될 때까지 따라간다 (#309).
+      데운 뒤에 보낸다 - 검색엔진이 바로 와도 새 화면을 받는다.
+      알림이 실패해도 발행은 이미 끝났다. 응답의 search 에 담고 동기화 결과는 바꾸지 않는다.
+    */
+    let search: NotifyResult | { error: string } | undefined;
+    const changed = [
+      ...result.published.map((e) => ({ e, isNew: true })),
+      ...result.updated.map((e) => ({ e, isNew: false })),
+    ];
+    if (changed.length > 0) {
+      try {
+        search = await notifyUrls(
+          changed.map(({ e, isNew }) => ({ url: `${SITE_URL}${pathOf(e)}`, origin: "blog", track: true, isNew })),
+          "블로그 동기화",
+        );
+      } catch (e) {
+        search = { error: e instanceof Error ? e.message : String(e) };
+      }
+    }
+    const label = (e: SyncedSlug) => `${e.locale}/${e.slug}`;
+    await recordSyncRun({
+      ok,
+      published: result.published.map(label),
+      updated: result.updated.map(label),
+      unpublished: result.unpublished.map(label),
+      removed: result.removed.map(label),
+      failed: result.failed.length,
+    });
+
     return NextResponse.json(
-      { ...result, stillPublic, ...(gc ? { gc } : {}) },
+      { ...result, stillPublic, ...(gc ? { gc } : {}), ...(search ? { search } : {}) },
       { status: ok ? 200 : 500 },
     );
   } catch (e) {
