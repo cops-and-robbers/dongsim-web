@@ -20,6 +20,12 @@ on:
         description: "이 날부터 다시 채우기 (YYYY-MM-DD, 비우면 최근 7일)"
         type: string
         default: ""
+      source:
+        # 한 소스만 다시 채울 때. 시작일이 모든 소스에 같이 걸리면 처음부터 받는 소스가 300초를 넘길 수 있다(#311)
+        description: "이 소스만 돌리기 (비우면 전부)"
+        type: choice
+        options: ["", appstore, ga4, admob, play, reviews, daangn, gsc]
+        default: ""
 
 jobs:
   collect:
@@ -32,6 +38,8 @@ jobs:
         source: [appstore, ga4, admob, play, reviews, daangn, gsc]
     steps:
       - name: ${{ matrix.source }} 수집
+        # 손으로 돌릴 때 소스를 골랐으면 그 소스만. 예약 실행은 inputs 가 비어 전부 돈다
+        if: ${{ !inputs.source || inputs.source == matrix.source }}
         env:
           SOURCE: ${{ matrix.source }}
           FROM: ${{ inputs.from }}
