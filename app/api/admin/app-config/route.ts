@@ -11,7 +11,9 @@ import {
   storageBucket,
 } from "@/lib/admin/server/remoteConfig";
 import {
+  describeChanges,
   describeForHistory,
+  warningsFor,
   diffAppConfig,
   isAppConfigKey,
   EVIDENCE_KEYS,
@@ -23,6 +25,7 @@ import {
   type AppConfigChanges,
   type AppConfigState,
 } from "@/lib/admin/appConfig";
+import { recordChange } from "@/lib/changes/server";
 
 /**
  * 어드민 "앱 설정" (docs/admin-ui.md). Firebase Remote Config 를 서버에서 대신 읽고 게시한다.
@@ -100,8 +103,22 @@ export async function PUT(req: Request): Promise<NextResponse> {
     const firstError = Object.values(errors)[0];
     if (firstError) return NextResponse.json({ error: firstError, errors }, { status: 400 });
 
-    const description = describeForHistory(await actorName(checked.token), values, changes);
+    const actor = await actorName(checked.token);
+    const description = describeForHistory(actor, values, changes);
     await publishTemplate(mergeTemplate(template, changes, description), etag);
+    // 변경 기록(#313). 사진은 주소 대신 그림으로 보이게 image 로 남긴다. 점검과 앱을 못 쓰게 되는 변경은 사용자에게 닿는 것으로 표시
+    await recordChange({
+      actor,
+      area: "app-config",
+      target: "앱 설정",
+      action: "edit",
+      fields: describeChanges(values, changes).map((d) =>
+        (EVIDENCE_KEYS as readonly string[]).includes(d.key) || d.key === "banner_image_url"
+          ? { kind: "image" as const, label: d.label, before: values[d.key] || null, after: changes[d.key] || null }
+          : { kind: "value" as const, label: d.label, before: d.before, after: d.after },
+      ),
+      impact: changes.maintenance !== undefined || warningsFor(values, changes).length > 0,
+    });
     return NextResponse.json(await currentState(), noStore);
   } catch (e) {
     if (e instanceof RemoteConfigConflict) return NextResponse.json({ error: CONFLICT }, { status: 409 });

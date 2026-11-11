@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { actorName } from "@/lib/admin/server/remoteConfig";
 import { guard, isEventsWritable, noStore, storeError } from "@/lib/event/adminApi";
-import { writeMinigame } from "@/lib/event/server";
-import { toMs, type HomeMinigame } from "@/lib/event/settings";
+import { readMinigameStored, writeMinigame } from "@/lib/event/server";
+import { shortTime, toMs, type HomeMinigame } from "@/lib/event/settings";
+import { recordChange } from "@/lib/changes/server";
+import { actionOf, diffValues } from "@/lib/changes/model";
+
+const shown = (v: HomeMinigame) => (v ? { from: shortTime(v.from), until: shortTime(v.until) } : null);
 
 /**
  * 홈 미니게임 칸을 보이는 기간 (#219). 행사에 매이지 않는 사이트 설정 하나다.
@@ -26,7 +30,11 @@ export async function PUT(req: Request): Promise<NextResponse> {
     value = { from, until };
   }
   try {
-    await writeMinigame(value, await actorName(checked.token));
+    const before = await readMinigameStored().catch(() => null);
+    const actor = await actorName(checked.token);
+    await writeMinigame(value, actor);
+    // 변경 기록(#313). 숨김은 "없음"으로 남긴다
+    await recordChange({ actor, area: "event", target: "홈 미니게임 칸", action: actionOf(before, value), fields: diffValues(shown(before), shown(value), { from: "보이기 시작", until: "보이기 끝" }), href: "/admin/events" });
     return NextResponse.json({ value }, noStore);
   } catch (e) {
     return storeError(e);

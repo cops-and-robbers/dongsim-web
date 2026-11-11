@@ -72,7 +72,8 @@ export async function readImageDrafts(): Promise<ImageDraft[] | null> {
 }
 
 export type SaveImageInput = { platform: ImageDraft["platform"]; lang: Lang; slot: ImageSlotId; items: ImageItem[] | null; expect: string | null };
-export type SaveImageResult = { ok: true; draft: ImageDraft | null } | { ok: false; current: ImageDraft | null };
+/** previous 는 저장 전 초안(변경 기록용, #313) */
+export type SaveImageResult = { ok: true; draft: ImageDraft | null; previous: ImageDraft | null } | { ok: false; current: ImageDraft | null };
 
 /** 한 칸의 목록을 저장한다. items 가 null 이면 초안을 지운다. 다른 사람이 먼저 고쳤으면 덮어쓰지 않는다 */
 export async function saveImageDraft(input: SaveImageInput, actor: string): Promise<SaveImageResult> {
@@ -84,11 +85,11 @@ export async function saveImageDraft(input: SaveImageInput, actor: string): Prom
   if (input.items === null) {
     const { error } = await db().from(IMAGE_TABLE).delete().match(where);
     if (error) throw new Error(error.message);
-    return { ok: true, draft: null };
+    return { ok: true, draft: null, previous: current };
   }
   const { data, error } = await db().from(IMAGE_TABLE).upsert({ ...where, items: input.items, updated_by: actor, updated_at: new Date().toISOString() }).select(IMAGE_COLUMNS).single();
   if (error) throw new Error(error.message);
-  return { ok: true, draft: toImageDraft(data as ImageRow) };
+  return { ok: true, draft: toImageDraft(data as ImageRow), previous: current };
 }
 
 export async function storePage(): Promise<StorePage> {
@@ -115,7 +116,8 @@ export async function deleteImageDrafts(platform: ImageDraft["platform"], change
 }
 
 export type SaveInput = { platform: Draft["platform"]; lang: Lang; field: FieldId; value: string | null; expect: string | null };
-export type SaveResult = { ok: true; draft: Draft | null } | { ok: false; current: Draft | null };
+/** previous 는 저장 전 초안(변경 기록용, #313) */
+export type SaveResult = { ok: true; draft: Draft | null; previous: Draft | null } | { ok: false; current: Draft | null };
 
 /**
  * 한 칸을 저장한다. value 가 null 이면 초안을 지운다.
@@ -130,7 +132,7 @@ export async function saveDraft(input: SaveInput, actor: string): Promise<SaveRe
   if (input.value === null) {
     const { error } = await db().from(TABLE).delete().match(where);
     if (error) throw new Error(error.message);
-    return { ok: true, draft: null };
+    return { ok: true, draft: null, previous: current };
   }
   const { data, error } = await db()
     .from(TABLE)
@@ -138,5 +140,5 @@ export async function saveDraft(input: SaveInput, actor: string): Promise<SaveRe
     .select("platform,lang,field,value,updated_by,updated_at")
     .single();
   if (error) throw new Error(error.message);
-  return { ok: true, draft: toDraft(data as Row) };
+  return { ok: true, draft: toDraft(data as Row), previous: current };
 }

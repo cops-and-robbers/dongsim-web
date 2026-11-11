@@ -21,6 +21,7 @@ import {
   TeamIcon,
   QrCodeIcon,
   CalendarIcon,
+  HistoryIcon,
 } from "@/components/admin/icons";
 
 // 어드민 메뉴 정본. 데스크톱 사이드바(AdminShell)와 폰 하단 탭, 전체 메뉴(MobileNav)가 같은 목록을 쓴다
@@ -47,6 +48,7 @@ export const STORE_PAGE_HREF = "/admin/store-page";
 export const COMPANY_HREF = "/admin/company";
 export const QR_PRINT_HREF = "/admin/qr-print";
 export const SCHEDULE_HREF = "/admin/schedule";
+export const CHANGES_HREF = "/admin/changes";
 
 // 역할별 그룹. 개요(현황) → 데이터(조회) → 처리(쌓이는 일) → 콘텐츠(발행) → 운영(모든 사용자에게 바로 닿는 스위치).
 // 그룹 이름을 메뉴 위에 적어 훑어보게 한다(docs/admin-ui.md "내비게이션").
@@ -94,10 +96,12 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    // 우리 팀이 한 일과 할 일(일정), 누가 무슨 일을 맡는지(운영진). 서비스가 아니라 우리 팀을 다루는 곳이라 따로 묶는다
+    // 우리 팀이 한 일과 할 일(일정), 누가 무엇을 바꿨는지(변경 기록), 누가 무슨 일을 맡는지(운영진).
+    // 서비스가 아니라 우리 팀을 다루는 곳이라 따로 묶는다
     label: "팀",
     items: [
       { href: SCHEDULE_HREF, label: "일정", Icon: CalendarIcon },
+      { href: CHANGES_HREF, label: "변경 기록", Icon: HistoryIcon },
       { href: "/admin/team", label: "운영진", Icon: TeamIcon },
     ],
   },

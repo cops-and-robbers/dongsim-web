@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { actorName } from "@/lib/admin/server/remoteConfig";
-import { isTeamWritable, readManager, readTeam, saveMemberRoles, TeamConflict, userIdOf } from "@/lib/admin/server/team";
+import { isTeamWritable, listRoleNames, readManager, readTeam, saveMemberRoles, TeamConflict, userIdOf } from "@/lib/admin/server/team";
+import { db } from "@/lib/metrics/db";
+import { recordChange } from "@/lib/changes/server";
+import { diffList } from "@/lib/changes/model";
 import { guard, noStore } from "@/lib/event/adminApi";
 
 /**
@@ -28,7 +31,14 @@ export async function PUT(req: Request): Promise<NextResponse> {
   const me = userIdOf(checked.token);
   try {
     if (userId !== me && !(await readManager(me))) return NextResponse.json({ error: "다른 분의 역할은 운영 역할을 맡은 분이 고칠 수 있어요." }, { status: 403 });
-    const member = await saveMemberRoles(userId, updatedAt, roleKeys as string[], onboard === true && userId === me, await actorName(checked.token));
+    const actor = await actorName(checked.token);
+    const { data: prev } = await db().from("admin_members").select("role_keys").eq("user_id", userId).maybeSingle();
+    const member = await saveMemberRoles(userId, updatedAt, roleKeys as string[], onboard === true && userId === me, actor);
+    // 변경 기록(#313). 맡은 역할을 이름으로 더하고 뺀 것만 남긴다
+    const names = new Map((await listRoleNames().catch(() => [])).map((r) => [r.key, r.name]));
+    const named = (keys: string[]) => keys.map((k) => names.get(k) ?? k);
+    const field = diffList("맡은 일", named((prev?.role_keys as string[] | undefined) ?? []), named(member.roleKeys));
+    if (field) await recordChange({ actor, area: "team", target: `${member.nickname} 님의 역할`, action: "edit", fields: [field], href: "/admin/team" });
     return NextResponse.json({ member }, noStore);
   } catch (e) {
     if (e instanceof TeamConflict) return NextResponse.json({ error: "다른 분이 먼저 고쳤어요. 새로 불러온 뒤 다시 골라 주세요." }, { status: 409 });

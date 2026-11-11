@@ -47,3 +47,4 @@ pnpm build                 # 검증 기준은 이 빌드의 "Compiled successful
 | 팀원에게 블로그 글쓰기를 안내할 때 | `docs/blog-writing-guide.md` |
 | 이용약관·개인정보 처리방침 등 법적 문서 | `docs/legal-documents.md` |
 | 행사 값(포토부스, 홈 팝업, /event, 홈 미니게임), 어드민 화면 원칙 | `docs/admin-ui.md` |
+| 어드민 변경 기록(누가 무엇을 바꿨나), 새 저장 화면에 기록 남기기 | `docs/admin-ui.md` "변경 기록" |

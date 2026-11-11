@@ -285,7 +285,7 @@ export function SlidersIcon({ className }: IconProps) {
 }
 
 export function HistoryIcon({ className }: IconProps) {
-  // Lucide 'history'. 최근 본 게임, 유저. 원본 path 그대로.
+  // Lucide 'history'. 최근 본 게임, 유저, 메뉴 "변경 기록"(#313). 원본 path 그대로.
   return (
     <Line className={className}>
       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />

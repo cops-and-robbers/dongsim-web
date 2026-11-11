@@ -1,6 +1,28 @@
 import { NextResponse } from "next/server";
 import { actorName } from "@/lib/admin/server/remoteConfig";
 import { createRole, isTeamWritable, listRoleNames, readManager, TeamConflict, updateRole, userIdOf } from "@/lib/admin/server/team";
+import { db } from "@/lib/metrics/db";
+import { CARDS, isCardKey } from "@/lib/admin/overview/cards";
+import { recordChange } from "@/lib/changes/server";
+import { actionOf, diffList, diffValues } from "@/lib/changes/model";
+
+// ── 변경 기록(#313) ──
+type RoleRow = { name: string; description: string; cards: string[] };
+const readRoleRow = async (key: string): Promise<RoleRow | null> => {
+  const { data } = await db().from("admin_roles").select("name, description, cards").eq("key", key).maybeSingle();
+  return (data as RoleRow | null) ?? null;
+};
+const cardNames = (keys: string[]) => keys.map((k) => (isCardKey(k) ? CARDS[k].title : k));
+async function recordRole(actor: string, before: RoleRow | null, after: RoleRow | null): Promise<void> {
+  const r = after ?? before;
+  if (!r) return;
+  const text = (x: RoleRow | null) => x && { name: x.name, description: x.description };
+  const fields = diffValues(text(before), text(after), { name: "이름", description: "설명" });
+  const cards = diffList("개요 기본 카드", cardNames(before?.cards ?? []), cardNames(after?.cards ?? []));
+  if (cards && before && after) fields.push(cards);
+  await recordChange({ actor, area: "team", target: `역할 ${r.name}`, action: actionOf(before, after), fields, href: "/admin/team" });
+}
+
 import { cardsProblem } from "@/lib/admin/overview/cards";
 import { isBuiltin, newRoleKey, roleProblem, type RoleInput } from "@/lib/admin/team";
 import { guard, noStore } from "@/lib/event/adminApi";
@@ -40,7 +62,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   try {
     const problem = roleProblem(input, await listRoleNames(), false) ?? cardsProblem(input.cards);
     if (problem) return bad(problem);
-    return NextResponse.json({ role: await createRole(newRoleKey(Date.now()), input, await actorName(ok.token)) }, noStore);
+    const actor = await actorName(ok.token);
+    const role = await createRole(newRoleKey(Date.now()), input, actor);
+    await recordRole(actor, null, role);
+    return NextResponse.json({ role }, noStore);
   } catch (e) {
     return failed(e);
   }
@@ -54,7 +79,10 @@ export async function PUT(req: Request): Promise<NextResponse> {
   try {
     if (archive === true) {
       if (isBuiltin(key)) return bad("처음부터 있던 역할은 지울 수 없어요.");
-      await updateRole(key, updatedAt, null, await actorName(ok.token));
+      const actor = await actorName(ok.token);
+      const before = await readRoleRow(key);
+      await updateRole(key, updatedAt, null, actor);
+      await recordRole(actor, before, null);
       return NextResponse.json({ ok: true }, noStore);
     }
     const input = inputOf(ok.body);
@@ -62,7 +90,11 @@ export async function PUT(req: Request): Promise<NextResponse> {
     const problem = roleProblem(input, (await listRoleNames()).filter((r) => r.key !== key), isBuiltin(key)) ?? cardsProblem(input.cards);
     if (problem) return bad(problem);
     // 처음부터 있던 역할은 그림이 정해져 있어 아이콘을 바꾸지 않는다
-    return NextResponse.json({ role: await updateRole(key, updatedAt, isBuiltin(key) ? { ...input, icon: key } : input, await actorName(ok.token)) }, noStore);
+    const actor = await actorName(ok.token);
+    const before = await readRoleRow(key);
+    const role = await updateRole(key, updatedAt, isBuiltin(key) ? { ...input, icon: key } : input, actor);
+    if (role) await recordRole(actor, before, role);
+    return NextResponse.json({ role }, noStore);
   } catch (e) {
     return failed(e);
   }
