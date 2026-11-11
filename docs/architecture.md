@@ -34,6 +34,8 @@
 | `/api/admin/company`, `/api/admin/company/records`, `/people`, `/skips` | 어드민 "동심지키미 소개": 이력과 명단을 읽고 고침. 저장은 운영 배포에서만 |
 | `/api/admin/release/actions` | 어드민 출시 조작: 다시 읽고 확인한 뒤 스토어에 보냄, `release_actions` 에 기록. 고르기는 `lib/release/options.ts`, 보내기는 `lib/release/actions.ts` |
 | `/api/admin/store-page` | 어드민 "스토어 페이지": 두 스토어의 문구 읽기(1분 캐시)와 초안 저장. 칸과 점검은 `lib/store-page/fields.ts`, 스토어에는 쓰지 않음 |
+| `/api/admin/search`, `/api/admin/search/requested` | 지표 "검색" 탭: 구글 판정, 새 페이지 진행, 검색 실적을 읽고, 서치 콘솔에서 색인을 요청했다는 기록을 남김. `docs/search-indexing.md` |
+| `/api/metrics/gsc` | 매일 05:43 수집(크론 시크릿). 구글 URL 검사, 검색 실적, 사이트맵 상태, 새 주소 알림 |
 
 `/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 다국어 라우팅용 `proxy.ts`도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/(en)/en/*`·`app/(ja)/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
 

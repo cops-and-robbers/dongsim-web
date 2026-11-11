@@ -35,6 +35,7 @@ pnpm build                 # 검증 기준은 이 빌드의 "Compiled successful
 | 블로그(노션 CMS) 관련 개발 | `docs/blog-system.md` |
 | 인스타 성과 수집, 디스코드 리포트 | `docs/instagram-report.md` |
 | App Store, GA4, AdMob 지표 수집 | `docs/metrics-collection.md` |
+| 구글 검색 색인, 사이트맵 제출, IndexNow, 지표 검색 탭 | `docs/search-indexing.md` |
 | 어드민 지표 챗봇(물어보기 패널), 치즈 펫 | `docs/metrics-chat.md` |
 | 일정(달력) 성격, 운영진 거르기, 행사 성적표 | `docs/metrics-events.md` |
 | 회사 소개 이력, 수상, 고마운 분들, 앱 크레딧 명단 | `docs/admin-ui.md` "동심지키미 소개" |

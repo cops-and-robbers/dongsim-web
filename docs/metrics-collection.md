@@ -33,6 +33,7 @@ GitHub Actions
 | GA4 | `ga4_daily` | 속성 시간대 | 최근 7일 | 세로로 길게 저장. `totalUsers` 는 날짜끼리 더하면 안 된다(같은 사람을 여러 번 센다) |
 | AdMob | `admob_daily` | Asia/Seoul | 최근 7일 | 서비스 계정 불가, 사람 계정 갱신 토큰. 매치율, 노출률은 저장하지 않고 요청 수에서 계산 |
 | Google Play | `play_daily` | 미국 서부(PT) | 지난달과 이번 달 파일 | API 가 없고 Cloud Storage 에 달마다 CSV(UTF-16). 3~7일 늦게 채워진다. 같은 버킷에 다른 앱 파일도 있어 패키지로 거른다. 아래 "Google Play" |
+| 구글 서치 콘솔 | `gsc_inspection_daily`, `gsc_search_daily`, `gsc_sitemap_daily` | 판정은 한국 날짜, 검색 실적은 미국 서부(PT) | 판정은 오늘만, 실적은 최근 10일 | 실적은 2~3일 늦게 확정돼 `final` 만 받는다. 판정 API 는 그날 상태만 줘서 매일 남겨야 추세가 생긴다. 사이트당 하루 2,000건. 자세한 건 `docs/search-indexing.md` (#309) |
 | 당근 키워드 광고 | `daangn_ads_daily` | Asia/Seoul | 최근 7일 | OpenAPI 는 소재 단위까지만 준다(키워드별 없음). 설치 칸은 측정 서비스를 연결해야 채워져 받지 않는다. 키는 조회 전용이 없다 |
 
 **App Store 판매 상품 유형(`product_type`)**: `1`, `1F`, `1T` 신규 다운로드 / `3`, `3F` 재다운로드 / `7`, `7F`, `7T` 업데이트.
@@ -143,6 +144,7 @@ Play Developer Reporting API 는 비정상 종료율 같은 품질 지표만 줘
 | `ADMOB_REFRESH_TOKEN` | Vercel | 팀 계정이 허락해 받은 갱신 토큰 |
 | `ASC_RELEASE_KEY_ID`, `ASC_RELEASE_PRIVATE_KEY`, `PLAY_RELEASE_SERVICE_ACCOUNT_JSON` | Vercel | 지표가 아니라 어드민 "출시" 보드용(출시 권한). `docs/admin-ui.md` "출시" |
 | `PLAY_GCS_URI` | Vercel | Play Console > 보고서 다운로드 > 통계 > Cloud Storage URI 복사(`gs://pubsite_prod_...`). 서비스 계정은 `GOOGLE_SERVICE_ACCOUNT_JSON` 을 같이 쓴다 |
+| `INDEXNOW_KEY` | Vercel | IndexNow 키(영문, 숫자, 대시 8~128자). 아무 값이나 만들어 넣으면 `/indexnow-key.txt` 가 내준다. `docs/search-indexing.md` |
 | `DAANGN_ADS_API_KEY` | Vercel | 당근 전문가모드 > 고객센터 > 온라인 문의 > 광고 도구 및 전환 > OpenAPI 키 발급 (광고 계정). 확인 링크는 24시간 안에 한 번만 열리고, 새로 발급하면 이전 키는 바로 폐기된다 |
 
 비밀이 아닌 식별자(앱 ID, Vendor 번호, GA4 속성 ID, AdMob 퍼블리셔 ID, 처음 채울 날짜)는 `lib/metrics/config.ts` 에 있다.
