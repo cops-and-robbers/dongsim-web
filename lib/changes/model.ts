@@ -144,3 +144,42 @@ export function fieldCount(f: FieldChange): number {
   if (f.kind !== "list" && f.kind !== "images") return 1;
   return f.added.length + f.removed.length || (f.moved ? 1 : 0);
 }
+
+// ── 긴 문구 비교 ──
+
+export type Segment = { op: "same" | "add" | "del"; text: string };
+
+/** 문구가 길거나 줄이 여럿이면 통째로 둘을 보이지 않고 바뀐 단어만 칠한다 */
+export const isLong = (v: string | null) => !!v && (v.length > 60 || v.includes("\n"));
+
+/**
+ * 단어(띄어쓰기 기준) 단위로 무엇을 지우고 무엇을 넣었는지. 너무 길면(단어 수의 곱이 25만 넘게) null 을 돌려
+ * 화면이 전과 후를 통째로 보여 준다. 스토어 설명(4,000자)도 보통 이 안에 든다
+ */
+export function diffWords(before: string, after: string): Segment[] | null {
+  const a = before.split(/(\s+)/).filter(Boolean);
+  const b = after.split(/(\s+)/).filter(Boolean);
+  if (a.length * b.length > 250_000) return null;
+  // 가장 긴 공통 부분열. 뒤에서부터 채워 앞에서 읽는다
+  const dp = Array.from({ length: a.length + 1 }, () => new Uint16Array(b.length + 1));
+  for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const out: Segment[] = [];
+  const push = (op: Segment["op"], text: string) => {
+    const last = out.at(-1);
+    if (last?.op === op) last.text += text;
+    else out.push({ op, text });
+  };
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      push("same", a[i]);
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) push("del", a[i++]);
+    else push("add", b[j++]);
+  }
+  while (i < a.length) push("del", a[i++]);
+  while (j < b.length) push("add", b[j++]);
+  return out;
+}

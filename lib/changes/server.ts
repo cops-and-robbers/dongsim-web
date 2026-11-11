@@ -10,6 +10,8 @@ import { db } from "@/lib/metrics/db";
 import { diff as diffEvent, defaultSettings, normalize, type EventDay } from "@/lib/event/settings";
 import { AREA, diffList, isChangeArea, type Change, type ChangeAction, type FieldChange } from "./model";
 import { mergeFields } from "./merge";
+import { FIELDS, LANGS, type Platform } from "@/lib/store-page/fields";
+import { slotById } from "@/lib/store-page/images";
 
 export { mergeFields };
 
@@ -148,7 +150,7 @@ async function releaseActions(from: string, to: string): Promise<Change[]> {
         area: "store-page" as const,
         target: `${store} 스토어에 보내기 (${r.version})`,
         action: "run" as const,
-        fields: params.fields?.length ? [{ kind: "list" as const, label: "보낸 칸", added: params.fields, removed: [] }] : [],
+        fields: params.fields?.length ? [{ kind: "list" as const, label: "보낸 칸", added: params.fields.map((k) => sentName(r.platform as Platform, k)), removed: [] }] : [],
         href: AREA["store-page"].href,
         impact: true,
         status: r.status,
@@ -170,6 +172,14 @@ async function releaseActions(from: string, to: string): Promise<Change[]> {
       note: r.status === "failed" ? (r.message ?? undefined) : undefined,
     };
   });
+}
+
+/** "ko:name" 을 "한국어 이름" 으로 */
+function sentName(platform: Platform, key: string): string {
+  const [lang, id] = key.split(":");
+  const langLabel = LANGS.find((l) => l.id === lang)?.label ?? lang;
+  const label = FIELDS[platform]?.find((f) => f.id === id)?.label ?? slotById(platform, id)?.label ?? id;
+  return `${langLabel} ${label}`;
 }
 
 const COMPANY_ACTION: Record<string, ChangeAction> = { create: "add", update: "edit", delete: "remove" };
