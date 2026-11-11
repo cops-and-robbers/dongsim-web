@@ -38,7 +38,11 @@ export type FieldChange =
   /** 목록. 순서만 바뀌었으면 moved 로 알린다 */
   | { kind: "list"; label: string; added: string[]; removed: string[]; moved?: boolean }
   /** 그림 주소. 화면이 작은 그림 둘로 보여 준다 */
-  | { kind: "image"; label: string; before: string | null; after: string | null };
+  | { kind: "image"; label: string; before: string | null; after: string | null }
+  /** 그림 목록(스토어 스크린샷). 더하고 뺀 그림을 작은 그림으로 보여 준다 */
+  | { kind: "images"; label: string; added: Pic[]; removed: Pic[]; moved?: boolean };
+
+export type Pic = { id: string; url: string; name?: string };
 
 export type Change = {
   /** 출처까지 붙인 고유 값(같은 일이 두 갈래에서 겹치지 않게) */
@@ -93,6 +97,15 @@ export function diffList(label: string, before: readonly string[], after: readon
   return null;
 }
 
+/** 두 그림 목록에서 더한 것과 뺀 것. id 로 같은 그림을 가린다 */
+export function diffPics(label: string, before: readonly Pic[], after: readonly Pic[]): FieldChange | null {
+  const ids = (l: readonly Pic[]) => l.map((p) => p.id);
+  const d = diffList(label, ids(before), ids(after));
+  if (!d || d.kind !== "list") return null;
+  const pick = (l: readonly Pic[], want: string[]) => l.filter((p) => want.includes(p.id));
+  return { kind: "images", label, added: pick(after, d.added), removed: pick(before, d.removed), ...(d.moved && { moved: true }) };
+}
+
 /** 무엇을 했는지 한 단어. 전이 없으면 추가, 후가 없으면 지움 */
 export function actionOf(before: unknown, after: unknown): ChangeAction {
   if (before === null || before === undefined) return "add";
@@ -128,6 +141,6 @@ export function filterChanges(changes: readonly Change[], f: ChangeFilter): Chan
 
 /** 화면이 바꾼 칸 수를 셀 때. 목록은 더하고 뺀 개수, 순서만 바뀌면 1 */
 export function fieldCount(f: FieldChange): number {
-  if (f.kind !== "list") return 1;
+  if (f.kind !== "list" && f.kind !== "images") return 1;
   return f.added.length + f.removed.length || (f.moved ? 1 : 0);
 }

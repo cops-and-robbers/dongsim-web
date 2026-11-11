@@ -9,12 +9,33 @@
 import { db } from "@/lib/metrics/db";
 import { diff as diffEvent, defaultSettings, normalize, type EventDay } from "@/lib/event/settings";
 import { AREA, diffList, isChangeArea, type Change, type ChangeAction, type FieldChange } from "./model";
+import { mergeFields } from "./merge";
+
+export { mergeFields };
 
 export type NewChange = Omit<Change, "id" | "at" | "status" | "note"> & { at?: string };
 
-export async function recordChange(c: NewChange): Promise<void> {
+/**
+ * mergeWithinMs 를 주면 같은 사람이 같은 대상을 그 시간 안에 다시 고친 것을 한 줄로 합친다.
+ * 입력하는 동안 저절로 저장되는 칸(스토어 페이지 초안)이 한 글자마다 기록을 쌓지 않게.
+ * 합칠 때 "전"은 처음 줄 것을, "후"는 이번 것을 쓰고, 결국 같아진 칸은 뺀다
+ */
+export async function recordChange(c: NewChange, opts: { mergeWithinMs?: number } = {}): Promise<void> {
   if (c.action === "edit" && c.fields.length === 0) return;
   try {
+    if (opts.mergeWithinMs) {
+      const since = new Date(Date.now() - opts.mergeWithinMs).toISOString();
+      const { data: last } = await db().from("admin_changes").select("id, action, fields").eq("actor", c.actor).eq("area", c.area).eq("target", c.target.slice(0, 120)).gte("at", since).order("at", { ascending: false }).limit(1).maybeSingle();
+      if (last) {
+        const fields = mergeFields(last.fields as FieldChange[], c.fields);
+        // 새로 만든 것을 곧바로 지웠으면 기록할 일이 없다
+        if (last.action === "add" && c.action === "remove") return void (await db().from("admin_changes").delete().eq("id", last.id));
+        const action: ChangeAction = last.action === "add" ? "add" : c.action;
+        if (fields.length === 0 && action === "edit") return void (await db().from("admin_changes").delete().eq("id", last.id));
+        await db().from("admin_changes").update({ at: new Date().toISOString(), action, fields, impact: c.impact ?? false }).eq("id", last.id);
+        return;
+      }
+    }
     const { error } = await db()
       .from("admin_changes")
       .insert({ actor: c.actor, area: c.area, target: c.target.slice(0, 120), action: c.action, fields: c.fields, href: c.href ?? null, impact: c.impact ?? false, ...(c.at && { at: c.at }) });
