@@ -8,7 +8,9 @@ import {
   webgameUrl,
   writeWebgameControl,
 } from "@/lib/admin/server/webgame";
-import { validateWebgameChange, type WebgameChange, type WebgameState } from "@/lib/admin/webgame";
+import { MODE_LABEL, validateWebgameChange, type WebgameChange, type WebgameState } from "@/lib/admin/webgame";
+import { recordChange } from "@/lib/changes/server";
+import { diffValues } from "@/lib/changes/model";
 
 /**
  * 어드민 "온라인 게임" (docs/admin-ui.md). 게임 서버의 운영 상태를 대신 읽고 바꾼다.
@@ -57,7 +59,19 @@ export async function PUT(req: Request): Promise<NextResponse> {
 
   try {
     const change: WebgameChange = { mode: body.mode!, message: (body.message ?? "").trim(), until: body.until || null };
-    const saved = await writeWebgameControl(change, await actorName(checked.token));
+    // 변경 기록(#313)에 전 값을 남기려고 먼저 읽는다. 못 읽어도 바꾸기는 한다
+    const before = await readWebgameControl().catch(() => null);
+    const actor = await actorName(checked.token);
+    const saved = await writeWebgameControl(change, actor);
+    const show = (c: { mode: WebgameChange["mode"]; message: string; until: string | null } | null) => c && { mode: MODE_LABEL[c.mode], message: c.message, until: c.until ? c.until.replace("T", " ").slice(0, 16) : "" };
+    await recordChange({
+      actor,
+      area: "webgame",
+      target: "온라인 게임 입구",
+      action: "edit",
+      fields: diffValues(show(before), show(change), { mode: "누가 들어올 수 있나", message: "안내 문구", until: "끝나는 때" }),
+      impact: before?.mode !== change.mode,
+    });
     return NextResponse.json(withEnv(saved), noStore);
   } catch (e) {
     console.error("[webgame] 바꾸기 실패", e);

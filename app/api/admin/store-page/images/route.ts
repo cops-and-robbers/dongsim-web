@@ -4,9 +4,11 @@ import { actorName } from "@/lib/admin/server/remoteConfig";
 import { guard, noStore } from "@/lib/event/adminApi";
 import { PHOTOBOOTH_PUBLIC_BASE } from "@/lib/photobooth/constants";
 import { presignUpload } from "@/lib/photobooth/r2";
-import { isLang, type Platform } from "@/lib/store-page/fields";
-import { extOf, invalidItems, MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, slotById, type ImageItem } from "@/lib/store-page/images";
-import { saveImageDraft } from "@/lib/store-page/server";
+import { isLang, LANGS, type Platform } from "@/lib/store-page/fields";
+import { extOf, invalidItems, MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, itemId, slotById, type ImageItem } from "@/lib/store-page/images";
+import { saveImageDraft, storePage } from "@/lib/store-page/server";
+import { recordChange } from "@/lib/changes/server";
+import { diffPics } from "@/lib/changes/model";
 
 /**
  * 어드민 "스토어 페이지"의 이미지와 영상 (docs/admin-ui.md "스토어 페이지").
@@ -53,8 +55,23 @@ export async function PUT(req: Request): Promise<NextResponse> {
     if (problem) return bad(problem);
   }
   try {
-    const result = await saveImageDraft({ platform: body.platform, lang: body.lang, slot: slot.id, items: body.items ?? null, expect: body.expect ?? null }, await actorName(checked.token));
+    const actor = await actorName(checked.token);
+    const result = await saveImageDraft({ platform: body.platform, lang: body.lang, slot: slot.id, items: body.items ?? null, expect: body.expect ?? null }, actor);
     if (!result.ok) return NextResponse.json({ error: "다른 분이 방금 이 칸을 고쳤어요.", current: result.current }, { status: 409 });
+    // 변경 기록(#313). 초안이 없던 칸은 스토어에 지금 있는 그림들이 "전"이다
+    const platform = body.platform;
+    const lang = body.lang;
+    const live = async (): Promise<ImageItem[]> => {
+      const page = (await storePage().catch(() => null))?.[platform];
+      return page?.ok ? (page.images[lang]?.[slot.id] ?? []) : [];
+    };
+    const pics = (l: ImageItem[]) => l.map((i, n) => ({ id: itemId(i), url: i.url, name: i.kind === "new" ? i.name : `스토어 ${n + 1}번` }));
+    const field = diffPics(slot.label, pics(result.previous?.items ?? (await live())), pics(result.draft?.items ?? (await live())));
+    const langLabel = LANGS.find((l) => l.id === lang)?.label ?? lang;
+    await recordChange(
+      { actor, area: "store-page", target: `${platform === "ios" ? "App Store" : "Google Play"} ${langLabel} ${slot.label} 초안`, action: "edit", fields: field ? [field] : [], href: "/admin/store-page" },
+      { mergeWithinMs: 10 * 60_000 },
+    );
     return NextResponse.json({ draft: result.draft }, noStore);
   } catch (e) {
     console.error("[store-page] 이미지 저장", e instanceof Error ? e.message : e);

@@ -3,6 +3,19 @@ import { actorName } from "@/lib/admin/server/remoteConfig";
 import { guard, noStore } from "@/lib/event/adminApi";
 import { REPLY_LANGS, templateProblem, type Fit, type TemplateInput } from "@/lib/reviews/templates";
 import { createTemplate, deleteTemplate, listTemplates, TemplateConflict, updateTemplate } from "@/lib/reviews/templatesServer";
+import { FIT_LABEL, type ReplyTemplate } from "@/lib/reviews/templates";
+import { recordChange } from "@/lib/changes/server";
+import { actionOf, diffValues } from "@/lib/changes/model";
+
+// 변경 기록(#313). 세 언어 문구를 칸으로 나눠 무엇이 바뀌었는지 보이게 한다
+const LABELS = { title: "이름", fit: "어울리는 리뷰", ko: "한국어 문구", en: "영어 문구", ja: "일본어 문구" };
+const shown = (t: Pick<ReplyTemplate, "title" | "fit" | "bodies"> | null) => t && { title: t.title, fit: FIT_LABEL[t.fit], ...t.bodies };
+async function record(actor: string, before: ReplyTemplate | null, after: ReplyTemplate | null): Promise<void> {
+  const t = after ?? before;
+  if (!t) return;
+  await recordChange({ actor, area: "reviews", target: `답변 문구 ${t.title}`, action: actionOf(before, after), fields: diffValues(shown(before), shown(after), LABELS), href: "/admin/reviews" });
+}
+const findTemplate = async (id: number) => (await listTemplates()).templates.find((t) => t.id === id) ?? null;
 
 /**
  * 리뷰 답변 문구 (docs/admin-ui.md "리뷰").
@@ -47,7 +60,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   const body = await read(req);
   if (body instanceof NextResponse) return body;
   try {
-    return NextResponse.json({ template: await createTemplate(body.input, await actorName(checked.token)) }, noStore);
+    const actor = await actorName(checked.token);
+    const template = await createTemplate(body.input, actor);
+    await record(actor, null, template);
+    return NextResponse.json({ template }, noStore);
   } catch (e) {
     return failed(e);
   }
@@ -62,7 +78,11 @@ export async function PUT(req: Request): Promise<NextResponse> {
   const { id, updatedAt } = body.raw;
   if (typeof id !== "number" || typeof updatedAt !== "string") return bad("어느 문구인지 알 수 없어요.");
   try {
-    return NextResponse.json({ template: await updateTemplate(id, updatedAt, body.input, await actorName(checked.token)) }, noStore);
+    const actor = await actorName(checked.token);
+    const before = await findTemplate(id);
+    const template = await updateTemplate(id, updatedAt, body.input, actor);
+    await record(actor, before, template);
+    return NextResponse.json({ template }, noStore);
   } catch (e) {
     if (e instanceof TemplateConflict) return NextResponse.json({ error: "다른 분이 먼저 고쳤어요. 새로 불러온 뒤 다시 고쳐 주세요." }, { status: 409 });
     return failed(e);
@@ -76,7 +96,9 @@ export async function DELETE(req: Request): Promise<NextResponse> {
   const id = Number(new URL(req.url).searchParams.get("id"));
   if (!Number.isInteger(id) || id <= 0) return bad("어느 문구인지 알 수 없어요.");
   try {
+    const before = await findTemplate(id);
     await deleteTemplate(id);
+    await record(await actorName(checked.token), before, null);
     return NextResponse.json({ ok: true }, noStore);
   } catch (e) {
     return failed(e);

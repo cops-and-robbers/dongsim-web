@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { actorName } from "@/lib/admin/server/remoteConfig";
+import { recordChange } from "@/lib/changes/server";
+import { assetUrl } from "@/lib/event/assets";
+
+const KIND_NAME = { frame: "프레임", character: "캐릭터", icon: "QR 아이콘" } as const;
 import { guard, isEventsWritable, noStore, storeError, type AssetsList } from "@/lib/event/adminApi";
 import { CHARACTER_TYPES, FRAME_SIZE, FRAME_TYPES, ICON_MIN_PX, ICON_TYPES, MAX_BYTES, checkFrame, type Asset, type Slot } from "@/lib/event/assets";
 import { createAsset, listAssets, pngSize, usage, webpSize } from "@/lib/event/assetsServer";
@@ -101,7 +105,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   try {
-    const asset = await createAsset({ kind, label, meta, body, type: file.type, by: await actorName(checked.token) });
+    const by = await actorName(checked.token);
+    const asset = await createAsset({ kind, label, meta, body, type: file.type, by });
+    // 변경 기록(#313). 올린 그림을 기록에서 바로 보이게 image 로 남긴다
+    await recordChange({ actor: by, area: "assets", target: `${KIND_NAME[asset.kind]} ${asset.label}`, action: "add", fields: [{ kind: "image", label: "그림", before: null, after: assetUrl(asset.key) }], href: "/admin/assets" });
     return NextResponse.json({ asset }, noStore);
   } catch (e) {
     return storeError(e);
