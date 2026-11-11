@@ -20,6 +20,12 @@
 - **sharp는 0.34.5 고정** - Next 내장 sharp(0.34.x)와 다른 메이저·마이너가 공존하면
   libvips 네이티브 충돌(`colourspace: parameter space not set`)로 OG 프리렌더가 깨진다.
   버전을 올릴 땐 Next가 내장한 버전과 맞춘다
+- **페이지를 `app/` 바로 아래에 만들면 안 된다.** 루트 레이아웃은 언어 묶음
+  `app/(ko)`·`app/(en)`·`app/(ja)`마다 있고 `app/layout.tsx`는 없다(#301).
+  묶음 밖 페이지는 `pnpm build`에서 루트 레이아웃이 없다고 실패한다.
+  `pnpm dev`는 Next가 `app/layout.tsx`를 저절로 만드는데, 이 파일이 세 묶음을 모두 감싸
+  화면이 깨지니 지우고 커밋하지 않는다. 다른 브랜치를 리베이스할 때 그쪽이 옛 위치
+  (`app/admin/...` 등)에 새로 만든 파일도 묶음으로 옮긴다(#304에서 실제로 남았다)
 
 ## pnpm (Windows 로컬)
 

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { actorName } from "@/lib/admin/server/remoteConfig";
 import { guard, noStore } from "@/lib/event/adminApi";
-import { DRAFT_MAX, isField, isLang, type Platform } from "@/lib/store-page/fields";
+import { baseOf, DRAFT_MAX, FIELDS, isField, isLang, LANGS, type Platform } from "@/lib/store-page/fields";
+import { recordChange } from "@/lib/changes/server";
 import { refreshStores, saveDraft, storePage } from "@/lib/store-page/server";
 
 /**
@@ -35,8 +36,22 @@ export async function PUT(req: Request): Promise<NextResponse> {
   if ((platform !== "ios" && platform !== "android") || !isLang(lang) || !isField(platform, field)) return NextResponse.json({ error: "어느 칸인지 알 수 없어요." }, { status: 400 });
   if (value !== null && (typeof value !== "string" || [...value].length > DRAFT_MAX)) return NextResponse.json({ error: "글이 너무 길어요." }, { status: 400 });
   try {
-    const result = await saveDraft({ platform, lang, field, value: value ?? null, expect: body.expect ?? null }, await actorName(checked.token));
+    const actor = await actorName(checked.token);
+    const result = await saveDraft({ platform, lang, field, value: value ?? null, expect: body.expect ?? null }, actor);
     if (!result.ok) return NextResponse.json({ error: "다른 분이 방금 이 칸을 고쳤어요.", current: result.current }, { status: 409 });
+    // 변경 기록(#313). 초안이 없던 칸은 스토어에 지금 있는 문구가 "전"이다. 입력하는 동안 저절로 저장돼 10분 안의 고침은 한 줄로 합친다
+    const live = async () => {
+      const page = (await storePage().catch(() => null))?.[platform];
+      return page?.ok ? baseOf(page.langs[lang], field) : null;
+    };
+    const before = result.previous?.value ?? (await live());
+    const after = result.draft?.value ?? (await live());
+    const label = FIELDS[platform].find((f) => f.id === field)?.label ?? field;
+    const langLabel = LANGS.find((l) => l.id === lang)?.label ?? lang;
+    await recordChange(
+      { actor, area: "store-page", target: `${platform === "ios" ? "App Store" : "Google Play"} ${langLabel} ${label} 초안`, action: "edit", fields: before === after ? [] : [{ kind: "value", label, before: before || null, after: after || null }], href: "/admin/store-page" },
+      { mergeWithinMs: 10 * 60_000 },
+    );
     return NextResponse.json({ draft: result.draft }, noStore);
   } catch (e) {
     console.error("[store-page] 저장", e instanceof Error ? e.message : e);

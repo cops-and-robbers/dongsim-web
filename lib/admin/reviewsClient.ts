@@ -2,6 +2,7 @@
 import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
 import type { Inbox, Platform, Review } from "@/lib/reviews/model";
+import type { ReplyTemplate, TemplateInput, TemplateList } from "@/lib/reviews/templates";
 
 const API = "/api/admin/reviews";
 
@@ -36,4 +37,22 @@ export const reopen = (key: Key) => patch({ ...key, action: "reopen" });
 
 export async function postReply(key: Key, text: string): Promise<Review> {
   return (await json<{ review: Review }>(await send(API, { method: "POST", body: JSON.stringify({ ...key, text }) }), "답글을 올리지 못했어요. 잠시 뒤 다시 시도해 주세요.")).review;
+}
+
+const TEMPLATES = `${API}/templates`;
+
+export async function fetchTemplates(): Promise<TemplateList> {
+  return json<TemplateList>(await send(TEMPLATES), "답변 문구를 불러오지 못했어요.");
+}
+
+export async function createTemplate(input: TemplateInput): Promise<ReplyTemplate> {
+  return (await json<{ template: ReplyTemplate }>(await send(TEMPLATES, { method: "POST", body: JSON.stringify(input) }), "답변 문구를 저장하지 못했어요.")).template;
+}
+
+export async function updateTemplate(id: number, updatedAt: string, input: TemplateInput): Promise<ReplyTemplate> {
+  return (await json<{ template: ReplyTemplate }>(await send(TEMPLATES, { method: "PUT", body: JSON.stringify({ id, updatedAt, ...input }) }), "답변 문구를 저장하지 못했어요.")).template;
+}
+
+export async function deleteTemplate(id: number): Promise<void> {
+  await json(await send(`${TEMPLATES}?id=${id}`, { method: "DELETE" }), "답변 문구를 지우지 못했어요.");
 }

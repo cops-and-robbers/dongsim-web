@@ -1,4 +1,4 @@
-# App Store, GA4, AdMob, Google Play 수집 (#142, #143, #147).
+# App Store, GA4, AdMob, Google Play, 당근 광고 수집 (#142, #143, #147).
 #
 # 하루 한 번 소스마다 수집 라우트를 부른다. 소스마다 따로 부르는 이유는 둘이다 -
 # 한 소스가 실패해도 다른 소스는 저장되고, 각 호출이 Vercel 300초 한도 안에 든다.
@@ -20,6 +20,12 @@ on:
         description: "이 날부터 다시 채우기 (YYYY-MM-DD, 비우면 최근 7일)"
         type: string
         default: ""
+      source:
+        # 한 소스만 다시 채울 때. 시작일이 모든 소스에 같이 걸리면 처음부터 받는 소스가 300초를 넘길 수 있다(#311)
+        description: "이 소스만 돌리기 (비우면 전부)"
+        type: choice
+        options: ["", appstore, ga4, admob, play, reviews, daangn, gsc]
+        default: ""
 
 jobs:
   collect:
@@ -29,9 +35,11 @@ jobs:
       # 한 소스가 실패해도 나머지는 돈다
       fail-fast: false
       matrix:
-        source: [appstore, ga4, admob, play, reviews]
+        source: [appstore, ga4, admob, play, reviews, daangn, gsc]
     steps:
       - name: ${{ matrix.source }} 수집
+        # 손으로 돌릴 때 소스를 골랐으면 그 소스만. 예약 실행은 inputs 가 비어 전부 돈다
+        if: ${{ !inputs.source || inputs.source == matrix.source }}
         env:
           SOURCE: ${{ matrix.source }}
           FROM: ${{ inputs.from }}
@@ -43,7 +51,7 @@ jobs:
             "https://copsandrobbers.app/api/metrics/$SOURCE$query" \
             -H "Authorization: Bearer $SECRET")
           # 공개 저장소 로그라 수익(earningsUsd)과 판매 개수(sales.units)는 빼고, 됐는지와 몇 줄인지만 남긴다
-          jq 'del(.earningsUsd, .sales.units)' response.json || head -c 300 response.json
+          jq 'del(.earningsUsd, .sales.units, .costWon)' response.json || head -c 300 response.json
           echo
           echo "HTTP $code"
           test "$code" = "200"

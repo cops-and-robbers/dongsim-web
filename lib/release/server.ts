@@ -4,7 +4,7 @@
  */
 import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/lib/metrics/db";
-import { buildBoard, type ReleaseBoard } from "./board";
+import { buildBoard, iosVersionsByBuild, type ReleaseBoard } from "./board";
 import { auditReady, recentActions } from "./audit";
 import { androidOptions, iosOptions } from "./options";
 import { NotCached, retryOnce, unwrapNotCached } from "./reliable";
@@ -42,7 +42,7 @@ async function read(): Promise<ReleaseBoard> {
   const board = buildBoard({ now: now.toISOString(), ios, android, lookup, history });
   // 할 수 있는 조작은 스토어에서 읽은 값 그대로로 고른다(서버가 누를 때 다시 읽어 같은지 본다)
   if (board.ios.ok && !("error" in ios)) board.ios.options = iosOptions(ios);
-  if (board.android.ok && !("error" in android)) board.android.options = androidOptions(android);
+  if (board.android.ok && !("error" in android)) board.android.options = androidOptions(android, "error" in ios ? undefined : iosVersionsByBuild(ios));
   const production = process.env.VERCEL_ENV === "production";
   board.actions = actions;
   board.writable = production && ready;

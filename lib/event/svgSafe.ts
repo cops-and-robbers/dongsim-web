@@ -8,7 +8,7 @@
  * - 요소: 도형, 묶음, 그라데이션, 마스크, 클립, 필터, 글자, 안에 든 그림(data: 래스터만)
  * - 속성: 그리기 속성만. url() 은 같은 파일 안(#id)만, 링크(href)는 #id 와 data:image 래스터만
  * - DOCTYPE, ENTITY 는 받지 않는다(엔티티를 부풀려 서버를 멈추게 하는 공격)
- * 내줄 때는 스크립트 실행을 막는 헤더도 붙여 두 겹으로 막는다(app/photobooth/asset).
+ * 내줄 때는 스크립트 실행을 막는 헤더도 붙여 두 겹으로 막는다(app/(ko)/photobooth/asset).
  */
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 

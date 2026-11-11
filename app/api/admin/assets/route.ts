@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { actorName } from "@/lib/admin/server/remoteConfig";
+import { recordChange } from "@/lib/changes/server";
+import { assetUrl } from "@/lib/event/assets";
+
+const KIND_NAME = { frame: "프레임", character: "캐릭터", icon: "QR 아이콘" } as const;
 import { guard, isEventsWritable, noStore, storeError, type AssetsList } from "@/lib/event/adminApi";
-import { CHARACTER_TYPES, FRAME_SIZE, FRAME_TYPES, MAX_BYTES, checkFrame, type Asset, type Slot } from "@/lib/event/assets";
+import { CHARACTER_TYPES, FRAME_SIZE, FRAME_TYPES, ICON_MIN_PX, ICON_TYPES, MAX_BYTES, checkFrame, type Asset, type Slot } from "@/lib/event/assets";
 import { createAsset, listAssets, pngSize, usage, webpSize } from "@/lib/event/assetsServer";
 import { sanitizeSvg } from "@/lib/event/svgSafe";
 
@@ -12,6 +16,7 @@ import { sanitizeSvg } from "@/lib/event/svgSafe";
  * POST multipart { file, kind, label, side?, slots?, swatch? }
  *   프레임: PNG 1800x5400, 4MB 이하. 칸은 화면이 재서 보내고, 여기서 크기와 칸 모양을 다시 검사한다
  *   캐릭터: PNG, WebP, SVG, 1MB 이하, 경찰 쪽 또는 도둑 쪽. SVG 는 그리는 데 필요한 것만 남겨 새로 지은 파일을 올린다
+ *   아이콘(QR 인쇄물, #296): PNG, WebP, SVG, 1MB 이하. 비트맵은 한 변 240px 이상
  */
 export async function GET(req: Request): Promise<NextResponse> {
   const checked = await guard(req);
@@ -37,7 +42,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const kind = form?.get("kind");
   const label = String(form?.get("label") ?? "").trim();
   if (!(file instanceof File)) return bad("파일을 골라 주세요.");
-  if (kind !== "frame" && kind !== "character") return bad("종류가 올바르지 않아요.");
+  if (kind !== "frame" && kind !== "character" && kind !== "icon") return bad("종류가 올바르지 않아요.");
   if (!label || label.length > 20) return bad("이름은 1자에서 20자예요.");
   let body = await file.arrayBuffer();
 
@@ -58,6 +63,24 @@ export async function POST(req: Request): Promise<NextResponse> {
     if (failed) return bad(failed.text);
     const swatch = String(form?.get("swatch") ?? "");
     meta = { width: size.width, height: size.height, slots, swatch: /^#[0-9A-Fa-f]{6}$/.test(swatch) ? swatch.toUpperCase() : "#FFFFFF" };
+  } else if (kind === "icon") {
+    if (!(ICON_TYPES as readonly string[]).includes(file.type)) return bad("아이콘은 PNG, WebP, SVG 만 올릴 수 있어요.");
+    if (body.byteLength > MAX_BYTES.icon) return bad("1MB 아래로 줄여 주세요.");
+    let size: { width: number; height: number } | null;
+    if (file.type === "image/svg+xml") {
+      try {
+        const safe = sanitizeSvg(new TextDecoder().decode(body));
+        body = new TextEncoder().encode(safe.svg).buffer as ArrayBuffer;
+        size = { width: safe.width, height: safe.height };
+      } catch (e) {
+        return bad((e as Error).message);
+      }
+    } else {
+      size = file.type === "image/png" ? pngSize(body) : webpSize(body);
+      if (!size || Math.max(size.width, size.height) < ICON_MIN_PX || size.width > 6000 || size.height > 6000) return bad(`크기는 긴 변 ${ICON_MIN_PX}px 에서 6000px 사이예요. 인쇄하면 작으면 흐려요.`);
+    }
+    if (!size) return bad("크기를 읽지 못했어요.");
+    meta = { width: size.width, height: size.height };
   } else {
     if (!(CHARACTER_TYPES as readonly string[]).includes(file.type)) return bad("캐릭터는 투명 배경 PNG, WebP, SVG 만 올릴 수 있어요.");
     if (body.byteLength > MAX_BYTES.character) return bad("1MB 아래로 줄여 주세요.");
@@ -82,7 +105,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   try {
-    const asset = await createAsset({ kind, label, meta, body, type: file.type, by: await actorName(checked.token) });
+    const by = await actorName(checked.token);
+    const asset = await createAsset({ kind, label, meta, body, type: file.type, by });
+    // 변경 기록(#313). 올린 그림을 기록에서 바로 보이게 image 로 남긴다
+    await recordChange({ actor: by, area: "assets", target: `${KIND_NAME[asset.kind]} ${asset.label}`, action: "add", fields: [{ kind: "image", label: "그림", before: null, after: assetUrl(asset.key) }], href: "/admin/assets" });
     return NextResponse.json({ asset }, noStore);
   } catch (e) {
     return storeError(e);

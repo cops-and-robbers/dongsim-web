@@ -9,8 +9,14 @@ import { mockCompany, mockRemovePerson, mockRemoveRecord, mockSavePerson, mockSa
 import { mockAssets, mockPatchAsset, mockUploadAsset } from "./assets";
 import { mockRelease, mockRunAction } from "./release";
 import { mockPresign, mockSaveDraft, mockSaveImageDraft, mockSend, mockStorePage } from "./storePage";
-import { mockInbox, mockPatchReview, mockReply, mockWaiting } from "./reviews";
+import { mockCreateTemplate, mockDeleteTemplate, mockInbox, mockPatchReview, mockReply, mockTemplates, mockUpdateTemplate, mockWaiting } from "./reviews";
 import { mockPatchCheck, mockStoreCheck } from "./storeCheck";
+import { mockSaveLayout, mockSaveRole, mockSaveRoles, mockTeam } from "./team";
+import { mockOverview } from "./overview";
+import { mockChanges } from "./changes";
+import { mockAddSchedule, mockEditSchedule, mockRemoveSchedule, mockSchedule, mockScheduleReport } from "./schedule";
+import { mockMarkRequested, mockSearch } from "./search";
+import { todayIn } from "@/lib/metrics/dates";
 import {
   queryUsers,
   getUser,
@@ -430,6 +436,64 @@ export const handlers = [
     return HttpResponse.json(body as Record<string, unknown>, { status });
   }),
 
+  // 변경 기록(#313). 칸 모양마다 하나씩 담은 가짜 기록
+  http.get("/api/admin/changes", async ({ request }) => {
+    await delay(300);
+    return HttpResponse.json(mockChanges(Number(new URL(request.url).searchParams.get("days") ?? 30)));
+  }),
+
+  // 일정(#302). 로컬에서는 실제 일정(metrics_events)에 닿지 않는다. 행사 게임과 성적표는 게임 기록, 지표 숫자가 없어 안내만
+  // 지표 "검색" 탭(#309). 서치 콘솔과 실제 기록에 닿지 않는다
+  http.get("/api/admin/search", async ({ request }) => {
+    await delay(400);
+    return HttpResponse.json(mockSearch(new URL(request.url).searchParams));
+  }),
+
+  http.post("/api/admin/search/requested", async ({ request }) => {
+    await delay(300);
+    const { url } = (await request.json()) as { url: string };
+    const { status, body } = mockMarkRequested(url);
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.get("/api/admin/metrics/events", async () => {
+    await delay(300);
+    return HttpResponse.json(mockSchedule());
+  }),
+
+  http.post("/api/admin/metrics/events", async ({ request }) => {
+    await delay(400);
+    const { status, body } = mockAddSchedule((await request.json()) as Parameters<typeof mockAddSchedule>[0]);
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.patch("/api/admin/metrics/events", async ({ request }) => {
+    await delay(400);
+    const id = Number(new URL(request.url).searchParams.get("id"));
+    const { status, body } = mockEditSchedule(id, (await request.json()) as Parameters<typeof mockEditSchedule>[1]);
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.delete("/api/admin/metrics/events", async ({ request }) => {
+    await delay(300);
+    mockRemoveSchedule(Number(new URL(request.url).searchParams.get("id")));
+    return HttpResponse.json({ ok: true });
+  }),
+
+  http.get("/api/admin/metrics/event-report", async ({ request }) => {
+    await delay(400);
+    const { status, body } = mockScheduleReport(Number(new URL(request.url).searchParams.get("id")), todayIn("Asia/Seoul"));
+    return HttpResponse.json(body as Record<string, unknown>, { status });
+  }),
+
+  http.get("/api/admin/metrics/event-games", async ({ request }) => {
+    await delay(300);
+    const id = Number(new URL(request.url).searchParams.get("id"));
+    const event = mockSchedule().find((e) => e.id === id);
+    if (event && event.day > todayIn("Asia/Seoul")) return HttpResponse.json({ status: "upcoming" });
+    return HttpResponse.json({ error: "로컬에서는 게임 기록이 없어 행사 게임을 고를 수 없어요." }, { status: 503 });
+  }),
+
   // 회사 소개(#250). 로컬에서는 실제 소개 페이지가 읽는 저장소에 닿지 않는다
   http.get("/api/admin/company", async () => {
     await delay(300);
@@ -502,6 +566,62 @@ export const handlers = [
   http.post("/api/admin/reviews", async ({ request }) => {
     await delay(500);
     return HttpResponse.json(mockReply((await request.json()) as Parameters<typeof mockReply>[0]));
+  }),
+
+  // 개요의 서버 카드. 화면에 놓인 카드만 돌려준다
+  http.get("/api/admin/overview", async ({ request }) => {
+    await delay(500);
+    return HttpResponse.json(mockOverview(request.url));
+  }),
+
+  // 운영진과 역할. 브라우저에 남겨 새로고침해도 고른 역할이 그대로다
+  http.get("/api/admin/team", async () => {
+    await delay(200);
+    return HttpResponse.json(mockTeam());
+  }),
+
+  http.put("/api/admin/team", async ({ request }) => {
+    await delay(300);
+    const r = mockSaveRoles((await request.json()) as Parameters<typeof mockSaveRoles>[0]);
+    return HttpResponse.json(r.body, { status: r.status });
+  }),
+
+  http.put("/api/admin/team/layout", async ({ request }) => {
+    await delay(300);
+    const r = mockSaveLayout((await request.json()) as Parameters<typeof mockSaveLayout>[0]);
+    return HttpResponse.json(r.body, { status: r.status });
+  }),
+
+  http.post("/api/admin/team/roles", async ({ request }) => {
+    await delay(300);
+    const r = mockSaveRole((await request.json()) as Parameters<typeof mockSaveRole>[0]);
+    return HttpResponse.json(r.body, { status: r.status });
+  }),
+
+  http.put("/api/admin/team/roles", async ({ request }) => {
+    await delay(300);
+    const r = mockSaveRole((await request.json()) as Parameters<typeof mockSaveRole>[0]);
+    return HttpResponse.json(r.body, { status: r.status });
+  }),
+
+  http.get("/api/admin/reviews/templates", async () => {
+    await delay(200);
+    return HttpResponse.json(mockTemplates());
+  }),
+
+  http.post("/api/admin/reviews/templates", async ({ request }) => {
+    await delay(300);
+    return HttpResponse.json(mockCreateTemplate((await request.json()) as Parameters<typeof mockCreateTemplate>[0]));
+  }),
+
+  http.put("/api/admin/reviews/templates", async ({ request }) => {
+    await delay(300);
+    return HttpResponse.json(mockUpdateTemplate((await request.json()) as Parameters<typeof mockUpdateTemplate>[0]));
+  }),
+
+  http.delete("/api/admin/reviews/templates", async ({ request }) => {
+    await delay(200);
+    return HttpResponse.json(mockDeleteTemplate(Number(new URL(request.url).searchParams.get("id"))));
   }),
 
   // 스토어 페이지. 로컬에서는 실제 스토어와 Supabase 에 닿지 않는다

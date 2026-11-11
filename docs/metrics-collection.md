@@ -33,6 +33,8 @@ GitHub Actions
 | GA4 | `ga4_daily` | 속성 시간대 | 최근 7일 | 세로로 길게 저장. `totalUsers` 는 날짜끼리 더하면 안 된다(같은 사람을 여러 번 센다) |
 | AdMob | `admob_daily` | Asia/Seoul | 최근 7일 | 서비스 계정 불가, 사람 계정 갱신 토큰. 매치율, 노출률은 저장하지 않고 요청 수에서 계산 |
 | Google Play | `play_daily` | 미국 서부(PT) | 지난달과 이번 달 파일 | API 가 없고 Cloud Storage 에 달마다 CSV(UTF-16). 3~7일 늦게 채워진다. 같은 버킷에 다른 앱 파일도 있어 패키지로 거른다. 아래 "Google Play" |
+| 구글 서치 콘솔 | `gsc_inspection_daily`, `gsc_search_daily`, `gsc_sitemap_daily` | 판정은 한국 날짜, 검색 실적은 미국 서부(PT) | 판정은 오늘만, 실적은 최근 10일 | 실적은 2~3일 늦게 확정돼 `final` 만 받는다. 판정 API 는 그날 상태만 줘서 매일 남겨야 추세가 생긴다. 사이트당 하루 2,000건. 자세한 건 `docs/search-indexing.md` (#309) |
+| 당근 키워드 광고 | `daangn_ads_daily` | Asia/Seoul | 최근 7일 | OpenAPI 는 소재 단위까지만 준다(키워드별 없음). 설치 칸은 측정 서비스를 연결해야 채워져 받지 않는다. 키는 조회 전용이 없다 |
 
 **App Store 판매 상품 유형(`product_type`)**: `1`, `1F`, `1T` 신규 다운로드 / `3`, `3F` 재다운로드 / `7`, `7F`, `7T` 업데이트.
 
@@ -101,6 +103,7 @@ Play Developer Reporting API 는 비정상 종료율 같은 품질 지표만 줘
 바뀐 걸 처음 본 날의 전날을 "Android x.y.z 출시"로 넣는다(`play/releases.ts`). 보기 권한으로 되고, 구글 클라우드에서 이 API 를 켜 둬야 한다(2026-10-07 켬).
 이 API 는 날짜 없이 지금 상태만 줘서, 처음 본 버전(3.1.24)과 그 전 출시는 자동으로 못 넣는다. 지난 출시는 Play Console 출시 기록을 보고 일정에 직접 넣는다.
 앱 저장소 CI 는 내부 테스트 트랙에만 올리고 프로덕션은 콘솔에서 손으로 올려서, CI 기록으로도 출시일을 못 찾는다.
+출시 이름 앞 번호가 실제 빌드와 다르면(이전 출시 이름이 남은 경우) 버전을 믿지 않아 일정에 넣지 않고 기록만 남긴다(#292). 2026-11-09 의 4.0.1 이 "382 (3.2.7)" 이름으로 나가 "Android 3.2.7 출시"와 겹쳐 빠졌고, 그 줄은 손으로 넣었다.
 
 **App Store 분석 리포트도 화면에 쓴다.** 노출(`Impression`), 제품 페이지 조회(`Page view`)를 나라별로 본다. 날짜는 UTC 라 옮기지 않는다(하루 경계가 한국 오전 9시).
 고유 기기 수는 하루마다 센 값이라 기간으로 더하면 App Store Connect 의 기간 값보다 조금 크다. 비율의 분모로만 쓰고 그렇게 적는다.
@@ -141,6 +144,8 @@ Play Developer Reporting API 는 비정상 종료율 같은 품질 지표만 줘
 | `ADMOB_REFRESH_TOKEN` | Vercel | 팀 계정이 허락해 받은 갱신 토큰 |
 | `ASC_RELEASE_KEY_ID`, `ASC_RELEASE_PRIVATE_KEY`, `PLAY_RELEASE_SERVICE_ACCOUNT_JSON` | Vercel | 지표가 아니라 어드민 "출시" 보드용(출시 권한). `docs/admin-ui.md` "출시" |
 | `PLAY_GCS_URI` | Vercel | Play Console > 보고서 다운로드 > 통계 > Cloud Storage URI 복사(`gs://pubsite_prod_...`). 서비스 계정은 `GOOGLE_SERVICE_ACCOUNT_JSON` 을 같이 쓴다 |
+| `INDEXNOW_KEY` | Vercel | IndexNow 키(영문, 숫자, 대시 8~128자). 아무 값이나 만들어 넣으면 `/indexnow-key.txt` 가 내준다. `docs/search-indexing.md` |
+| `DAANGN_ADS_API_KEY` | Vercel | 당근 전문가모드 > 고객센터 > 온라인 문의 > 광고 도구 및 전환 > OpenAPI 키 발급 (광고 계정). 확인 링크는 24시간 안에 한 번만 열리고, 새로 발급하면 이전 키는 바로 폐기된다 |
 
 비밀이 아닌 식별자(앱 ID, Vendor 번호, GA4 속성 ID, AdMob 퍼블리셔 ID, 처음 채울 날짜)는 `lib/metrics/config.ts` 에 있다.
 
@@ -165,6 +170,17 @@ Play Developer Reporting API 는 비정상 종료율 같은 품질 지표만 줘
 그때 수집이 `invalid_grant` 로 실패한다. 구글 클라우드 `dongsim-analytics` 의 OAuth 클라이언트로
 다시 로그인해 새 갱신 토큰을 받아 `ADMOB_REFRESH_TOKEN` 을 바꾼다. OAuth 동의 화면이 **프로덕션**이어야 한다 -
 테스트 상태면 갱신 토큰이 7일마다 만료된다.
+
+## 당근 키워드 광고
+
+우리가 돈을 내는 광고의 비용과 지표를 쌓는다. 앱에 붙는 AdMob(`admob_daily`)과 다른 광고다. 지표 화면 유입 탭의 "당근 키워드 광고", 주간 리포트(노출이 있는 주만)에서 본다. 챗봇 지표에는 아직 넣지 않았다(지표 목록을 바꾸면 체다 버전을 올리고 평가를 다시 돌려야 한다).
+
+- **왜 모으나:** 대시보드는 당근에서 온 방문은 알아도 쓴 돈을 몰랐다. 비용이 들어와야 방문 1회당 비용이 나온다. 당근 화면에서 바로 볼 수 있는 기간은 13개월이다.
+- **부르는 API:** `GET /v1/materials`(켬, 끔, 지움 모두)와 `POST /v1/performance`(소재, 하루 단위)뿐이다. 키가 광고 수정까지 되므로 다른 API 를 부르지 않는다. 한 번에 소재 50개, 31일까지라 나눠 부른다.
+- **광고로 온 방문:** GA4 에서 `utm_source=daangn`, `utm_medium=keyword` 인 방문을 노출이 있는 날만 센다. 노출이 없는 날의 같은 UTM 방문은 심사나 팀 확인이다(2026-11-06~08 에 5회). 비즈프로필 링크나 UTM 없이 넘어온 방문은 "채널별"의 당근에는 들어가지만 광고비로 나누지 않는다.
+- **화면 표시:** 제목 옆 채워진 당근 아이콘(Phosphor `carrot-fill`, 선 아이콘은 18px 에서 가늘어 보였다)에만 당근 색을 쓴다(몸통 `--daangn`, 잎 `--daangn-leaf`). 칸을 칠하지 않고 아이콘도 색 상자에 넣지 않는다(`docs/admin-ui.md` 원칙). 당근 로고 원본은 공개 저장소에 넣지 않는다.
+- **넣지 않은 것:** 설치 수(측정 서비스 미연결, 0 으로 보이면 오해한다), 스토어 이동 비용(/download 가 자동으로 넘겨 방문과 거의 같다), 도달(날짜끼리 더할 수 없다), 키워드별, 연령별(필요할 때 당근 광고 MCP 나 엑셀 보고서로 본다).
+- **처음 켜기:** `0022_daangn_ads.sql` 실행, Vercel 에 `DAANGN_ADS_API_KEY` 추가, `POST /api/metrics/daangn?dry=1` 로 비용이 당근 화면(VAT 포함)과 맞는지 확인, `?from=all` 로 채운다.
 
 ## 주간 리포트 (#146)
 

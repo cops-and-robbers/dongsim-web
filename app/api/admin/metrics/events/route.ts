@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { checkAdmin } from "@/lib/admin/server/checkAdmin";
 import { db } from "@/lib/metrics/db";
-import { CATEGORIES, isCategory, type Category } from "@/lib/metrics/events";
+import { CATEGORIES, CATEGORY_LABEL, isCategory, type Category } from "@/lib/metrics/events";
+import { actorName } from "@/lib/admin/server/remoteConfig";
+import { recordChange } from "@/lib/changes/server";
+import { diffValues, type ChangeAction } from "@/lib/changes/model";
 import { loadEvents } from "@/lib/metrics/staff";
 
 /**
@@ -65,6 +68,25 @@ function fieldsOf(body: Record<string, unknown>, partial: boolean): Fields | str
   return out;
 }
 
+// ── 변경 기록(#313) ──
+
+type Row = { day: string; label: string; category: Category | null; starts_at: string | null; ends_at: string | null };
+const ROW = "day, label, category, starts_at, ends_at";
+const LABELS = { label: "이름", category: "성격", time: "행사 시간" };
+const shown = (r: Row | null) => r && { label: r.label, category: r.category ? CATEGORY_LABEL[r.category] : "", time: r.starts_at && r.ends_at ? `${r.starts_at}~${r.ends_at}` : "" };
+
+async function readRow(id: number): Promise<Row | null> {
+  const { data } = await db().from("metrics_events").select(ROW).eq("id", id).maybeSingle();
+  return (data as Row | null) ?? null;
+}
+
+async function record(req: Request, action: ChangeAction, before: Row | null, after: Row | null): Promise<void> {
+  const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const row = after ?? before;
+  if (!row) return;
+  await recordChange({ actor: await actorName(token), area: "schedule", target: `${row.day.slice(5).replace("-", "/")} ${row.label}`, action, fields: diffValues(shown(before), shown(after), LABELS), href: `/admin/schedule?day=${row.day}` });
+}
+
 export async function GET(req: Request): Promise<NextResponse> {
   const denied = await guard(req);
   if (denied) return denied;
@@ -83,9 +105,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
   const fields = fieldsOf(body, false);
   if (typeof fields === "string") return NextResponse.json({ error: fields }, { status: 400 });
-  const { data, error } = await db().from("metrics_events").insert({ day, ...fields }).select("id").single();
+  const { data, error } = await db().from("metrics_events").insert({ day, ...fields }).select(`id, ${ROW}`).single();
   if (error) return failure(error.message);
-  return NextResponse.json(data, { status: 201 });
+  await record(req, "add", null, data as Row);
+  return NextResponse.json({ id: data.id }, { status: 201 });
 }
 
 export async function PATCH(req: Request): Promise<NextResponse> {
@@ -96,8 +119,10 @@ export async function PATCH(req: Request): Promise<NextResponse> {
   const fields = fieldsOf((await req.json().catch(() => ({}))) as Record<string, unknown>, true);
   if (typeof fields === "string") return NextResponse.json({ error: fields }, { status: 400 });
   if (!Object.keys(fields).length) return NextResponse.json({ error: "고칠 내용이 없어요." }, { status: 400 });
+  const before = await readRow(id);
   const { error } = await db().from("metrics_events").update(fields).eq("id", id);
   if (error) return failure(error.message);
+  if (before) await record(req, "edit", before, { ...before, ...fields } as Row);
   return new NextResponse(null, { status: 204 });
 }
 
@@ -106,7 +131,9 @@ export async function DELETE(req: Request): Promise<NextResponse> {
   if (denied) return denied;
   const id = Number(new URL(req.url).searchParams.get("id"));
   if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: "지울 일정을 다시 골라 주세요." }, { status: 400 });
+  const before = await readRow(id);
   const { error } = await db().from("metrics_events").delete().eq("id", id);
   if (error) return failure(error.message);
+  await record(req, "remove", before, null);
   return new NextResponse(null, { status: 204 });
 }

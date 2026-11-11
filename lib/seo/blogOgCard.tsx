@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getPosts } from "@/lib/blog/store";
 import type { Locale } from "@/lib/i18n/config";
+import { OG_LOGOS } from "@/components/seo/ogLogo";
 
 // 블로그 글 공유용 동적 OG - 글 제목·작성자가 박힌 브랜드 카드.
 // 커버 사진 대신 텍스트 중심으로 가서(만료되는 노션 URL 임베드 회피)
@@ -56,6 +57,9 @@ const NO_LINE_END = /[「『（［｛〈《]/;
 
 // 제목이 들어갈 가로 폭(px). 캔버스 1200 - 좌우 패딩 160 - 캐릭터 자리 240.
 const TITLE_WIDTH = 800;
+
+// 로고 높이는 고정하고 가로는 언어별 로고 비율대로 정한다.
+const LOGO_HEIGHT = 48;
 
 /**
  * 일본어 제목을 satori에 넘기기 전에 직접 줄을 나눈다.
@@ -123,11 +127,13 @@ export async function renderBlogOg(locale: Locale, slug?: string) {
   const [bold, extraBold, logoBuf, copBuf, thiefBuf] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
-    readFile(join(process.cwd(), "public/brand/header-logo.svg")),
+    // 로고는 언어마다 다르다(ケイドロ, Cops and Robbers). 경로와 치수는 OG_LOGOS 가 관리한다 (#307).
+    OG_LOGOS[locale].read(),
     readFile(join(process.cwd(), "public/photobooth/cop.svg")),
     readFile(join(process.cwd(), "public/photobooth/thief.svg")),
   ]);
   const logo = dataUri(logoBuf, "image/svg+xml");
+  const logoWidth = Math.round((OG_LOGOS[locale].w * LOGO_HEIGHT) / OG_LOGOS[locale].h);
   const cop = dataUri(copBuf, "image/svg+xml");
   const thief = dataUri(thiefBuf, "image/svg+xml");
 
@@ -167,7 +173,7 @@ export async function renderBlogOg(locale: Locale, slug?: string) {
       >
         {/* 상단: 로고 + 섹션명 */}
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <img src={logo} width={300} height={48} alt="" />
+          <img src={logo} width={logoWidth} height={LOGO_HEIGHT} alt="" />
           <div
             style={{
               display: "flex",

@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getPost, isOpen, localeOfPost, seatsLeft } from "@/lib/community/api";
+import { OG_LOGOS } from "@/components/seo/ogLogo";
 import { meetingLabel, zoneOf } from "@/lib/community/format";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -27,6 +28,9 @@ const LABELS: Record<
 
 // readFile 경로는 호출부에 글자 그대로 적는다. 변수로 넘기면 파일 트레이싱이
 // 경로를 좁히지 못해 프로젝트 전체를 함수 번들에 넣는다 (#113 실측).
+// 로고 높이는 고정하고 가로는 언어별 로고 비율대로 정한다.
+const LOGO_HEIGHT = 48;
+
 const svgDataUri = (buf: Buffer) =>
   `data:image/svg+xml;base64,${buf.toString("base64")}`;
 
@@ -36,19 +40,20 @@ function clampTitle(title: string, max = 32) {
 }
 
 export async function renderCommunityOgImage(postId: string) {
-  const [bold, extraBold, logoBuf, robberBuf, policeBuf, post] = await Promise.all([
+  const [bold, extraBold, robberBuf, policeBuf, post] = await Promise.all([
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-Bold.otf")),
     readFile(join(process.cwd(), FONT_DIR, "Pretendard-ExtraBold.otf")),
-    readFile(join(process.cwd(), "public/brand/header-logo.svg")),
     readFile(join(process.cwd(), "public/characters/robber-flee.svg")),
     readFile(join(process.cwd(), "public/characters/police-chase.svg")),
     getPost(Number(postId)).catch(() => null),
   ]);
-  const logo = svgDataUri(logoBuf);
   const robber = svgDataUri(robberBuf);
   const police = svgDataUri(policeBuf);
 
   const locale: Locale = post ? localeOfPost(post) : "ko";
+  // 로고는 글의 언어를 따른다(ケイドロ, Cops and Robbers). 경로와 치수는 OG_LOGOS 가 관리한다 (#307).
+  const logo = svgDataUri(await OG_LOGOS[locale].read());
+  const logoWidth = Math.round((OG_LOGOS[locale].w * LOGO_HEIGHT) / OG_LOGOS[locale].h);
   const t = LABELS[locale];
   const open = post ? isOpen(post) : false;
   const left = post ? seatsLeft(post) : null;
@@ -87,7 +92,7 @@ export async function renderCommunityOgImage(postId: string) {
             padding: "0 12px 0 80px",
           }}
         >
-          <img src={logo} width={300} height={48} alt="" />
+          <img src={logo} width={logoWidth} height={LOGO_HEIGHT} alt="" />
 
           {badgeText && (
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 40 }}>

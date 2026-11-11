@@ -285,7 +285,7 @@ export function SlidersIcon({ className }: IconProps) {
 }
 
 export function HistoryIcon({ className }: IconProps) {
-  // Lucide 'history'. 최근 본 게임, 유저. 원본 path 그대로.
+  // Lucide 'history'. 최근 본 게임, 유저, 메뉴 "변경 기록"(#313). 원본 path 그대로.
   return (
     <Line className={className}>
       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -296,7 +296,7 @@ export function HistoryIcon({ className }: IconProps) {
 }
 
 export function CalendarIcon({ className }: IconProps) {
-  // Lucide 'calendar'. 지표 화면(#145) 기간 직접 고르기. 원본 path 그대로.
+  // Lucide 'calendar'. 지표 화면(#145) 기간 직접 고르기, 메뉴 "일정"(#302). 원본 path 그대로.
   return (
     <Line className={className}>
       <path d="M8 2v4" />
@@ -495,6 +495,19 @@ export function ClockIcon({ className }: IconProps) {
     <Line className={className}>
       <circle cx="12" cy="12" r="10" />
       <path d="M12 6v6l4 2" />
+    </Line>
+  );
+}
+
+export function TeamIcon({ className }: IconProps) {
+  // Lucide 'id-card'. 운영진. 유저(사람들)와 헷갈리지 않게 명찰로 둔다. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M16 10h2" />
+      <path d="M16 14h2" />
+      <path d="M6.17 15a3 3 0 0 1 5.66 0" />
+      <circle cx="9" cy="11" r="2" />
+      <rect x="2" y="5" width="20" height="14" rx="2" />
     </Line>
   );
 }

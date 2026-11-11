@@ -415,7 +415,7 @@ export async function eventReport(ctx: Ctx, eventId: number) {
     day: r.report.metrics.map((m) => ({ key: m.key, label: m.label, unit: m.unit, value: m.value, usual: m.usual, pending: m.pending })),
     usualDays: r.report.baseline,
     notes: [
-      ...(t.games === 0 && r.report.missing === 0 ? ["이 행사의 게임을 아직 고르지 않았어요. 지표 화면 달력에서 그날을 눌러 행사 게임을 고르면 행사별로 나눠 볼 수 있어요"] : []),
+      ...(t.games === 0 && r.report.missing === 0 ? ["이 행사의 게임을 아직 고르지 않았어요. 어드민 일정 화면의 달력에서 그날을 눌러 행사 게임을 고르면 행사별로 나눠 볼 수 있어요"] : []),
       ...(r.report.missing > 0 ? [`고른 게임 ${r.report.missing}판을 지금 게임 서버에서 찾지 못했어요`] : []),
       ...(r.report.noRoster ? [`${PARTICIPANTS_SINCE} 전 판이 섞여 누가 했는지 몰라 uniqueVisitors 는 비어 있고, 방문객은 끝까지 남은 인원이에요`] : []),
       ...(sameDay.length ? ["day 의 숫자(설치, 가입 등)는 그날 전체라 같은 날 다른 행사 몫이 섞여 있어요. 행사별로 나눌 수 있는 건 고른 게임과 방문객뿐이에요"] : []),

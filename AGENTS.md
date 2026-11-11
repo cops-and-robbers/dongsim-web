@@ -21,6 +21,7 @@ pnpm build                 # 검증 기준은 이 빌드의 "Compiled successful
 - **경찰·도둑 두 진영은 대등** - 한쪽을 기본값/주인공으로 두지 않는다
 - 긴 대시(—·–) 금지, 하이픈(-) 사용
 - UI를 새로 만들기 전에 `components/ui/` 프리미티브 먼저 확인
+- 새 페이지는 언어 묶음 안에 만든다: 한국어(어드민 포함)는 `app/(ko)/`, 영어·일본어는 `app/(en)/en/`·`app/(ja)/ja/`. `app/` 바로 아래에 두면 루트 레이아웃 밖이라 열리지 않는다(#301)
 - 사용자에게 보이는 문구를 쓰거나 고칠 땐 `docs/copy-guide.md`의 말투를 따른다
 
 ## 상황별로 읽는 문서
@@ -34,13 +35,16 @@ pnpm build                 # 검증 기준은 이 빌드의 "Compiled successful
 | 블로그(노션 CMS) 관련 개발 | `docs/blog-system.md` |
 | 인스타 성과 수집, 디스코드 리포트 | `docs/instagram-report.md` |
 | App Store, GA4, AdMob 지표 수집 | `docs/metrics-collection.md` |
+| 구글 검색 색인, 사이트맵 제출, IndexNow, 지표 검색 탭 | `docs/search-indexing.md` |
 | 어드민 지표 챗봇(물어보기 패널), 치즈 펫 | `docs/metrics-chat.md` |
-| 지표 일정 성격, 운영진 거르기, 행사 성적표 | `docs/metrics-events.md` |
+| 일정(달력) 성격, 운영진 거르기, 행사 성적표 | `docs/metrics-events.md` |
 | 회사 소개 이력, 수상, 고마운 분들, 앱 크레딧 명단 | `docs/admin-ui.md` "동심지키미 소개" |
 | 행사 링크 짧은 주소 /q/, QR, 링크별 결과 | `docs/metrics-links.md` |
+| QR 인쇄물(어드민 "QR 인쇄물", 디자이너 틀, PDF) | `docs/qr-print.md` |
 | 빌드·배포·환경 문제가 생겼을 때 | `docs/gotchas.md` |
 | 어드민 웹 애플 로그인 설정·문제 해결 | `docs/apple-signin-web.md` |
 | 온라인 게임 입구(`/online`)와 어드민 "온라인 게임" | `docs/online-game.md` |
 | 팀원에게 블로그 글쓰기를 안내할 때 | `docs/blog-writing-guide.md` |
 | 이용약관·개인정보 처리방침 등 법적 문서 | `docs/legal-documents.md` |
 | 행사 값(포토부스, 홈 팝업, /event, 홈 미니게임), 어드민 화면 원칙 | `docs/admin-ui.md` |
+| 어드민 변경 기록(누가 무엇을 바꿨나), 새 저장 화면에 기록 남기기 | `docs/admin-ui.md` "변경 기록" |

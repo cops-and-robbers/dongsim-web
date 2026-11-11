@@ -99,6 +99,14 @@ const cachedExtra = unstable_cache(
 
 export const refreshStoreCheck = () => revalidateTag(TAG, { expire: 0 });
 
+// 개요 카드가 쓴다. 28일 값이라 한 시간 같은 값을 써도 된다. 못 읽으면 남기지 않는다
+const cachedVitals = unstable_cache(
+  () => serviceAccountToken(serviceAccountFromEnv("PLAY_RELEASE_SERVICE_ACCOUNT_JSON"), "https://www.googleapis.com/auth/playdeveloperreporting").then(readVitals),
+  ["overview-vitals-v1"],
+  { revalidate: 3600 },
+);
+export const playVitals = () => cachedVitals();
+
 async function readDone(): Promise<Map<string, { doneBy: string; doneAt: string }> | null> {
   try {
     const { data, error } = await db().from(TABLE).select("id,done_by,done_at");
@@ -108,6 +116,11 @@ async function readDone(): Promise<Map<string, { doneBy: string; doneAt: string 
     console.error("[store-check] 체크", e instanceof Error ? e.message : e);
     return null;
   }
+}
+
+/** 개요 카드가 쓴다. API 로 읽을 수 없는 일의 기한과 끝냈는지 */
+export async function manualDeadlines(now = new Date()): Promise<Check[]> {
+  return manualChecks(MANUAL, (await readDone()) ?? new Map(), now);
 }
 
 const cantRead = (id: string, store: Check["store"], name: string): Check => ({ id, store, level: "watch", title: `${name}을 지금 읽지 못했어요`, detail: "잠시 뒤 다시 확인해 주세요." });

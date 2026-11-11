@@ -34,8 +34,15 @@
 | `/api/admin/company`, `/api/admin/company/records`, `/people`, `/skips` | 어드민 "동심지키미 소개": 이력과 명단을 읽고 고침. 저장은 운영 배포에서만 |
 | `/api/admin/release/actions` | 어드민 출시 조작: 다시 읽고 확인한 뒤 스토어에 보냄, `release_actions` 에 기록. 고르기는 `lib/release/options.ts`, 보내기는 `lib/release/actions.ts` |
 | `/api/admin/store-page` | 어드민 "스토어 페이지": 두 스토어의 문구 읽기(1분 캐시)와 초안 저장. 칸과 점검은 `lib/store-page/fields.ts`, 스토어에는 쓰지 않음 |
+| `/api/admin/changes` | 어드민 "변경 기록": 공통 기록(`admin_changes`)과 행사 저장본, 출시 조작, 회사 소개 기록을 모아 읽음. 남기기는 저장 라우트가 `lib/changes/server.ts` 의 `recordChange` 로 |
+| `/api/admin/search`, `/api/admin/search/requested` | 지표 "검색" 탭: 구글 판정, 새 페이지 진행, 검색 실적을 읽고, 서치 콘솔에서 색인을 요청했다는 기록을 남김. `docs/search-indexing.md` |
+| `/api/metrics/gsc` | 매일 05:43 수집(크론 시크릿). 구글 URL 검사, 검색 실적, 사이트맵 상태, 새 주소 알림 |
 
-`/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 다국어 라우팅용 `proxy.ts`도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/en/*`·`app/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
+`/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 다국어 라우팅용 `proxy.ts`도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/(en)/en/*`·`app/(ja)/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
+
+페이지는 언어별 묶음 `app/(ko)`·`app/(en)`·`app/(ja)` 아래에 있고, 묶음마다 루트 레이아웃이 있다(#301). 묶음 폴더는 주소에 들어가지 않는다. 루트 레이아웃이 하나면 서버가 언어를 몰라 `<html lang>` 을 `ko` 로만 보내서 나눴다. 세 레이아웃은 `app/_root/RootDocument.tsx` 를 `lang` 만 바꿔 쓰고 메타데이터도 같다. 다른 묶음의 페이지로 가면 페이지를 한 번 새로 읽는다. `notFound()` 404는 묶음마다 있는 `not-found.tsx` 가, 어떤 라우트에도 없는 주소는 `app/global-not-found.tsx` 가 그린다.
+
+사이트맵에는 검색으로 찾아올 주소만 넣는다(#299). 법적 문서, 체험(`/demo`), 마감된 모집글은 빼고, 마감된 모집글 상세는 `noindex, follow`다. `lastModified` 는 블로그 글 날짜, 모집글 `updatedAt` 처럼 정확히 아는 값만 넣고 고정 페이지에는 넣지 않는다.
 
 ## 컴포넌트 (`components/`)
 
