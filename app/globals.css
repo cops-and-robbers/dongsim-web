@@ -1286,3 +1286,12 @@ body {
 .dark .chat-marker {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M1 9C18 4 38 7 58 5S88 4 99 7L98 15C80 18 57 13 36 16S9 18 2 14Z' fill='%23ff8a3d' fill-opacity='.38'/%3E%3C/svg%3E");
 }
+
+/* 어드민 유저와 게임 두 칸 화면(#315). 게임 중 점이 퍼지는 맥박, 상세가 바뀔 때 살짝 올라오는 등장 */
+@keyframes livepulse {
+  from { transform: scale(0.6); opacity: 0.9; }
+  to { transform: scale(1.6); opacity: 0; }
+}
+@keyframes detailenter {
+  from { opacity: 0.4; transform: translateY(6px); }
+}
