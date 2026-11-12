@@ -70,6 +70,11 @@ export const GRAPHQL_ENDPOINT = "/graphql";
 
 const api = graphql.link(GRAPHQL_ENDPOINT);
 
+// 운영 서버에 아직 없는 필드를 물었을 때 Spring GraphQL 이 내는 스키마 오류(lib/admin/notDeployed.ts)
+const notDeployed = (path: string, field: string, type: string) => ({
+  message: `Validation error (FieldUndefined@[${path}]) : Field '${field}' in type '${type}' is undefined`,
+});
+
 export const handlers = [
   api.query("TermsResetPreview", async ({ variables }) => {
     await delay(250);
@@ -181,6 +186,52 @@ export const handlers = [
         errors: [{ message: "GAME_RESULT_NOT_FOUND" }],
       });
     }
+  }),
+
+  // 무전 시간(BE #239)과 동네 이름(BE #241). 본 쿼리와 따로 묻는다(lib/admin/useOptionalQuery.ts).
+  // 지난 게임 4번과 유저 4번은 운영 배포 전처럼 필드가 없다고 답해, 화면이 그대로 열리는지 볼 수 있다
+  api.query("AdminGamesPlaceNames", async ({ variables }) => {
+    await delay(600);
+    const page = queryGames(variables as { page?: number; size?: number; status?: GameStatus; sortDirection?: "ASC" | "DESC" });
+    return HttpResponse.json({
+      data: { adminGames: { content: page.content.map((g) => ({ id: g.id, placeName: g.placeName })) } },
+    });
+  }),
+
+  api.query("AdminGamePlaceName", async ({ variables }) => {
+    await delay(600);
+    const game = getGame((variables as { id: string }).id);
+    return HttpResponse.json({
+      data: { adminGame: game && { id: game.id, area: game.area && { placeName: game.area.placeName ?? null } } },
+    });
+  }),
+
+  api.query("AdminGameHistoryPlaceName", async ({ variables }) => {
+    await delay(600);
+    const { id } = variables as { id: string };
+    if (id === "4") return HttpResponse.json({ errors: [notDeployed("adminGameHistory/area/placeName", "placeName", "GameArea")] });
+    const h = queryGameHistory(id);
+    return HttpResponse.json({
+      data: { adminGameHistory: { id: h.id, area: h.area && { placeName: h.area.placeName ?? null } } },
+    });
+  }),
+
+  api.query("AdminGameHistoryRadio", async ({ variables }) => {
+    await delay(600);
+    const { id } = variables as { id: string };
+    if (id === "4") {
+      return HttpResponse.json({ errors: [notDeployed("adminGameHistory/participants/radioSeconds", "radioSeconds", "AdminGameHistoryParticipant")] });
+    }
+    const h = queryGameHistory(id);
+    return HttpResponse.json({ data: { adminGameHistory: { id: h.id, participants: h.participants } } });
+  }),
+
+  api.query("AdminUserRadio", async ({ variables }) => {
+    await delay(600);
+    const { id } = variables as { id: string };
+    if (id === "4") return HttpResponse.json({ errors: [notDeployed("adminUser/radioSeconds", "radioSeconds", "AdminUser")] });
+    const user = getUser(id);
+    return HttpResponse.json({ data: { adminUser: user && { id: user.id, radioSeconds: user.radioSeconds } } });
   }),
 
   api.query("AdminDashboard", async () => {

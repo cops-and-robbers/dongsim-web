@@ -19,6 +19,8 @@ export interface MockHistoryParticipant {
   leftAt: string | null;
   arrestCount: number;
   arrestedCount: number;
+  // 이 라운드에서 쓴 무전 시간(초, BE #239). 무전은 경찰만 써서 도둑은 0
+  radioSeconds: number;
 }
 
 export interface MockGameHistory {
@@ -44,9 +46,9 @@ export interface MockGameHistory {
 //  - 놀이터만 있음: 감옥 좌표 저장(2026-08-15 배포) 이전 기록
 //  - 놀이터 + 감옥: 그 이후 기록
 const PARKS = [
-  { lat: 37.5445, lng: 127.0374 },
-  { lat: 37.5202, lng: 127.1216 },
-  { lat: 37.5301, lng: 127.0668 },
+  { lat: 37.5445, lng: 127.0374, placeName: "서울특별시 성동구 성수동1가" },
+  { lat: 37.5202, lng: 127.1216, placeName: "서울특별시 송파구 방이동" },
+  { lat: 37.5301, lng: 127.0668, placeName: "서울특별시 광진구 자양동" },
 ];
 const M_PER_LAT = 111_320;
 
@@ -60,6 +62,8 @@ function buildArea(
   const lng = +(park.lng + (i % 4) * 0.0006).toFixed(6);
   const mPerLng = M_PER_LAT * Math.cos((lat * Math.PI) / 180);
   const radius = 40 + (i % 5) * 12;
+  // 다섯 판에 하나는 동네 이름을 못 찾은 곳으로 둔다
+  const placeName = i % 5 === 3 ? null : park.placeName;
   const at = (angle: number, meters: number): MockLatLng => ({
     latitude: +(lat + (meters * Math.cos(angle)) / M_PER_LAT).toFixed(6),
     longitude: +(lng + (meters * Math.sin(angle)) / mPerLng).toFixed(6),
@@ -81,6 +85,7 @@ function buildArea(
       jailPolygon: withJail
         ? [0.25, 0.75, 1.25, 1.75].map((t) => at(Math.PI * t, 10))
         : null,
+      placeName,
     };
   }
 
@@ -95,6 +100,7 @@ function buildArea(
     jailRadiusInMeters: withJail ? 8 + (i % 4) : null,
     playgroundPolygon: null,
     jailPolygon: null,
+    placeName,
   };
 }
 
@@ -159,6 +165,8 @@ function buildParticipants(
       leftAt: i === policeCount - 1 ? leftPoliceAt : null,
       arrestCount: share,
       arrestedCount: 0,
+      // 판마다 한 명쯤은 무전을 안 쓰고, 나머지는 몇 분씩 쓴다
+      radioSeconds: (seq + i) % 4 === 0 ? 0 : 40 + ((seq * 37 + i * 211) % 900),
     });
   }
   for (let i = 0; i < robberCount; i += 1) {
@@ -174,6 +182,7 @@ function buildParticipants(
       leftAt: null,
       arrestCount: 0,
       arrestedCount: (jailed ? 1 : 0) + (i === 0 && arrestedCount > 0 ? extraArrests : 0),
+      radioSeconds: 0,
     });
   }
   return out;
