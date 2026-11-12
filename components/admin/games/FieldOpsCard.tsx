@@ -88,12 +88,13 @@ export function FieldOpsCard({ game }: { game: Game }) {
   const note = switchNote(game.status, game.isEventGame);
 
   return (
-    <section aria-labelledby="field-ops-title" className="mb-5 rounded-2xl border border-sd-line bg-sd-surface">
-      <h2 id="field-ops-title" className="border-b border-sd-hairline px-5 py-4 text-[14px] font-bold text-sd-fg">
+    <section aria-labelledby="field-ops-title" className="rounded-[18px] bg-sd-surface px-[22px] pt-5 pb-2 shadow-[0_1px_2px_rgba(2,32,71,0.04)]">
+      <h3 id="field-ops-title" className="mb-1 text-[15px] font-bold text-sd-fg">
         현장 운영
-      </h2>
-      <div className="grid grid-cols-1 divide-y divide-sd-hairline lg:grid-cols-2 lg:divide-x lg:divide-y-0">
-        <div className="flex items-start justify-between gap-4 p-5">
+      </h3>
+      {/* 부스에서 하는 두 가지를 한곳에 모았다(#315 두 칸 화면의 방 상세) */}
+      <div className="grid grid-cols-1 divide-y divide-sd-hairline">
+        <div className="flex items-start justify-between gap-4 py-3.5">
           <div className="min-w-0">
             <p id="event-game-label" className="text-[14px] font-semibold text-sd-fg">
               이벤트 게임
@@ -121,7 +122,7 @@ export function FieldOpsCard({ game }: { game: Game }) {
           </button>
         </div>
 
-        <div className="flex items-start justify-between gap-4 p-5">
+        <div className="flex items-start justify-between gap-4 py-3.5">
           <div className="min-w-0">
             <p className="text-[14px] font-semibold text-sd-fg">참가 QR</p>
             <p className="mt-1 text-[13px] leading-relaxed text-sd-fg-muted">휴대폰 카메라로 찍으면 앱에서 이 방이 열려요. 앱이 없으면 스토어로 가요.</p>
