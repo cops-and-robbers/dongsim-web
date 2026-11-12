@@ -198,6 +198,14 @@ export const handlers = [
     });
   }),
 
+  api.query("AdminGameHistoriesPlaceNames", async ({ variables }) => {
+    await delay(600);
+    const page = queryGameHistories(variables as { page?: number; size?: number; endReason?: GameEndReason; sortDirection?: "ASC" | "DESC" });
+    return HttpResponse.json({
+      data: { adminGameHistories: { content: page.content.map((h) => ({ id: h.id, area: h.area && { placeName: h.area.placeName ?? null } })) } },
+    });
+  }),
+
   api.query("AdminGamePlaceName", async ({ variables }) => {
     await delay(600);
     const game = getGame((variables as { id: string }).id);

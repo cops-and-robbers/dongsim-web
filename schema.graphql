@@ -600,6 +600,8 @@ type AdminGameHistory {
   id: ID!
   """종료 당시의 게임 id. 게임 row는 삭제되므로 상세 조회에 쓸 수 없다."""
   gameId: ID!
+  """몇 번째 라운드였나. roundNumber 컬럼 전 기록은 null"""
+  roundNumber: Int
   winnerTeam: Team!
   endReason: GameEndReason!
   totalPoliceCount: Int!
@@ -607,6 +609,16 @@ type AdminGameHistory {
   arrestedRobberCount: Int!
   totalArrestCount: Int!
   durationSeconds: Int!
+  """라운드를 시작한 시각. 컬럼이 생기기 전 기록은 null"""
+  startedAt: String
+  """위치 공개 주기(분). 컬럼이 생기기 전 기록은 null (BE #192)"""
+  locationRevealIntervalMinutes: Int
+  """구역 축소 최종 반경. 축소를 안 썼으면 null (BE #226)"""
+  shrinkFinalRadiusInMeters: Int
+  """이벤트 게임이었나. 컬럼이 생기기 전 기록은 null (BE #214)"""
+  isEventGame: Boolean
+  """방장 회원 번호. 탈퇴했거나 컬럼 전 기록은 null (BE #214)"""
+  hostUserId: ID
   areaType: AreaType!
   """
   종료 시점의 플레이 구역. 진행 중인 게임의 adminGame.area와 같은 타입이다.
@@ -662,6 +674,8 @@ type AdminGameSummary {
   isEventGame: Boolean!
   """participants COUNT 계산값"""
   participantCount: Int!
+  """지금 몇 번째 라운드인가. 대기 중이고 한 판도 안 했으면 0"""
+  roundNumber: Int!
   createdAt: String!
   """
   플레이 구역의 동네 이름(예: "서울특별시 강남구 역삼동", 해외는 그 나라 말). 아직 못 찾았거나 주소가 없는 곳이면 null. BE #241.

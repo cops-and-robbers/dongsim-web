@@ -530,6 +530,7 @@ export function queryGames(args: {
     participantCount: participants.filter((p) => p.gameId === g.id).length,
     createdAt: g.createdAt,
     placeName: g.area?.placeName ?? null,
+    roundNumber: g.results.length + (g.status === "IN_PROGRESS" ? 1 : 0),
   }));
 
   return paginate(summaries, page, size);

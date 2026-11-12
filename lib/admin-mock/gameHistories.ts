@@ -39,6 +39,13 @@ export interface MockGameHistory {
   createdAt: string;
   endedAt: string | null;
   participants: MockHistoryParticipant[];
+  // 운영에 이미 있는 값(BE #192, #214, #226). 옛 기록처럼 비어 있는 판도 섞는다
+  roundNumber: number | null;
+  startedAt: string | null;
+  locationRevealIntervalMinutes: number | null;
+  shrinkFinalRadiusInMeters: number | null;
+  isEventGame: boolean | null;
+  hostUserId: string | null;
 }
 
 // 종료 스냅샷의 구역. 실제 데이터가 세 갈래로 섞여 있어 그대로 재현한다.
@@ -235,6 +242,14 @@ const histories: MockGameHistory[] = Array.from({ length: HISTORY_COUNT }, (_, i
     // 다섯 번째 판은 ended_at 컬럼이 생기기 전 기록처럼 비워 둔다. 그때는 createdAt 이 끝난 시각이다
     endedAt: i === 4 ? null : new Date(Date.parse(createdAt) + durationSeconds * 1000).toISOString(),
     participants: buildParticipants(seq, policeCount, robberCount, arrestedCount, i % 2, leftPoliceAt),
+    // 열한 번째 판부터 열 판에 하나는 컬럼이 생기기 전 기록처럼 비운다
+    roundNumber: i % 10 === 9 ? null : 1 + (i % 3),
+    startedAt: i % 10 === 9 ? null : createdAt,
+    locationRevealIntervalMinutes: i % 10 === 9 ? null : [3, 5, 5, 10][i % 4],
+    shrinkFinalRadiusInMeters: i % 6 === 2 ? 30 : null,
+    isEventGame: i % 10 === 9 ? null : i % 7 === 1,
+    // 방장은 첫 경찰. 경찰이 없으면(경찰 기권) 첫 도둑
+    hostUserId: i % 10 === 9 ? null : String(policeCount > 0 ? 100 + seq * 10 : 200 + seq * 10),
   };
 });
 
