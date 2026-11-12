@@ -1,259 +1,85 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import Link from "next/link";
-import { useLazyLoadQuery } from "react-relay";
-import type { AdminUsers } from "@/__generated__/AdminUsers.graphql";
-import { AdminUsersQuery } from "@/lib/admin/gql/AdminUsers";
-import {
-  PageHeader,
-  Card,
-  Pagination,
-  SearchInput,
-  EmptyBlock,
-  TableSkeleton,
-  ListPage,
-} from "@/components/admin/Parts";
-import { LAST_ROW_TITLE, Table, Th, Tr, Td } from "@/components/admin/Table";
-import { RoleBadge, SocialBadge } from "@/components/admin/StatusBadge";
-import { SegmentedControl } from "@/components/admin/SegmentedControl";
-import { Button } from "@/components/admin/Button";
-import { Dropdown } from "@/components/admin/Dropdown";
-import { RecentMenu } from "@/components/admin/RecentViewed";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import QueryBoundary from "@/components/admin/QueryBoundary";
-import { DeviceIcon } from "@/components/admin/icons";
-import { DEVICE_LABEL, formatDate, labelOf } from "@/lib/admin/format";
-import { useClampPage, useListParams, useListScroll } from "@/lib/admin/useListParams";
+import { DetailState, PanelSkeleton } from "@/components/admin/split/SplitParts";
+import { SplitView } from "@/components/admin/split/SplitView";
+import { UserList } from "@/components/admin/users/UserList";
+import { UserPanel } from "@/components/admin/users/UserPanel";
+import { fetchStaffIds } from "@/lib/admin/staffClient";
+import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
+import { roomsByUser, useLiveRooms } from "@/lib/admin/useLiveRooms";
 
-type SocialType = "" | "KAKAO" | "GOOGLE" | "APPLE";
-type Sort = "LATEST" | "OLDEST";
-const PAGE_SIZE = 20;
-
-// BE는 가입일 기준 정렬만 지원한다(sortDirection). 별도 정렬 키는 없다.
-const SORT_VARS: Record<Sort, { sortDirection: "ASC" | "DESC" }> = {
-  LATEST: { sortDirection: "DESC" },
-  OLDEST: { sortDirection: "ASC" },
-};
-
-const PARAMS = {
-  nickname: "text",
-  social: ["", "KAKAO", "GOOGLE", "APPLE"],
-  sort: ["LATEST", "OLDEST"],
-} as const;
-
+// 유저 (#315, docs/admin-ui.md "유저와 게임 두 칸 화면"). 왼쪽에서 찾고 오른쪽에서 본다.
+// 검색어, 정렬, 고른 사람을 주소(?q=, ?sort=asc, ?u=)에 남겨 새로 고치거나 링크로 보내도 같은 화면이 열린다.
 export default function UsersPage() {
-  const { current, shown, dim, set } = useListParams(PARAMS);
-  const [fetchKey, setFetchKey] = useState(0);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const query = params.get("q") ?? "";
+  const sort = params.get("sort") === "asc" ? "ASC" : "DESC";
+  const selected = params.get("u");
 
-  const [nicknameInput, setNicknameInput] = useState(current.nickname);
-  const [written, setWritten] = useState(current.nickname);
-  const [lastUrlNickname, setLastUrlNickname] = useState(current.nickname);
-
-  // 메뉴를 눌러 주소가 비면 검색창도 따라 비운다. 내가 방금 쓴 값이면 그대로 둬서 치고 있는 글자를 덮지 않는다
-  if (current.nickname !== lastUrlNickname) {
-    setLastUrlNickname(current.nickname);
-    if (current.nickname !== written) {
-      setNicknameInput(current.nickname);
-      setWritten(current.nickname);
-    }
-  }
-
-  // 입력이 바뀌었을 때만 쓴다. 돌아와서 복원한 검색어를 다시 쓰면 첫 페이지로 돌아가 버린다
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const trimmed = nicknameInput.trim();
-      if (trimmed === written) return;
-      setWritten(trimmed);
-      set({ nickname: trimmed });
-    }, 300);
-    return () => clearTimeout(t);
-  }, [nicknameInput, written, set]);
-
-  return (
-    <ListPage>
-      <PageHeader
-        title="유저"
-        description="가입한 유저를 검색하고 상세 이력을 확인해요."
-      />
-
-      <div className="mb-5 flex flex-wrap items-center gap-2.5">
-        <SearchInput
-          value={nicknameInput}
-          onChange={setNicknameInput}
-          placeholder="닉네임 검색"
-        />
-        <Dropdown<SocialType>
-          value={current.social}
-          onChange={(v) => set({ social: v })}
-          options={[
-            { label: "소셜 전체", value: "" },
-            { label: "카카오", value: "KAKAO" },
-            { label: "구글", value: "GOOGLE" },
-            { label: "애플", value: "APPLE" },
-          ]}
-        />
-        <SegmentedControl<Sort>
-          value={current.sort}
-          onChange={(v) => set({ sort: v })}
-          options={[
-            { label: "최신순", value: "LATEST" },
-            { label: "오래된순", value: "OLDEST" },
-          ]}
-        />
-        <RecentMenu group="user" />
-      </div>
-
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <QueryBoundary
-          pending={<TableSkeleton />}
-          onRetry={() => setFetchKey((k) => k + 1)}
-        >
-          <UsersResults
-            variables={{
-              page: shown.page,
-              size: PAGE_SIZE,
-              nickname: shown.nickname || undefined,
-              socialType: shown.social || undefined,
-              ...SORT_VARS[shown.sort],
-            }}
-            fetchKey={fetchKey}
-            dim={dim}
-            onPage={(page) => set({ page })}
-            emptyAction={
-              shown.nickname !== "" || shown.social !== "" ? (
-                <Button
-                  variant="neutral"
-                  size="sm"
-                  onClick={() => {
-                    setNicknameInput("");
-                    setWritten("");
-                    set({ nickname: "", social: "", sort: "LATEST", page: 0 });
-                  }}
-                >
-                  검색 초기화
-                </Button>
-              ) : undefined
-            }
-          />
-        </QueryBoundary>
-      </Card>
-    </ListPage>
+  const hrefWith = useCallback(
+    (patch: Record<string, string | null>) => {
+      const next = new URLSearchParams(params.toString());
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === "") next.delete(k);
+        else next.set(k, v);
+      }
+      const q = next.toString();
+      return q ? `${pathname}?${q}` : pathname;
+    },
+    [params, pathname],
   );
-}
+  const replace = useCallback((patch: Record<string, string | null>) => router.replace(hrefWith(patch), { scroll: false }), [router, hrefWith]);
 
-function UsersResults({
-  variables,
-  fetchKey,
-  dim,
-  onPage,
-  emptyAction,
-}: {
-  variables: AdminUsers["variables"];
-  fetchKey: number;
-  dim: boolean;
-  onPage: (p: number) => void;
-  emptyAction?: ReactNode;
-}) {
-  const data = useLazyLoadQuery<AdminUsers>(AdminUsersQuery, variables, {
-    fetchKey,
-    fetchPolicy: "store-or-network",
-  });
-  const pageData = data.adminUsers;
-  const scrollRef = useListScroll();
-  const over = useClampPage(pageData, onPage);
+  // 지금 방에 있는 사람은 게임 데이터와 맞춰 보면 서버 추가 없이 알 수 있다. 방 상태는 앱에서 바뀌어 30초마다 다시 읽는다
+  const live = useLiveRefresh();
+  const rooms = useLiveRooms(live);
+  const inRoom = useMemo(() => roomsByUser(rooms.rooms), [rooms.rooms]);
 
-  if (over) return null;
-
-  if (pageData.content.length === 0) {
-    const filtered = variables.nickname != null || variables.socialType != null;
-    return (
-      <div className="flex min-h-0 flex-1 items-center justify-center">
-        <EmptyBlock
-          title={filtered ? "조건에 맞는 유저가 없어요" : "아직 유저가 없어요"}
-          description={
-            filtered
-              ? "검색어나 필터를 바꿔보세요."
-              : "가입한 유저가 여기에 표시돼요."
-          }
-          action={emptyAction}
-        />
-      </div>
+  // 운영진 표시는 한 번만 읽는다. 못 읽으면 표시만 빠진다
+  const [staff, setStaffIds] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetchStaffIds().then(
+      (ids) => alive && setStaffIds(ids),
+      () => {},
     );
-  }
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
-    <div
-      className={`flex min-h-0 flex-1 flex-col transition-opacity ${dim ? "pointer-events-none opacity-50" : ""}`}
-    >
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
-      <Table
-        sticky
-        head={
-          <>
-            <Th>유저</Th>
-            <Th>소셜</Th>
-            <Th>권한</Th>
-            <Th>위치 동의</Th>
-            <Th>기기</Th>
-            <Th className="text-right">가입일</Th>
-          </>
-        }
-      >
-          {pageData.content.map((u, i) => (
-            <Tr key={u.id} index={i} href={`/admin/users/${u.id}`}>
-              <Td>
-                <Link
-                  href={`/admin/users/${u.id}`}
-                  className={`font-semibold text-sd-fg transition hover:text-accent ${LAST_ROW_TITLE}`}
-                >
-                  {u.nickname}
-                </Link>
-              </Td>
-              <Td>
-                <SocialBadge social={u.socialType} />
-              </Td>
-              <Td>
-                <RoleBadge role={u.role} />
-              </Td>
-              <Td>
-                {u.locationTermsAgreed ? (
-                  <span className="font-semibold text-sd-fg-subtle">
-                    동의
-                  </span>
-                ) : (
-                  <span className="font-bold text-sd-critical">미동의</span>
-                )}
-              </Td>
-              <Td className="text-sd-fg-subtle">
-                {u.device ? (
-                  <span className="inline-flex items-center gap-1.5 font-medium">
-                    <DeviceIcon
-                      type={u.device.deviceType}
-                      className="h-3.5 w-3.5 text-sd-fg-subtle"
-                    />
-                    {labelOf(DEVICE_LABEL, u.device.deviceType)}
-                  </span>
-                ) : (
-                  <span className="text-sd-disabled">
-                    미등록
-                  </span>
-                )}
-              </Td>
-              <Td className="text-right text-sd-fg-subtle">
-                {formatDate(u.createdAt)}
-              </Td>
-            </Tr>
-          ))}
-      </Table>
-      </div>
-
-      <Pagination
-        page={pageData.page}
-        totalPages={pageData.totalPages}
-        totalElements={pageData.totalElements}
-        size={pageData.size}
-        onPage={onPage}
-      />
-    </div>
+    <SplitView
+      listLabel="유저 찾기"
+      detailLabel="유저 상세"
+      selectionKey={selected}
+      closeHref={hrefWith({ u: null })}
+      list={
+        <UserList
+          query={query}
+          sort={sort}
+          selectedId={selected}
+          hrefFor={(id) => hrefWith({ u: id })}
+          onQuery={(q) => replace({ q })}
+          onSort={(s) => replace({ sort: s === "ASC" ? "asc" : null })}
+          staff={staff}
+          inRoom={inRoom}
+        />
+      }
+      detail={
+        selected ? (
+          <QueryBoundary key={selected} pending={<PanelSkeleton />}>
+            <UserPanel id={selected} gamesHref={(gameResultId) => `/admin/games?h=${gameResultId}`} />
+          </QueryBoundary>
+        ) : (
+          <DetailState title="왼쪽에서 유저를 골라 주세요" body="닉네임으로 찾거나 / 를 눌러 바로 검색할 수 있어요." />
+        )
+      }
+    />
   );
 }
