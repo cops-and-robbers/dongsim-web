@@ -4,12 +4,17 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useLazyLoadQuery } from "react-relay";
 import type { AdminGameHistory } from "@/__generated__/AdminGameHistory.graphql";
+import type { AdminGameHistoryRadio } from "@/__generated__/AdminGameHistoryRadio.graphql";
+import type { AdminGameHistoryPlaceName } from "@/__generated__/AdminGameHistoryPlaceName.graphql";
 import { AdminGameHistoryQuery } from "@/lib/admin/gql/AdminGameHistory";
+import { AdminGameHistoryRadioQuery } from "@/lib/admin/gql/AdminGameHistoryRadio";
+import { AdminGameHistoryPlaceNameQuery } from "@/lib/admin/gql/AdminGameHistoryPlaceName";
 import {
   PageHeader,
   SectionCard,
   DescriptionList,
   ScrollPage,
+  CardNote,
 } from "@/components/admin/Parts";
 import { Table, Th, Tr, Td } from "@/components/admin/Table";
 import {
@@ -21,6 +26,9 @@ import { Avatar } from "@/components/admin/Avatar";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { GameAreaMap } from "@/components/admin/maps";
+import { PlaceNameTag } from "@/components/admin/games/PlaceNameTag";
+import { attachRadio, formatRadio, radioSummary } from "@/lib/admin/gameExtras";
+import { useOptionalQuery } from "@/lib/admin/useOptionalQuery";
 import {
   END_REASON_LABEL,
   TEAM_LABEL,
@@ -51,6 +59,18 @@ function HistoryDetail({ id }: { id: string }) {
   });
 
   const area = history.area;
+
+  // 무전 시간(BE #239)과 동네 이름(BE #241)은 운영에 아직 없을 수 있어 따로 읽는다. 없으면 그 칸만 안 보인다
+  const radio = useOptionalQuery<AdminGameHistoryRadio>(AdminGameHistoryRadioQuery, { id }, "radioSeconds");
+  const place = useOptionalQuery<AdminGameHistoryPlaceName>(AdminGameHistoryPlaceNameQuery, { id }, "placeName", 0, {
+    // 처음 보는 곳은 이름을 찾는 데 몇 초 걸려 첫 응답엔 비어 있을 수 있다. 백엔드가 찾아 저장해 두면 다음에 온다
+    retryWhile: (d) => d.adminGameHistory?.area != null && d.adminGameHistory.area.placeName == null,
+  });
+  const placeName = place.data?.adminGameHistory?.area?.placeName ?? null;
+  const rows = attachRadio(history.participants, radio.data?.adminGameHistory?.participants ?? null);
+  const hasPolice = rows.some((p) => p.team === "POLICE");
+  const showRadio = radio.status === "ready" && hasPolice;
+  const radioTotal = radioSummary(rows);
   const forfeited =
     history.endReason === "POLICE_FORFEITED" ||
     history.endReason === "ROBBER_FORFEITED";
@@ -60,7 +80,7 @@ function HistoryDetail({ id }: { id: string }) {
   const teamOrder: Record<string, number> = { POLICE: 0, ROBBER: 1 };
   const recordOf = (p: (typeof history.participants)[number]) =>
     p.team === "POLICE" ? p.arrestCount : p.arrestedCount;
-  const participants = [...history.participants].sort(
+  const participants = [...rows].sort(
     (a, b) =>
       (teamOrder[a.team ?? ""] ?? 9) - (teamOrder[b.team ?? ""] ?? 9) ||
       (a.team === "POLICE"
@@ -127,11 +147,22 @@ function HistoryDetail({ id }: { id: string }) {
                 desc: formatDuration(history.durationSeconds),
               },
               { term: "종료 시각", desc: endedAt },
+              ...(showRadio
+                ? [
+                    {
+                      term: "경찰 무전",
+                      desc:
+                        radioTotal.used === 0
+                          ? "아무도 안 썼어요"
+                          : `${radioTotal.police}명 중 ${radioTotal.used}명, 합계 ${formatRadio(radioTotal.totalSeconds)}`,
+                    },
+                  ]
+                : []),
             ]}
           />
         </SectionCard>
 
-        <SectionCard title="플레이 구역">
+        <SectionCard title="플레이 구역" right={placeName ? <PlaceNameTag name={placeName} /> : undefined}>
           {area ? (
             <>
               <GameAreaMap area={area} />
@@ -174,6 +205,7 @@ function HistoryDetail({ id }: { id: string }) {
                   <Th>팀</Th>
                   <Th>상태</Th>
                   <Th>기록</Th>
+                  {showRadio && <Th>무전</Th>}
                 </>
               }
             >
@@ -226,9 +258,23 @@ function HistoryDetail({ id }: { id: string }) {
                         )}
                     </span>
                   </Td>
+                  {showRadio && (
+                    <Td className="tabular-nums">
+                      {p.team !== "POLICE" ? (
+                        <span className="text-sd-disabled">-</span>
+                      ) : p.radioSeconds == null ? (
+                        <span className="text-sd-fg-subtle">-</span>
+                      ) : (
+                        <span className={p.radioSeconds > 0 ? "text-sd-fg" : "text-sd-fg-subtle"}>{formatRadio(p.radioSeconds)}</span>
+                      )}
+                    </Td>
+                  )}
                 </Tr>
               ))}
             </Table>
+          )}
+          {showRadio && history.participants.length > 0 && (
+            <CardNote>무전은 경찰만 써요. 2분마다 세서 실제보다 한 번 접속에 최대 2분 적게 나와요.</CardNote>
           )}
         </SectionCard>
       </div>

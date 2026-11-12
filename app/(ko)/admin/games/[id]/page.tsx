@@ -4,7 +4,9 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useLazyLoadQuery } from "react-relay";
 import type { AdminGame } from "@/__generated__/AdminGame.graphql";
+import type { AdminGamePlaceName } from "@/__generated__/AdminGamePlaceName.graphql";
 import { AdminGameQuery } from "@/lib/admin/gql/AdminGame";
+import { AdminGamePlaceNameQuery } from "@/lib/admin/gql/AdminGamePlaceName";
 import {
   CardNote,
   PageHeader,
@@ -25,6 +27,8 @@ import QueryBoundary from "@/components/admin/QueryBoundary";
 import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { GameAreaMap } from "@/components/admin/maps";
 import { FieldOpsCard } from "@/components/admin/games/FieldOpsCard";
+import { PlaceNameTag } from "@/components/admin/games/PlaceNameTag";
+import { useOptionalQuery } from "@/lib/admin/useOptionalQuery";
 import { isActive } from "@/lib/admin/eventGame";
 import {
   END_REASON_LABEL,
@@ -52,6 +56,11 @@ function GameDetail({ id }: { id: string }) {
   const data = useLazyLoadQuery<AdminGame>(AdminGameQuery, { id }, { fetchKey: live, fetchPolicy: "store-and-network" });
   const game = data.adminGame;
   useRecordRecent("game", id, game ? { title: game.inviteCode, detail: `게임 ID ${game.id}` } : null);
+  // 동네 이름(BE #241)은 운영에 아직 없을 수 있어 따로 읽는다. 대기 중인 방은 구역이 바뀔 수 있어 상세와 같은 차례로 다시 읽는다
+  const place = useOptionalQuery<AdminGamePlaceName>(AdminGamePlaceNameQuery, { id }, "placeName", live, {
+    retryWhile: (d) => d.adminGame?.area != null && d.adminGame.area.placeName == null,
+  });
+  const placeName = place.data?.adminGame?.area?.placeName ?? null;
 
   if (!game) {
     return (
@@ -109,7 +118,7 @@ function GameDetail({ id }: { id: string }) {
           />
         </SectionCard>
 
-        <SectionCard title="게임 위치">
+        <SectionCard title="게임 위치" right={area && placeName ? <PlaceNameTag name={placeName} /> : undefined}>
           {area ? (
             <GameAreaMap area={area} />
           ) : (

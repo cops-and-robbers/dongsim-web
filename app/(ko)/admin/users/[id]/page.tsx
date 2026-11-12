@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { fetchQuery, useLazyLoadQuery, useRelayEnvironment } from "react-relay";
 import type { AdminUser } from "@/__generated__/AdminUser.graphql";
+import type { AdminUserRadio } from "@/__generated__/AdminUserRadio.graphql";
 import { AdminUserQuery } from "@/lib/admin/gql/AdminUser";
+import { AdminUserRadioQuery } from "@/lib/admin/gql/AdminUserRadio";
 import type { ReactNode } from "react";
 import {
   CardNote,
@@ -27,7 +29,9 @@ import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { StaffToggle } from "@/components/admin/metrics/StaffToggle";
 import { FinishedGamesCard } from "@/components/admin/users/FinishedGamesCard";
 import { DEVICE_LABEL, formatDate, formatDateTime, labelOf } from "@/lib/admin/format";
+import { formatRadio } from "@/lib/admin/gameExtras";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
+import { useOptionalQuery } from "@/lib/admin/useOptionalQuery";
 
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -49,6 +53,26 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       <p className="mb-1.5 text-[12px] font-medium text-sd-fg-subtle">{label}</p>
       <div className="text-[14px] font-semibold text-sd-fg">{children}</div>
     </div>
+  );
+}
+
+// 지금까지 쓴 경찰 무전 시간(BE #239). 운영에 아직 없을 수 있어 유저 상세와 따로 읽고, 판이 끝날 때만 늘어서 1분마다 다시 읽는다
+function RadioField({ userId }: { userId: string }) {
+  const live = useLiveRefresh(60_000);
+  const { data, status } = useOptionalQuery<AdminUserRadio>(AdminUserRadioQuery, { id: userId }, "radioSeconds", live);
+  const seconds = data?.adminUser?.radioSeconds;
+  return (
+    <Field label="무전 사용">
+      {seconds != null ? (
+        <span className={`tabular-nums ${seconds > 0 ? "" : "font-medium text-sd-fg-subtle"}`}>{formatRadio(seconds)}</span>
+      ) : status === "loading" ? (
+        <span aria-busy className="inline-block h-4 w-14 animate-pulse rounded bg-sd-gray-200 align-middle" />
+      ) : status === "not-deployed" ? (
+        <span className="text-[13px] font-medium text-sd-fg-subtle">서버 업데이트 뒤에 보여요</span>
+      ) : (
+        <span className="text-sd-fg-subtle">-</span>
+      )}
+    </Field>
   );
 }
 
@@ -140,6 +164,7 @@ function UserDetail({ id, fetchKey }: { id: string; fetchKey: number }) {
                 <span className="text-sd-fg-subtle">-</span>
               )}
             </Field>
+            <RadioField userId={user.id} />
           </div>
         </SectionCard>
 

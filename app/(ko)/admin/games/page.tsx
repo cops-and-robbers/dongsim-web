@@ -3,7 +3,9 @@
 import { useState, type ReactNode } from "react";
 import { useLazyLoadQuery } from "react-relay";
 import type { AdminGames } from "@/__generated__/AdminGames.graphql";
+import type { AdminGamesPlaceNames } from "@/__generated__/AdminGamesPlaceNames.graphql";
 import { AdminGamesQuery } from "@/lib/admin/gql/AdminGames";
+import { AdminGamesPlaceNamesQuery } from "@/lib/admin/gql/AdminGamesPlaceNames";
 import {
   PageHeader,
   Card,
@@ -21,6 +23,8 @@ import { Button } from "@/components/admin/Button";
 import { InviteCode } from "@/components/admin/InviteCode";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { formatDate } from "@/lib/admin/format";
+import { shortPlaceName } from "@/lib/admin/gameExtras";
+import { useOptionalQuery } from "@/lib/admin/useOptionalQuery";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 import { useClampPage, useListParams, useListScroll } from "@/lib/admin/useListParams";
 
@@ -114,6 +118,11 @@ function GamesResults({
     fetchPolicy: "store-and-network",
   });
   const pageData = data.adminGames;
+  // 동네 이름(BE #241)은 운영에 아직 없을 수 있어 같은 조건으로 따로 읽는다. 배포 전이면 칸을 아예 안 그린다.
+  // 처음 보는 곳은 한 번에 5곳까지만 찾아서, 목록을 새로 받는 차례마다 같이 다시 물어 채운다
+  const place = useOptionalQuery<AdminGamesPlaceNames>(AdminGamesPlaceNamesQuery, variables, "placeName", live);
+  const placeById = new Map((place.data?.adminGames.content ?? []).map((g) => [g.id, g.placeName ?? null]));
+  const showPlace = place.status !== "not-deployed" && !(place.status === "error" && !place.data);
   const scrollRef = useListScroll();
   const over = useClampPage(pageData, onPage);
 
@@ -146,6 +155,7 @@ function GamesResults({
         head={
           <>
             <Th>초대코드</Th>
+            {showPlace && <Th>동네</Th>}
             <Th>상태</Th>
             <Th>인원</Th>
             <Th>라운드</Th>
@@ -159,6 +169,7 @@ function GamesResults({
             <Td>
               <InviteCode code={g.inviteCode} gameId={g.id} />
             </Td>
+            {showPlace && <PlaceCell known={placeById.has(g.id)} name={placeById.get(g.id) ?? null} />}
             <Td>
               <GameStatusBadge status={g.status} />
             </Td>
@@ -194,5 +205,25 @@ function GamesResults({
         onPage={onPage}
       />
     </div>
+  );
+}
+
+// 목록의 동네 칸. 시도를 떼고 짧게 보여 주고, 다 보려면 마우스를 올린다.
+// 아직 안 받은 줄은 비워 두고, 받았는데 이름이 없으면(구역을 아직 안 정한 방, 못 찾은 곳) "-"
+function PlaceCell({ known, name }: { known: boolean; name: string | null }) {
+  if (!known) return <Td>{null}</Td>;
+  if (!name) {
+    return (
+      <Td>
+        <span className="text-sd-disabled" title="구역을 아직 정하지 않았거나 동네 이름을 찾지 못했어요">
+          -
+        </span>
+      </Td>
+    );
+  }
+  return (
+    <Td className="max-w-[14rem] truncate text-sd-fg-muted" title={name}>
+      {shortPlaceName(name)}
+    </Td>
   );
 }
