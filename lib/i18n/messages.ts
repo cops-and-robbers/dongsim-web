@@ -348,6 +348,36 @@ const ko = {
       count: "글 {count}개",
     },
   },
+  online: {
+    meta: {
+      title: "경찰과 도둑 온라인 게임",
+      description: "밖에 나가지 않고 온라인으로 즐기는 경찰과 도둑이에요. 최대 8명, 한 판 3분이에요.",
+    },
+    badge: { soon: "만들고 있어요", open: "지금 할 수 있어요", pause: "점검 중" },
+    title: ["경찰과 도둑", "온라인 게임"],
+    lead: "밖에 나가지 않고 온라인으로 즐겨 보세요.",
+    play: "친구랑 한 판 하기",
+    stats: [
+      ["인원", "최대 8명"],
+      ["한 판", "3분"],
+      ["설치", "필요 없어요"],
+    ],
+    // {t} 는 다시 여는 예정 시각("11월 7일 오후 9:30")
+    note: { soon: "아직 만들고 있어요", pauseUntil: "{t}쯤 다시 와 주세요", pause: "점검하고 있어요. 조금 뒤에 다시 와 주세요" },
+    features: [
+      { title: "팀을 선택하세요", body: "대기실에서 경찰 칸이나 도둑 칸으로 들어가세요." },
+      { title: "숨거나 찾으세요", body: "수풀에 들어가면 멀리서는 보이지 않아요. 밖으로 나오면 들켜요." },
+      { title: "35초마다 위치가 공개돼요", body: "도둑 위치가 경찰 지도에 잠깐 표시돼요." },
+      { title: "동료를 구출하세요", body: "잡히면 감옥으로 가요. 같은 편이 문 앞에 잠깐 서 있으면 풀려나요." },
+    ],
+    again: "친구와 함께 즐겨 보세요",
+    app: {
+      iconAlt: "경찰과 도둑 앱 아이콘",
+      title: "오프라인으로도 즐겨 보세요",
+      body: "공원이나 운동장에서 친구들과 직접 뛰어요.",
+      link: "어떻게 하는지 보기",
+    },
+  },
   legal: {
     effectiveDate: "시행일",
     history: "이전 버전",
@@ -705,6 +735,35 @@ const en: Messages = {
       count: "{count} stories",
     },
   },
+  online: {
+    meta: {
+      title: "Cops and Robbers Online - Play in your browser",
+      description: "Play Cops and Robbers online with friends, no install. Up to 8 players, 3 minutes a round.",
+    },
+    badge: { soon: "Coming soon", open: "Play now", pause: "Under maintenance" },
+    title: ["Cops and Robbers", "Online"],
+    lead: "Play with friends online, right in your browser.",
+    play: "Play with friends",
+    stats: [
+      ["Players", "Up to 8"],
+      ["Round", "3 min"],
+      ["Install", "Not needed"],
+    ],
+    note: { soon: "Still in the works", pauseUntil: "Come back around {t} (KST)", pause: "Down for maintenance. Come back in a bit" },
+    features: [
+      { title: "Pick your side", body: "In the lobby, walk into the cops' zone or the robbers' zone." },
+      { title: "Hide or seek", body: "In a bush, you can't be seen from afar. Step out and you're spotted." },
+      { title: "Robbers revealed every 35 seconds", body: "Each robber's spot flashes on the cops' map for a moment." },
+      { title: "Free your teammates", body: "Get caught and you go to jail. A teammate standing at the door for a moment sets you free." },
+    ],
+    again: "Grab your friends and play",
+    app: {
+      iconAlt: "Cops and Robbers app icon",
+      title: "Play it for real, outside",
+      body: "Run around a park or a field with your friends.",
+      link: "See how it works",
+    },
+  },
   legal: {
     effectiveDate: "Effective date",
     history: "Previous versions",
@@ -1058,6 +1117,35 @@ const ja: Messages = {
       card: "カード表示",
       list: "リスト表示",
       count: "記事 {count}本",
+    },
+  },
+  online: {
+    meta: {
+      title: "ケイドロ オンライン - ブラウザですぐ遊べる",
+      description: "インストールなしで、友だちとオンラインでケイドロ。最大8人、1回3分。",
+    },
+    badge: { soon: "準備中", open: "いま遊べます", pause: "メンテナンス中" },
+    title: ["ケイドロ", "オンライン"],
+    lead: "外に出なくても、オンラインで遊べます。",
+    play: "友だちと1回遊ぶ",
+    stats: [
+      ["人数", "最大8人"],
+      ["1回", "3分"],
+      ["インストール", "不要"],
+    ],
+    note: { soon: "まだ準備中です", pauseUntil: "{t}ごろにまた来てください", pause: "メンテナンス中です。少し待ってまた来てください" },
+    features: [
+      { title: "チームを選ぼう", body: "ロビーで警察エリアか泥棒エリアに入ります。" },
+      { title: "隠れる? 探す?", body: "茂みに入ると遠くからは見えません。外に出るとばれます。" },
+      { title: "35秒ごとに位置が公開", body: "泥棒の位置が警察の地図に少しの間表示されます。" },
+      { title: "仲間を助けよう", body: "捕まると牢屋へ。仲間が扉の前に少し立つと出られます。" },
+    ],
+    again: "友だちと遊んでみよう",
+    app: {
+      iconAlt: "ケイドロアプリのアイコン",
+      title: "外でも遊んでみよう",
+      body: "公園やグラウンドで、友だちと走り回って遊べます。",
+      link: "遊び方を見る",
     },
   },
   legal: {

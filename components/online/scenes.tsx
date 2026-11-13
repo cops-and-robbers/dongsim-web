@@ -1,6 +1,7 @@
 "use client";
 
 import GameStage, { type StageScript } from "./GameStage";
+import { useSceneCopy } from "./copy";
 import { Building, Bush, Buttons, Clock, Flower, Grass, Ground, Jail, Joystick, MiniMap, RevealChip, SoundButton, Stamina, Toast, Tree, W, H, Z, type Road, type Theme } from "./scene";
 
 // /online 에 넣는 게임 장면 네 개. 실제 판에서 나오는 순간을 게임 에셋과 게임의 그리기 규칙으로 배치하고,
@@ -39,14 +40,15 @@ const BOUNDS: [number, number, number, number] = [-300, -300, 2400, 1400];
 
 /** 대표 장면: 낮 동네. 경찰(나)이 길을 걷다 수풀에서 뛰쳐나온 도둑을 보고 쫓아가 잡는다 */
 export function ChaseScene() {
+  const c = useSceneCopy();
   const roads = [{ x: -300, y: 336, w: 2400, h: 120 }, { x: 1190, y: -300, w: 110, h: 1400 }];
   const bs: Box[] = [[110, 40, 430, 236, 0], [1350, 30, 300, 256, 1], [170, 540, 380, 220, 3], [1340, 540, 300, 210, 2], [1450, 860, 320, 220, 0]];
   const script: StageScript = {
     length: 8,
     still: 2.9,
     cast: [
-      { id: "me", team: "police", x: 380, y: 396, tag: "나", me: true },
-      { id: "r", team: "robber", x: 1050, y: 452, tag: "치즈손" },
+      { id: "me", team: "police", x: 380, y: 396, tag: c.me, me: true },
+      { id: "r", team: "robber", x: 1050, y: 452, tag: c.names.cheese },
     ],
     move(t, api) {
       const me = path(t, [[0, 380, 396], [1.7, 760, 396], [2.3, 900, 400], [3.4, 1170, 470], [4.1, 1238, 640]]);
@@ -61,7 +63,7 @@ export function ChaseScene() {
   };
   return (
     <GameStage
-      label="경찰이 수풀에서 뛰쳐나온 도둑을 쫓아가 잡는 장면"
+      label={c.label.chase}
       theme="town"
       bounds={BOUNDS}
       map={mapOf("town", roads, [[640, 300], [920, 560], [700, 650], [990, 250], [60, 500], [1500, 400]], [[880, 280, 22], [1080, 600, 20], [620, 560, 24], [40, 300, 20], [960, 690, 22], [1520, 330, 22]])}
@@ -83,7 +85,7 @@ export function ChaseScene() {
           <Joystick />
           <Stamina team="police" value={t > 2.3 && t < 4.1 ? 0.95 - (t - 2.3) * 0.32 : t >= 4.1 ? 0.4 + (t - 4.1) * 0.12 : 0.95} />
           <Buttons team="police" ready={t > 3.1 && t < 4.1} />
-          {t > 4.1 && t < 6.4 && <Toast team="police" text="치즈손을 잡았어요" />}
+          {t > 4.1 && t < 6.4 && <Toast team="police" text={c.caught(c.names.cheese)} />}
         </>
       )}
     />
@@ -92,13 +94,14 @@ export function ChaseScene() {
 
 /** 밤 골목: 도둑(나)은 수풀 안에 숨어 있고(반투명), 경찰이 시야 안으로 들어왔다가 지나간다 */
 export function HideScene() {
+  const c = useSceneCopy();
   const roads = [{ x: -300, y: 330, w: 2400, h: 120 }, { x: 410, y: -300, w: 110, h: 1400 }];
   const bs: Box[] = [[30, 30, 330, 240, 0], [580, 20, 400, 250, 1], [1060, 30, 340, 236, 2], [1000, 520, 400, 230, 0], [40, 520, 330, 220, 1]];
   const script: StageScript = {
     length: 8,
     still: 3.6,
     cast: [
-      { id: "me", team: "robber", x: 779, y: 540, tag: "나", me: true },
+      { id: "me", team: "robber", x: 779, y: 540, tag: c.me, me: true },
       { id: "c", team: "police", x: 1700, y: 392 },
     ],
     move(t) {
@@ -111,7 +114,7 @@ export function HideScene() {
   };
   return (
     <GameStage
-      label="밤 골목 수풀에 숨은 도둑 앞으로 경찰이 지나가는 장면"
+      label={c.label.hide}
       theme="night"
       bounds={BOUNDS}
       map={mapOf("night", roads, [[640, 520], [880, 600], [600, 690]], [[760, 610, 20], [920, 680, 22]])}
@@ -139,6 +142,7 @@ export function HideScene() {
 
 /** 위치 공개: 시간이 다 되면 도둑 자리가 빨간 표시로 드러나고, 경찰(나)이 그쪽으로 달려간다 */
 export function RevealScene() {
+  const c = useSceneCopy();
   const roads = [{ x: -300, y: 336, w: 2400, h: 120 }, { x: 330, y: -300, w: 110, h: 1400 }];
   const bs: Box[] = [[470, 30, 400, 240, 2], [1000, 40, 360, 236, 0], [30, 540, 260, 210, 1], [1180, 560, 380, 220, 3]];
   const REVEAL = 1.6;
@@ -146,7 +150,7 @@ export function RevealScene() {
     length: 7.5,
     still: 2.6,
     cast: [
-      { id: "me", team: "police", x: 600, y: 396, tag: "나", me: true },
+      { id: "me", team: "police", x: 600, y: 396, tag: c.me, me: true },
       { id: "r", team: "robber", x: 1010, y: 610 },
     ],
     move(t) {
@@ -160,7 +164,7 @@ export function RevealScene() {
   const pingAt = { x: 1010, y: 610 };
   return (
     <GameStage
-      label="도둑 위치가 공개돼 빨간 표시가 뜨고 경찰이 그쪽으로 달려가는 장면"
+      label={c.label.reveal}
       theme="town"
       bounds={BOUNDS}
       map={mapOf("town", roads, [[600, 560], [900, 620], [140, 300], [1440, 300]], [[700, 600, 22], [980, 660, 20], [120, 260, 24], [1500, 270, 20]])}
@@ -194,7 +198,7 @@ export function RevealScene() {
             <Clock time={clock(95 - t)} out={1} />
             <RevealChip team="police" sec={Math.ceil(left)} progress={left / 35} soon={t < REVEAL} />
             <MiniMap theme="town" team="police" me={[756 + t * 4, 46 + t * 2]} dots={t > REVEAL && t < REVEAL + 4 ? [[790, 58], [812, 34], [742, 70]] : []} />
-            {t > REVEAL && t < REVEAL + 2.6 && <Toast team="police" text="도둑 위치가 공개됐어요. 빨간 표시가 있는 곳으로 가요" />}
+            {t > REVEAL && t < REVEAL + 2.6 && <Toast team="police" text={c.revealed} />}
             <Joystick />
             <Stamina team="police" value={t > REVEAL ? Math.max(0.3, 0.9 - (t - REVEAL) * 0.12) : 0.9} />
             <Buttons team="police" ready={t > 5.4 && t < 6.2} />
@@ -207,6 +211,7 @@ export function RevealScene() {
 
 /** 감옥: 도둑(나)이 감옥 문 앞에 서면 고리가 2.2초 동안 차오르고, 다 차면 갇힌 동료가 튀어나와 달아난다 */
 export function JailScene() {
+  const c = useSceneCopy();
   const J = { x: 560, y: 360 };
   const roads = [{ x: 1080, y: -300, w: 110, h: 1400 }, { x: -300, y: 650, w: 2400, h: 110 }];
   const bs: Box[] = [[1260, 60, 300, 240, 1]];
@@ -220,10 +225,10 @@ export function JailScene() {
     length: 9,
     still: 3.2,
     cast: [
-      { id: "me", team: "robber", x: 1250, y: 470, tag: "나", me: true },
-      { id: "j0", team: "robber", x: s0.x, y: s0.y, tag: "치즈손", jailed: true },
-      { id: "j1", team: "robber", x: s1.x, y: s1.y, tag: "살금이", jailed: true },
-      { id: "c", team: "police", x: 60, y: 120, tag: "번개발" },
+      { id: "me", team: "robber", x: 1250, y: 470, tag: c.me, me: true },
+      { id: "j0", team: "robber", x: s0.x, y: s0.y, tag: c.names.cheese, jailed: true },
+      { id: "j1", team: "robber", x: s1.x, y: s1.y, tag: c.names.sneak, jailed: true },
+      { id: "c", team: "police", x: 60, y: 120, tag: c.names.flash },
     ],
     move(t, api) {
       if (t > FREE && api.once("free")) { api.act("j0", "escape"); api.act("j1", "escape"); }
@@ -241,7 +246,7 @@ export function JailScene() {
   };
   return (
     <GameStage
-      label="감옥 문 앞에 선 도둑이 갇힌 동료를 꺼내 함께 달아나는 장면"
+      label={c.label.jail}
       theme="town"
       bounds={BOUNDS}
       map={mapOf("town", roads, [[960, 200], [1300, 420], [120, 120], [940, 560]], [[980, 250, 22], [1320, 470, 20], [90, 160, 22], [900, 600, 24]], <Jail theme="town" x={J.x} y={J.y} />)}
@@ -269,7 +274,7 @@ export function JailScene() {
           <Clock time={clock(48 - t)} out={t > FREE ? 0 : 2} />
           <RevealChip team="robber" sec={Math.ceil(Math.max(1, 9 - t))} progress={Math.max(0, 9 - t) / 35} soon={9 - t <= 5} />
           <MiniMap theme="town" team="robber" me={[780 + t * 3, 52 + t]} />
-          {t > FREE && t < FREE + 2.2 && <Toast team="robber" text="동료 2명을 구했어요" />}
+          {t > FREE && t < FREE + 2.2 && <Toast team="robber" text={c.rescued(2)} />}
           <Joystick />
           <Stamina team="robber" value={t < ARRIVE ? 0.8 - t * 0.2 : Math.min(1, 0.46 + (t - ARRIVE) * 0.08)} />
           <Buttons team="robber" />
