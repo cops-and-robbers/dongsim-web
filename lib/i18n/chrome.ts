@@ -53,6 +53,7 @@ const en: Chrome = {
   nav: [
     { path: "/game", label: "Game" },
     { path: "/demo", label: "Try it" },
+    { path: "/online", label: "Play online" },
     { path: "/blog", label: "Stories" },
     { path: "/team", label: "Team" },
   ],
@@ -80,6 +81,7 @@ const ja: Chrome = {
   nav: [
     { path: "/game", label: "ゲーム紹介" },
     { path: "/demo", label: "体験する" },
+    { path: "/online", label: "オンライン" },
     { path: "/blog", label: "ストーリー" },
     { path: "/team", label: "チーム紹介" },
   ],
