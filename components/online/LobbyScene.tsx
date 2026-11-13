@@ -1,5 +1,6 @@
 "use client";
 
+import { SCENE_KO, textWidth, useSceneCopy } from "./copy";
 import GameStage, { type StageScript } from "./GameStage";
 import { Bins, Building, Buttons, Ground, Hedge, Joystick, Stamina, Tree } from "./scene";
 
@@ -110,7 +111,7 @@ function ChalkCharacter({ view, cx, foot, h, outline, seed, w0, h0 }: { view: st
 
 /** 대기실 이름표(.wtag): 26px 700(게임 #14 에서 30px 800 에서 줄임), 패딩 4 14 6, 발밑에서 132 위. 나는 검은 바탕에 옅은 "방장 나", 칸을 고르면 편 색 */
 function LobbyTag({ x, foot, name, extra = [], me = false, side }: { x: number; foot: number; name: string; extra?: string[]; me?: boolean; side?: "cop" | "rob" }) {
-  const tw = Array.from(name).length * 26 + extra.reduce((n, e) => n + Array.from(e).length * 18 + 7, 0) + 28;
+  const tw = textWidth(name, 26) + extra.reduce((n, e) => n + textWidth(e, 18) + 7, 0) + 28;
   const y = foot - 132;
   const bg = me ? (side === "cop" ? "#2A9BEF" : side === "rob" ? "#1F9A52" : INK) : "#fff";
   return (
@@ -132,6 +133,11 @@ function LobbyTag({ x, foot, name, extra = [], me = false, side }: { x: number; 
 
 /** 대기실: 방장(나)이 가운데서 도둑 칸으로 걸어가고, 친구들은 이미 편을 골랐다 */
 export function LobbyScene() {
+  const c = useSceneCopy(), L = c.lobby;
+  // 언어마다 글자 길이가 달라 버튼 폭을 글자에 맞추고, 옆 버튼을 그만큼 민다. 한국어는 원래 크기 그대로다
+  const fit = (text: string, size: number, min: number) => (c === SCENE_KO ? min : Math.max(min, Math.round(textWidth(text, size) + 24)));
+  const inviteW = fit(L.invite, 14, 96), sayX = 165 + inviteW + 9, hintW = fit(L.hint, 14, 179), quitW = fit(L.quit, 14, 67), seatsW = fit(L.seats, 14, 54);
+  const quitX = 830 - quitW, seatsX = quitX - 7 - seatsW, startW = fit(L.start, 17, 150);
   // 건물과 쓰레기통은 부딪히는 칸보다 위로 높게 그린다(RISE 70, BIN_RISE 30)
   const buildings: [number, number, number, number][] = [
     [560, 240, 300, 210], [900, 220, 380, 240], [1440, 240, 310, 210], [1920, 220, 380, 240], [2340, 240, 300, 210],
@@ -159,7 +165,7 @@ export function LobbyScene() {
   };
   return (
     <GameStage
-      label="대기실에서 친구들이 경찰 칸과 도둑 칸으로 걸어가 편을 고르는 장면"
+      label={c.label.lobby}
       theme="town"
       bounds={[400, 0, 2500, 1500]}
       cam={CAM}
@@ -206,10 +212,10 @@ export function LobbyScene() {
             <text x={ZX[2] + 34} y={ZY[0] + 26 + 46} fontSize={50} fontWeight={800} fill={INK} opacity={0.8}>
               {t > ENTER ? "2/4" : "1/4"}
             </text>
-            {tag("a", "하늘")}
-            {tag("b", "도윤")}
-            {tag("c", "서아")}
-            {tag("me", "찬빈", ["방장", "나"], true, t > ENTER ? "rob" : undefined)}
+            {tag("a", L.people[0])}
+            {tag("b", L.people[1])}
+            {tag("c", L.people[2])}
+            {tag("me", L.people[3], [L.host, c.me], true, t > ENTER ? "rob" : undefined)}
           </>
         );
       }}
@@ -218,7 +224,7 @@ export function LobbyScene() {
           {/* 방 코드(.lp.code) 143x53 */}
           <rect x={14} y={10} width={143} height={53} rx={14} fill="#fff" style={PLATE} />
           <text x={26} y={29} fontSize={11} fontWeight={700} fill="#545E6E">
-            방 코드
+            {L.code}
             <tspan dx={4} fontWeight={800} fill={INK}>
               4/6
             </tspan>
@@ -231,14 +237,14 @@ export function LobbyScene() {
             <rect x={3} y={7} width={10} height={10} rx={1.4} />
           </g>
           {/* 친구 부르기(.bt.main) 96x44, 정해진 말(.bt.ic) 44, 안내(.line), 인원, 나가기 */}
-          <rect x={165} y={13} width={96} height={44} rx={14} fill="#CFA93C" />
-          <rect x={165} y={10} width={96} height={44} rx={14} fill="#F7D774" />
-          <text x={213} y={37} textAnchor="middle" fontSize={14} fontWeight={800} fill={INK}>
-            친구 부르기
+          <rect x={165} y={13} width={inviteW} height={44} rx={14} fill="#CFA93C" />
+          <rect x={165} y={10} width={inviteW} height={44} rx={14} fill="#F7D774" />
+          <text x={165 + inviteW / 2} y={37} textAnchor="middle" fontSize={14} fontWeight={800} fill={INK}>
+            {L.invite}
           </text>
-          <rect x={270} y={10} width={44} height={44} rx={14} fill="#fff" style={PLATE} />
+          <rect x={sayX} y={10} width={44} height={44} rx={14} fill="#fff" style={PLATE} />
           <path
-            transform="translate(281 21) scale(0.9167)"
+            transform={`translate(${sayX + 11} 21) scale(0.9167)`}
             d="M4.4 5.6c4-1.1 11-1.2 15.2 0 .6 2.7.6 6.3 0 9-2 .6-4.8.8-7.3.8L7.8 19.3l.2-4C6.6 15.2 5.3 15 4.4 14.7c-.6-2.8-.6-6.3 0-9.1Z"
             fill="none"
             stroke={INK}
@@ -246,23 +252,23 @@ export function LobbyScene() {
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <rect x={418} y={14} width={179} height={36} rx={12} fill="rgba(29,35,43,.86)" />
+          <rect x={507.5 - hintW / 2} y={14} width={hintW} height={36} rx={12} fill="rgba(29,35,43,.86)" />
           <text x={507.5} y={37} textAnchor="middle" fontSize={14} fontWeight={700} fill="#fff">
-            하고 싶은 편으로 걸어가요
+            {L.hint}
           </text>
-          <rect x={702} y={10} width={54} height={44} rx={14} fill="#fff" style={PLATE} />
-          <text x={729} y={37} textAnchor="middle" fontSize={14} fontWeight={800} fill={INK}>
-            인원
+          <rect x={seatsX} y={10} width={seatsW} height={44} rx={14} fill="#fff" style={PLATE} />
+          <text x={seatsX + seatsW / 2} y={37} textAnchor="middle" fontSize={14} fontWeight={800} fill={INK}>
+            {L.seats}
           </text>
-          <rect x={763} y={10} width={67} height={44} rx={14} fill="#fff" style={PLATE} />
-          <text x={796.5} y={37} textAnchor="middle" fontSize={14} fontWeight={800} fill="#545E6E">
-            나가기
+          <rect x={quitX} y={10} width={quitW} height={44} rx={14} fill="#fff" style={PLATE} />
+          <text x={quitX + quitW / 2} y={37} textAnchor="middle" fontSize={14} fontWeight={800} fill="#545E6E">
+            {L.quit}
           </text>
           {/* 시작하기(#startBtn) 150x56: 편을 고른 친구가 있어 방장이 누를 수 있다 */}
-          <rect x={582} y={320} width={150} height={56} rx={16} fill="#CFA93C" />
-          <rect x={582} y={316} width={150} height={56} rx={16} fill="#F7D774" />
+          <rect x={657 - startW / 2} y={320} width={startW} height={56} rx={16} fill="#CFA93C" />
+          <rect x={657 - startW / 2} y={316} width={startW} height={56} rx={16} fill="#F7D774" />
           <text x={657} y={350} textAnchor="middle" fontSize={17} fontWeight={800} fill={INK}>
-            시작하기
+            {L.start}
           </text>
           <Joystick />
           <Stamina team="police" value={1} lobby />
