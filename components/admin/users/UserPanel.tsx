@@ -17,7 +17,7 @@ import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { DEVICE_LABEL, END_REASON_LABEL, SOCIAL_LABEL, TEAM_LABEL, labelOf } from "@/lib/admin/format";
 import { formatRadio } from "@/lib/admin/gameExtras";
 import { isFieldNotDeployed } from "@/lib/admin/notDeployed";
-import { ago, clock, dayName, groupInOrder, kstClock, kstDay, kstTimeOfDay, sinceDay } from "@/lib/admin/people";
+import { ago, dayName, durationText, groupInOrder, kstClock, kstDay, kstTimeOfDay, sinceDay } from "@/lib/admin/people";
 import { fetchStaffIds, setStaff } from "@/lib/admin/staffClient";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 import { useOptionalQuery } from "@/lib/admin/useOptionalQuery";
@@ -237,7 +237,7 @@ function GameLine({ game, href }: { game: Game; href: string }) {
   const outcome = gameOutcome(game);
   const cop = game.team === "POLICE";
   const record = recordCounted(game.endedAt) ? (cop ? `체포 ${game.arrestCount}회` : `잡힘 ${game.arrestedCount}회`) : null;
-  const meta = [record, labelOf(END_REASON_LABEL, game.endReason), game.durationSeconds != null ? clock(game.durationSeconds) : null].filter(Boolean).join(" · ");
+  const meta = [record, labelOf(END_REASON_LABEL, game.endReason), game.durationSeconds != null ? durationText(game.durationSeconds) : null].filter(Boolean).join(" · ");
   // 넓으면 한 줄, 폰처럼 좁으면 설명을 둘째 줄로 내려 잘리지 않게 한다
   return (
     <Link

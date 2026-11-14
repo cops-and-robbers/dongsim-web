@@ -2,8 +2,9 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
+import { animate, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { avatarFor } from "@/lib/admin/people";
+import { profileIconSrc } from "@/lib/admin/people";
 
 /**
  * 유저와 게임 두 칸 화면(#315)의 조각들. 시안 "경도 어드민 유저와 게임"의 모양을 어드민 토큰(sd-*)으로 옮겼다.
@@ -36,6 +37,9 @@ export function GroupHead({ children, right }: { children: ReactNode; right?: Re
   );
 }
 
+// 고른 줄 바탕이 한 줄에서 다음 줄로 미끄러져 옮겨 간다(사이드바 메뉴와 같은 용수철). 지금 어디를 보고 있는지 눈이 따라간다
+const SLIDE = { type: "spring", stiffness: 520, damping: 40, mass: 0.8 } as const;
+
 /** 목록 한 줄. 고른 줄은 강조색 바탕이고 보조 기술에 현재 항목으로 알린다 */
 export function ListRow({ href, current, children, onClick }: { href: string; current: boolean; children: ReactNode; onClick?: () => void }) {
   return (
@@ -44,26 +48,27 @@ export function ListRow({ href, current, children, onClick }: { href: string; cu
       scroll={false}
       onClick={onClick}
       aria-current={current ? "true" : undefined}
-      className={`flex min-h-[58px] w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-        current ? "bg-accent-weak" : "hover:bg-sd-pressed"
-      }`}
+      className={`relative isolate flex min-h-[58px] w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${current ? "" : "hover:bg-sd-pressed"}`}
     >
+      {/* isolate 안의 -z 라 줄 바탕 위, 글자 아래에 깔린다 */}
+      {current && <motion.span layoutId="split-row-current" aria-hidden className="absolute inset-0 -z-10 rounded-xl bg-accent-weak" transition={SLIDE} />}
       {children}
     </Link>
   );
 }
 
-/** 칩 하나. 고르면 진한 바탕 */
-export function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
+/** 칩 하나. 고르면 진한 바탕이 옆 칩에서 미끄러져 온다. group 은 한 화면에 칩 묶음이 여럿일 때 서로 섞이지 않게 나누는 이름 */
+export function Chip({ on, onClick, children, group = "chips" }: { on: boolean; onClick: () => void; children: ReactNode; group?: string }) {
   return (
     <button
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`whitespace-nowrap rounded-full px-[11px] py-[5px] text-[13px] transition-colors ${
-        on ? "bg-sd-fg font-semibold text-sd-surface" : "bg-sd-gray-200 font-medium text-sd-fg-muted hover:bg-sd-gray-300"
+      className={`relative isolate whitespace-nowrap rounded-full bg-sd-gray-200 px-[11px] py-[5px] text-[13px] transition-colors ${
+        on ? "font-semibold text-sd-surface" : "font-medium text-sd-fg-muted hover:bg-sd-gray-300"
       }`}
     >
+      {on && <motion.span layoutId={`chip-on-${group}`} aria-hidden className="absolute inset-0 -z-10 rounded-full bg-sd-fg" transition={SLIDE} />}
       {children}
     </button>
   );
@@ -126,12 +131,38 @@ export function Stats({ items }: { items: { label: string; value: ReactNode; uni
         <div key={it.label} className={`px-4 py-0.5 first:pl-0 ${i > 0 ? "shadow-[inset_1px_0_0_var(--sd-hairline)]" : ""}`}>
           <small className="mb-0.5 block text-[12.5px] text-sd-fg-subtle">{it.label}</small>
           <b className={`whitespace-nowrap text-[21px] font-bold tracking-[-0.02em] tabular-nums ${it.tone ? tone[it.tone] : "text-sd-fg"}`}>
-            {it.value}
+            {typeof it.value === "number" ? <CountUp value={it.value} /> : it.value}
             {it.unit && <em className="ml-[3px] text-[13px] font-medium not-italic text-sd-fg-subtle">{it.unit}</em>}
           </b>
         </div>
       ))}
     </div>
+  );
+}
+
+/**
+ * 숫자가 0에서 제 값까지 빠르게 올라간다. 처음 그릴 때만, 그 뒤로 값이 바뀌면 바뀐 만큼만 움직인다.
+ * 글자는 처음부터 최종 값으로 그려 두고 움직임만 덧입혀서, 움직임을 끈 사람은 바로 최종 값을 본다
+ */
+function CountUp({ value }: { value: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const from = useRef(0);
+  const reduce = useReducedMotion();
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduce || !Number.isInteger(value)) return;
+    const start = from.current;
+    from.current = value;
+    if (start === value) return;
+    const c = animate(start, value, {
+      duration: Math.min(0.9, 0.35 + Math.abs(value - start) * 0.02),
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => (el.textContent = Math.round(v).toLocaleString("ko-KR")),
+    });
+    return () => c.stop();
+  }, [value, reduce]);
+  return (
+<span ref={ref}>{value.toLocaleString("ko-KR")}</span>
   );
 }
 
@@ -243,19 +274,9 @@ export function DetailState({ title, body, action, art }: { title: string; body?
 
 /* ─── 사람 그림 ─── */
 
-// 바탕색 여섯 가지. 어드민 토큰의 옅은 색이라 다크 모드에서도 어둡게 바뀐다
-const TONES = ["bg-sd-info-weak", "bg-sd-positive-weak", "bg-sd-warning-weak", "bg-sd-critical-weak", "bg-sd-gray-200", "bg-sd-selected"];
-
-/** 사람 그림(꾸밈). 유저 번호로 그림과 바탕색이 정해져 같은 사람은 어디서나 같은 모양이다. 탈퇴자는 회색 빈 원 */
+/** 사람 그림(꾸밈). 앱의 프로필 그림을 앱과 같은 모양으로, 유저 번호로 둘 중 하나를 골라 그린다(lib/admin/people.ts profileIconSrc) */
 export function PersonAvatar({ id, size = 40 }: { id: string | null | undefined; size?: number }) {
-  if (!id)
-    return <span aria-hidden className="inline-block shrink-0 rounded-full bg-sd-gray-200" style={{ width: size, height: size }} />;
-  const { character, tone } = avatarFor(id);
-  return (
-    <span aria-hidden className={`inline-flex shrink-0 items-start justify-center overflow-hidden rounded-full ${TONES[tone]}`} style={{ width: size, height: size }}>
-      <img src={`/characters/${character}.svg`} alt="" className="mt-[12%] w-[86%] max-w-none" />
-    </span>
-  );
+  return <img src={profileIconSrc(id)} alt="" aria-hidden width={size} height={size} className="shrink-0 rounded-full" style={{ width: size, height: size }} />;
 }
 
 /* ─── 아이콘 ─── */
