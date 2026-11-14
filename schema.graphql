@@ -676,6 +676,11 @@ type AdminGameHistoryParticipant {
   2분마다 오는 토큰 재발급을 하트비트로 세서 접속마다 최대 2분 적게 나온다.
   """
   radioSeconds: Int!
+  """
+  이 판의 팀 MVP 인지. 게임이 끝날 때 서버가 팀마다 한 명을 골라 저장한 값으로 앱 결과 화면과 같다.
+  이벤트 게임과 MVP 저장 전(V261017_1000 이전) 판은 모두 false. BE #243 배포 전에는 없다.
+  """
+  isMvp: Boolean!
 }
 
 type AdminGameSummary {

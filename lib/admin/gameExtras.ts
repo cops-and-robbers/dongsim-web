@@ -62,6 +62,20 @@ export function attachRadio<T extends ParticipantKey>(
 }
 
 /**
+ * 지난 게임 참가자 줄마다 서버가 정한 MVP 여부를 붙인다(BE #243). 무전처럼 따로 읽어 줄의 값으로 짝짓는다.
+ * 웹이 직접 고르지 않는 이유: 서버는 동점을 이동 거리와 참가 순서로 갈라 팀마다 한 명만 고르고, 이벤트 게임과 중도 퇴장자는 빼는데
+ * 그 값들은 어드민에 내려오지 않아 같은 결과를 낼 수 없다. 앱 결과 화면과 다른 MVP를 보이느니 서버 값이 올 때까지 비워 둔다
+ */
+export function attachMvp<T extends ParticipantKey>(
+  rows: readonly T[],
+  mvps: readonly (ParticipantKey & { readonly isMvp: boolean })[] | null | undefined,
+): (T & { isMvp: boolean })[] {
+  const byKey = new Map<string, boolean>();
+  if (mvps) keysOf(mvps).forEach((k, i) => byKey.set(k, mvps[i].isMvp));
+  return keysOf(rows).map((k, i) => ({ ...rows[i], isMvp: byKey.get(k) ?? false }));
+}
+
+/**
  * 경찰 무전 요약. 몇 명 중 몇 명이 썼고 합해서 얼마인지.
  * 합계는 줄마다 보이는 분(내림)을 더한다. 초를 다 더해 내리면 줄의 합(1분 + 5분)과 합계(7분)가 어긋나 보인다
  */

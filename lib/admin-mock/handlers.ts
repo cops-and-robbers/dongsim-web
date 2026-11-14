@@ -259,6 +259,27 @@ export const handlers = [
     });
   }),
 
+  // 팀 MVP(BE #243). 서버처럼 팀마다 한 명, 이벤트 게임은 없음, 중도 퇴장자는 빼고 고른다(동점은 먼저 온 사람).
+  // 판 4번은 운영 배포 전처럼 필드가 없다고 답한다
+  api.query("AdminGameHistoryMvp", async ({ variables }) => {
+    await delay(500);
+    const { id } = variables as { id: string };
+    if (id === "4") {
+      return HttpResponse.json({ errors: [notDeployed("adminGameHistory/participants/isMvp", "isMvp", "AdminGameHistoryParticipant")] });
+    }
+    const h = queryGameHistory(id);
+    const pick = (team: "POLICE" | "ROBBER") => {
+      if (h.isEventGame) return null;
+      const cands = h.participants.filter((p) => p.team === team && p.leftAt == null);
+      if (cands.length === 0) return null;
+      return cands.reduce((best, p) =>
+        (team === "POLICE" ? p.arrestCount > best.arrestCount : p.arrestedCount < best.arrestedCount) ? p : best,
+      );
+    };
+    const winners = new Set([pick("POLICE"), pick("ROBBER")].filter(Boolean));
+    return HttpResponse.json({ data: { adminGameHistory: { id: h.id, participants: h.participants.map((p) => ({ ...p, isMvp: winners.has(p) })) } } });
+  }),
+
   api.query("AdminUserRadio", async ({ variables }) => {
     await delay(600);
     const { id } = variables as { id: string };
