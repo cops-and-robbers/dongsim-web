@@ -8,7 +8,7 @@ import { AdminGameHistoriesQuery } from "@/lib/admin/gql/AdminGameHistories";
 import { AdminGameHistoriesPlaceNamesQuery } from "@/lib/admin/gql/AdminGameHistoriesPlaceNames";
 import { END_REASON_LABEL, TEAM_LABEL, gameEndedAt, labelOf } from "@/lib/admin/format";
 import { shortPlaceName } from "@/lib/admin/gameExtras";
-import { ago, dayName, groupInOrder, kstClock, kstDay } from "@/lib/admin/people";
+import { ago, dayName, durationText, groupInOrder, kstClock, kstDay } from "@/lib/admin/people";
 import { usePagedQuery } from "@/lib/admin/usePagedQuery";
 import type { LiveRoom } from "@/lib/admin/useLiveRooms";
 import { RecentMenu } from "@/components/admin/RecentViewed";
@@ -184,7 +184,7 @@ function HistoryRow({ h, href, current }: { h: History; href: string; current: b
       </span>
       <span className="flex shrink-0 flex-col items-end gap-[3px] text-[12.5px] tabular-nums text-sd-fg-subtle">
         <span className="font-semibold text-sd-fg-muted">{kstClock(gameEndedAt(h))}</span>
-        <span>{Math.max(1, Math.round(h.durationSeconds / 60))}분 경기</span>
+        <span>{durationText(h.durationSeconds)} 경기</span>
       </span>
     </ListRow>
   );

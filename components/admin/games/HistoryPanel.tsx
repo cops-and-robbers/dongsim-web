@@ -13,7 +13,7 @@ import { AreaCard } from "@/components/admin/games/AreaCard";
 import { DetailHead, ExpandIcon, IconButton, Panel, Stats, Tag } from "@/components/admin/split/SplitParts";
 import { END_REASON_LABEL, TEAM_LABEL, gameEndedAt, labelOf } from "@/lib/admin/format";
 import { attachRadio, formatRadio, radioSummary } from "@/lib/admin/gameExtras";
-import { clock, dayName, kstClock, kstTimeOfDay } from "@/lib/admin/people";
+import { dayName, durationText, kstClock, kstTimeOfDay } from "@/lib/admin/people";
 import { useOptionalQuery } from "@/lib/admin/useOptionalQuery";
 
 type History = AdminGameHistory["response"]["adminGameHistory"];
@@ -66,7 +66,7 @@ export function HistoryPanel({ id, page = false, userHref }: { id: string; page?
         <Stats
           items={[
             { label: "체포", value: h.arrestedRobberCount, unit: `/ ${h.totalRobberCount}명` },
-            { label: "진행 시간", value: clock(h.durationSeconds) },
+            { label: "진행 시간", value: durationText(h.durationSeconds, true) },
             { label: "인원", value: count("POLICE") + count("ROBBER"), unit: `명 (경찰 ${count("POLICE")} · 도둑 ${count("ROBBER")})` },
           ]}
         />
@@ -81,7 +81,11 @@ export function HistoryPanel({ id, page = false, userHref }: { id: string; page?
           <>
             <TeamRecord team="POLICE" rows={rows} showRadio={showRadio} userHref={userHref} />
             <TeamRecord team="ROBBER" rows={rows} showRadio={false} userHref={userHref} />
-            {showRadio && <p className="mt-3 text-[12.5px] text-sd-fg-subtle">무전은 2분마다 세서 실제보다 한 번 접속에 최대 2분 적게 나와요.</p>}
+            {showRadio && (
+              <p className="mt-3 text-[12.5px] text-sd-fg-subtle">
+                {radioSummary(rows).used > 0 ? `경찰 무전 합계 ${formatRadio(radioSummary(rows).totalSeconds)}. ` : ""}무전은 2분마다 세서 실제보다 한 번 접속에 최대 2분 적게 나와요.
+              </p>
+            )}
           </>
         )}
       </Panel>
@@ -91,56 +95,58 @@ export function HistoryPanel({ id, page = false, userHref }: { id: string; page?
   );
 }
 
-// 막대는 같은 팀 안에서 누가 많이 했는지를 비교한다. MVP는 경찰은 가장 많이 잡은 사람, 도둑은 가장 덜 잡힌 사람.
-// 팀 전원이 같은 값이면(전원 0회 등) MVP 를 달지 않고, 같은 값으로 1등이 여럿이면 모두 MVP
+// 횟수는 오른쪽 정렬 숫자로 쓴다. 점은 세어야 읽히고, 0과 6 이상에서 표기가 바뀌어 한 칸에 모양이 섞였다.
+// 0은 "없음"이 아니라 실제 결과라 지우지 않고 흐리게 둔다. 그래야 0이 아닌 사람이 먼저 눈에 들어온다.
+// MVP는 경찰은 가장 많이 잡은 사람, 도둑은 가장 덜 잡힌 사람. 팀 전원이 같은 값이면 달지 않고, 1등이 여럿이면 모두 MVP
+function Count({ value }: { value: number }) {
+  return <span className={`text-right text-[14px] tabular-nums ${value ? "font-bold text-sd-fg" : "text-sd-fg-subtle"}`}>{value}</span>;
+}
+
 function TeamRecord({ team, rows, showRadio, userHref }: { team: "POLICE" | "ROBBER"; rows: readonly Row[]; showRadio: boolean; userHref: (id: string) => string }) {
   const cop = team === "POLICE";
   const members = rows.filter((p) => p.team === team);
   if (members.length === 0) return null;
   const val = (p: Row) => (cop ? p.arrestCount : p.arrestedCount);
   const values = members.map(val);
-  const max = Math.max(1, ...values);
   const allSame = values.every((v) => v === values[0]);
   const best = cop ? Math.max(...values) : Math.min(...values);
   // 경찰은 잘한 순서(많이 잡을수록), 도둑도 잘한 순서(덜 잡힐수록)
   const sorted = [...members].sort((a, b) => (cop ? val(b) - val(a) : val(a) - val(b)));
-  const radioTotal = radioSummary(members);
-  const total = values.reduce((a, b) => a + b, 0);
+  const radio = cop && showRadio;
+  // 무전 칸이 있으면 도둑에도 빈 칸을 두어 경찰 "체포"와 도둑 "잡힘" 숫자가 같은 세로줄에 선다
+  const cols = showRadio ? "grid-cols-[minmax(0,1fr)_48px_64px]" : "grid-cols-[minmax(0,1fr)_48px]";
   return (
     <div className="[&+&]:mt-4 [&+&]:pt-3.5 [&+&]:shadow-[inset_0_1px_0_var(--sd-hairline)]">
-      <div className="mb-1 flex items-baseline gap-2 text-[13.5px] font-bold">
-        <span className={cop ? "text-sd-info" : "text-sd-positive"}>{TEAM_LABEL[team]}</span>
-        <small className="text-[12.5px] font-medium tabular-nums text-sd-fg-subtle">{members.length}명</small>
-        <small className="ml-auto text-[12.5px] font-medium tabular-nums text-sd-fg-subtle">
-          {cop ? `체포 ${total}회` : `잡힌 횟수 ${total}회`}
-          {showRadio && radioTotal.used > 0 ? ` · 무전 ${formatRadio(radioTotal.totalSeconds)}` : ""}
-        </small>
+      {/* 팀 이름과 칸 이름. 무엇을 세는지 칸 위에 적어 둔다 */}
+      <div className={`-mx-2.5 mb-0.5 grid items-baseline gap-3 px-2.5 ${cols}`}>
+        <span className="text-[13.5px] font-bold">
+          <span className={cop ? "text-sd-info" : "text-sd-positive"}>{TEAM_LABEL[team]}</span>
+          <small className="ml-2 text-[12.5px] font-medium tabular-nums text-sd-fg-subtle">{members.length}명</small>
+        </span>
+        <span className="text-right text-[11.5px] font-semibold text-sd-fg-subtle">{cop ? "체포" : "잡힘"}</span>
+        {showRadio && <span className="text-right text-[11.5px] font-semibold text-sd-fg-subtle">{radio ? "무전" : ""}</span>}
       </div>
       {sorted.map((p, i) => {
         const v = val(p);
-        const name = (
-          <b className="flex min-w-0 items-center gap-1.5 font-semibold">
-            <span className={`truncate ${p.userId ? "text-sd-fg" : "text-sd-fg-muted"}`}>{p.nickname}</span>
-            {!allSame && v === best && <Tag tone="warn">MVP</Tag>}
-            {p.userId == null && <Tag>탈퇴</Tag>}
-            {p.leftAt != null && <Tag tone="warn">중도 퇴장</Tag>}
-          </b>
-        );
         const cells = (
           <>
-            {name}
-            {showRadio && (
-              <span className="text-right text-[12.5px] tabular-nums text-sd-fg-subtle" title="무전 사용 시간">
-                {p.radioSeconds == null ? "-" : p.radioSeconds > 0 ? `무전 ${formatRadio(p.radioSeconds)}` : "무전 안 씀"}
+            <b className="flex min-w-0 items-center gap-1.5 font-semibold">
+              <span className={`truncate ${p.userId ? "text-sd-fg" : "text-sd-fg-muted"}`}>{p.nickname}</span>
+              {!allSame && v === best && <Tag tone="warn">MVP</Tag>}
+              {p.userId == null && <Tag>탈퇴</Tag>}
+              {p.leftAt != null && <Tag tone="warn">중도 퇴장</Tag>}
+            </b>
+            <Count value={v} />
+            {showRadio && !cop && <span aria-hidden />}
+            {radio && (
+              // 무전 0초는 "안 씀"(실제 결과), 값을 못 받았으면 "-"(모름)
+              <span className={`text-right text-[13px] tabular-nums ${p.radioSeconds ? "text-sd-fg" : "text-sd-fg-subtle"}`}>
+                {p.radioSeconds == null ? "-" : formatRadio(p.radioSeconds)}
               </span>
             )}
-            <span className="h-1.5 overflow-hidden rounded-[3px] bg-sd-gray-200" aria-hidden>
-              <i className={`block h-full rounded-[3px] ${cop ? "bg-sd-info" : "bg-sd-positive"}`} style={{ width: `${(v / max) * 100}%` }} />
-            </span>
-            <span className="text-right font-bold tabular-nums text-sd-fg">{v}회</span>
           </>
         );
-        const cls = `-mx-2.5 grid items-center gap-3 rounded-[10px] px-2.5 py-[7px] text-[14px] ${showRadio ? "grid-cols-[minmax(0,1fr)_76px_96px_40px]" : "grid-cols-[minmax(0,1fr)_120px_40px]"}`;
+        const cls = `-mx-2.5 grid items-center gap-3 rounded-[10px] px-2.5 py-[7px] text-[14px] ${cols}`;
         // 이벤트 게임은 나갔다 다시 들어올 수 있어 같은 사람이 두 줄이 된다. 회원 번호만으로는 열쇠가 겹친다
         return p.userId ? (
           <Link key={`${p.userId}-${i}`} href={userHref(p.userId)} className={`${cls} hover:bg-sd-pressed`}>
