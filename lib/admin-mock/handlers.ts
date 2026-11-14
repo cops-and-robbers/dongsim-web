@@ -691,6 +691,26 @@ export const handlers = [
     return HttpResponse.json(r.body, { status: r.status });
   }),
 
+  // 내 목록 보기. 운영 어드민처럼 계정에 남는 것처럼 굴되 실제로는 브라우저에 둔다
+  http.get("/api/admin/team/view", async () => {
+    await delay(200);
+    let view: string | null = null;
+    try {
+      view = localStorage.getItem("mock_admin_list_view");
+    } catch {}
+    return HttpResponse.json({ view: view === "split" || view === "table" ? view : null, saved: true });
+  }),
+
+  http.put("/api/admin/team/view", async ({ request }) => {
+    await delay(200);
+    const { view } = (await request.json()) as { view?: unknown };
+    if (view !== "split" && view !== "table") return HttpResponse.json({ error: "목록 보기를 읽지 못했어요." }, { status: 400 });
+    try {
+      localStorage.setItem("mock_admin_list_view", view);
+    } catch {}
+    return HttpResponse.json({ view });
+  }),
+
   http.put("/api/admin/team/layout", async ({ request }) => {
     await delay(300);
     const r = mockSaveLayout((await request.json()) as Parameters<typeof mockSaveLayout>[0]);

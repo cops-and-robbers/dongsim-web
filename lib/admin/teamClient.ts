@@ -2,6 +2,7 @@
 import { getAccessToken } from "@/lib/admin/auth/tokens";
 import { reissue } from "@/lib/admin/auth/session";
 import type { Member, Role, RoleInput, Team } from "@/lib/admin/team";
+import type { ListView } from "@/lib/admin/listView";
 
 const API = "/api/admin/team";
 
@@ -43,4 +44,13 @@ export async function archiveRole(role: Pick<Role, "key" | "updatedAt">): Promis
 /** 내 개요 구성. cards 가 null 이면 역할 기본값으로 돌아간다 */
 export async function saveLayout(cards: string[] | null, roleKeys: string[]): Promise<Member> {
   return (await json<{ member: Member }>(await send(`${API}/layout`, { method: "PUT", body: JSON.stringify({ cards, roleKeys }) }), SAVE_FAIL)).member;
+}
+
+/** 내가 고른 목록 보기. 운영 어드민이 아니거나(미리보기, 로컬) 고른 적 없으면 view 는 null */
+export async function fetchListView(): Promise<{ view: ListView | null; saved: boolean }> {
+  return json(await send(`${API}/view`), "목록 보기를 불러오지 못했어요.");
+}
+
+export async function saveListView(view: ListView): Promise<ListView> {
+  return (await json<{ view: ListView }>(await send(`${API}/view`, { method: "PUT", body: JSON.stringify({ view }) }), SAVE_FAIL)).view;
 }

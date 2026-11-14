@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Callout } from "@/components/admin/Callout";
 import { Dropdown } from "@/components/admin/Dropdown";
 import { EmptyBlock, ErrorBlock, PageHeader, ScrollPage } from "@/components/admin/Parts";
@@ -24,7 +24,6 @@ type Period = (typeof PERIODS)[number]["value"];
 const ALL = "";
 
 export default function ChangesPage() {
-  const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const daysParam = params.get("days");
@@ -41,7 +40,8 @@ export default function ChangesPage() {
       else next.set(k, v);
     }
     const q = next.toString();
-    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    // 거르기는 서버를 다녀오지 않고 주소만 바꿔 누르는 즉시 바뀐다(#325, lib/admin/useListParams.ts 와 같은 방식)
+    window.history.replaceState(null, "", q ? `${pathname}?${q}` : pathname);
   };
 
   const [result, setResult] = useState<{ days: Period; data?: ChangesResult; error?: string } | null>(null);

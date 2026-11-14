@@ -8,6 +8,7 @@ import { MotionConfig, motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ToastProvider } from "@/components/admin/Toast";
 import { TeamProvider } from "@/components/admin/team/TeamProvider";
+import { ListViewProvider } from "@/components/admin/ListViewProvider";
 import CommandPalette from "@/components/admin/CommandPalette";
 import { AccountRow } from "@/components/admin/AccountRow";
 import { MobileTabBar } from "@/components/admin/MobileNav";
@@ -42,7 +43,7 @@ function NavLink({ item, active, count, notice, order }: { item: NavItem; active
       {active && (
         <motion.span
           layoutId="navHighlight"
-          className="absolute inset-0 rounded-lg bg-accent-weak"
+          className="pointer-events-none absolute inset-0 rounded-lg bg-accent-weak"
           transition={{ type: "spring", stiffness: 400, damping: 32 }}
         />
       )}
@@ -153,6 +154,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     <MotionConfig reducedMotion="user">
     <ToastProvider>
       <TeamProvider>
+      <ListViewProvider>
       <div className="admin-shell fixed inset-0 z-50 flex flex-col overscroll-none bg-sd-fill text-sd-fg md:flex-row">
         {/* 데스크톱 사이드바. 로고와 계정 줄은 고정하고 가운데 메뉴만 스크롤한다(docs/admin-ui.md "내비게이션") */}
         {/* 처음 열 때 사이드바가 왼쪽에서 밀려 나온다. 화면을 옮길 때는 그대로 있다 */}
@@ -241,6 +243,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         <MobileTabBar pathname={pathname} countOf={countOf} noticeOf={noticeOf} />
       </div>
       <CommandPalette />
+      </ListViewProvider>
       </TeamProvider>
     </ToastProvider>
     </MotionConfig>

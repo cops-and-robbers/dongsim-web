@@ -13,6 +13,7 @@ import { dayName, groupInOrder, kstClock, kstDay } from "@/lib/admin/people";
 import { usePagedQuery } from "@/lib/admin/usePagedQuery";
 import type { LiveRoom, LiveRoomPerson } from "@/lib/admin/useLiveRooms";
 import { RecentMenu } from "@/components/admin/RecentViewed";
+import { ListViewSwitch } from "@/components/admin/ListViewSwitch";
 import { EmptyRow, GroupHead, ListHead, ListRow, LiveDot, LoadMore, PersonAvatar, SearchIcon, SortIcon, Tag } from "@/components/admin/split/SplitParts";
 
 // country: 주로 플레이하는 국가(BE #241). 운영에 아직 없거나 판이 없으면 null
@@ -80,6 +81,7 @@ export function UserList({
               {sort === "DESC" ? "최근 가입순" : "가입한 지 오래된 순"}
             </button>
             <RecentMenu group="user" />
+            <ListViewSwitch />
           </div>
         }
       >

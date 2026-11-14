@@ -121,7 +121,7 @@ export default function BlogViewToggle({ labels }: { labels: Labels }) {
                     ? { type: "spring", stiffness: 400, damping: 32 }
                     : { duration: 0 }
                 }
-                className="absolute inset-0 rounded-full bg-white shadow-sm dark:bg-app-black-800"
+                className="pointer-events-none absolute inset-0 rounded-full bg-white shadow-sm dark:bg-app-black-800"
               />
             )}
             <span className="relative z-10 block">{option.icon}</span>

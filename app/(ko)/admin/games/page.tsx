@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { GameEndReason } from "@/__generated__/AdminGameHistories.graphql";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { GAME_FILTERS, GameList, type GameTab } from "@/components/admin/games/GameList";
 import { HistoryPanel } from "@/components/admin/games/HistoryPanel";
+import { GamesTable } from "@/components/admin/games/GamesTable";
+import { useListView } from "@/components/admin/ListViewProvider";
 import { RoomPanel } from "@/components/admin/games/RoomPanel";
-import { DetailState, PanelSkeleton } from "@/components/admin/split/SplitParts";
+import { DetailState, PanelSkeleton, setSameScreenUrl } from "@/components/admin/split/SplitParts";
 import { SplitView } from "@/components/admin/split/SplitView";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 import { useLiveRooms } from "@/lib/admin/useLiveRooms";
@@ -15,7 +17,6 @@ import { useLiveRooms } from "@/lib/admin/useLiveRooms";
 // 게임 (#315, docs/admin-ui.md "유저와 게임 두 칸 화면"). 끝난 판과 지금 방을 두 탭으로 보고 오른쪽에서 연다(#323).
 // 탭, 거르기, 고른 방과 판을 주소(?tab=, ?f=, ?room=, ?h=)에 남겨 새로 고치거나 링크로 보내도 같은 화면이 열린다.
 export default function GamesPage() {
-  const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const f = params.get("f");
@@ -44,6 +45,17 @@ export default function GamesPage() {
   const rooms = useLiveRooms(live);
   const userHref = (userId: string) => `/admin/users?u=${userId}`;
 
+  // 표로 보기를 고른 사람은 표로 본다(docs/admin-ui.md "목록 보기 고르기"). 다른 화면의 "이 방 보기"(?room=, ?h=)로
+  // 들어오면 표에는 옆 칸이 없으니 그 방이나 판을 전체 화면으로 연다
+  const { view } = useListView();
+  const router = useRouter();
+  const full = view !== "table" ? null : room ? `/admin/games/${room}` : history ? `/admin/games/history/${history}` : null;
+  useEffect(() => {
+    if (full) router.replace(full);
+  }, [full, router]);
+  if (full) return null;
+  if (view === "table") return <GamesTable rooms={rooms.rooms} roomsReady={rooms.status !== "loading"} refreshKey={live} />;
+
   return (
     <SplitView
       listLabel="게임 목록"
@@ -53,9 +65,10 @@ export default function GamesPage() {
       list={
         <GameList
           tab={tab}
-          onTab={(v) => router.replace(hrefWith({ tab: v === "rooms" ? "rooms" : room ? "done" : null }), { scroll: false })}
+          // 탭과 거르기는 서버를 다녀오지 않고 주소만 바꿔 누르는 즉시 바뀐다(#325)
+          onTab={(v) => setSameScreenUrl(hrefWith({ tab: v === "rooms" ? "rooms" : room ? "done" : null }))}
           filter={filter}
-          onFilter={(v) => router.replace(hrefWith({ f: v || null }), { scroll: false })}
+          onFilter={(v) => setSameScreenUrl(hrefWith({ f: v || null }))}
           rooms={rooms.rooms}
           roomsReady={rooms.status !== "loading"}
           syncedAt={rooms.syncedAt}
