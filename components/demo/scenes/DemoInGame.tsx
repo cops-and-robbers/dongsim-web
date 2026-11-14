@@ -9,7 +9,7 @@ import { DemoParticipants } from "./DemoParticipants";
 import { DemoConfirmDialog } from "./DemoConfirmDialog";
 import { TintIcon } from "./DemoGameParts";
 import { GameChatButton, GameChatPanel, GameChatPreview, GameZoneGrid, useGameChat } from "./DemoGameChat";
-import { DemoGameStart } from "./DemoGameStart";
+import { DemoGameStart, demoReleaseAt } from "./DemoGameStart";
 import {
   DemoFabMenu,
   ShrinkNotice,
@@ -43,6 +43,7 @@ export function DemoInGame({
   onTask,
   onVictory,
   onLeave,
+  onIntroEnd,
 }: {
   myTeam: "police" | "robber";
   /** 방 만들기에서 구역 축소를 켰는지 */
@@ -50,9 +51,13 @@ export function DemoInGame({
   onTask: (taskId: string) => void;
   onVictory: () => void;
   onLeave: () => void;
+  /** 시작 장면(역할 배너·대기·출동 카운팅)이 끝나 지도가 열렸을 때 */
+  onIntroEnd?: () => void;
 }) {
   // 시작 장면(역할 배너, 대기 장면)이 끝나야 지도 각본이 돈다
   const [started, setStarted] = useState(false);
+  // 경찰 출동 시각 - 대기 장면과 출동 카운팅이 이 값을 센다
+  const [releaseAt] = useState(() => demoReleaseAt("police"));
   const [gridOn, setGridOn] = useState(false);
   const [footprints, setFootprints] = useState(0);
   const [tapped, setTapped] = useState<number | null>(null);
@@ -81,7 +86,10 @@ export function DemoInGame({
   });
   const pressTimer = useRef<number | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const onStarted = useCallback(() => setStarted(true), []);
+  const onStarted = useCallback(() => {
+    setStarted(true);
+    onIntroEnd?.();
+  }, [onIntroEnd]);
 
   // 각본: 발자국을 주기마다 하나씩 찍고, 다 찍히면 도둑이 모습을 드러낸다
   useEffect(() => {
@@ -449,7 +457,7 @@ export function DemoInGame({
         </div>
       )}
 
-      <DemoGameStart team={myTeam} onStarted={onStarted} />
+      <DemoGameStart team={myTeam} releaseAt={releaseAt} onStarted={onStarted} />
     </>
   );
 }

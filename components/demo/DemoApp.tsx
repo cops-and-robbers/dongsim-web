@@ -92,6 +92,10 @@ export function DemoApp({
   // 마이페이지에서 고른 프로필 - 홈 프로필 카드와 같은 값이다
   const [profileIcon, setProfileIcon] = useState<1 | 2>(1);
   const [done, setDone] = useState<Set<string>>(new Set());
+  // 인게임 시작 장면(역할 배너·대기·설명·출동 카운팅)이 화면을 덮는 동안은 말풍선을 숨긴다 -
+  // 아직 할 수 없는 일을 안내하고, 장면의 팀 이름을 가린다
+  const [introOver, setIntroOver] = useState(false);
+  const endIntro = useCallback(() => setIntroOver(true), []);
   // 방 만들기 초안 - 구역·감옥·설정이 화면 사이를 오간다.
   // 설정은 4.0.1처럼 추천값으로 채워 두고, 최종 확인에서 고칠 항목만 연다
   const [zone, setZone] = useState<ZoneDraft>(() => defaultZone(500));
@@ -134,6 +138,7 @@ export function DemoApp({
   // 대기실의 "잠시 뒤 시작" 타이머가 리렌더마다 리셋되지 않게 참조를 고정한다
   const startGame = useCallback((team: "police" | "robber") => {
     setMyTeam(team);
+    setIntroOver(false);
     setFlow("ingame");
   }, []);
   const leaveToHome = useCallback(() => setFlow("home"), []);
@@ -221,7 +226,9 @@ export function DemoApp({
             : undefined
         }
       >
-      <DemoGuide scene={scene} done={done} overlay={fullscreen} />
+      {!(tab === "home" && flow === "ingame" && !introOver) && (
+        <DemoGuide scene={scene} done={done} overlay={fullscreen} />
+      )}
       <PhoneFrame clock={clock} darkStatus={darkStatus} unbounded={fullscreen}>
         <AppScreen
           playing
@@ -349,6 +356,7 @@ export function DemoApp({
                 onTask={markDone}
                 onSurvive={() => setFlow("victory")}
                 onLeave={leaveToHome}
+                onIntroEnd={endIntro}
               />
             ) : (
               <DemoInGame
@@ -357,12 +365,16 @@ export function DemoApp({
                 onTask={markDone}
                 onVictory={() => setFlow("victory")}
                 onLeave={leaveToHome}
+                onIntroEnd={endIntro}
               />
             ))}
           {tab === "home" && flow === "victory" && (
             <DemoVictory
               team={myTeam}
-              onReplay={() => setFlow("ingame")}
+              onReplay={() => {
+                setIntroOver(false);
+                setFlow("ingame");
+              }}
               onHome={() => setFlow("home")}
             />
           )}

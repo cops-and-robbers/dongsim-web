@@ -132,8 +132,6 @@ export const POLICE_CHASE_PATH = [
   { left: "48%", top: "44%" },
 ] as const;
 
-/** 경찰이 출발하기까지의 카운트다운(초) - 도둑에게 주어지는 선행 시간이다 */
-export const ROBBER_POLICE_START_SECONDS = 12;
 /** 도둑 라운드의 남은 시간(초). 0이 되면 생존 승리다 */
 export const ROBBER_ROUND_SECONDS = 40;
 /** 내 위치가 공개되는 간격(ms) - 발자국이 찍히고 내 점이 옮겨 가는 주기 */
@@ -157,11 +155,13 @@ export const DEMO_SHRINK_INTERVAL_SECONDS = 9;
 // 방문자의 닉네임. 대기실, 참가자, MVP 공개가 같은 사람을 가리킨다
 export const DEMO_MY_NAME = "민첩한괴도5308";
 
-// 게임 시작 장면 (앱 start/chase_scene.dart). 앱은 경찰 대기가 방 설정 시간(최소 1분)만큼, 도둑 설명이 20초 지도를 덮는다.
-// 데모에서 그대로 두면 체험이 멈춰서 몇 초로 줄이고, 앱과 달리 경찰 대기도 눌러서 넘길 수 있게 한다.
-export const DEMO_POLICE_WAIT_SECONDS = 8;
-export const DEMO_EXPLAINER_SECONDS = 8;
-/** 규칙 줄이 바뀌는 간격(ms). 앱은 5초인데 장면이 짧아 한두 줄만 보이므로 줄였다 */
-export const DEMO_RULE_INTERVAL_MS = 3000;
+// 게임 시작 장면 (앱 4.0.1 start/*.dart). 앱은 경찰 대기가 방 설정 시간(최소 1분)이라
+// 데모에서 그대로 두면 체험이 멈춘다. 역할 배너가 끝난 뒤 출동까지를 몇 초로 줄인다.
+// 출동 6초 전부터는 출동 카운팅(5~1, "출동!")이 화면을 덮는다.
+export const DEMO_POLICE_WAIT_SECONDS = 14;
+/** 도둑 코스의 출동 시각 - 설명 장면을 읽고 지도로 간 뒤에도 몇 초 남게 한다 */
+export const DEMO_ROBBER_RELEASE_SECONDS = 18;
+/** 게임 안내 카드가 바뀌는 간격(ms). 앱과 같다 */
+export const DEMO_RULE_INTERVAL_MS = 5000;
 /** 규칙 문구에 들어가는 위치 공개 주기(분). 방 설정의 기본값이다 */
 export const DEMO_REVEAL_MINUTES = 5;

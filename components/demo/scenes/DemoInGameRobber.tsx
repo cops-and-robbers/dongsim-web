@@ -6,7 +6,6 @@ import { appColors } from "@/lib/app-tokens";
 import { FakeMap, ZoneCircle, FakeQr } from "@/components/game/mockups/parts";
 import {
   ROBBER_PATH,
-  ROBBER_POLICE_START_SECONDS,
   ROBBER_REVEAL_INTERVAL_MS,
   ROBBER_ROUND_SECONDS,
 } from "@/lib/demo/scenes";
@@ -14,7 +13,7 @@ import { DemoParticipants } from "./DemoParticipants";
 import { DemoConfirmDialog } from "./DemoConfirmDialog";
 import { TintIcon } from "./DemoGameParts";
 import { GameChatButton, GameChatPanel, GameChatPreview, GameZoneGrid, useGameChat } from "./DemoGameChat";
-import { DemoGameStart, DispatchBanner } from "./DemoGameStart";
+import { DemoGameStart, demoReleaseAt } from "./DemoGameStart";
 import { DemoFabMenu } from "./DemoGameMenu";
 import { useDemoCopy } from "../demo-copy";
 
@@ -64,15 +63,21 @@ export function DemoInGameRobber({
   onTask,
   onSurvive,
   onLeave,
+  onIntroEnd,
 }: {
   onTask: (taskId: string) => void;
   onSurvive: () => void;
   onLeave: () => void;
+  /** 시작 장면(역할 배너·설명)이 끝나 지도가 열렸을 때 */
+  onIntroEnd?: () => void;
 }) {
   // 시작 장면(역할 배너, 설명 장면)이 끝나야 지도 각본이 돈다
   const [started, setStarted] = useState(false);
   const [gridOn, setGridOn] = useState(false);
-  const [dispatchDone, setDispatchDone] = useState(false);
+  // 경찰 출동 시각 - 시작 장면의 카운트다운과 지도의 "경찰 시작까지"가 같은 값을 센다
+  const [releaseAt] = useState(() => demoReleaseAt("robber"));
+  // 지도가 열린 시각(설명 장면을 닫은 때)
+  const [startedAt, setStartedAt] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [tapped, setTapped] = useState<number | null>(null);
   const [pingSelect, setPingSelect] = useState<Point | null>(null);
@@ -94,8 +99,11 @@ export function DemoInGameRobber({
   });
   const pressTimer = useRef<number | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const onStarted = useCallback(() => setStarted(true), []);
-  const hideDispatch = useCallback(() => setDispatchDone(true), []);
+  const onStarted = useCallback(() => {
+    setStartedAt(Date.now());
+    setStarted(true);
+    onIntroEnd?.();
+  }, [onIntroEnd]);
 
   // 각본은 전부 경과 시간에서 파생된다 - 타이머는 이 틱 하나뿐이다
   useEffect(() => {
@@ -111,7 +119,9 @@ export function DemoInGameRobber({
     ROBBER_PATH.length - 1,
   );
   const myPos = ROBBER_PATH[trail];
-  const policeCountdown = ROBBER_POLICE_START_SECONDS - elapsed;
+  const policeCountdown = started
+    ? Math.max(0, Math.ceil((releaseAt - startedAt) / 1000) - elapsed)
+    : 0;
   const arrestBanner =
     elapsed >= ARREST_AT && elapsed < ARREST_AT + ARREST_BANNER_SECONDS;
 
@@ -442,9 +452,8 @@ export function DemoInGameRobber({
         </div>
       )}
 
-      <DemoGameStart team="robber" onStarted={onStarted} />
-      {/* 경찰 카운트다운이 끝나면 출동 배너가 지도 위로 지나간다 (터치는 막지 않는다) */}
-      {policeCountdown <= 0 && !dispatchDone && <DispatchBanner team="robber" onDone={hideDispatch} />}
+      {/* 역할 배너 → 설명 장면, 출동 6초 전에는 지도 위로 출동 카운팅이 덮는다 */}
+      <DemoGameStart team="robber" releaseAt={releaseAt} onStarted={onStarted} />
     </>
   );
 }

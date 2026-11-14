@@ -71,17 +71,26 @@ export type DemoAppStrings = {
   /** gameChatBackToMap / gameGridToggle */
   chatBackToMap: string;
   gridToggle: string;
-  /** startRoleLabel / gameRoleCopLabel / gameRoleRobberLabel / startMission* */
+  /** startRoleLabel / gameRoleCopLabel / gameRoleRobberLabel / startTitle* (\n 으로 두 줄) / startRoleSentence */
   startRoleLabel: string;
   roleCop: string;
   roleRobber: string;
+  startTitlePolice: string;
+  startTitleRobber: string;
+  startTitlePoliceAccent: string;
+  startTitleRobberAccent: string;
+  startRoleSentence: (role: string) => string;
+  /** startMission*Label / startMission* */
+  startMissionPoliceLabel: string;
+  startMissionRobberLabel: string;
   startMissionPolice: string;
   startMissionRobber: string;
   /** startWaitCountdownLabel / startWaitPoliceTitle / startWaitRobberTitle */
   startWaitCountdownLabel: string;
   startWaitPoliceTitle: string;
   startWaitRobberTitle: string;
-  /** startRulesCounter / startRule* / startTapToMap */
+  /** startGuideLabel / startRulesCounter / startRule* / startExplainerTapHint */
+  startGuideLabel: string;
   startRulesCounter: (current: number, total: number) => string;
   startRuleQrArrest: string;
   startRulePing: string;
@@ -90,21 +99,21 @@ export type DemoAppStrings = {
   startRuleQrCaught: string;
   startRuleMyReveal: (minutes: number) => string;
   startRuleJailbreak: string;
-  startTapToMap: string;
-  /** dispatchPolice* / dispatchRobber* */
-  dispatchPoliceLead: string;
-  dispatchPoliceMain: string;
-  dispatchRobberLead: string;
-  dispatchRobberMain: string;
+  startExplainerTapHint: string;
+  /** dispatchCountdownGo */
+  dispatchGo: string;
   /** gameOverBannerTitle / gameOverReasonAllArrested / gameOverReasonTimeUp */
   gameOverTitle: string;
   gameOverAllArrested: string;
   gameOverTimeUp: string;
-  /** mvpRevealTease / labelPoliceTeamMvp / labelRobberTeamMvp / mvpRevealTapToContinue / labelMvp */
+  /** mvpRevealTease / labelPoliceTeamMvp / labelRobberTeamMvp / mvpRevealTapToContinue / mvpRevealTitle / mvpReveal*Subtitle */
   mvpTease: string;
   mvpPolice: string;
   mvpRobber: string;
   mvpTapContinue: string;
+  mvpTitle: string;
+  mvpPoliceSubtitle: string;
+  mvpRobberSubtitle: string;
   labelMvp: string;
   /** tabResultTeam / tabResultMine */
   tabResultTeam: string;
@@ -375,12 +384,20 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRoleLabel: "내 역할",
       roleCop: "경찰",
       roleRobber: "도둑",
+      startTitlePolice: "도둑을 찾아\n모두 체포해요!",
+      startTitleRobber: "경찰을 피해\n끝까지 도망쳐요!",
+      startTitlePoliceAccent: "체포해요!",
+      startTitleRobberAccent: "도망쳐요!",
+      startRoleSentence: (role) => `이번 판은 ${role}이에요`,
+      startMissionPoliceLabel: "경찰 팀 미션",
+      startMissionRobberLabel: "도둑 팀 미션",
       startMissionPolice: "도둑을 찾아 QR로 모두 체포하세요",
-      startMissionRobber: "끝날 때까지 잡히지 말고 도망치세요",
+      startMissionRobber: "게임이 끝날 때까지 잡히지 말고 도망치세요",
       startWaitCountdownLabel: "경찰 출동까지",
-      startWaitPoliceTitle: "도둑이 도망치는 중이에요",
-      startWaitRobberTitle: "경찰에게서 멀어지는 중이에요",
-      startRulesCounter: (current, total) => `게임 규칙 ${current}/${total}`,
+      startWaitPoliceTitle: "도둑이 도망치는 중이에요!",
+      startWaitRobberTitle: "경찰에게서 멀어지세요!",
+      startGuideLabel: "게임 안내",
+      startRulesCounter: (current, total) => `게임 안내 ${current}/${total}`,
       startRuleQrArrest: "도둑의 QR을 스캔하면 체포돼요",
       startRulePing: "지도를 길게 누르면 핑을 찍어 우리 팀에 알릴 수 있어요",
       startRuleRobberReveal: (minutes) => `도둑 위치는 ${minutes}분마다 경찰에게 공개돼요`,
@@ -388,18 +405,18 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRuleQrCaught: "경찰이 내 QR을 스캔하면 잡혀요",
       startRuleMyReveal: (minutes) => `내 위치는 ${minutes}분마다 경찰에게 공개돼요`,
       startRuleJailbreak: "잡히면 감옥에 들어갔다가 밖으로 나가 3초가 지나면 탈옥돼요",
-      startTapToMap: "탭하면 지도로 돌아가요",
-      dispatchPoliceLead: "시간이 됐어요",
-      dispatchPoliceMain: "출동!",
-      dispatchRobberLead: "경찰이 출동했어요",
-      dispatchRobberMain: "조심!",
+      startExplainerTapHint: "화면을 누르면 지도로 가요",
+      dispatchGo: "출동!",
       gameOverTitle: "게임 종료!",
       gameOverAllArrested: "도둑이 모두 체포됐어요!",
       gameOverTimeUp: "제한 시간이 끝났어요!",
       mvpTease: "MVP는 누굴까?!",
       mvpPolice: "경찰 팀 MVP",
       mvpRobber: "도둑 팀 MVP",
-      mvpTapContinue: "탭하면 넘어가요",
+      mvpTapContinue: "화면을 누르면 다음 결과로 넘어가요",
+      mvpTitle: "게임 결과",
+      mvpPoliceSubtitle: "경찰 팀 최고의 활약",
+      mvpRobberSubtitle: "도둑 팀 최고의 활약",
       labelMvp: "MVP",
       tabResultTeam: "전체",
       tabResultMine: "개인",
@@ -842,12 +859,20 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRoleLabel: "Your role",
       roleCop: "Cop",
       roleRobber: "Robber",
-      startMissionPolice: "Find the Robbers and arrest them all by QR",
-      startMissionRobber: "Don't get caught until time runs out",
+      startTitlePolice: "Find the Robbers,\narrest them all!",
+      startTitleRobber: "Dodge the Cops,\nrun until the end!",
+      startTitlePoliceAccent: "arrest them all!",
+      startTitleRobberAccent: "run until the end!",
+      startRoleSentence: (role) => `You're a ${role} this round`,
+      startMissionPoliceLabel: "Cop team mission",
+      startMissionRobberLabel: "Robber team mission",
+      startMissionPolice: "Find the Robbers and arrest them all with QR",
+      startMissionRobber: "Stay free and keep running until the game ends",
       startWaitCountdownLabel: "Cops move out in",
-      startWaitPoliceTitle: "The Robbers are getting away",
-      startWaitRobberTitle: "You're getting away from the Cops",
-      startRulesCounter: (current, total) => `Game rules ${current}/${total}`,
+      startWaitPoliceTitle: "The Robbers are getting away!",
+      startWaitRobberTitle: "Get away from the Cops!",
+      startGuideLabel: "Game guide",
+      startRulesCounter: (current, total) => `Game guide ${current}/${total}`,
       startRuleQrArrest: "Scan a Robber's QR to arrest them",
       startRulePing: "Long-press the map to drop a ping for your team",
       startRuleRobberReveal: (minutes) => `Robber locations are revealed to the Cops every ${minutes} min`,
@@ -855,18 +880,18 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRuleQrCaught: "You're caught when the Cops scan your QR",
       startRuleMyReveal: (minutes) => `Your location is revealed to the Cops every ${minutes} min`,
       startRuleJailbreak: "If caught, you go to Jail. Step outside for 3 seconds to escape",
-      startTapToMap: "Tap to return to the map",
-      dispatchPoliceLead: "Time's up",
-      dispatchPoliceMain: "Move out!",
-      dispatchRobberLead: "The Cops are moving",
-      dispatchRobberMain: "Watch out!",
+      startExplainerTapHint: "Tap anywhere to go to the map",
+      dispatchGo: "Let's go!",
       gameOverTitle: "Game over!",
       gameOverAllArrested: "All Robbers have been arrested!",
       gameOverTimeUp: "The time limit has expired!",
       mvpTease: "Who's the MVP?!",
       mvpPolice: "Cops team MVP",
       mvpRobber: "Robber team MVP",
-      mvpTapContinue: "Tap to continue",
+      mvpTapContinue: "Tap the screen to see the next result",
+      mvpTitle: "Game results",
+      mvpPoliceSubtitle: "Top player on the Cops team",
+      mvpRobberSubtitle: "Top player on the Robber team",
       labelMvp: "MVP",
       tabResultTeam: "All",
       tabResultMine: "Mine",
@@ -1310,12 +1335,20 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRoleLabel: "あなたの役割",
       roleCop: "警察",
       roleRobber: "泥棒",
+      startTitlePolice: "泥棒を見つけて\n全員逮捕しよう!",
+      startTitleRobber: "警察をかわして\n最後まで逃げ切ろう!",
+      startTitlePoliceAccent: "全員逮捕しよう!",
+      startTitleRobberAccent: "最後まで逃げ切ろう!",
+      startRoleSentence: (role) => `このラウンドは${role}です`,
+      startMissionPoliceLabel: "警察チームのミッション",
+      startMissionRobberLabel: "泥棒チームのミッション",
       startMissionPolice: "泥棒を見つけてQRで全員逮捕しましょう",
-      startMissionRobber: "終了まで捕まらずに逃げ切りましょう",
+      startMissionRobber: "ゲームが終わるまで捕まらずに逃げ切りましょう",
       startWaitCountdownLabel: "警察出動まで",
-      startWaitPoliceTitle: "泥棒が逃げています",
-      startWaitRobberTitle: "警察から離れています",
-      startRulesCounter: (current, total) => `ゲームルール ${current}/${total}`,
+      startWaitPoliceTitle: "泥棒が逃げています！",
+      startWaitRobberTitle: "警察から離れましょう！",
+      startGuideLabel: "ゲーム案内",
+      startRulesCounter: (current, total) => `ゲーム案内 ${current}/${total}`,
       startRuleQrArrest: "泥棒のQRをスキャンすると逮捕できます",
       startRulePing: "地図を長押しするとピンで味方に知らせられます",
       startRuleRobberReveal: (minutes) => `泥棒の位置は${minutes}分ごとに警察に公開されます`,
@@ -1323,18 +1356,18 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRuleQrCaught: "警察にQRをスキャンされると捕まります",
       startRuleMyReveal: (minutes) => `あなたの位置は${minutes}分ごとに警察に公開されます`,
       startRuleJailbreak: "捕まると牢屋に入り、外に出て3秒たつと脱獄できます",
-      startTapToMap: "タップすると地図に戻ります",
-      dispatchPoliceLead: "時間です",
-      dispatchPoliceMain: "出動！",
-      dispatchRobberLead: "警察が出動しました",
-      dispatchRobberMain: "気をつけて！",
+      startExplainerTapHint: "画面をタップすると地図に移動します",
+      dispatchGo: "いくぞ！",
       gameOverTitle: "ゲーム終了！",
       gameOverAllArrested: "泥棒が全員逮捕されました！",
       gameOverTimeUp: "制限時間が終了しました！",
       mvpTease: "MVPは誰だ!?",
       mvpPolice: "警察チームMVP",
       mvpRobber: "泥棒チームMVP",
-      mvpTapContinue: "タップして次へ",
+      mvpTapContinue: "画面をタップして次の結果を見る",
+      mvpTitle: "ゲーム結果",
+      mvpPoliceSubtitle: "警察チームで一番の活躍",
+      mvpRobberSubtitle: "泥棒チームで一番の活躍",
       labelMvp: "MVP",
       tabResultTeam: "全体",
       tabResultMine: "個人",
