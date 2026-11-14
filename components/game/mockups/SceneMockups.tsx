@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { useTheme } from "@/components/ThemeProvider";
 import { DemoCopyProvider } from "@/components/demo/demo-copy";
@@ -11,10 +10,10 @@ import {
   ROLE_BANNER_MS,
 } from "@/components/demo/scenes/DemoGameStart";
 import { DemoMvpStage, MVP_STAGE_SETTLED_MS } from "@/components/demo/scenes/DemoMvpStage";
-import { AppScreen, MOCKUP_VIEW } from "./AppScreen";
+import { AppScreen } from "./AppScreen";
 import { InGameScreen } from "./LocationMockup";
 import { ResultCard } from "./ResultMockup";
-import { ReplayButton, useScenePlayback } from "./ScenePlayer";
+import { useInView, useScenePlayback } from "./ScenePlayer";
 import { MOCKUP_TEXT } from "./text";
 
 // 게임 소개에서 움직이는 장면 두 개. 체험하기와 같은 장면 부품(앱 4.0.1 시작 장면, MVP 무대)을 쓴다.
@@ -51,16 +50,16 @@ const noop = () => {};
 export function StartSequenceMockup() {
   const locale = useLocale();
   const { team } = useTheme();
-  const { ref, visible } = useScrollAnimation<HTMLDivElement>(MOCKUP_VIEW);
+  const { ref, inView } = useInView<HTMLDivElement>();
   const reduce = useReducedMotion();
-  const play = useScenePlayback(visible && !reduce, SEQUENCE_LENGTH_MS);
+  const play = useScenePlayback(inView && !reduce, SEQUENCE_LENGTH_MS);
   const text = MOCKUP_TEXT[locale];
   const dark = team === "robber";
 
   return (
     <DemoCopyProvider locale={locale}>
       <AppScreen
-        playing={visible}
+        playing={inView}
         scrollRef={ref}
         className={dark ? "bg-[#1E232A]" : "bg-white"}
       >
@@ -68,7 +67,6 @@ export function StartSequenceMockup() {
           <InGameScreen dark={dark} timer={text.location.timer} countdown={text.location.countdown} />
         </div>
         {play.started && !play.finished && <StartRun key={`${play.run}-${team}`} team={team} />}
-        {play.finished && <ReplayButton label={text.replay} dark={dark} onClick={play.replay} />}
       </AppScreen>
     </DemoCopyProvider>
   );
@@ -82,9 +80,9 @@ const CROSSFADE_MS = 450;
 export function MvpMockup() {
   const locale = useLocale();
   const { team } = useTheme();
-  const { ref, visible } = useScrollAnimation<HTMLDivElement>(MOCKUP_VIEW);
+  const { ref, inView } = useInView<HTMLDivElement>();
   const reduce = useReducedMotion();
-  const play = useScenePlayback(visible && !reduce, MVP_TO_RESULT_MS + CROSSFADE_MS);
+  const play = useScenePlayback(inView && !reduce, MVP_TO_RESULT_MS + CROSSFADE_MS);
   const text = MOCKUP_TEXT[locale];
   const dark = team === "robber";
   // 아직 보이지 않았으면 조명이 켜지기 전(어두운 무대)에서 기다린다. 움직임 줄이기면 다 켜진 무대에 머문다
@@ -95,7 +93,7 @@ export function MvpMockup() {
 
   return (
     <DemoCopyProvider locale={locale}>
-      <AppScreen playing={visible} scrollRef={ref} className={dark ? "bg-black" : "bg-white"}>
+      <AppScreen playing={inView} scrollRef={ref} className={dark ? "bg-black" : "bg-white"}>
         <div className="relative min-h-0 flex-1">
           <DemoMvpStage key={play.run} team={team} nickname={text.mvpNames[team]} ms={ms} />
           {resultOpacity > 0 && (
@@ -104,7 +102,6 @@ export function MvpMockup() {
             </div>
           )}
         </div>
-        {play.finished && <ReplayButton label={text.replay} dark={dark} onClick={play.replay} />}
       </AppScreen>
     </DemoCopyProvider>
   );
