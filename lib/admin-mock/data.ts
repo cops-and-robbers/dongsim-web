@@ -409,6 +409,24 @@ for (let i = 0; i < N_GAMES; i++) {
     }
   }
 
+  // 판이 끝나면 방은 다시 대기 중이 된다. 대기 중 방 셋 중 하나는 이미 몇 판 한 방으로 둔다(#323 "3판 하고 대기").
+  // 난수를 더 쓰면 뒤의 목 데이터가 모두 바뀌어서 번호로만 정한다
+  if (status === "WAITING" && i % 3 === 1) {
+    const played = (i % 4) + 1;
+    for (let r = 1; r <= played; r += 1) {
+      results.push({
+        winnerTeam: r % 2 ? "POLICE" : "ROBBER",
+        endReason: END_REASONS[r % END_REASONS.length],
+        totalPoliceCount: 2,
+        totalRobberCount: 3,
+        arrestedRobberCount: r % 4,
+        durationSeconds: roundDurationMinutes * 60 - 60 * r,
+        roundNumber: r,
+        endedAt: createdAt,
+      });
+    }
+  }
+
   games.push({
     id,
     inviteCode: makeInviteCode(),

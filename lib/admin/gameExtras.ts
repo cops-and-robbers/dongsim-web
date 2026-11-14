@@ -17,6 +17,14 @@ export function formatRadio(seconds: number): string {
   return m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
 }
 
+/**
+ * 대기 중인 방이 어느 단계인지 (#323). 서버는 판을 시작할 때 라운드 번호를 올리고, 판이 끝나면 방을 다시 대기 중으로 돌린다.
+ * 그래서 대기 중인 방의 라운드 번호가 곧 그 방에서 한 판 수다. 0이면 아직 한 판도 안 했다
+ */
+export function waitingStage(roundNumber: number): string {
+  return roundNumber > 0 ? `${roundNumber}판 하고 대기` : "시작 전";
+}
+
 // 시도 이름. 목록 칸이 좁아 이 앞부분을 떼고 보여 준다("서울특별시 강남구 역삼동" -> "강남구 역삼동")
 const PROVINCE = /(특별시|광역시|특별자치시|특별자치도|도)$/;
 
