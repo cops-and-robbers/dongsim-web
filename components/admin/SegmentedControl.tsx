@@ -32,7 +32,7 @@ export function SegmentedControl<T extends string>({
             {active && (
               <motion.span
                 layoutId={gid}
-                className="absolute inset-0 rounded-lg bg-sd-surface shadow-sm"
+                className="pointer-events-none absolute inset-0 rounded-lg bg-sd-surface shadow-sm"
                 transition={{ type: "spring", stiffness: 400, damping: 32 }}
               />
             )}

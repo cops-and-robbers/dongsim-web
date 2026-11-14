@@ -89,7 +89,7 @@ function TabIndicator() {
   return (
     <motion.span
       layoutId="mobileTab"
-      className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-accent"
+      className="pointer-events-none absolute inset-x-5 top-0 h-0.5 rounded-full bg-accent"
       transition={{ type: "spring", stiffness: 400, damping: 32 }}
     />
   );

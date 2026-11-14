@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import QueryBoundary from "@/components/admin/QueryBoundary";
-import { DetailState, PanelSkeleton } from "@/components/admin/split/SplitParts";
+import { DetailState, PanelSkeleton, setSameScreenUrl } from "@/components/admin/split/SplitParts";
 import { SplitView } from "@/components/admin/split/SplitView";
 import { UserList } from "@/components/admin/users/UserList";
 import { UserPanel } from "@/components/admin/users/UserPanel";
@@ -14,7 +14,6 @@ import { roomsByUser, useLiveRooms } from "@/lib/admin/useLiveRooms";
 // 유저 (#315, docs/admin-ui.md "유저와 게임 두 칸 화면"). 왼쪽에서 찾고 오른쪽에서 본다.
 // 검색어, 정렬, 고른 사람을 주소(?q=, ?sort=asc, ?u=)에 남겨 새로 고치거나 링크로 보내도 같은 화면이 열린다.
 export default function UsersPage() {
-  const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const query = params.get("q") ?? "";
@@ -33,7 +32,8 @@ export default function UsersPage() {
     },
     [params, pathname],
   );
-  const replace = useCallback((patch: Record<string, string | null>) => router.replace(hrefWith(patch), { scroll: false }), [router, hrefWith]);
+  // 검색어와 정렬은 서버를 다녀오지 않고 주소만 바꾼다. 글자를 칠 때마다 서버를 다녀오면 늦게 따라왔다(#325)
+  const replace = useCallback((patch: Record<string, string | null>) => setSameScreenUrl(hrefWith(patch)), [hrefWith]);
 
   // 지금 방에 있는 사람은 게임 데이터와 맞춰 보면 서버 추가 없이 알 수 있다. 방 상태는 앱에서 바뀌어 30초마다 다시 읽는다
   const live = useLiveRefresh();
