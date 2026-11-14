@@ -36,6 +36,8 @@ export interface MockUser {
   device: MockDevice | null;
   // 지금까지 쓴 무전 시간(초, BE #239). 경찰을 안 해 봤거나 무전을 안 쓴 사람은 0
   radioSeconds: number;
+  // 주로 플레이하는 국가(BE #241, #319). 많이 한 국가부터, 국가를 아직 못 찾은 판은 맨 뒤 null 한 줄
+  playCountries: { countryCode: string | null; games: number; lastPlayedAt: string | null }[];
 }
 
 export interface MockLatLng {
@@ -55,6 +57,8 @@ export interface MockArea {
   jailPolygon: MockLatLng[] | null;
   // 동네 이름(BE #241). 아직 못 찾았거나 주소가 없으면 null
   placeName?: string | null;
+  // 플레이 구역의 국가(BE #241, #319). 이름을 못 찾았으면 null
+  countryCode?: string | null;
 }
 
 export interface MockResult {
@@ -158,11 +162,14 @@ const NOUN = [
 
 const SOCIALS: readonly SocialType[] = ["KAKAO", "GOOGLE", "APPLE"];
 const PARKS = [
-  { lat: 36.1194, lng: 128.1074, region: "김천 직지문화공원", placeName: "경상북도 김천시 교동" },
-  { lat: 37.5445, lng: 127.0374, region: "서울 성수", placeName: "서울특별시 성동구 성수동1가" },
-  { lat: 37.5202, lng: 127.1216, region: "서울 잠실", placeName: "서울특별시 송파구 방이동" },
-  { lat: 37.5301, lng: 127.0668, region: "서울 뚝섬", placeName: "서울특별시 광진구 자양동" },
-  { lat: 35.1687, lng: 129.0596, region: "부산시민공원", placeName: "부산광역시 부산진구 범전동" },
+  { lat: 36.1194, lng: 128.1074, region: "김천 직지문화공원", placeName: "경상북도 김천시 교동", countryCode: "KR" },
+  { lat: 37.5445, lng: 127.0374, region: "서울 성수", placeName: "서울특별시 성동구 성수동1가", countryCode: "KR" },
+  { lat: 37.5202, lng: 127.1216, region: "서울 잠실", placeName: "서울특별시 송파구 방이동", countryCode: "KR" },
+  { lat: 37.5301, lng: 127.0668, region: "서울 뚝섬", placeName: "서울특별시 광진구 자양동", countryCode: "KR" },
+  { lat: 35.1687, lng: 129.0596, region: "부산시민공원", placeName: "부산광역시 부산진구 범전동", countryCode: "KR" },
+  // 해외 판(#319). 해외 동네 이름은 그 나라 말로 온다
+  { lat: 35.658, lng: 139.7016, region: "도쿄 시부야", placeName: "東京都 渋谷区 道玄坂", countryCode: "JP" },
+  { lat: -33.8915, lng: 151.2247, region: "시드니 무어 파크", placeName: "New South Wales, Sydney, Moore Park", countryCode: "AU" },
 ] as const;
 
 const N_USERS = 137;
@@ -184,6 +191,21 @@ function makeNickname(): string {
   return fallback;
 }
 
+// 유저별 플레이 국가(#319). 난수 대신 번호로 정해 다른 목 값이 바뀌지 않게 한다.
+// 판 수 합은 끝난 게임 목(gameHistories.ts queryUserGameHistories)과 맞춘다. 1번과 6번 45판, 2번 120판, 3번 0판, 그 밖 5판.
+// 대부분 한국, 아홉에 하나는 주로 일본, 그 밖에 미국, 호주 원정, 아직 확인 중인 판이 섞인다
+function mockPlayCountries(i: number): MockUser["playCountries"] {
+  const id = String(i + 1);
+  const total = id === "1" || id === "6" ? 45 : id === "2" ? 120 : id === "3" ? 0 : 5;
+  if (total === 0) return [];
+  const at = (days: number) => new Date(Date.UTC(2026, 10, 3 - days, 6, 0)).toISOString();
+  if (i % 9 === 4) return [{ countryCode: "JP", games: total - 1, lastPlayedAt: at(0) }, { countryCode: "KR", games: 1, lastPlayedAt: at(20) }];
+  if (i % 17 === 8) return [{ countryCode: "US", games: total - 1, lastPlayedAt: at(1) }, { countryCode: null, games: 1, lastPlayedAt: at(0) }];
+  if (i % 13 === 6) return [{ countryCode: "KR", games: total - 1, lastPlayedAt: at(0) }, { countryCode: "AU", games: 1, lastPlayedAt: at(40) }];
+  if (i % 5 === 2) return [{ countryCode: "KR", games: total - 1, lastPlayedAt: at(1) }, { countryCode: null, games: 1, lastPlayedAt: at(0) }];
+  return [{ countryCode: "KR", games: total, lastPlayedAt: at(0) }];
+}
+
 export const users: MockUser[] = Array.from({ length: N_USERS }, (_, i) => {
   const createdAt = isoBefore(180);
   const hasDevice = chance(0.82);
@@ -203,6 +225,7 @@ export const users: MockUser[] = Array.from({ length: N_USERS }, (_, i) => {
       : null,
     // 다른 목 값이 바뀌지 않게 난수 대신 번호로 정한다. 셋 중 하나는 안 썼고, 나머지는 몇 분에서 두 시간 남짓
     radioSeconds: i % 3 === 0 ? 0 : ((i * 7919) % 8000) + 30,
+    playCountries: mockPlayCountries(i),
   };
 });
 
@@ -306,7 +329,10 @@ for (let i = 0; i < N_GAMES; i++) {
   }
 
   // 여섯 방에 하나는 동네 이름을 아직 못 찾은 곳으로 둔다(BE 는 한 번에 5곳까지만 찾는다)
-  if (area) area.placeName = (i + 1) % 6 === 0 ? null : park.placeName;
+  if (area) {
+    area.placeName = (i + 1) % 6 === 0 ? null : park.placeName;
+    area.countryCode = area.placeName ? park.countryCode : null;
+  }
 
   // 참가자 구성
   const count = Math.min(maxParticipants, range(2, Math.max(2, maxParticipants)));
@@ -530,6 +556,7 @@ export function queryGames(args: {
     participantCount: participants.filter((p) => p.gameId === g.id).length,
     createdAt: g.createdAt,
     placeName: g.area?.placeName ?? null,
+    countryCode: g.area?.countryCode ?? null,
     roundNumber: g.results.length + (g.status === "IN_PROGRESS" ? 1 : 0),
   }));
 

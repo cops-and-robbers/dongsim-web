@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<c076f879eb91b086bbf4255dc806f841>>
+ * @generated SignedSource<<fd473216d930dc5e8799c046c05853b6>>
  * @lightSyntaxTransform
  */
 
@@ -20,6 +20,7 @@ export type AdminGameHistoriesPlaceNames$data = {
   readonly adminGameHistories: {
     readonly content: ReadonlyArray<{
       readonly area: {
+        readonly countryCode: string | null | undefined;
         readonly placeName: string | null | undefined;
       } | null | undefined;
       readonly id: string;
@@ -111,6 +112,13 @@ v4 = [
                 "kind": "ScalarField",
                 "name": "placeName",
                 "storageKey": null
+              },
+              {
+                "alias": null,
+                "args": null,
+                "kind": "ScalarField",
+                "name": "countryCode",
+                "storageKey": null
               }
             ],
             "storageKey": null
@@ -150,16 +158,16 @@ return {
     "selections": (v4/*:: as any*/)
   },
   "params": {
-    "cacheID": "593984bac1fc6bb239ed437123a69567",
+    "cacheID": "14639ca8573009803f701f383987edc1",
     "id": null,
     "metadata": {},
     "name": "AdminGameHistoriesPlaceNames",
     "operationKind": "query",
-    "text": "query AdminGameHistoriesPlaceNames(\n  $page: Int\n  $size: Int\n  $endReason: GameEndReason\n  $sortDirection: SortDirection\n) {\n  adminGameHistories(page: $page, size: $size, endReason: $endReason, sortDirection: $sortDirection) {\n    content {\n      id\n      area {\n        placeName\n      }\n    }\n  }\n}\n"
+    "text": "query AdminGameHistoriesPlaceNames(\n  $page: Int\n  $size: Int\n  $endReason: GameEndReason\n  $sortDirection: SortDirection\n) {\n  adminGameHistories(page: $page, size: $size, endReason: $endReason, sortDirection: $sortDirection) {\n    content {\n      id\n      area {\n        placeName\n        countryCode\n      }\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "73d8e7fc2ab2e62e259d12ae1dcd340d";
+(node as any).hash = "9ea02f25fff1a8df7110986c07dfd790";
 
 export default node;
