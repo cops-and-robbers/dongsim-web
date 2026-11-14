@@ -74,6 +74,47 @@ export function Chip({ on, onClick, children, group = "chips" }: { on: boolean; 
   );
 }
 
+/**
+ * 목록을 나누는 두세 칸 전환(#323). 고른 칸의 흰 바탕이 옆 칸으로 미끄러져 옮겨 간다(칩, 고른 줄과 같은 용수철).
+ * group 은 한 화면에 전환이 여럿일 때 바탕이 섞이지 않게 나누는 이름
+ */
+export function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  group,
+  label,
+}: {
+  value: T;
+  options: readonly { value: T; label: ReactNode }[];
+  onChange: (v: T) => void;
+  group: string;
+  label: string;
+}) {
+  return (
+    <div role="tablist" aria-label={label} className="grid rounded-[11px] bg-sd-gray-200 p-[3px]" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="tab"
+            aria-selected={on}
+            onClick={() => onChange(o.value)}
+            className={`relative isolate flex items-center justify-center gap-1.5 rounded-[9px] px-3 py-[7px] text-[13.5px] transition-colors ${
+              on ? "font-bold text-sd-fg" : "font-semibold text-sd-fg-subtle hover:text-sd-fg-muted"
+            }`}
+          >
+            {on && <motion.span layoutId={`seg-${group}`} aria-hidden className="absolute inset-0 -z-10 rounded-[9px] bg-sd-surface shadow-[0_1px_2px_rgba(2,32,71,0.1)]" transition={SLIDE} />}
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** 목록 끝에 닿으면 다음 쪽을 부르는 줄. 버튼도 함께 둬서 키보드와 느린 연결에서도 누를 수 있다 */
 export function LoadMore({ hasMore, loading, failed, onMore }: { hasMore: boolean; loading: boolean; failed: boolean; onMore: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
