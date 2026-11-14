@@ -19,6 +19,8 @@ export interface MockHistoryParticipant {
   leftAt: string | null;
   arrestCount: number;
   arrestedCount: number;
+  // 이 라운드에서 쓴 무전 시간(초, BE #239). 무전은 경찰만 써서 도둑은 0
+  radioSeconds: number;
 }
 
 export interface MockGameHistory {
@@ -37,6 +39,13 @@ export interface MockGameHistory {
   createdAt: string;
   endedAt: string | null;
   participants: MockHistoryParticipant[];
+  // 운영에 이미 있는 값(BE #192, #214, #226). 옛 기록처럼 비어 있는 판도 섞는다
+  roundNumber: number | null;
+  startedAt: string | null;
+  locationRevealIntervalMinutes: number | null;
+  shrinkFinalRadiusInMeters: number | null;
+  isEventGame: boolean | null;
+  hostUserId: string | null;
 }
 
 // 종료 스냅샷의 구역. 실제 데이터가 세 갈래로 섞여 있어 그대로 재현한다.
@@ -44,9 +53,9 @@ export interface MockGameHistory {
 //  - 놀이터만 있음: 감옥 좌표 저장(2026-08-15 배포) 이전 기록
 //  - 놀이터 + 감옥: 그 이후 기록
 const PARKS = [
-  { lat: 37.5445, lng: 127.0374 },
-  { lat: 37.5202, lng: 127.1216 },
-  { lat: 37.5301, lng: 127.0668 },
+  { lat: 37.5445, lng: 127.0374, placeName: "서울특별시 성동구 성수동1가" },
+  { lat: 37.5202, lng: 127.1216, placeName: "서울특별시 송파구 방이동" },
+  { lat: 37.5301, lng: 127.0668, placeName: "서울특별시 광진구 자양동" },
 ];
 const M_PER_LAT = 111_320;
 
@@ -60,6 +69,8 @@ function buildArea(
   const lng = +(park.lng + (i % 4) * 0.0006).toFixed(6);
   const mPerLng = M_PER_LAT * Math.cos((lat * Math.PI) / 180);
   const radius = 40 + (i % 5) * 12;
+  // 다섯 판에 하나는 동네 이름을 못 찾은 곳으로 둔다
+  const placeName = i % 5 === 3 ? null : park.placeName;
   const at = (angle: number, meters: number): MockLatLng => ({
     latitude: +(lat + (meters * Math.cos(angle)) / M_PER_LAT).toFixed(6),
     longitude: +(lng + (meters * Math.sin(angle)) / mPerLng).toFixed(6),
@@ -81,6 +92,7 @@ function buildArea(
       jailPolygon: withJail
         ? [0.25, 0.75, 1.25, 1.75].map((t) => at(Math.PI * t, 10))
         : null,
+      placeName,
     };
   }
 
@@ -95,6 +107,7 @@ function buildArea(
     jailRadiusInMeters: withJail ? 8 + (i % 4) : null,
     playgroundPolygon: null,
     jailPolygon: null,
+    placeName,
   };
 }
 
@@ -159,6 +172,8 @@ function buildParticipants(
       leftAt: i === policeCount - 1 ? leftPoliceAt : null,
       arrestCount: share,
       arrestedCount: 0,
+      // 판마다 한 명쯤은 무전을 안 쓰고, 나머지는 몇 분씩 쓴다
+      radioSeconds: (seq + i) % 4 === 0 ? 0 : 40 + ((seq * 37 + i * 211) % 900),
     });
   }
   for (let i = 0; i < robberCount; i += 1) {
@@ -174,6 +189,7 @@ function buildParticipants(
       leftAt: null,
       arrestCount: 0,
       arrestedCount: (jailed ? 1 : 0) + (i === 0 && arrestedCount > 0 ? extraArrests : 0),
+      radioSeconds: 0,
     });
   }
   return out;
@@ -226,6 +242,14 @@ const histories: MockGameHistory[] = Array.from({ length: HISTORY_COUNT }, (_, i
     // 다섯 번째 판은 ended_at 컬럼이 생기기 전 기록처럼 비워 둔다. 그때는 createdAt 이 끝난 시각이다
     endedAt: i === 4 ? null : new Date(Date.parse(createdAt) + durationSeconds * 1000).toISOString(),
     participants: buildParticipants(seq, policeCount, robberCount, arrestedCount, i % 2, leftPoliceAt),
+    // 열한 번째 판부터 열 판에 하나는 컬럼이 생기기 전 기록처럼 비운다
+    roundNumber: i % 10 === 9 ? null : 1 + (i % 3),
+    startedAt: i % 10 === 9 ? null : createdAt,
+    locationRevealIntervalMinutes: i % 10 === 9 ? null : [3, 5, 5, 10][i % 4],
+    shrinkFinalRadiusInMeters: i % 6 === 2 ? 30 : null,
+    isEventGame: i % 10 === 9 ? null : i % 7 === 1,
+    // 방장은 첫 경찰. 경찰이 없으면(경찰 기권) 첫 도둑
+    hostUserId: i % 10 === 9 ? null : String(policeCount > 0 ? 100 + seq * 10 : 200 + seq * 10),
   };
 });
 

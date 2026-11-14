@@ -1286,3 +1286,48 @@ body {
 .dark .chat-marker {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M1 9C18 4 38 7 58 5S88 4 99 7L98 15C80 18 57 13 36 16S9 18 2 14Z' fill='%23ff8a3d' fill-opacity='.38'/%3E%3C/svg%3E");
 }
+
+/* 어드민 유저와 게임 두 칸 화면(#315). 게임 중 점이 퍼지는 맥박, 상세가 바뀔 때 살짝 올라오는 등장 */
+@keyframes livepulse {
+  from { transform: scale(0.6); opacity: 0.9; }
+  to { transform: scale(1.6); opacity: 0; }
+}
+
+/* 어드민 움직임. 운영진만 쓰는 화면이라 전환을 또렷하게 주되, 0.5초 안에 끝내 일을 막지 않는다.
+   채우기는 backwards 라 끝나면 transform 이 남지 않는다(카드 안 fixed 대화상자가 카드에 갇히지 않게) */
+@keyframes admincardin {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); filter: blur(4px); }
+}
+@keyframes adminpushin {
+  from { opacity: 0.6; transform: translateX(28px); }
+}
+@keyframes adminnavin {
+  from { opacity: 0; transform: translateX(-10px); }
+}
+/* 상세 칸: 카드가 위에서부터 차례로 떠오른다 */
+.admin-detail-in > * {
+  animation: admincardin 0.46s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.admin-detail-in > :nth-child(2) { animation-delay: 45ms; }
+.admin-detail-in > :nth-child(3) { animation-delay: 90ms; }
+.admin-detail-in > :nth-child(4) { animation-delay: 135ms; }
+.admin-detail-in > :nth-child(5) { animation-delay: 180ms; }
+.admin-detail-in > :nth-child(n + 6) { animation-delay: 220ms; }
+/* 폰: 목록 위로 상세가 오른쪽에서 밀려 들어온다(앱의 화면 넘김과 같은 방향) */
+@media (max-width: 1023.98px) {
+  .admin-detail-in {
+    animation: adminpushin 0.34s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+}
+/* 사이드바 메뉴: 어드민을 처음 열 때 한 번만 위에서부터 차례로 들어온다 */
+.admin-nav-in {
+  animation: adminnavin 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 18ms + 60ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-detail-in,
+  .admin-detail-in > *,
+  .admin-nav-in {
+    animation: none;
+  }
+}

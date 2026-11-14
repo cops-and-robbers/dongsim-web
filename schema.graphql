@@ -531,6 +531,10 @@ type AdminUser {
   """지금 들어가 있는 방. 방에서 나가면 사라진다. 목록 쿼리에선 선택하지 않는다"""
   participations: [GameParticipation!]!
   """
+  지금까지 쓴 경찰 무전 시간(초), 모든 라운드 합. 안 썼으면 0. BE #239 (dev 머지, 운영 배포 전).
+  """
+  radioSeconds: Int!
+  """
   끝난 게임 기록 (최신순). limit 은 1~100. BE #227 이라 운영 서버에 아직 없을 수 있다.
   같은 판에 기록이 여러 개면(이벤트 게임에서 나갔다 다시 들어온 경우) 가장 최근 하나만 온다.
   """
@@ -596,6 +600,8 @@ type AdminGameHistory {
   id: ID!
   """종료 당시의 게임 id. 게임 row는 삭제되므로 상세 조회에 쓸 수 없다."""
   gameId: ID!
+  """몇 번째 라운드였나. roundNumber 컬럼 전 기록은 null"""
+  roundNumber: Int
   winnerTeam: Team!
   endReason: GameEndReason!
   totalPoliceCount: Int!
@@ -603,6 +609,16 @@ type AdminGameHistory {
   arrestedRobberCount: Int!
   totalArrestCount: Int!
   durationSeconds: Int!
+  """라운드를 시작한 시각. 컬럼이 생기기 전 기록은 null"""
+  startedAt: String
+  """위치 공개 주기(분). 컬럼이 생기기 전 기록은 null (BE #192)"""
+  locationRevealIntervalMinutes: Int
+  """구역 축소 최종 반경. 축소를 안 썼으면 null (BE #226)"""
+  shrinkFinalRadiusInMeters: Int
+  """이벤트 게임이었나. 컬럼이 생기기 전 기록은 null (BE #214)"""
+  isEventGame: Boolean
+  """방장 회원 번호. 탈퇴했거나 컬럼 전 기록은 null (BE #214)"""
+  hostUserId: ID
   areaType: AreaType!
   """
   종료 시점의 플레이 구역. 진행 중인 게임의 adminGame.area와 같은 타입이다.
@@ -641,6 +657,16 @@ type AdminGameHistoryParticipant {
   이 참가자가 체포당한 횟수. 경찰은 항상 0이다. 탈옥 후 재체포도 누적된다.
   """
   arrestedCount: Int!
+  """
+  이 라운드에서 쓴 무전 시간(초). 무전은 경찰만 써서 도둑은 항상 0이다. BE #239.
+  2분마다 오는 토큰 재발급을 하트비트로 세서 접속마다 최대 2분 적게 나온다.
+  """
+  radioSeconds: Int!
+  """
+  이 판의 팀 MVP 인지. 게임이 끝날 때 서버가 팀마다 한 명을 골라 저장한 값으로 앱 결과 화면과 같다.
+  이벤트 게임과 MVP 저장 전(V261017_1000 이전) 판은 모두 false. BE #243 배포 전에는 없다.
+  """
+  isMvp: Boolean!
 }
 
 type AdminGameSummary {
@@ -653,7 +679,14 @@ type AdminGameSummary {
   isEventGame: Boolean!
   """participants COUNT 계산값"""
   participantCount: Int!
+  """지금 몇 번째 라운드인가. 대기 중이고 한 판도 안 했으면 0"""
+  roundNumber: Int!
   createdAt: String!
+  """
+  플레이 구역의 동네 이름(예: "서울특별시 강남구 역삼동", 해외는 그 나라 말). 아직 못 찾았거나 주소가 없는 곳이면 null. BE #241.
+  처음 보는 곳은 한 번 조회에 5곳까지만 찾아서, 목록을 다시 열면 채워질 수 있다.
+  """
+  placeName: String
 }
 
 type AdminGame {
@@ -719,6 +752,10 @@ type GameArea {
   jailRadiusInMeters: Int
   playgroundPolygon: [Coordinate!]
   jailPolygon: [Coordinate!]
+  """
+  플레이 구역의 동네 이름. 원형은 중심, 다각형은 무게중심(오목하면 구역 안 한 점) 기준. 못 찾으면 null. BE #241.
+  """
+  placeName: String
 }
 
 type Coordinate {
