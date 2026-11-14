@@ -1,18 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { DetailState, PanelSkeleton, setSameScreenUrl } from "@/components/admin/split/SplitParts";
 import { SplitView } from "@/components/admin/split/SplitView";
 import { UserList } from "@/components/admin/users/UserList";
 import { UserPanel } from "@/components/admin/users/UserPanel";
+import { UsersTable } from "@/components/admin/users/UsersTable";
+import { useListView } from "@/components/admin/ListViewProvider";
 import { fetchStaffIds } from "@/lib/admin/staffClient";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
 import { roomsByUser, useLiveRooms } from "@/lib/admin/useLiveRooms";
 
 // 유저 (#315, docs/admin-ui.md "유저와 게임 두 칸 화면"). 왼쪽에서 찾고 오른쪽에서 본다.
 // 검색어, 정렬, 고른 사람을 주소(?q=, ?sort=asc, ?u=)에 남겨 새로 고치거나 링크로 보내도 같은 화면이 열린다.
+// 표로 보기를 고른 사람은 표로 본다(docs/admin-ui.md "목록 보기 고르기"). 표와 두 칸은 q, sort 를 같이 써서 바꿔도 검색이 남는다.
 export default function UsersPage() {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -52,6 +55,16 @@ export default function UsersPage() {
       alive = false;
     };
   }, []);
+
+  const { view } = useListView();
+  const router = useRouter();
+  // 다른 화면의 "이 유저 보기"(?u=)로 표 보기에 들어오면, 표에는 옆 칸이 없으니 그 사람을 전체 화면으로 연다
+  const openFull = view === "table" && selected !== null;
+  useEffect(() => {
+    if (openFull) router.replace(`/admin/users/${selected}`);
+  }, [openFull, selected, router]);
+  if (openFull) return null;
+  if (view === "table") return <UsersTable staff={staff} inRoom={inRoom} />;
 
   return (
     <SplitView

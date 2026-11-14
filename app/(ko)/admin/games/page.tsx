@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useCallback, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { GameEndReason } from "@/__generated__/AdminGameHistories.graphql";
 import QueryBoundary from "@/components/admin/QueryBoundary";
 import { GAME_FILTERS, GameList, type GameTab } from "@/components/admin/games/GameList";
 import { HistoryPanel } from "@/components/admin/games/HistoryPanel";
+import { GamesTable } from "@/components/admin/games/GamesTable";
+import { useListView } from "@/components/admin/ListViewProvider";
 import { RoomPanel } from "@/components/admin/games/RoomPanel";
 import { DetailState, PanelSkeleton, setSameScreenUrl } from "@/components/admin/split/SplitParts";
 import { SplitView } from "@/components/admin/split/SplitView";
@@ -42,6 +44,17 @@ export default function GamesPage() {
   const live = useLiveRefresh();
   const rooms = useLiveRooms(live);
   const userHref = (userId: string) => `/admin/users?u=${userId}`;
+
+  // 표로 보기를 고른 사람은 표로 본다(docs/admin-ui.md "목록 보기 고르기"). 다른 화면의 "이 방 보기"(?room=, ?h=)로
+  // 들어오면 표에는 옆 칸이 없으니 그 방이나 판을 전체 화면으로 연다
+  const { view } = useListView();
+  const router = useRouter();
+  const full = view !== "table" ? null : room ? `/admin/games/${room}` : history ? `/admin/games/history/${history}` : null;
+  useEffect(() => {
+    if (full) router.replace(full);
+  }, [full, router]);
+  if (full) return null;
+  if (view === "table") return <GamesTable rooms={rooms.rooms} roomsReady={rooms.status !== "loading"} refreshKey={live} />;
 
   return (
     <SplitView

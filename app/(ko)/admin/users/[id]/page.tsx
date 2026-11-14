@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import QueryBoundary from "@/components/admin/QueryBoundary";
-import { BackIcon, PanelSkeleton } from "@/components/admin/split/SplitParts";
+import { PanelSkeleton } from "@/components/admin/split/SplitParts";
+import { BackToList } from "@/components/admin/split/BackToList";
 import { DetailPage } from "@/components/admin/split/SplitView";
 import { UserPanel } from "@/components/admin/users/UserPanel";
 
@@ -16,10 +16,7 @@ export default function UserDetailPage() {
   const [retry, setRetry] = useState(0);
   return (
     <DetailPage>
-      <Link href={`/admin/users?u=${id}`} className="-ml-2 inline-flex w-fit items-center gap-1 rounded-lg px-2 py-1 text-[13.5px] font-semibold text-sd-fg-subtle hover:bg-sd-pressed hover:text-sd-fg">
-        <BackIcon />
-        유저 목록
-      </Link>
+      <BackToList list="/admin/users" selectedHref={`/admin/users?u=${id}`} label="유저 목록" />
       <QueryBoundary key={retry} pending={<PanelSkeleton />} onRetry={() => setRetry((n) => n + 1)}>
         <UserPanel id={id} page gamesHref={(gameResultId) => `/admin/games/history/${gameResultId}`} />
       </QueryBoundary>
