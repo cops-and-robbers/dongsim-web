@@ -48,3 +48,4 @@ pnpm build                 # 검증 기준은 이 빌드의 "Compiled successful
 | 이용약관·개인정보 처리방침 등 법적 문서 | `docs/legal-documents.md` |
 | 행사 값(포토부스, 홈 팝업, /event, 홈 미니게임), 어드민 화면 원칙 | `docs/admin-ui.md` |
 | 어드민 변경 기록(누가 무엇을 바꿨나), 새 저장 화면에 기록 남기기 | `docs/admin-ui.md` "변경 기록" |
+| 어드민 유저, 게임 목록 보기(두 칸, 표) 고르기 | `docs/admin-ui.md` "목록 보기 고르기" |

@@ -9,6 +9,7 @@ import { dayName, groupInOrder, kstClock, kstDay } from "@/lib/admin/people";
 import { usePagedQuery } from "@/lib/admin/usePagedQuery";
 import type { LiveRoom, LiveRoomPerson } from "@/lib/admin/useLiveRooms";
 import { RecentMenu } from "@/components/admin/RecentViewed";
+import { ListViewSwitch } from "@/components/admin/ListViewSwitch";
 import { EmptyRow, GroupHead, ListHead, ListRow, LiveDot, LoadMore, PersonAvatar, SearchIcon, SortIcon, Tag } from "@/components/admin/split/SplitParts";
 
 type User = AdminUsers$data["adminUsers"]["content"][number];
@@ -69,6 +70,7 @@ export function UserList({
               {sort === "DESC" ? "최근 가입순" : "가입한 지 오래된 순"}
             </button>
             <RecentMenu group="user" />
+            <ListViewSwitch />
           </div>
         }
       >

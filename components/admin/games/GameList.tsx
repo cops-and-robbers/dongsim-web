@@ -12,6 +12,7 @@ import { ago, dayName, durationText, groupInOrder, kstClock, kstDay } from "@/li
 import { usePagedQuery } from "@/lib/admin/usePagedQuery";
 import type { LiveRoom } from "@/lib/admin/useLiveRooms";
 import { RecentMenu } from "@/components/admin/RecentViewed";
+import { ListViewSwitch } from "@/components/admin/ListViewSwitch";
 import { Chip, EmptyRow, GroupHead, ListHead, ListRow, LiveDot, LoadMore, Segmented, Tag } from "@/components/admin/split/SplitParts";
 
 type History = AdminGameHistories$data["adminGameHistories"]["content"][number] & { placeName: string | null };
@@ -89,7 +90,7 @@ export function GameList({
 
   return (
     <>
-      <ListHead title="게임" right={<div className="flex items-center gap-1"><SyncLabel at={syncedAt} /><RecentMenu group="game" /></div>}>
+      <ListHead title="게임" right={<div className="flex items-center gap-1"><SyncLabel at={syncedAt} /><RecentMenu group="game" /><ListViewSwitch /></div>}>
         <Segmented
           group="game-tab"
           label="게임 목록 나누기"
