@@ -8,7 +8,6 @@ import { AdminGameHistoriesQuery } from "@/lib/admin/gql/AdminGameHistories";
 import { AdminGameHistoriesPlaceNamesQuery } from "@/lib/admin/gql/AdminGameHistoriesPlaceNames";
 import { END_REASON_LABEL, TEAM_LABEL, gameEndedAt, labelOf } from "@/lib/admin/format";
 import { shortPlaceName } from "@/lib/admin/gameExtras";
-import { isAbroad } from "@/lib/admin/country";
 import { CountryFlag } from "@/components/admin/CountryFlag";
 import { ago, dayName, durationText, groupInOrder, kstClock, kstDay } from "@/lib/admin/people";
 import { usePagedQuery } from "@/lib/admin/usePagedQuery";
@@ -148,7 +147,6 @@ function RoomRow({ room, href, current }: { room: LiveRoom; href: string; curren
   const teams = room.people && (room.live || pol + rob > 0) ? `경찰 ${pol} · 도둑 ${rob}` : `${room.participantCount}명`;
   const people = room.isEventGame ? teams : `${teams} / ${room.maxParticipants}명`;
   const meta = [room.placeName ? shortPlaceName(room.placeName) : null, people].filter(Boolean).join(" · ");
-  const abroad = isAbroad(room.countryCode) ? room.countryCode : null;
   return (
     <ListRow href={href} current={current}>
       <span className="min-w-0 flex-1">
@@ -157,7 +155,7 @@ function RoomRow({ room, href, current }: { room: LiveRoom; href: string; curren
           {room.isEventGame && <Tag>이벤트</Tag>}
         </b>
         <small className="mt-px flex items-center gap-1.5 truncate text-[12.5px] text-sd-fg-subtle" title={room.placeName ?? undefined}>
-          {abroad && <CountryFlag code={abroad} size={11} />}
+          {room.countryCode && <CountryFlag code={room.countryCode} size={11} />}
           <span className="truncate">{meta}</span>
         </small>
       </span>
@@ -175,8 +173,8 @@ function RoomRow({ room, href, current }: { room: LiveRoom; href: string; curren
 function HistoryRow({ h, href, current }: { h: History; href: string; current: boolean }) {
   const host = h.hostUserId ? h.participants.find((p) => p.userId === h.hostUserId)?.nickname : null;
   const place = h.placeName ? shortPlaceName(h.placeName) : null;
+  // 동네 앞에는 한국을 포함해 늘 국기를 단다. 해외만 달면 국기가 있다 없다 해서 같은 칸이 들쭉날쭉해 보이고,
   // 해외 동네 이름은 그 나라 말로 와서 국기가 없으면 어디인지 바로 안 읽힌다
-  const abroad = isAbroad(h.countryCode) ? h.countryCode : null;
   const meta = [place, `체포 ${h.arrestedRobberCount}/${h.totalRobberCount}`, host ? `${host} 님의 방` : null].filter(Boolean).join(" · ");
   const cop = h.winnerTeam === "POLICE";
   return (
@@ -188,7 +186,7 @@ function HistoryRow({ h, href, current }: { h: History; href: string; current: b
           {h.isEventGame && <Tag>이벤트</Tag>}
         </b>
         <small className="mt-px flex items-center gap-1.5 truncate text-[12.5px] text-sd-fg-subtle" title={h.placeName ?? undefined}>
-          {abroad && <CountryFlag code={abroad} size={11} />}
+          {h.countryCode && <CountryFlag code={h.countryCode} size={11} />}
           <span className="truncate">{meta}</span>
         </small>
       </span>
