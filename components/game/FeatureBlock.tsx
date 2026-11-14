@@ -44,7 +44,7 @@ export default function FeatureBlock({ copy, mockup, index, total }: Props) {
   const mockupAnim = isReversed ? "fadeInLeft" : "fadeInRight";
 
   return (
-    <section className="py-16 sm:py-24 md:py-28">
+    <section className="py-16 sm:py-20 md:py-16">
       <Container>
         <div className="grid gap-8 md:grid-cols-2 md:items-center md:gap-14">
           <ScrollReveal
@@ -66,8 +66,12 @@ export default function FeatureBlock({ copy, mockup, index, total }: Props) {
             delayMs={100}
             className={`order-2 ${mockupCol} md:row-span-2 md:row-start-1`}
           >
+            {/* 폰이 화면 높이를 넘지 않게 폭을 높이에서 정한다(폭 = 남는 높이 x 9/19).
+                넓은 화면은 블록 하나가 한 화면에 들어오고, 좁은 화면은 제목과 폰이 함께 보인다 */}
             <div className="flex justify-center">
-              <PhoneFrame>{MOCKUPS[mockup]}</PhoneFrame>
+              <div className="w-[clamp(200px,calc((100svh_-_14rem)*9/19),280px)] md:w-[clamp(220px,calc((100svh_-_12rem)*9/19),300px)]">
+                <PhoneFrame>{MOCKUPS[mockup]}</PhoneFrame>
+              </div>
             </div>
           </ScrollReveal>
 
