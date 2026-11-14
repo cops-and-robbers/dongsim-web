@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode, type Ref } from "react";
 import { appColors } from "@/lib/app-tokens";
 import { DEMO_APP_VERSION } from "@/lib/demo/scenes";
 import { useDemoCopy } from "../demo-copy";
@@ -19,10 +19,17 @@ export function DemoMyPage({
   profileIcon,
   onSelectIcon,
   onTask,
+  appVersion = DEMO_APP_VERSION,
+  deleteAccountRef,
+  deleteAccountMark,
 }: {
   profileIcon: 1 | 2;
   onSelectIcon: (id: 1 | 2) => void;
   onTask: (taskId: string) => void;
+  appVersion?: string;
+  /** 계정 삭제 페이지의 안내가 이 줄까지 내려가고 표시를 얹는다 */
+  deleteAccountRef?: Ref<HTMLDivElement>;
+  deleteAccountMark?: ReactNode;
 }) {
   const { app } = useDemoCopy();
   const [gamePush, setGamePush] = useState(true);
@@ -141,7 +148,7 @@ export function DemoMyPage({
             {app.appVersionLabel}
           </span>
           <span className="text-[14px] font-semibold" style={{ color: appColors.black600 }}>
-            v{DEMO_APP_VERSION}
+            v{appVersion}
           </span>
         </button>
         <ItemDivider />
@@ -158,7 +165,10 @@ export function DemoMyPage({
         <SectionHeader>{app.sectionEtc}</SectionHeader>
         <MenuRow text={app.logout} textColor={appColors.red} />
         <ItemDivider />
-        <MenuRow text={app.deleteAccount} textColor={appColors.black600} />
+        <div ref={deleteAccountRef} className="relative">
+          <MenuRow text={app.deleteAccount} textColor={appColors.black600} />
+          {deleteAccountMark}
+        </div>
         <div className="h-[8px]" />
 
         {/* 공식 SNS 채널 (sns_channel_row.dart: 슬레이트 원 44 + 글리프 22) */}
@@ -167,7 +177,7 @@ export function DemoMyPage({
           <p className="text-[14px] font-semibold" style={{ color: appColors.black500 }}>
             {app.snsPrompt}
           </p>
-          <div className="mt-[20px] flex items-center justify-center gap-[24px]">
+          <div className="mt-[24px] flex items-center justify-center gap-[24px]">
             {["instagram_black", "youtube_black", "tiktok_black"].map((glyph) => (
               <span
                 key={glyph}
@@ -179,7 +189,7 @@ export function DemoMyPage({
             ))}
           </div>
         </div>
-        <div className="h-[24px]" />
+        <div className="h-[64px]" />
       </div>
 
       {/* 크레딧 - 앱과 같은 웹 정본(#82)을 그대로 연다. 밤 지도가 이어진다 */}

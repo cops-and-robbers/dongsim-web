@@ -45,6 +45,7 @@ const ko: Chrome = {
       { path: "/location", label: "위치정보 이용약관" },
       { path: "/marketing", label: "마케팅 정보 수신 동의" },
       { path: "/licenses", label: "오픈소스 라이선스" },
+      { path: "/delete-account", label: "계정 삭제" },
     ],
   },
 };
@@ -73,6 +74,7 @@ const en: Chrome = {
       { path: "/en/location", label: "Location Data Terms" },
       { path: "/en/marketing", label: "Marketing Consent" },
       { path: "/en/licenses", label: "Open Source Licenses" },
+      { path: "/en/delete-account", label: "Delete Account" },
     ],
   },
 };
@@ -101,6 +103,7 @@ const ja: Chrome = {
       { path: "/ja/location", label: "位置情報利用規約" },
       { path: "/ja/marketing", label: "マーケティング情報の受信同意" },
       { path: "/ja/licenses", label: "オープンソースライセンス" },
+      { path: "/ja/delete-account", label: "アカウントの削除" },
     ],
   },
 };
