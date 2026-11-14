@@ -5,19 +5,21 @@ import { useLazyLoadQuery } from "react-relay";
 import type { AdminGameHistory } from "@/__generated__/AdminGameHistory.graphql";
 import type { AdminGameHistoryPlaceName } from "@/__generated__/AdminGameHistoryPlaceName.graphql";
 import type { AdminGameHistoryRadio } from "@/__generated__/AdminGameHistoryRadio.graphql";
+import type { AdminGameHistoryMvp } from "@/__generated__/AdminGameHistoryMvp.graphql";
 import { AdminGameHistoryQuery } from "@/lib/admin/gql/AdminGameHistory";
 import { AdminGameHistoryPlaceNameQuery } from "@/lib/admin/gql/AdminGameHistoryPlaceName";
 import { AdminGameHistoryRadioQuery } from "@/lib/admin/gql/AdminGameHistoryRadio";
+import { AdminGameHistoryMvpQuery } from "@/lib/admin/gql/AdminGameHistoryMvp";
 import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { AreaCard } from "@/components/admin/games/AreaCard";
 import { DetailHead, ExpandIcon, IconButton, Panel, Stats, Tag } from "@/components/admin/split/SplitParts";
 import { END_REASON_LABEL, TEAM_LABEL, gameEndedAt, labelOf } from "@/lib/admin/format";
-import { attachRadio, formatRadio, radioSummary } from "@/lib/admin/gameExtras";
+import { attachMvp, attachRadio, formatRadio, radioSummary } from "@/lib/admin/gameExtras";
 import { dayName, durationText, kstClock, kstTimeOfDay } from "@/lib/admin/people";
 import { useOptionalQuery } from "@/lib/admin/useOptionalQuery";
 
 type History = AdminGameHistory["response"]["adminGameHistory"];
-type Row = History["participants"][number] & { radioSeconds: number | null };
+type Row = History["participants"][number] & { radioSeconds: number | null; isMvp: boolean };
 
 /**
  * 끝난 판 상세 (#315, 시안 "경도 어드민 유저와 게임").
@@ -36,7 +38,9 @@ export function HistoryPanel({ id, page = false, userHref }: { id: string; page?
     // 처음 보는 곳은 이름을 찾는 데 몇 초 걸려 첫 응답엔 비어 있을 수 있다
     retryWhile: (d) => d.adminGameHistory?.area != null && d.adminGameHistory.area.placeName == null,
   });
-  const rows = attachRadio(h.participants, radio.data?.adminGameHistory?.participants ?? null) as Row[];
+  // MVP 는 서버가 정한 값만 쓴다(BE #243). 운영에 아직 없으면 MVP 표시만 빠진다
+  const mvp = useOptionalQuery<AdminGameHistoryMvp>(AdminGameHistoryMvpQuery, { id }, "isMvp");
+  const rows = attachMvp(attachRadio(h.participants, radio.data?.adminGameHistory?.participants ?? null), mvp.data?.adminGameHistory?.participants ?? null) as Row[];
   const showRadio = radio.status === "ready" && rows.some((p) => p.team === "POLICE") && h.isEventGame !== true;
 
   const host = h.hostUserId ? h.participants.find((p) => p.userId === h.hostUserId)?.nickname : null;
@@ -97,7 +101,7 @@ export function HistoryPanel({ id, page = false, userHref }: { id: string; page?
 
 // 횟수는 오른쪽 정렬 숫자로 쓴다. 점은 세어야 읽히고, 0과 6 이상에서 표기가 바뀌어 한 칸에 모양이 섞였다.
 // 0은 "없음"이 아니라 실제 결과라 지우지 않고 흐리게 둔다. 그래야 0이 아닌 사람이 먼저 눈에 들어온다.
-// MVP는 경찰은 가장 많이 잡은 사람, 도둑은 가장 덜 잡힌 사람. 팀 전원이 같은 값이면 달지 않고, 1등이 여럿이면 모두 MVP
+// MVP는 서버가 팀마다 한 명 고른 값(isMvp)을 그대로 단다. 앱 결과 화면과 같다(lib/admin/gameExtras.ts attachMvp)
 function Count({ value }: { value: number }) {
   return <span className={`text-right text-[14px] tabular-nums ${value ? "font-bold text-sd-fg" : "text-sd-fg-subtle"}`}>{value}</span>;
 }
@@ -107,9 +111,6 @@ function TeamRecord({ team, rows, showRadio, userHref }: { team: "POLICE" | "ROB
   const members = rows.filter((p) => p.team === team);
   if (members.length === 0) return null;
   const val = (p: Row) => (cop ? p.arrestCount : p.arrestedCount);
-  const values = members.map(val);
-  const allSame = values.every((v) => v === values[0]);
-  const best = cop ? Math.max(...values) : Math.min(...values);
   // 경찰은 잘한 순서(많이 잡을수록), 도둑도 잘한 순서(덜 잡힐수록)
   const sorted = [...members].sort((a, b) => (cop ? val(b) - val(a) : val(a) - val(b)));
   const radio = cop && showRadio;
@@ -132,7 +133,7 @@ function TeamRecord({ team, rows, showRadio, userHref }: { team: "POLICE" | "ROB
           <>
             <b className="flex min-w-0 items-center gap-1.5 font-semibold">
               <span className={`truncate ${p.userId ? "text-sd-fg" : "text-sd-fg-muted"}`}>{p.nickname}</span>
-              {!allSame && v === best && <Tag tone="warn">MVP</Tag>}
+              {p.isMvp && <Tag tone="warn">MVP</Tag>}
               {p.userId == null && <Tag>탈퇴</Tag>}
               {p.leftAt != null && <Tag tone="warn">중도 퇴장</Tag>}
             </b>
