@@ -10,8 +10,8 @@ import { getMessages } from "@/lib/i18n/messages";
 import { alternateLanguages } from "@/lib/i18n/config";
 import EventModal from "@/components/home/EventModal";
 import { homePopup, showHomeMinigame } from "@/lib/event/server";
-import V3AnnouncementModal from "@/components/home/V3AnnouncementModal";
-import { isV3AnnouncementLive } from "@/lib/app-version";
+import UpdateAnnouncementModal from "@/components/home/UpdateAnnouncementModal";
+import { isUpdateAnnouncementLive } from "@/lib/app-version";
 import WebsiteJsonLd from "@/components/seo/WebsiteJsonLd";
 import { APP_LINKS, SITE_URL } from "@/lib/constants";
 
@@ -26,7 +26,7 @@ const gameSchema = {
           name: "경찰과 도둑이란 어떤 게임인가요?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "경찰과 도둑은 한국에서 오랫동안 사랑받아 온 추억의 술래잡기 놀이예요. 동심지키미는 이 추억의 게임을 GPS 기반 모바일 앱으로 되살려, 친구들과 공원이나 야외에서 실제로 뛰면서 즐길 수 있도록 만들었습니다. 별명으로 '경도'라고도 부릅니다.",
+            text: "경찰과 도둑은 한국에서 오랫동안 사랑받아 온 술래잡기 놀이예요. 동심지키미는 이 놀이를 GPS 기반 모바일 앱으로 되살려, 친구들과 공원이나 야외에서 실제로 뛰면서 즐길 수 있게 만들었어요. 줄여서 '경도'라고도 불러요.",
           },
         },
         {
@@ -34,7 +34,7 @@ const gameSchema = {
           name: "경도(경찰과 도둑) 어떻게 플레이하나요?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "방장이 지도에서 플레이 구역과 감옥 위치를 그리면 게임이 시작됩니다. 도둑은 방장이 정한 주기마다 발자국으로 위치가 공개되고, 경찰은 도둑의 QR 코드를 스캔해 체포합니다. 같은 팀끼리 채팅으로 전략을 공유할 수 있습니다.",
+            text: "방장이 지도에 플레이 구역과 감옥을 그리고 게임을 시작해요. 도둑 위치는 방장이 정한 주기마다 발자국으로 공개되고, 경찰은 도둑을 터치한 뒤 QR을 찍어 체포해요. 같은 팀끼리는 채팅과 핑으로 작전을 나눠요.",
           },
         },
         {
@@ -42,7 +42,7 @@ const gameSchema = {
           name: "경찰과 도둑 앱의 핵심 기능은 무엇인가요?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "실시간 GPS 위치 추적, 자유로운 플레이 구역 설정, 주기별 발자국 공개 시스템, QR 스캔 체포 시스템, 팀 분리 채팅 기능이 모두 무료로 제공됩니다. iOS와 Android 모두 지원하며, 최대 150명까지 함께 플레이할 수 있는 위치 기반 멀티플레이어 게임입니다.",
+            text: "도둑 위치를 주기마다 보여 주는 발자국, 원이나 핀으로 그리는 플레이 구역, 게임 중에 좁아지는 구역, 터치 뒤 QR로 확인하는 체포, 팀 채팅, 팀별 MVP와 이동 경로 기록을 모두 무료로 쓸 수 있어요. iOS와 Android 모두 지원하고, 최대 150명까지 함께 하는 위치 기반 멀티플레이어 게임이에요.",
           },
         },
         {
@@ -50,7 +50,7 @@ const gameSchema = {
           name: "몇 명이 함께 할 수 있나요?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "최소 2명부터 최대 150명까지 함께 플레이할 수 있어요. 친구들끼리 모여 경찰 팀과 도둑 팀으로 나뉘어 진행합니다.",
+            text: "최소 2명부터 최대 150명까지 함께 할 수 있고, 경찰 팀과 도둑 팀에 한 명씩은 있어야 시작돼요.",
           },
         },
         {
@@ -58,7 +58,7 @@ const gameSchema = {
           name: "경찰과 도둑(경도) 앱은 어디서 다운로드하나요?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "App Store와 Google Play 양쪽에서 '경찰과 도둑'으로 검색해 무료로 다운로드할 수 있습니다.",
+            text: "App Store와 Google Play에서 '경찰과 도둑'을 검색해 무료로 받을 수 있어요.",
           },
         },
       ],
@@ -80,13 +80,13 @@ const gameSchema = {
           "@type": "HowToStep",
           position: 2,
           name: "구역 그리기",
-          text: "지도 위에 플레이 구역과 감옥을 드래그로 그려요.",
+          text: "지도 위에 원이나 핀으로 플레이 구역과 감옥을 그려요.",
         },
         {
           "@type": "HowToStep",
           position: 3,
           name: "팀 정하기",
-          text: "닉네임을 정하고 경찰이나 도둑을 자유롭게 선택해요.",
+          text: "방에 들어오면 팀이 정해지고, 대기실에서 언제든 바꿀 수 있어요.",
         },
         {
           "@type": "HowToStep",
@@ -180,7 +180,7 @@ export const revalidate = 60;
 
 export default async function HomePage() {
   const copy = getMessages("ko").home;
-  const [v3Live, popup, minigame] = await Promise.all([isV3AnnouncementLive(), homePopup(), showHomeMinigame()]);
+  const [updateLive, popup, minigame] = await Promise.all([isUpdateAnnouncementLive(), homePopup(), showHomeMinigame()]);
   return (
     <>
       <WebsiteJsonLd locale="ko" />
@@ -191,7 +191,7 @@ export default async function HomePage() {
         }}
       />
       <EventModal popup={popup} />
-      <V3AnnouncementModal enabled={v3Live} />
+      <UpdateAnnouncementModal enabled={updateLive} />
       <HeroSection copy={copy.hero} locale="ko" />
       <section
         id="game-intro"
@@ -202,46 +202,32 @@ export default async function HomePage() {
           경찰과 도둑(경도) - 동심지키미의 GPS 기반 오프라인 술래잡기 게임
         </h2>
         <p>
-          흔히 &lsquo;경도&rsquo;로 줄여 부르는 경찰과 도둑을 스마트폰으로 다시
-          즐기세요. 동심지키미가 만든 위치 기반 친구 게임으로, 공원에서 직접
-          뛰며 구역 그리기, 발자국 추적, QR 체포, 팀 채팅까지 앱 하나로
-          진행합니다.
+          흔히 &lsquo;경도&rsquo;로 줄여 부르는 경찰과 도둑을 스마트폰으로 다시 즐겨 보세요. 동심지키미가 만든 위치 기반 친구 게임으로, 공원에서 직접 뛰고 판단은 앱이 도와줘요.
         </p>
 
         <h3>경찰과 도둑이란 어떤 게임인가요?</h3>
         <p>
-          경찰과 도둑은 한국에서 오랫동안 사랑받아 온 추억의 술래잡기 놀이예요.
-          동심지키미는 이 추억의 게임을 GPS 기반 모바일 앱으로 되살려, 친구들과
-          공원이나 야외에서 실제로 뛰면서 즐길 수 있도록 만들었습니다. 별명으로
-          &lsquo;경도&rsquo;라고도 부릅니다.
+          경찰과 도둑은 한국에서 오랫동안 사랑받아 온 술래잡기 놀이예요. 동심지키미는 이 놀이를 GPS 기반 모바일 앱으로 되살려, 친구들과 공원이나 야외에서 실제로 뛰면서 즐길 수 있게 만들었어요. 줄여서 &lsquo;경도&rsquo;라고도 불러요.
         </p>
 
         <h3>경도(경찰과 도둑) 어떻게 플레이하나요?</h3>
         <p>
-          방장이 지도에서 플레이 구역과 감옥 위치를 그리면 게임이 시작됩니다.
-          도둑은 방장이 정한 주기마다 발자국으로 위치가 공개되고, 경찰은 도둑의
-          QR 코드를 스캔해 체포합니다. 같은 팀끼리 채팅으로 전략을 공유할 수
-          있습니다.
+          방장이 지도에 플레이 구역과 감옥을 그리고 게임을 시작해요. 도둑 위치는 방장이 정한 주기마다 발자국으로 공개되고, 경찰은 도둑을 터치한 뒤 QR을 찍어 체포해요. 같은 팀끼리는 채팅과 핑으로 작전을 나눠요.
         </p>
 
         <h3>경찰과 도둑 앱의 핵심 기능</h3>
         <p>
-          실시간 GPS 위치 추적, 자유로운 플레이 구역 설정, 주기별 발자국 공개
-          시스템, QR 스캔 체포 시스템, 팀 분리 채팅 기능이 모두 무료로
-          제공됩니다. iOS와 Android 모두 지원하며, 최대 150명까지 함께 플레이할
-          수 있는 위치 기반 멀티플레이어 게임입니다.
+          도둑 위치를 주기마다 보여 주는 발자국, 원이나 핀으로 그리는 플레이 구역, 게임 중에 좁아지는 구역, 터치 뒤 QR로 확인하는 체포, 팀 채팅, 팀별 MVP와 이동 경로 기록을 모두 무료로 쓸 수 있어요. iOS와 Android 모두 지원하고, 최대 150명까지 함께 하는 위치 기반 멀티플레이어 게임이에요.
         </p>
 
         <h3>몇 명이 함께 할 수 있나요?</h3>
         <p>
-          최소 2명부터 최대 150명까지 함께 플레이할 수 있어요. 친구들끼리 모여
-          경찰 팀과 도둑 팀으로 나뉘어 진행합니다.
+          최소 2명부터 최대 150명까지 함께 할 수 있고, 경찰 팀과 도둑 팀에 한 명씩은 있어야 시작돼요.
         </p>
 
         <h3>경찰과 도둑(경도) 앱은 어디서 다운로드하나요?</h3>
         <p>
-          App Store와 Google Play 양쪽에서 &lsquo;경찰과 도둑&rsquo;으로 검색해
-          무료로 다운로드할 수 있습니다.
+          App Store와 Google Play에서 &lsquo;경찰과 도둑&rsquo;을 검색해 무료로 받을 수 있어요.
         </p>
       </section>
       <CharactersSection copy={copy.characters} />

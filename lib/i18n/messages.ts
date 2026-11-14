@@ -50,11 +50,11 @@ const ko = {
         },
         {
           title: "구역 그리기",
-          description: "지도 위에 플레이 구역과 감옥을 드래그로 그려요.",
+          description: "지도 위에 원이나 핀으로 플레이 구역과 감옥을 그려요.",
         },
         {
           title: "팀 정하기",
-          description: "닉네임을 정하고 경찰이나 도둑을 자유롭게 선택해요.",
+          description: "방에 들어오면 팀이 정해지고, 대기실에서 언제든 바꿀 수 있어요.",
         },
         {
           title: "이제 뛰면 돼요",
@@ -66,7 +66,7 @@ const ko = {
     features: {
       title1: "복잡한 건 앱에 맡기고",
       title2: "즐기기만 하세요",
-      sub: "위치 공유, 구역 체크, 팀 채팅까지 앱이 책임집니다. 이제 게임만 즐기세요.",
+      sub: "위치 공개와 구역 확인, 팀 채팅은 앱이 맡으니 뛰는 데만 집중하면 돼요.",
       items: [
         {
           title: "주기적으로 남는 발자국",
@@ -74,9 +74,9 @@ const ko = {
             "설정한 주기마다 도둑 위치가 발자국으로 찍혀요. 경찰이 따라갈 유일한 단서예요.",
         },
         {
-          title: "구역과 감옥, 손끝으로",
+          title: "점점 좁아지는 구역",
           description:
-            "지도를 드래그해서 플레이 구역과 감옥을 그려요. 구역 밖으로 나가면 바로 경고가 떠요.",
+            "방장이 켜면 시간이 갈수록 구역이 좁아져서, 끝으로 갈수록 숨을 곳이 줄어요.",
         },
         {
           title: "팀원에게만 닿는 대화",
@@ -99,23 +99,21 @@ const ko = {
       wantedName: "치즈 도둑",
       bounty: "현상금 🧀 듬뿍",
     },
-    v3Notice: {
-      badge: "v3 새 소식",
-      tag: "v3 업데이트",
-      title: "경찰과 도둑이 새로워졌어요",
+    updateNotice: {
+      badge: "v4 새 소식",
+      tag: "v4 업데이트",
+      title: "경찰과 도둑이 한 번 더 달라졌어요",
       highlights: [
         {
-          title: "같이 뛸 사람을 구해요",
-          description:
-            "'토요일에 동네 공원에서 뛰실 분!' 이런 글을 보고 마음에 들면 바로 참여할 수 있어요.",
+          title: "구역이 점점 좁아져요",
+          description: "방장이 켜면 게임 중에 구역이 네 번에 걸쳐 좁아져요.",
         },
         {
-          title: "약속은 채팅방에서 잡아요",
-          description:
-            "참여하면 채팅방이 열려서, 번호 몰라도 약속을 잡고 게임 초대까지 받을 수 있어요.",
+          title: "방장이 누르면 바로 시작해요",
+          description: "준비 버튼 없이, 두 팀 인원만 확인하면 바로 출발해요.",
         },
       ],
-      demoCta: "웹에서 미리 체험하기",
+      demoCta: "웹에서 미리 해 보기",
       close: "닫기",
     },
   },
@@ -451,11 +449,11 @@ const en: Messages = {
         },
         {
           title: "Draw the zone",
-          description: "Drag on the map to set your play area and the jail.",
+          description: "Set your play area and the jail on the map with a circle or pins.",
         },
         {
           title: "Pick teams",
-          description: "Set a nickname and jump in as a cop or a robber.",
+          description: "You get a team when you join, and you can switch anytime in the waiting room.",
         },
         {
           title: "Now just run",
@@ -467,7 +465,7 @@ const en: Messages = {
     features: {
       title1: "Let the app do the work,",
       title2: "you just play",
-      sub: "Live location sharing, boundary alerts, team chat - the app handles it all. You just play.",
+      sub: "Location reveals, zone checks, and team chat are on the app, so you can focus on running.",
       items: [
         {
           title: "Footprints on a timer",
@@ -475,9 +473,9 @@ const en: Messages = {
             "At the interval you set, each robber's location appears as a footprint - the cops' only clue.",
         },
         {
-          title: "Draw your zone and jail",
+          title: "A zone that keeps shrinking",
           description:
-            "Drag out your play area and jail right on the map. Step outside the boundary and you'll get an instant alert.",
+            "When the host turns it on, the zone closes in as time goes by, leaving fewer places to hide.",
         },
         {
           title: "Team-only chat",
@@ -500,20 +498,18 @@ const en: Messages = {
       wantedName: "Cheese Thief",
       bounty: "Reward: 🧀 loads",
     },
-    v3Notice: {
-      badge: "What's new in v3",
-      tag: "v3 update",
-      title: "Cops and Robbers just got a big update",
+    updateNotice: {
+      badge: "What's new in v4",
+      tag: "v4 update",
+      title: "Cops and Robbers got another upgrade",
       highlights: [
         {
-          title: "Find people to run with",
-          description:
-            "Short on players? Browse recruiting posts, check the spot, time, and open slots, and jump into a game you like.",
+          title: "The zone keeps shrinking",
+          description: "When the host turns it on, the zone closes in four times during the game.",
         },
         {
-          title: "Plan it in the group chat",
-          description:
-            "Joining a post opens a chat with everyone in it. Set the plan and get your game invite right there - no swapping numbers.",
+          title: "The host starts with one tap",
+          description: "No more Ready button. Check both teams and you're off.",
         },
       ],
       demoCta: "Try it on the web first",
@@ -853,11 +849,11 @@ const ja: Messages = {
         },
         {
           title: "エリアを描く",
-          description: "地図をドラッグして、プレイエリアと牢屋を描く。",
+          description: "地図に円かピンで、プレイエリアと牢屋を描く。",
         },
         {
           title: "チームを決める",
-          description: "ニックネームを決めて、警察か泥棒を自由に選ぶ。",
+          description: "部屋に入るとチームが決まり、待機室でいつでも変えられる。",
         },
         {
           title: "あとは走るだけ",
@@ -869,7 +865,7 @@ const ja: Messages = {
     features: {
       title1: "面倒なことはアプリに任せて、",
       title2: "遊ぶだけ",
-      sub: "位置共有、エリア判定、チームチャットまで、ぜんぶアプリにおまかせ。あとはゲームを楽しむだけ。",
+      sub: "位置の公開もエリア判定もチームチャットもアプリにおまかせ。走ることに集中できます。",
       items: [
         {
           title: "一定間隔で残る足跡",
@@ -877,9 +873,9 @@ const ja: Messages = {
             "設定した間隔ごとに、泥棒の位置が足跡として残る。警察が追える唯一の手がかり。",
         },
         {
-          title: "エリアと牢屋を指先で",
+          title: "だんだん狭まるエリア",
           description:
-            "地図をドラッグして、プレイエリアと牢屋を設定。エリアの外に出ると、すぐに警告が届く。",
+            "ホストがオンにすると時間とともにエリアが狭まり、終盤ほど隠れる場所が減っていく。",
         },
         {
           title: "仲間だけのチームチャット",
@@ -902,20 +898,18 @@ const ja: Messages = {
       wantedName: "チーズ泥棒",
       bounty: "賞金 🧀 たっぷり",
     },
-    v3Notice: {
-      badge: "v3の新機能",
-      tag: "v3アップデート",
-      title: "ケイドロが大きく新しくなりました",
+    updateNotice: {
+      badge: "v4の新機能",
+      tag: "v4アップデート",
+      title: "ケイドロがまた新しくなりました",
       highlights: [
         {
-          title: "一緒に走る仲間を探せます",
-          description:
-            "人数が足りなくても大丈夫。募集の投稿から場所・時間・残り枠を見て、気になるゲームに参加できます。",
+          title: "エリアがだんだん狭まる",
+          description: "ホストがオンにすると、ゲーム中にエリアが4回に分けて狭まります。",
         },
         {
-          title: "約束はグループチャットで",
-          description:
-            "参加すると同じゲームの仲間とチャットが開きます。連絡先を交換しなくても、約束もゲームへの招待もそこで完結します。",
+          title: "ホストのワンタップでスタート",
+          description: "準備ボタンはなくなりました。両チームの人数を確認したらすぐ出発です。",
         },
       ],
       demoCta: "まずウェブで体験する",

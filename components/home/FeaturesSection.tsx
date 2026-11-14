@@ -3,7 +3,10 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
 import type { Messages } from "@/lib/i18n/messages";
 
-function ZoneVisual() {
+// 점점 좁아지는 구역 (#668) - 지난 구역(점선) 안으로 지금 구역이 좁아진다.
+// 올려 두면 한 단계 더 좁아진다. 색은 테마 진영을 따른다(경찰 파랑 / 도둑 초록).
+function ShrinkVisual() {
+  const arrows = [0, 90, 180, 270];
   return (
     <svg
       viewBox="0 0 200 140"
@@ -20,41 +23,30 @@ function ZoneVisual() {
         <path d="M 60 0 L 70 140" />
         <path d="M 140 0 L 130 140" />
       </g>
-      <circle
-        cx="100"
-        cy="70"
-        r="55"
-        fill="#3F63D9"
-        fillOpacity="0.05"
-        stroke="#3F63D9"
-        strokeWidth="1.8"
-        strokeDasharray="6 6"
-      />
-      <circle cx="100" cy="70" r="3" fill="#3F63D9" />
-      <g
-        transform="translate(140 48)"
-        style={{ transformBox: "fill-box", transformOrigin: "center" }}
-        className="transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:scale-110"
-      >
-        <rect
-          x="-12"
-          y="-10"
-          width="24"
-          height="20"
-          rx="3"
-          className="fill-slate-900 dark:fill-white"
+      <g className="stroke-brand-blue dark:stroke-brand-green" fill="none">
+        <circle cx="100" cy="70" r="58" strokeWidth="1.5" strokeDasharray="5 6" opacity="0.3" />
+        <circle cx="100" cy="70" r="46" strokeWidth="1.5" strokeDasharray="5 6" opacity="0.55" />
+        <circle
+          cx="100"
+          cy="70"
+          r="34"
+          strokeWidth="2"
+          style={{ transformBox: "fill-box", transformOrigin: "center" }}
+          className="fill-brand-blue/5 transition-transform duration-500 ease-out group-hover:scale-75 dark:fill-brand-green/10"
         />
-        <text
-          x="0"
-          y="3"
-          textAnchor="middle"
-          fontSize="7"
-          fontWeight="700"
-          className="fill-[#F5EF38] dark:fill-app-black"
-        >
-          JAIL
-        </text>
       </g>
+      {/* 바깥에서 안쪽을 가리키는 화살표 네 개 */}
+      <g className="fill-brand-blue dark:fill-brand-green">
+        {arrows.map((deg) => (
+          <path
+            key={deg}
+            d="M 0 -6 L 6 0 L 0 6 Z"
+            transform={`translate(100 70) rotate(${deg}) translate(-52 0) rotate(0)`}
+            opacity="0.8"
+          />
+        ))}
+      </g>
+      <circle cx="100" cy="70" r="3" className="fill-brand-blue dark:fill-brand-green" />
     </svg>
   );
 }
@@ -182,10 +174,10 @@ function ChatVisual() {
   );
 }
 
-// 비주얼은 언어 무관 - 사전의 items 순서(발자국·구역·채팅)와 맞춘다.
+// 비주얼은 언어 무관 - 사전의 items 순서(발자국·좁아지는 구역·채팅)와 맞춘다.
 const VISUALS = [
   <ShoeprintVisual key="shoeprint" />,
-  <ZoneVisual key="zone" />,
+  <ShrinkVisual key="shrink" />,
   <ChatVisual key="chat" />,
 ];
 
