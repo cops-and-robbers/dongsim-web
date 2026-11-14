@@ -10,7 +10,17 @@ import { DemoConfirmDialog } from "./DemoConfirmDialog";
 import { TintIcon } from "./DemoGameParts";
 import { GameChatButton, GameChatPanel, GameChatPreview, GameZoneGrid, useGameChat } from "./DemoGameChat";
 import { DemoGameStart } from "./DemoGameStart";
+import {
+  DemoFabMenu,
+  ShrinkNotice,
+  shrinkCircle,
+  useDemoShrink,
+} from "./DemoGameMenu";
 import { useDemoCopy } from "../demo-copy";
+
+// 플레이그라운드 원(시작)과 축소를 켰을 때의 마지막 원. 마지막 원은 감옥(38%, 24%)을 품는다
+const ZONE_START = { size: 430, left: 50, top: 46 };
+const ZONE_FINAL = { size: 250, left: 46, top: 36 };
 
 const LONG_PRESS_MS = 450;
 // 라운드 남은 시간(초). 헤더 타이머가 여기서 1초씩 줄어든다
@@ -29,11 +39,14 @@ type Ping = Point & { kind: "found" | "suspect" };
 // (google_map_view.dart, ping_selection_card.dart 실측).
 export function DemoInGame({
   myTeam,
+  shrink = false,
   onTask,
   onVictory,
   onLeave,
 }: {
   myTeam: "police" | "robber";
+  /** 방 만들기에서 구역 축소를 켰는지 */
+  shrink?: boolean;
   onTask: (taskId: string) => void;
   onVictory: () => void;
   onLeave: () => void;
@@ -51,6 +64,10 @@ export function DemoInGame({
   const copy = useDemoCopy();
   const { app } = copy;
   const [elapsed, setElapsed] = useState(0);
+  // 구역 축소는 지도가 열린 뒤 경과 시간에서 파생된다
+  const zoneShrink = useDemoShrink(shrink, elapsed);
+  const zoneNow = shrinkCircle(zoneShrink.stage, ZONE_START, ZONE_FINAL);
+  const shrinkLeft = zoneShrink.remaining;
   const [locFocused, setLocFocused] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
@@ -160,7 +177,9 @@ export function DemoInGame({
           className="mt-[6px] text-[12px] leading-none"
           style={{ color: appColors.red }}
         >
-          {app.revealCountdown(fmt(robberOut ? 0 : 2 - (elapsed % 2)))}
+          {shrink && shrinkLeft !== null
+            ? app.revealShrinkCountdown(fmt(robberOut ? 0 : 2 - (elapsed % 2)), fmt(shrinkLeft))
+            : app.revealCountdown(fmt(robberOut ? 0 : 2 - (elapsed % 2)))}
         </p>
         <span className="absolute right-[12px] top-1/2 -translate-y-1/2">
           <TintIcon src="/demo/icon_info.svg" size={24} color={appColors.black500} />
@@ -183,7 +202,7 @@ export function DemoInGame({
         onPointerLeave={cancelPress}
       >
         <FakeMap />
-        <ZoneCircle size={430} top="46%" filled={false} />
+        <ZoneCircle size={zoneNow.size} left={zoneNow.left} top={zoneNow.top} filled={false} smooth />
         <ZoneCircle
           size={90}
           left="38%"
@@ -303,21 +322,11 @@ export function DemoInGame({
         </div>
       )}
 
-      {/* 좌하단: 좌표 격자 토글 위, 내 위치 아래 (my_location_button.dart: 포커스 시 blue, 아니면 blue500).
+      {/* 좌하단: 내 위치 (my_location_button.dart: 포커스 시 blue, 아니면 blue500).
+          4.0.1 부터 좌표 격자는 가운데 메뉴로 옮겨 갔다.
           버튼 bottom 은 앱의 38 + 세이프 영역 34 다. 채팅 시트가 사라져 지도가 화면 끝까지 내려간다 */}
       {!showParticipants && (
         <div className="absolute bottom-[72px] left-[20px] flex flex-col gap-[8px]">
-          <button
-            type="button"
-            aria-label={app.gridToggle}
-            aria-pressed={gridOn}
-            onClick={() => setGridOn((v) => !v)}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="flex size-[56px] items-center justify-center rounded-[16px] shadow-[1px_1px_8px_rgba(8,10,12,0.1)] transition-transform active:scale-95"
-            style={{ backgroundColor: appColors.white }}
-          >
-            <TintIcon src="/demo/icon_grid.svg" size={32} color={gridOn ? appColors.blue : appColors.blue500} />
-          </button>
           <button
             type="button"
             onClick={() => setLocFocused((v) => !v)}
@@ -334,40 +343,54 @@ export function DemoInGame({
         </div>
       )}
 
-      {/* 우하단 액션 버튼 (svg_icon_button.dart: 56, radius 16, 아이콘 32) -
-          지도에서는 참가자 목록, 목록에서는 지도로 돌아가기 + QR + 채팅 */}
+      {/* 우하단 (svg_icon_button.dart: 56, radius 16, 아이콘 32) - 지도에서는 채팅만,
+          참가자 목록에서는 지도로 돌아가기 + 채팅. 참가자·체포는 가운데 메뉴가 연다 */}
       <div className="absolute bottom-[72px] right-[20px] flex flex-col gap-[8px]">
-        <button
-          type="button"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => setShowParticipants((v) => !v)}
-          className="flex size-[56px] items-center justify-center rounded-[16px] shadow-[1px_1px_8px_rgba(8,10,12,0.1)] transition-transform active:scale-95"
-          style={{ backgroundColor: appColors.white }}
-        >
-          <span
-            className="size-[32px]"
-            style={{
-              backgroundColor: appColors.blue,
-              WebkitMask: `url(/demo/${showParticipants ? "icon_map" : "icon_person"}.svg) center / contain no-repeat`,
-              mask: `url(/demo/${showParticipants ? "icon_map" : "icon_person"}.svg) center / contain no-repeat`,
-            }}
-          />
-        </button>
-        <button
-          type="button"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => {
-            if (!robberOut || scanning) return;
-            setScanning(true);
-            onTask("ingame-arrest");
-          }}
-          className="flex size-[56px] items-center justify-center rounded-[16px] shadow-[1px_1px_8px_rgba(8,10,12,0.1)] transition-transform active:scale-95"
-          style={{ backgroundColor: appColors.white }}
-        >
-          <Image src="/demo/icon_qr_scan.svg" alt="" width={32} height={32} />
-        </button>
+        {showParticipants && (
+          <button
+            type="button"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setShowParticipants(false)}
+            className="flex size-[56px] items-center justify-center rounded-[16px] shadow-[1px_1px_8px_rgba(8,10,12,0.1)] transition-transform active:scale-95"
+            style={{ backgroundColor: appColors.white }}
+          >
+            <TintIcon src="/demo/icon_map.svg" size={32} color={appColors.blue} />
+          </button>
+        )}
         <GameChatButton chat={chat} dark={false} />
       </div>
+
+      {/* 가운데 아래 플로팅 메뉴 (4.0.1 #656): 좌표, 참가자, 체포 */}
+      {!showParticipants && !chat.open && !scanning && (
+        <DemoFabMenu
+          dark={false}
+          items={[
+            {
+              key: "grid",
+              label: app.menuGrid,
+              icon: "/demo/icon_grid.svg",
+              onTap: () => setGridOn((v) => !v),
+            },
+            {
+              key: "participants",
+              label: app.menuParticipants,
+              icon: "/demo/icon_person.svg",
+              onTap: () => setShowParticipants(true),
+            },
+            {
+              key: "arrest",
+              label: app.menuArrest,
+              icon: "/demo/icon_qr_scan.svg",
+              onTap: () => {
+                if (!robberOut || scanning) return;
+                setScanning(true);
+                onTask("ingame-arrest");
+              },
+            },
+          ]}
+        />
+      )}
+      <ShrinkNotice text={zoneShrink.notice} dark={false} />
       <GameChatPreview chat={chat} dark={false} />
       <GameChatPanel chat={chat} dark={false} />
       </div>

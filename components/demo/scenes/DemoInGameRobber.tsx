@@ -15,6 +15,7 @@ import { DemoConfirmDialog } from "./DemoConfirmDialog";
 import { TintIcon } from "./DemoGameParts";
 import { GameChatButton, GameChatPanel, GameChatPreview, GameZoneGrid, useGameChat } from "./DemoGameChat";
 import { DemoGameStart, DispatchBanner } from "./DemoGameStart";
+import { DemoFabMenu } from "./DemoGameMenu";
 import { useDemoCopy } from "../demo-copy";
 
 const LONG_PRESS_MS = 450;
@@ -331,21 +332,10 @@ export function DemoInGameRobber({
           </div>
         )}
 
-        {/* 좌하단: 좌표 격자 토글 위, 내 위치 아래 - 다크: 검정 배경 + 초록 아이콘.
+        {/* 좌하단: 내 위치 - 다크: 검정 배경 + 초록 아이콘. 좌표 격자는 4.0.1 부터 가운데 메뉴에 있다.
             버튼 bottom 은 앱의 38 + 세이프 영역 34 다 */}
         {!showParticipants && (
           <div className="absolute bottom-[72px] left-[20px] flex flex-col gap-[8px]">
-            <button
-              type="button"
-              aria-label={app.gridToggle}
-              aria-pressed={gridOn}
-              onClick={() => setGridOn((v) => !v)}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="flex size-[56px] items-center justify-center rounded-[16px] transition-transform active:scale-95"
-              style={darkButton}
-            >
-              <TintIcon src="/demo/icon_grid.svg" size={32} color={gridOn ? appColors.green : appColors.green500} />
-            </button>
             <button
               type="button"
               onClick={() => setLocFocused((v) => !v)}
@@ -362,45 +352,52 @@ export function DemoInGameRobber({
           </div>
         )}
 
-        {/* 우하단 액션 버튼 - 참가자 목록 토글 + 내 수배 QR 열기 + 채팅 */}
+        {/* 우하단 - 지도에서는 채팅만, 참가자 목록에서는 지도로 돌아가기 + 채팅.
+            참가자와 내 QR 은 가운데 메뉴가 연다 (4.0.1 #656) */}
         <div className="absolute bottom-[72px] right-[20px] flex flex-col gap-[8px]">
-          <button
-            type="button"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => setShowParticipants((v) => !v)}
-            className="flex size-[56px] items-center justify-center rounded-[16px] transition-transform active:scale-95"
-            style={darkButton}
-          >
-            <span
-              className="size-[32px]"
-              style={{
-                backgroundColor: appColors.green,
-                WebkitMask: `url(/demo/${showParticipants ? "icon_map" : "icon_person"}.svg) center / contain no-repeat`,
-                mask: `url(/demo/${showParticipants ? "icon_map" : "icon_person"}.svg) center / contain no-repeat`,
-              }}
-            />
-          </button>
-          <button
-            type="button"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => {
-              setQrOpen(true);
-              onTask("robber-qr");
-            }}
-            className="flex size-[56px] items-center justify-center rounded-[16px] transition-transform active:scale-95"
-            style={darkButton}
-          >
-            <span
-              className="size-[32px]"
-              style={{
-                backgroundColor: appColors.green,
-                WebkitMask: "url(/demo/icon_qr_code.svg) center / contain no-repeat",
-                mask: "url(/demo/icon_qr_code.svg) center / contain no-repeat",
-              }}
-            />
-          </button>
+          {showParticipants && (
+            <button
+              type="button"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => setShowParticipants(false)}
+              className="flex size-[56px] items-center justify-center rounded-[16px] transition-transform active:scale-95"
+              style={darkButton}
+            >
+              <TintIcon src="/demo/icon_map.svg" size={32} color={appColors.green} />
+            </button>
+          )}
           <GameChatButton chat={chat} dark />
         </div>
+
+        {/* 가운데 아래 플로팅 메뉴: 좌표, 참가자, 내 QR */}
+        {!showParticipants && !chat.open && !qrOpen && (
+          <DemoFabMenu
+            dark
+            items={[
+              {
+                key: "grid",
+                label: app.menuGrid,
+                icon: "/demo/icon_grid.svg",
+                onTap: () => setGridOn((v) => !v),
+              },
+              {
+                key: "participants",
+                label: app.menuParticipants,
+                icon: "/demo/icon_person.svg",
+                onTap: () => setShowParticipants(true),
+              },
+              {
+                key: "myQr",
+                label: app.menuMyQr,
+                icon: "/demo/icon_qr_code.svg",
+                onTap: () => {
+                  setQrOpen(true);
+                  onTask("robber-qr");
+                },
+              },
+            ]}
+          />
+        )}
         <GameChatPreview chat={chat} dark />
         <GameChatPanel chat={chat} dark />
       </div>
@@ -419,7 +416,7 @@ export function DemoInGameRobber({
 
       {/* 수배 QR 다이얼로그 (qr_display_dialog.dart: 검정 카드, 초록 Moneygraphy) */}
       {qrOpen && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 px-[36px]">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 px-[36px]">
           <div
             className="flex w-full flex-col items-center rounded-[24px] px-[24px] py-[28px]"
             style={{ backgroundColor: appColors.black }}

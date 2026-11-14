@@ -82,8 +82,10 @@ export function courseProgress(course: DemoCourse, sceneId: DemoSceneId) {
   };
 }
 
-// 방 만들기 기본 정보 4항목 (game_setting_values_editor.dart의
-// GameSettingField 실측: 최소·최대와 키패드 빠른 추가 3개)
+// 방 만들기 설정 4항목 (game_setting_values_editor.dart의
+// GameSettingField 실측: 최소·최대와 키패드 빠른 추가 3개).
+// initial 은 4.0.1 최종 확인에 처음 채워 두는 추천값(recommended*)이다.
+// 참여 인원 상한은 출시된 앱(4.0.1)과 서버 main 기준이다. 다음 배포에서 50명으로 내려간다(BE #235).
 export type DemoSettingFieldId =
   | "participants"
   | "roundDuration"
@@ -97,10 +99,10 @@ export const DEMO_SETTING_FIELDS: readonly {
   initial: number;
   quickAmounts: readonly [number, number, number];
 }[] = [
-  { id: "participants", min: 2, max: 150, initial: 2, quickAmounts: [5, 10, 20] },
+  { id: "participants", min: 2, max: 150, initial: 10, quickAmounts: [5, 10, 20] },
   { id: "roundDuration", min: 10, max: 180, initial: 30, quickAmounts: [5, 10, 30] },
   { id: "locationShare", min: 0, max: 30, initial: 5, quickAmounts: [3, 5, 10] },
-  { id: "policeWait", min: 1, max: 10, initial: 3, quickAmounts: [1, 3, 5] },
+  { id: "policeWait", min: 1, max: 10, initial: 5, quickAmounts: [1, 3, 5] },
 ];
 
 // 인게임 각본 - 발자국이 찍히는 위치와 간격(ms). 구역 원 안쪽 경로다.
@@ -140,7 +142,17 @@ export const ROBBER_REVEAL_INTERVAL_MS = 7000;
 export const POLICE_STEP_INTERVAL_MS = 6000;
 
 // 마이페이지의 앱 버전 표기 (#88). 데모가 맞춘 앱 버전이다.
-export const DEMO_APP_VERSION = "3.2.7";
+export const DEMO_APP_VERSION = "4.0.1";
+
+// 구역 축소 (#668, shrink_schedule.dart). 최종 반경 = floor(max(감옥 + 100, min(시작 x 40%, 200))).
+// 원형 플레이그라운드에서만 켤 수 있고, 시작 반경이 감옥 + 100 이하이면 잠긴다.
+export const SHRINK_JAIL_MARGIN_M = 100;
+export const SHRINK_STAGES = 4;
+export function shrinkFinalRadius(startRadius: number, jailRadius: number) {
+  return Math.floor(Math.max(jailRadius + SHRINK_JAIL_MARGIN_M, Math.min(startRadius * 0.4, 200)));
+}
+/** 데모 인게임에서 구역이 한 단계 줄어드는 간격(초). 앱은 (게임 시간 - 경찰 대기) / 5 분이다 */
+export const DEMO_SHRINK_INTERVAL_SECONDS = 9;
 
 // 방문자의 닉네임. 대기실, 참가자, MVP 공개가 같은 사람을 가리킨다
 export const DEMO_MY_NAME = "민첩한괴도5308";
