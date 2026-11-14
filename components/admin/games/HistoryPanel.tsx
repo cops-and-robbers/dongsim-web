@@ -63,7 +63,13 @@ export function HistoryPanel({ id, page = false, userHref }: { id: string; page?
         actions={!page && <IconButton label="이 판만 크게 보기" href={`/admin/games/history/${h.id}`}><ExpandIcon /></IconButton>}
       />
 
-      <AreaCard area={h.area} placeName={place.data?.adminGameHistory?.area?.placeName ?? null} shrinkTo={h.shrinkFinalRadiusInMeters} emptyText="좌표를 남기지 않던 때의 기록이라 위치가 없어요." />
+      <AreaCard
+        area={h.area}
+        placeName={place.data?.adminGameHistory?.area?.placeName ?? null}
+        countryCode={place.data?.adminGameHistory?.area?.countryCode ?? null}
+        shrinkTo={h.shrinkFinalRadiusInMeters}
+        emptyText="좌표를 남기지 않던 때의 기록이라 위치가 없어요."
+      />
 
       {/* 결과를 숫자 세 개로 줄였다. 체포는 잡힌 도둑 수와 전체 도둑 수 */}
       <Panel>

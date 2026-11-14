@@ -194,7 +194,7 @@ export const handlers = [
     await delay(600);
     const page = queryGames(variables as { page?: number; size?: number; status?: GameStatus; sortDirection?: "ASC" | "DESC" });
     return HttpResponse.json({
-      data: { adminGames: { content: page.content.map((g) => ({ id: g.id, placeName: g.placeName })) } },
+      data: { adminGames: { content: page.content.map((g) => ({ id: g.id, placeName: g.placeName, countryCode: g.countryCode })) } },
     });
   }),
 
@@ -202,7 +202,11 @@ export const handlers = [
     await delay(600);
     const page = queryGameHistories(variables as { page?: number; size?: number; endReason?: GameEndReason; sortDirection?: "ASC" | "DESC" });
     return HttpResponse.json({
-      data: { adminGameHistories: { content: page.content.map((h) => ({ id: h.id, area: h.area && { placeName: h.area.placeName ?? null } })) } },
+      data: {
+        adminGameHistories: {
+          content: page.content.map((h) => ({ id: h.id, area: h.area && { placeName: h.area.placeName ?? null, countryCode: h.area.countryCode ?? null } })),
+        },
+      },
     });
   }),
 
@@ -210,7 +214,7 @@ export const handlers = [
     await delay(600);
     const game = getGame((variables as { id: string }).id);
     return HttpResponse.json({
-      data: { adminGame: game && { id: game.id, area: game.area && { placeName: game.area.placeName ?? null } } },
+      data: { adminGame: game && { id: game.id, area: game.area && { placeName: game.area.placeName ?? null, countryCode: game.area.countryCode ?? null } } },
     });
   }),
 
@@ -220,7 +224,7 @@ export const handlers = [
     if (id === "4") return HttpResponse.json({ errors: [notDeployed("adminGameHistory/area/placeName", "placeName", "GameArea")] });
     const h = queryGameHistory(id);
     return HttpResponse.json({
-      data: { adminGameHistory: { id: h.id, area: h.area && { placeName: h.area.placeName ?? null } } },
+      data: { adminGameHistory: { id: h.id, area: h.area && { placeName: h.area.placeName ?? null, countryCode: h.area.countryCode ?? null } } },
     });
   }),
 
@@ -232,6 +236,27 @@ export const handlers = [
     }
     const h = queryGameHistory(id);
     return HttpResponse.json({ data: { adminGameHistory: { id: h.id, participants: h.participants } } });
+  }),
+
+  // 주로 플레이하는 국가(BE #241, #319). 유저 4번은 운영 배포 전처럼 필드가 없다고 답한다
+  api.query("AdminUserPlayCountries", async ({ variables }) => {
+    await delay(600);
+    const { id } = variables as { id: string };
+    if (id === "4") return HttpResponse.json({ errors: [notDeployed("adminUser/playCountries", "playCountries", "AdminUser")] });
+    const user = getUser(id);
+    return HttpResponse.json({ data: { adminUser: user && { id: user.id, playCountries: user.playCountries } } });
+  }),
+
+  api.query("AdminUsersPlayCountries", async ({ variables }) => {
+    await delay(600);
+    const page = queryUsers(variables as Parameters<typeof queryUsers>[0]);
+    return HttpResponse.json({
+      data: {
+        adminUsers: {
+          content: page.content.map((u) => ({ id: u.id, playCountries: u.playCountries.map(({ countryCode, games }) => ({ countryCode, games })) })),
+        },
+      },
+    });
   }),
 
   // 팀 MVP(BE #243). 서버처럼 팀마다 한 명, 이벤트 게임은 없음, 중도 퇴장자는 빼고 고른다(동점은 먼저 온 사람).

@@ -53,9 +53,11 @@ export interface MockGameHistory {
 //  - 놀이터만 있음: 감옥 좌표 저장(2026-08-15 배포) 이전 기록
 //  - 놀이터 + 감옥: 그 이후 기록
 const PARKS = [
-  { lat: 37.5445, lng: 127.0374, placeName: "서울특별시 성동구 성수동1가" },
-  { lat: 37.5202, lng: 127.1216, placeName: "서울특별시 송파구 방이동" },
-  { lat: 37.5301, lng: 127.0668, placeName: "서울특별시 광진구 자양동" },
+  { lat: 37.5445, lng: 127.0374, placeName: "서울특별시 성동구 성수동1가", countryCode: "KR" },
+  { lat: 37.5202, lng: 127.1216, placeName: "서울특별시 송파구 방이동", countryCode: "KR" },
+  { lat: 37.5301, lng: 127.0668, placeName: "서울특별시 광진구 자양동", countryCode: "KR" },
+  // 해외 판(#319). 동네 이름은 그 나라 말로 온다
+  { lat: 35.658, lng: 139.7016, placeName: "東京都 渋谷区 道玄坂", countryCode: "JP" },
 ];
 const M_PER_LAT = 111_320;
 
@@ -71,6 +73,7 @@ function buildArea(
   const radius = 40 + (i % 5) * 12;
   // 다섯 판에 하나는 동네 이름을 못 찾은 곳으로 둔다
   const placeName = i % 5 === 3 ? null : park.placeName;
+  const countryCode = placeName ? park.countryCode : null;
   const at = (angle: number, meters: number): MockLatLng => ({
     latitude: +(lat + (meters * Math.cos(angle)) / M_PER_LAT).toFixed(6),
     longitude: +(lng + (meters * Math.sin(angle)) / mPerLng).toFixed(6),
@@ -93,6 +96,7 @@ function buildArea(
         ? [0.25, 0.75, 1.25, 1.75].map((t) => at(Math.PI * t, 10))
         : null,
       placeName,
+      countryCode,
     };
   }
 
@@ -108,6 +112,7 @@ function buildArea(
     playgroundPolygon: null,
     jailPolygon: null,
     placeName,
+    countryCode,
   };
 }
 

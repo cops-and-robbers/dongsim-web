@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<3b09bdc16979cfa78d265dcc2d68e698>>
+ * @generated SignedSource<<ba4cbcc40c25779ca35c24f017be8ae7>>
  * @lightSyntaxTransform
  */
 
@@ -14,6 +14,7 @@ export type AdminGamePlaceName$variables = {
 export type AdminGamePlaceName$data = {
   readonly adminGame: {
     readonly area: {
+      readonly countryCode: string | null | undefined;
       readonly placeName: string | null | undefined;
     } | null | undefined;
     readonly id: string;
@@ -68,6 +69,13 @@ v1 = [
             "kind": "ScalarField",
             "name": "placeName",
             "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "countryCode",
+            "storageKey": null
           }
         ],
         "storageKey": null
@@ -94,16 +102,16 @@ return {
     "selections": (v1/*:: as any*/)
   },
   "params": {
-    "cacheID": "0d5991782e9e34619287ab8422142ab5",
+    "cacheID": "246d3c603897b8563acacb83f83c64d8",
     "id": null,
     "metadata": {},
     "name": "AdminGamePlaceName",
     "operationKind": "query",
-    "text": "query AdminGamePlaceName(\n  $id: ID!\n) {\n  adminGame(id: $id) {\n    id\n    area {\n      placeName\n    }\n  }\n}\n"
+    "text": "query AdminGamePlaceName(\n  $id: ID!\n) {\n  adminGame(id: $id) {\n    id\n    area {\n      placeName\n      countryCode\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "8d58e270c513e5fe10dccda774eb9ffa";
+(node as any).hash = "145fa720fe0552b7b26a238e93498124";
 
 export default node;
