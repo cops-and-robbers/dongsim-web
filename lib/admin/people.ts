@@ -52,13 +52,19 @@ export function sinceDay(iso: string, now: number = Date.now()): string {
   return days <= 0 ? "오늘" : days === 1 ? "어제" : `${days}일 전`;
 }
 
-/** 진행 시간 "5:37", 한 시간이 넘으면 "1:02:03" */
-export function clock(seconds: number): string {
+/**
+ * 진행 시간. "7:00" 처럼 쓰면 옆의 끝난 시각("13:27")과 같은 모양이라 시각으로 읽혀서 분으로 쓴다.
+ * 목록은 "7분"(1분 안이면 "40초"), 판 상세처럼 정확히 볼 곳은 precise 로 "14분 21초"
+ */
+export function durationText(seconds: number, precise = false): string {
   const s = Math.max(0, Math.round(seconds));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const r = String(s % 60).padStart(2, "0");
-  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${r}` : `${m}:${r}`;
+  if (s < 60) return `${s}초`;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  const minutes = h > 0 ? `${h}시간${mm ? ` ${mm}분` : ""}` : `${m}분`;
+  return precise && r > 0 ? `${minutes} ${r}초` : minutes;
 }
 
 /** 순서를 지키며 같은 열쇠끼리 묶는다(이미 정렬된 목록을 날로 나눌 때) */
@@ -73,16 +79,20 @@ export function groupInOrder<T>(items: readonly T[], keyOf: (item: T) => string)
   return out;
 }
 
+/** 앱에 있는 프로필 그림 번호(앱 lib/features/user/presentation/providers/profile_icon_provider.dart 와 같다) */
+export const PROFILE_ICON_IDS = [1, 2] as const;
+
 /**
- * 사람 그림(꾸밈). 유저 번호로 그림(냥파, 도둥이)과 바탕색 여섯 가지 중 하나를 정한다.
- * 같은 사람은 어디서나 같은 모양이라 목록에서 다시 찾기 쉽다. 앱 프로필이나 팀과는 상관없다
+ * 사람 그림(꾸밈). 앱의 프로필 그림(public/app-icons/profile_*.svg, 체험하기 홈과 같은 앱 그림)을 앱과 같은 모양으로 쓰고,
+ * 유저 번호로 둘 중 하나를 정한다. 같은 사람은 어디서나 같은 그림이라 목록에서 다시 찾기 쉽다.
+ * 앱에서 실제로 고른 그림과는 상관없는 재미 요소다(어드민에 그 값을 따로 받지 않는다)
  */
-export function avatarFor(id: string): { character: "police" | "robber"; tone: number } {
+export function profileIconSrc(userId: string | null | undefined): string {
+  if (!userId) return `/app-icons/profile_${PROFILE_ICON_IDS[0]}.svg`;
   let h = 2166136261;
-  for (let i = 0; i < id.length; i++) {
-    h ^= id.charCodeAt(i);
+  for (let i = 0; i < userId.length; i++) {
+    h ^= userId.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
-  h >>>= 0;
-  return { character: h % 2 === 0 ? "police" : "robber", tone: Math.floor(h / 2) % 6 };
+  return `/app-icons/profile_${PROFILE_ICON_IDS[(h >>> 0) % PROFILE_ICON_IDS.length]}.svg`;
 }

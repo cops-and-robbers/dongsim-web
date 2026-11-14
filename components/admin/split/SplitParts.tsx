@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { avatarFor } from "@/lib/admin/people";
+import { profileIconSrc } from "@/lib/admin/people";
 
 /**
  * 유저와 게임 두 칸 화면(#315)의 조각들. 시안 "경도 어드민 유저와 게임"의 모양을 어드민 토큰(sd-*)으로 옮겼다.
@@ -243,19 +243,9 @@ export function DetailState({ title, body, action, art }: { title: string; body?
 
 /* ─── 사람 그림 ─── */
 
-// 바탕색 여섯 가지. 어드민 토큰의 옅은 색이라 다크 모드에서도 어둡게 바뀐다
-const TONES = ["bg-sd-info-weak", "bg-sd-positive-weak", "bg-sd-warning-weak", "bg-sd-critical-weak", "bg-sd-gray-200", "bg-sd-selected"];
-
-/** 사람 그림(꾸밈). 유저 번호로 그림과 바탕색이 정해져 같은 사람은 어디서나 같은 모양이다. 탈퇴자는 회색 빈 원 */
+/** 사람 그림(꾸밈). 앱의 프로필 그림을 앱과 같은 모양으로, 유저 번호로 둘 중 하나를 골라 그린다(lib/admin/people.ts profileIconSrc) */
 export function PersonAvatar({ id, size = 40 }: { id: string | null | undefined; size?: number }) {
-  if (!id)
-    return <span aria-hidden className="inline-block shrink-0 rounded-full bg-sd-gray-200" style={{ width: size, height: size }} />;
-  const { character, tone } = avatarFor(id);
-  return (
-    <span aria-hidden className={`inline-flex shrink-0 items-start justify-center overflow-hidden rounded-full ${TONES[tone]}`} style={{ width: size, height: size }}>
-      <img src={`/characters/${character}.svg`} alt="" className="mt-[12%] w-[86%] max-w-none" />
-    </span>
-  );
+  return <img src={profileIconSrc(id)} alt="" aria-hidden width={size} height={size} className="shrink-0 rounded-full" style={{ width: size, height: size }} />;
 }
 
 /* ─── 아이콘 ─── */
