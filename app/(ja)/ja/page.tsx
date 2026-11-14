@@ -3,8 +3,8 @@ import HomeSections from "@/components/home/HomeSections";
 import { getMessages } from "@/lib/i18n/messages";
 import { alternateLanguages } from "@/lib/i18n/config";
 import WebsiteJsonLd from "@/components/seo/WebsiteJsonLd";
-import V3AnnouncementModal from "@/components/home/V3AnnouncementModal";
-import { isV3AnnouncementLive } from "@/lib/app-version";
+import UpdateAnnouncementModal from "@/components/home/UpdateAnnouncementModal";
+import { isUpdateAnnouncementLive } from "@/lib/app-version";
 import { SITE_URL } from "@/lib/constants";
 
 const meta = getMessages("ja").home.meta;
@@ -49,11 +49,11 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function HomeJaPage() {
-  const v3Live = await isV3AnnouncementLive();
+  const updateLive = await isUpdateAnnouncementLive();
   return (
     <>
       <WebsiteJsonLd locale="ja" />
-      <V3AnnouncementModal enabled={v3Live} />
+      <UpdateAnnouncementModal enabled={updateLive} />
       <HomeSections locale="ja" />
     </>
   );

@@ -476,6 +476,33 @@ body {
   }
 }
 
+/* 구역 축소 (#668): 원이 한 단계 좁아진 뒤 "구역이 줄었어요" 안내가 뜬다.
+   가운데 정렬은 translate 속성이 맡아서 scale 과 겹치지 않는다 */
+.is-playing .mockup-shrink-ring {
+  animation: mockupShrink 1.4s cubic-bezier(0.65, 0, 0.35, 1) 0.6s forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mockup-shrink-ring,
+  .is-playing .mockup-shrink-ring {
+    animation: none;
+    transform: scale(0.84);
+  }
+}
+@keyframes mockupShrink {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.84);
+  }
+}
+.mockup-shrink-notice {
+  opacity: 0;
+}
+.is-playing .mockup-shrink-notice {
+  animation: mockupFootprintReveal 0.4s ease-out 2s forwards;
+}
+
 /* 부스 미니게임: 두더지 팝업·체포·점수 연출 */
 @keyframes booth-pop {
   0% {
@@ -867,6 +894,7 @@ body {
   }
   .mockup-zone-ring,
   .mockup-footprint,
+  .mockup-shrink-notice,
   .mockup-qr-scan,
   .mockup-chat-bubble,
   .mockup-typed-2,
@@ -934,6 +962,44 @@ body {
 @media (prefers-reduced-motion: reduce) {
   [data-blog-animate] [data-blog-panel] > * {
     animation: none;
+  }
+}
+
+/* 앱 게임 시작 장면 제목·카운트다운 서체 S-Core Dream 7 ExtraBold (데모 전용).
+   원본 cops-and-robbers-FE assets/fonts/SCDream7.otf 에서 시작 장면 문구(ko·en·ja)와 숫자만
+   남겨 줄였다(pyftsubset). 문구가 바뀌면 다시 뽑는다. 일본어는 원본에 글자가 없어 기본 서체로 보인다 */
+@font-face {
+  font-family: "SCDream";
+  src: url("/fonts/scdream/SCDream7-subset.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+.font-scdream {
+  font-family: "SCDream", var(--font-sans);
+  font-weight: 800;
+}
+
+/* 대기·설명 장면 바닥을 지나가는 경찰차 (police_car_drive.dart: 7초에 한 번 가로지르며 0.36초마다 통통) */
+.demo-car-drive {
+  animation: demoCarDrive 7s linear infinite;
+}
+.demo-car-bounce {
+  animation: demoCarBounce 0.36s ease-in-out infinite alternate;
+}
+@keyframes demoCarDrive {
+  from {
+    left: -192px;
+  }
+  to {
+    left: 100%;
+  }
+}
+@keyframes demoCarBounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-3px);
   }
 }
 
@@ -1042,79 +1108,7 @@ body {
   }
 }
 
-/* 게임 시작 띠 (stripe_banner.dart의 STRIPE_IN / STRIPE_OUT 재현).
-   줄 하나가 가늘고 길게 빨려 나와 살짝 지나쳤다 제자리에 앉고, 나갈 땐 살짝 물러섰다 오른쪽으로 빠진다 */
-.demo-stripe-in {
-  animation: demoStripeIn 0.38s both;
-}
-@keyframes demoStripeIn {
-  0% {
-    transform: translateX(-205%) scale(1.9, 0.12);
-    animation-timing-function: cubic-bezier(0.12, 0.9, 0.3, 1);
-  }
-  70% {
-    transform: translateX(3%) scale(0.94, 1.12);
-    animation-timing-function: ease-out;
-  }
-  86% {
-    transform: translateX(-1%) scale(1.02, 0.97);
-    animation-timing-function: linear;
-  }
-  100% {
-    transform: none;
-  }
-}
-.demo-stripe-out {
-  animation: demoStripeOut 0.34s both;
-}
-@keyframes demoStripeOut {
-  0% {
-    transform: none;
-    animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.3);
-  }
-  15% {
-    transform: translateX(-3%) scale(1.03, 1.05);
-    animation-timing-function: cubic-bezier(0.5, 0, 0.8, 0.3);
-  }
-  100% {
-    transform: translateX(240%) scale(2.2, 0.06);
-  }
-}
-.demo-stripe-filled {
-  animation: demoFadeIn 0.15s linear both;
-}
-.demo-band-content-in {
-  animation: demoBandContentIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes demoBandContentIn {
-  from {
-    opacity: 0;
-    transform: translateX(-21px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.demo-band-content-out {
-  animation: demoBandContentOut 0.2s cubic-bezier(0.64, 0, 0.78, 0) both;
-}
-@keyframes demoBandContentOut {
-  from {
-    opacity: 1;
-    transform: none;
-  }
-  to {
-    opacity: 0;
-    transform: translateX(21px);
-  }
-}
-.demo-dim-in {
-  animation: demoFadeIn 0.5s linear both;
-}
-.demo-dim-out {
-  animation: demoFadeOut 0.42s linear 0.2s both;
-}
+/* 데모 장면이 나타날 때 쓰는 페이드 */
 .demo-fade-in {
   animation: demoFadeIn 0.35s ease-out both;
 }
@@ -1124,49 +1118,6 @@ body {
   }
   to {
     opacity: 1;
-  }
-}
-@keyframes demoFadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-/* 시작 장면 캐릭터 (chase_scene.dart RunCycle). 주기와 지연은 팀마다 달라 인라인으로 받는다 */
-.demo-run {
-  animation: demoRun 0.5s ease-in-out infinite alternate;
-}
-@keyframes demoRun {
-  from {
-    transform: translateY(0) rotate(-1.5deg);
-  }
-  to {
-    transform: translateY(-12px) rotate(1.5deg);
-  }
-}
-.demo-breathe {
-  transform-origin: 50% 100%;
-  animation: demoBreathe 1.4s ease-in-out infinite alternate;
-}
-@keyframes demoBreathe {
-  from {
-    transform: scale(1, 1);
-  }
-  to {
-    transform: scale(1.01, 0.97);
-  }
-}
-.demo-runner-in {
-  animation: demoRunnerIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes demoRunnerIn {
-  from {
-    transform: translateX(-460px);
-  }
-  to {
-    transform: none;
   }
 }
 /* 인게임 채팅 말풍선 (chat_preview_card.dart: 0.3초, 0.7배에서 커진다) */
@@ -1184,63 +1135,6 @@ body {
     transform: none;
   }
 }
-/* 게임 종료 인트로 (game_over_intro_modal.dart). 흔들림은 sin(t*6pi)*14*(1-t) 의 꼭짓점이다 */
-.demo-rise-fade {
-  animation: demoFadeIn 0.3s ease-out both;
-}
-.demo-gameover-shake {
-  animation: demoGameOverShake 1.3s linear both;
-}
-@keyframes demoGameOverShake {
-  0%,
-  100% {
-    transform: none;
-  }
-  8.33% {
-    transform: translateX(12.8px);
-  }
-  25% {
-    transform: translateX(-10.5px);
-  }
-  41.67% {
-    transform: translateX(8.2px);
-  }
-  58.33% {
-    transform: translateX(-5.8px);
-  }
-  75% {
-    transform: translateX(3.5px);
-  }
-  91.67% {
-    transform: translateX(-1.2px);
-  }
-}
-/* MVP 캐릭터 탄성 확대 */
-.demo-pop {
-  animation: demoPop 1s both;
-}
-@keyframes demoPop {
-  0% {
-    transform: scale(0);
-    animation-timing-function: ease-out;
-  }
-  40% {
-    transform: scale(1.12);
-    animation-timing-function: ease-in-out;
-  }
-  65% {
-    transform: scale(0.96);
-    animation-timing-function: ease-in-out;
-  }
-  85% {
-    transform: scale(1.02);
-    animation-timing-function: ease-in-out;
-  }
-  100% {
-    transform: none;
-  }
-}
-
 /*
   블로그 코드 하이라이트(highlight.js 토큰) - #109 2단계.
   색을 네 갈래로만 쓴다 - 주석·키워드·문자열·숫자. 토큰마다 색을 주면

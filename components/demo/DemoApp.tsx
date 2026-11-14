@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PhoneFrame } from "@/components/game/PhoneMockup";
 import { AppScreen } from "@/components/game/mockups/AppScreen";
-import type { DemoCourseId, DemoSceneId, DemoTab } from "@/lib/demo/scenes";
+import type {
+  DemoCourseId,
+  DemoSceneId,
+  DemoSettingFieldId,
+  DemoTab,
+} from "@/lib/demo/scenes";
 import { useDemoCopy } from "./demo-copy";
 import { DemoGuide } from "./DemoGuide";
 import { DemoTabBar } from "./DemoTabBar";
@@ -16,7 +21,7 @@ import { DemoMyPage } from "./scenes/DemoMyPage";
 import { DemoVictory } from "./scenes/DemoVictory";
 import { DemoZoneSetup, defaultZone, type ZoneDraft } from "./scenes/DemoZoneSetup";
 import { DemoCreateBasic, defaultSettings, type SettingValues } from "./scenes/DemoCreateBasic";
-import { DemoCreateConfirm } from "./scenes/DemoCreateConfirm";
+import { DemoCreateConfirm, shrinkLockOf } from "./scenes/DemoCreateConfirm";
 import { DemoCommunityList } from "./scenes/DemoCommunityList";
 import { DemoCommunityDetail } from "./scenes/DemoCommunityDetail";
 import { DemoCommunityChat } from "./scenes/DemoCommunityChat";
@@ -87,10 +92,19 @@ export function DemoApp({
   // 마이페이지에서 고른 프로필 - 홈 프로필 카드와 같은 값이다
   const [profileIcon, setProfileIcon] = useState<1 | 2>(1);
   const [done, setDone] = useState<Set<string>>(new Set());
-  // 방 만들기 초안 - 구역·감옥·기본 정보가 화면 사이를 오간다
+  // 인게임 시작 장면(역할 배너·대기·설명·출동 카운팅)이 화면을 덮는 동안은 말풍선을 숨긴다 -
+  // 아직 할 수 없는 일을 안내하고, 장면의 팀 이름을 가린다
+  const [introOver, setIntroOver] = useState(false);
+  const endIntro = useCallback(() => setIntroOver(true), []);
+  // 방 만들기 초안 - 구역·감옥·설정이 화면 사이를 오간다.
+  // 설정은 4.0.1처럼 추천값으로 채워 두고, 최종 확인에서 고칠 항목만 연다
   const [zone, setZone] = useState<ZoneDraft>(() => defaultZone(500));
   const [jail, setJail] = useState<ZoneDraft>(() => defaultZone(100));
   const [settings, setSettings] = useState<SettingValues>(() => defaultSettings());
+  const [editField, setEditField] = useState<DemoSettingFieldId>("participants");
+  // 구역 축소 (#668). 앱은 기본 꺼짐이다. 원형이 아니거나 작은 구역이면 인게임에서도 끈다
+  const [shrink, setShrink] = useState(false);
+  const shrinkOn = shrink && shrinkLockOf(zone, jail) === null;
   const screenRef = useRef<HTMLDivElement>(null);
   const clock = useLiveClock();
   const copy = useDemoCopy();
@@ -124,6 +138,7 @@ export function DemoApp({
   // 대기실의 "잠시 뒤 시작" 타이머가 리렌더마다 리셋되지 않게 참조를 고정한다
   const startGame = useCallback((team: "police" | "robber") => {
     setMyTeam(team);
+    setIntroOver(false);
     setFlow("ingame");
   }, []);
   const leaveToHome = useCallback(() => setFlow("home"), []);
@@ -211,7 +226,9 @@ export function DemoApp({
             : undefined
         }
       >
-      <DemoGuide scene={scene} done={done} overlay={fullscreen} />
+      {!(tab === "home" && flow === "ingame" && !introOver) && (
+        <DemoGuide scene={scene} done={done} overlay={fullscreen} />
+      )}
       <PhoneFrame clock={clock} darkStatus={darkStatus} unbounded={fullscreen}>
         <AppScreen
           playing
@@ -251,12 +268,11 @@ export function DemoApp({
           )}
           {tab === "home" && flow === "waiting" && (
             <DemoWaitingRoom
+              // 경찰 코스는 팀 옮기기가 해볼 일이라 옮긴 뒤에 방장이 시작한다
+              waitForTeamMove={course === "police"}
               myTeam={myTeam}
               onTeamChange={setMyTeam}
               onTeamMoved={() => markDone("waiting-team")}
-              onReady={() =>
-                markDone(course === "robber" ? "waiting-robber-ready" : "waiting-ready")
-              }
               onStart={startGame}
               onLeave={leaveToHome}
             />
@@ -282,17 +298,17 @@ export function DemoApp({
               onDone={(next) => {
                 setJail(next);
                 markDone("create-jail");
-                setFlow("createBasic");
+                setFlow("createConfirm");
               }}
             />
           )}
           {tab === "home" && flow === "createBasic" && (
             <DemoCreateBasic
               initial={settings}
-              onBack={() => setFlow("createJail")}
+              editTarget={editField}
+              onBack={() => setFlow("createConfirm")}
               onDone={(next) => {
                 setSettings(next);
-                markDone("create-basic");
                 setFlow("createConfirm");
               }}
             />
@@ -302,9 +318,17 @@ export function DemoApp({
               zone={zone}
               jail={jail}
               settings={settings}
-              onBack={() => setFlow("createBasic")}
+              shrink={shrink}
+              onShrinkChange={(on) => {
+                setShrink(on);
+                if (on) markDone("create-shrink");
+              }}
+              onBack={() => setFlow("createJail")}
               onEditZone={() => setFlow("createZone")}
-              onEditSettings={() => setFlow("createBasic")}
+              onEditSetting={(field) => {
+                setEditField(field);
+                setFlow("createBasic");
+              }}
               onCreate={() => {
                 markDone("create-confirm");
                 setMyTeam("police");
@@ -318,7 +342,6 @@ export function DemoApp({
               myTeam={myTeam}
               onTeamChange={setMyTeam}
               onTeamMoved={() => {}}
-              onReady={() => {}}
               onStart={(team) => {
                 markDone("host-start");
                 startGame(team);
@@ -333,19 +356,25 @@ export function DemoApp({
                 onTask={markDone}
                 onSurvive={() => setFlow("victory")}
                 onLeave={leaveToHome}
+                onIntroEnd={endIntro}
               />
             ) : (
               <DemoInGame
                 myTeam={myTeam}
+                shrink={course === "create" && shrinkOn}
                 onTask={markDone}
                 onVictory={() => setFlow("victory")}
                 onLeave={leaveToHome}
+                onIntroEnd={endIntro}
               />
             ))}
           {tab === "home" && flow === "victory" && (
             <DemoVictory
               team={myTeam}
-              onReplay={() => setFlow("ingame")}
+              onReplay={() => {
+                setIntroOver(false);
+                setFlow("ingame");
+              }}
               onHome={() => setFlow("home")}
             />
           )}

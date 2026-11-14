@@ -5,7 +5,8 @@ import { ReactNode } from "react";
 // 목업 화면들은 앱 실측값 기반으로 mockups/ 아래에 분리되어 있다.
 // 기존 import 경로를 유지하기 위해 여기서 재수출한다.
 export { ZoneMockup } from "./mockups/ZoneMockup";
-export { LocationMockup } from "./mockups/LocationMockup";
+export { LocationMockup, ShrinkMockup } from "./mockups/LocationMockup";
+export { ResultMockup } from "./mockups/ResultMockup";
 export { QrMockup } from "./mockups/QrMockup";
 export { ChatMockup } from "./mockups/ChatMockup";
 // v3 출시와 함께 배치할 화면들 (#67) - 컴포넌트만 준비, 페이지 배치는 출시 시점에

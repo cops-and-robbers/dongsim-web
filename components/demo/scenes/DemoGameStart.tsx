@@ -1,366 +1,837 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { appColors } from "@/lib/app-tokens";
 import {
-  DEMO_EXPLAINER_SECONDS,
   DEMO_POLICE_WAIT_SECONDS,
   DEMO_REVEAL_MINUTES,
+  DEMO_ROBBER_RELEASE_SECONDS,
   DEMO_RULE_INTERVAL_MS,
-  ROBBER_POLICE_START_SECONDS,
 } from "@/lib/demo/scenes";
 import { useDemoCopy } from "../demo-copy";
 
+// 게임 시작 흐름 (앱 4.0.1, FE #674 · #678 · #691).
+//   ① 역할 배너(start_banners.dart, stripe_banner.dart) - 흰/검정 사선 띠, 미션 제목, 튀어 오르는 캐릭터
+//   ② 경찰 대기 / ③ 도둑 설명(chase_scene.dart) - 역할 띠 자리에서 펼쳐지는 장면(band_transition.dart)
+//   ④ 출동 카운팅(dispatch_countdown.dart) - 출동 6초 전에 화면을 덮고 5~1, "출동!" 뒤 원형으로 열린다
+// 좌표는 앱 기준 393 폭 시안 값 그대로다(이 레이어는 AppScreen 이 393 폭으로 그린다).
+// 띠 모양만 앱처럼 300 폭 목업 기준이라 [BAND_S] 를 곱한다.
+// 데모에서 앱과 다르게 둔 것: 경찰 대기 시간을 몇 초로 줄였고, 사이렌 소리는 틀지 않는다
+// (웹은 소리 자동 재생이 막히고 갑자기 울리면 놀란다).
+
 type Team = "police" | "robber";
 
-// 앱 좌표는 폭 300 목업 기준이다(stripe_banner.dart, start_banners.dart, chase_scene.dart).
-// 데모 화면 폭 393 에 맞춘 배율
-const S = 393 / 300;
+const W = 393;
+const BAND_S = W / 300;
+const PURE_BLACK = "#000000";
 
-const ENTER_MS = 900;
-const FILLED_ENTER_MS = 470;
-const EXIT_MS = 700;
-const STRIPES = 7;
+// ---------------------------------------------------------------- 시간과 곡선
 
-const bandColor = (team: Team) => (team === "police" ? appColors.blue : appColors.green);
-const onBandColor = (team: Team) => (team === "police" ? appColors.white : appColors.black);
+/** cubic-bezier(x1, y1, x2, y2) - 플러터 Cubic 과 같은 곡선 */
+function cubic(x1: number, y1: number, x2: number, y2: number) {
+  const bx = (t: number) => 3 * x1 * t * (1 - t) ** 2 + 3 * x2 * t * t * (1 - t) + t ** 3;
+  const by = (t: number) => 3 * y1 * t * (1 - t) ** 2 + 3 * y2 * t * t * (1 - t) + t ** 3;
+  return (x: number) => {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 24; i++) {
+      const mid = (lo + hi) / 2;
+      if (bx(mid) < x) lo = mid;
+      else hi = mid;
+    }
+    return by((lo + hi) / 2);
+  };
+}
+const linear = (t: number) => t;
+const easeOut = cubic(0, 0, 0.58, 1);
+const easeInOut = cubic(0.42, 0, 0.58, 1);
+const easeOutCubic = cubic(0.215, 0.61, 0.355, 1);
+/** Interval(begin, end, curve).transform(t) */
+const interval = (t: number, begin: number, end: number, curve: (x: number) => number = linear) =>
+  curve(Math.min(1, Math.max(0, (t - begin) / (end - begin))));
 
-// 시작 장면 캐릭터 파일 크기와 달리기 주기 (chase_scene.dart _runPeriod, _runDelay)
-const CHASE_SIZE = { police: { width: 272, height: 323 }, robber: { width: 248, height: 243 } };
-const RUN_TIMING = {
-  police: { animationDuration: "460ms", animationDelay: "230ms" },
-  robber: { animationDuration: "500ms", animationDelay: "0ms" },
-};
-
-// 사선 줄무늬 띠 (stripe_banner.dart). 폭 390, -4.6도 기울어진 띠에 양 끝이 사선인 줄 7개가
-// 왼쪽에서 빨려 나와 펼쳐지고 내용이 들어온다. 머문 뒤 내용이 먼저 빠지고 줄이 오른쪽으로 빠진다.
-// 들어오는 중 탭은 기억만 했다가 다 들어온 뒤 나간다(도중에 끊으면 줄이 튄다).
-function StripeBanner({
-  team,
-  bandHeight,
-  holdMs,
-  dimBehind = false,
-  tapToSkip = false,
-  filledStart = false,
-  onLeaving,
-  onDone,
-  children,
-}: {
-  team: Team;
-  bandHeight: number;
-  holdMs: number;
-  dimBehind?: boolean;
-  tapToSkip?: boolean;
-  filledStart?: boolean;
-  onLeaving?: () => void;
-  onDone: () => void;
-  children: ReactNode;
-}) {
-  const [stage, setStage] = useState<"enter" | "hold" | "leave">("enter");
-  const [skip, setSkip] = useState(false);
-
+/** 마운트 뒤 흐른 시간(ms). 화면이 그려질 때마다 갱신한다. [running] 이 거짓이면 멈춘다 */
+function useClock(running = true) {
+  const [ms, setMs] = useState(0);
   useEffect(() => {
-    if (stage !== "enter") return;
-    const t = window.setTimeout(() => setStage("hold"), filledStart ? FILLED_ENTER_MS : ENTER_MS);
-    return () => window.clearTimeout(t);
-  }, [stage, filledStart]);
+    if (!running) return;
+    const start = performance.now();
+    let raf = 0;
+    const loop = (now: number) => {
+      setMs(now - start);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    // 화면 갱신이 멈춘 환경(가려진 창, 절전)에서도 장면이 넘어가게 느린 타이머를 같이 둔다
+    const fallback = window.setInterval(() => setMs(performance.now() - start), 250);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearInterval(fallback);
+    };
+  }, [running]);
+  return ms;
+}
 
+/** 지금 시각(ms, Date.now). [stepMs] 마다 갱신한다 */
+function useNow(stepMs: number) {
+  const [now, setNow] = useState(0);
   useEffect(() => {
-    if (stage !== "hold") return;
-    const t = window.setTimeout(() => setStage("leave"), skip ? 0 : holdMs);
-    return () => window.clearTimeout(t);
-  }, [stage, skip, holdMs]);
+    const tick = () => setNow(Date.now());
+    const first = window.setTimeout(tick, 0);
+    const t = window.setInterval(tick, stepMs);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(t);
+    };
+  }, [stepMs]);
+  return now;
+}
 
+function useReducedMotion() {
+  const [reduce, setReduce] = useState(false);
   useEffect(() => {
-    if (stage !== "leave") return;
-    onLeaving?.();
-    const t = window.setTimeout(onDone, EXIT_MS);
-    return () => window.clearTimeout(t);
-  }, [stage, onLeaving, onDone]);
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduce(mq.matches);
+    const first = window.setTimeout(update, 0);
+    mq.addEventListener("change", update);
+    return () => {
+      window.clearTimeout(first);
+      mq.removeEventListener("change", update);
+    };
+  }, []);
+  return reduce;
+}
 
-  const leaving = stage === "leave";
-  const stripeClass = leaving ? "demo-stripe-out" : filledStart ? "demo-stripe-filled" : "demo-stripe-in";
+/** fixed 레이어(=앱 화면)의 실제 세로 길이. 화면 가운데 기준 좌표에 쓴다 */
+function useBoxHeight() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(852);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setHeight(el.clientHeight || 852);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, height };
+}
+
+// ---------------------------------------------------------------- ① 역할 배너
+
+const ROLE_ENTER_MS = 900;
+const ROLE_HOLD_MS = 2350;
+const ROLE_EXIT_MS = 700;
+/** 첫 줄이 빠지기 시작할 때 다음 장면을 띠 자리로 비춘다 (StripeBanner.revealNextAfter) */
+const REVEAL_NEXT_AFTER_MS = 120;
+export const ROLE_BANNER_MS = ROLE_ENTER_MS + ROLE_HOLD_MS + ROLE_EXIT_MS;
+const ROLE_REVEAL_AT_MS = ROLE_ENTER_MS + ROLE_HOLD_MS + REVEAL_NEXT_AFTER_MS;
+
+const BAND_HEIGHT = 224.4;
+const BAND_ANGLE = -9.5;
+const BAND_OFFSET_Y = -48.1;
+
+/** 데모의 출동 시각. 역할 배너가 끝난 뒤 경찰은 대기 장면만큼, 도둑은 설명과 지도에서 기다린다 */
+export function demoReleaseAt(team: Team) {
   return (
-    <div
-      className={`absolute inset-0 z-40 overflow-hidden ${tapToSkip ? "" : "pointer-events-none"}`}
-      onClick={tapToSkip ? () => setSkip(true) : undefined}
-    >
-      {dimBehind && <div className={`absolute inset-0 bg-black/50 ${leaving ? "demo-dim-out" : "demo-dim-in"}`} />}
+    Date.now() +
+    ROLE_BANNER_MS +
+    (team === "police" ? DEMO_POLICE_WAIT_SECONDS : DEMO_ROBBER_RELEASE_SECONDS) * 1000
+  );
+}
+
+type Pose = { x: number; sx: number; sy: number };
+const lerpPose = (a: Pose, b: Pose, t: number): Pose => ({
+  x: a.x + (b.x - a.x) * t,
+  sx: a.sx + (b.sx - a.sx) * t,
+  sy: a.sy + (b.sy - a.sy) * t,
+});
+/** STRIPE_IN: 가늘고 길게 빨려 나와 살짝 지나쳤다 제자리 */
+function stripeEnterPose(t: number): Pose {
+  const p0 = { x: -2.05, sx: 1.9, sy: 0.12 };
+  const p1 = { x: 0.03, sx: 0.94, sy: 1.12 };
+  const p2 = { x: -0.01, sx: 1.02, sy: 0.97 };
+  const p3 = { x: 0, sx: 1, sy: 1 };
+  if (t < 0.7) return lerpPose(p0, p1, cubic(0.12, 0.9, 0.3, 1)(t / 0.7));
+  if (t < 0.86) return lerpPose(p1, p2, easeOut((t - 0.7) / 0.16));
+  return lerpPose(p2, p3, (t - 0.86) / 0.14);
+}
+/** STRIPE_OUT: 살짝 물러섰다가 오른쪽 끝으로 가늘게 빨려 나감 */
+const stripeExitCurve = cubic(0.5, 0, 0.8, 0.3);
+function stripeExitPose(t: number): Pose {
+  const p0 = { x: 0, sx: 1, sy: 1 };
+  const p1 = { x: -0.03, sx: 1.03, sy: 1.05 };
+  const p2 = { x: 2.4, sx: 2.2, sy: 0.06 };
+  if (t < 0.15) return lerpPose(p0, p1, stripeExitCurve(t / 0.15));
+  return lerpPose(p1, p2, stripeExitCurve((t - 0.15) / 0.85));
+}
+
+type PopPose = { y: number; sx: number; sy: number };
+const lerpPop = (a: PopPose, b: PopPose, t: number): PopPose => ({
+  y: a.y + (b.y - a.y) * t,
+  sx: a.sx + (b.sx - a.sx) * t,
+  sy: a.sy + (b.sy - a.sy) * t,
+});
+/** 쫀득한 등장: 길게 늘어나며 튀어 올라 제자리를 지나치고, 눌리며 내려앉았다가 멈춘다 */
+function popPose(t: number): PopPose {
+  const start = { y: 1.12, sx: 0.92, sy: 1.1 };
+  const peak = { y: -0.05, sx: 0.97, sy: 1.04 };
+  const squash = { y: 0.012, sx: 1.05, sy: 0.94 };
+  const rebound = { y: -0.006, sx: 0.985, sy: 1.015 };
+  const rest = { y: 0, sx: 1, sy: 1 };
+  if (t < 0.42) return lerpPop(start, peak, easeOutCubic(t / 0.42));
+  if (t < 0.68) return lerpPop(peak, squash, easeInOut((t - 0.42) / 0.26));
+  if (t < 0.85) return lerpPop(squash, rebound, easeInOut((t - 0.68) / 0.17));
+  return lerpPop(rebound, rest, easeOut(Math.min(1, (t - 0.85) / 0.15)));
+}
+/** 쫀득한 퇴장: 위로 움찔하며 눌렸다가 길쭉하게 늘어나며 아래로 빠진다 */
+function dropPose(t: number): PopPose {
+  const rest = { y: 0, sx: 1, sy: 1 };
+  const rise = { y: -0.06, sx: 1.03, sy: 0.97 };
+  const gone = { y: 1.2, sx: 0.94, sy: 1.1 };
+  if (t < 0.35) return lerpPop(rest, rise, easeOut(t / 0.35));
+  return lerpPop(rise, gone, cubic(0.64, 0, 0.78, 0)(Math.min(1, (t - 0.35) / 0.65)));
+}
+
+/** 띠와 나란한 속도선. 시간은 배너 시작 기준(ms) */
+const SPEED_LINES = [
+  { x: 84, y: 208, length: 224, fromLeft: true, start: 300, end: 560, outAt: 1620 },
+  { x: 231.5, y: 181.8, length: 42, fromLeft: true, start: 520, end: 660, outAt: 1560 },
+  { x: 256.6, y: 534.6, length: 238, fromLeft: false, start: 380, end: 640, outAt: 1700 },
+  { x: 102.8, y: 560, length: 42, fromLeft: false, start: 600, end: 740, outAt: 1640 },
+];
+const speedOutCurve = cubic(0.5, 0, 0.8, 0.3);
+
+/** [text] 안의 [accent] 부분만 색을 바꾼다 */
+function Accented({ text, accent, color }: { text: string; accent: string; color: string }) {
+  const at = text.indexOf(accent);
+  if (at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <span style={{ color }}>{accent}</span>
+      {text.slice(at + accent.length)}
+    </>
+  );
+}
+
+function RoleBanner({ team, reduce }: { team: Team; reduce: boolean }) {
+  const { app } = useDemoCopy();
+  const ms = useClock();
+  const { ref, height } = useBoxHeight();
+  const police = team === "police";
+  const band = police ? appColors.white : PURE_BLACK;
+  const edge = police ? appColors.black100 : appColors.black800;
+  const accent = police ? appColors.blue : appColors.green;
+  const onBand = police ? appColors.black800 : appColors.white;
+
+  // 움직임 줄이기면 짧게 나타났다 사라지기만 한다
+  const enter = reduce ? Math.min(1, ms / 220) : Math.min(1, ms / ROLE_ENTER_MS);
+  const exitStart = ROLE_ENTER_MS + ROLE_HOLD_MS;
+  const exit = Math.min(1, Math.max(0, (ms - exitStart) / (reduce ? 200 : ROLE_EXIT_MS)));
+  const leaving = ms >= exitStart;
+
+  const backdrop = reduce
+    ? enter * (1 - exit)
+    : interval(enter, 0, 500 / 900) * (1 - interval(exit, 200 / 700, 620 / 700));
+  const contentIn = interval(enter, 560 / 900, 1, cubic(0.22, 1, 0.36, 1));
+  const contentOut = interval(exit, 0, 200 / 700, cubic(0.64, 0, 0.78, 0));
+  const contentOpacity = reduce ? enter * (1 - exit) : contentIn * (1 - contentOut);
+  const contentShift = reduce ? 0 : (-16 * (1 - contentIn) + 16 * contentOut) * BAND_S;
+
+  const bandWidth = 390 * BAND_S;
+  const stripe = (i: number, color: string, offsetY = 0) => {
+    const pose = reduce
+      ? { x: 0, sx: 1, sy: 1 }
+      : leaving
+        ? stripeExitPose(interval(exit, (120 + i * 40) / 700, (460 + i * 40) / 700))
+        : stripeEnterPose(interval(enter, (i * 50) / 900, (380 + i * 50) / 900));
+    return (
+      <span
+        key={`${color}-${i}`}
+        className="block min-h-0 flex-1"
+        style={{
+          transform: `translate(${pose.x * bandWidth}px, ${offsetY}px) scale(${pose.sx}, ${pose.sy * 1.04})`,
+          backgroundColor: color,
+          clipPath: "polygon(3% 0, 100% 0, 97% 100%, 0 100%)",
+        }}
+      />
+    );
+  };
+
+  const visibleHeight = police ? 317 : 305;
+  const pose = reduce
+    ? { y: 0, sx: 1, sy: 1 }
+    : exit > 0
+      ? dropPose(interval(exit, 0, 0.43))
+      : popPose(interval(enter, 0.33, 1));
+  const characterTop = Math.max(height - visibleHeight, height / 2 + (426 - visibleHeight));
+  const centerY = height / 2;
+  const title = (police ? app.startTitlePolice : app.startTitleRobber).split("\n");
+  const titleAccent = police ? app.startTitlePoliceAccent : app.startTitleRobberAccent;
+  const role = police ? app.roleCop : app.roleRobber;
+
+  return (
+    <div ref={ref} className="fixed inset-0 z-40 overflow-hidden" aria-hidden="true">
+      <div className="absolute inset-0" style={{ backgroundColor: appColors.black700, opacity: backdrop }} />
+
+      {/* 사선 띠 - 가운데에서 위로 옮겨 기울인다. 아래로 두께 색이 살짝 비친다 */}
       <div
         className="absolute left-1/2 top-1/2"
         style={{
-          width: 390 * S,
-          height: bandHeight * S,
-          transform: "translate(-50%, -50%) rotate(-4.6deg)",
+          width: bandWidth,
+          height: BAND_HEIGHT * BAND_S,
+          transform: `translate(-50%, calc(-50% + ${BAND_OFFSET_Y * BAND_S}px)) rotate(${BAND_ANGLE}deg)`,
         }}
       >
-        <div className="flex h-full flex-col">
-          {Array.from({ length: STRIPES }, (_, i) => (
-            <span
+        <div className="absolute inset-0 flex flex-col">
+          {Array.from({ length: 7 }, (_, i) => stripe(i, edge, 6 * BAND_S))}
+        </div>
+        <div className="absolute inset-0 flex flex-col">
+          {Array.from({ length: 7 }, (_, i) => stripe(i, band))}
+        </div>
+      </div>
+
+      {/* 속도선 - 배너와 따로 자기 시간표로 그어지고 흐르다 빠진다 */}
+      {!reduce &&
+        SPEED_LINES.map((line, i) => {
+          const drawn = interval(ms, line.start, line.end, cubic(0.3, 0, 0.2, 1));
+          const drift = interval(ms, line.end, line.outAt);
+          const out = Math.max(
+            interval(ms, line.outAt, line.outAt + 360, speedOutCurve),
+            interval(exit, 0, 0.4, speedOutCurve),
+          );
+          const travel = (drift - 0.5) * 18 + out * (W + line.length);
+          return (
+            <div
               key={i}
-              className={`min-h-0 flex-1 ${stripeClass}`}
+              className="absolute flex"
               style={{
-                backgroundColor: bandColor(team),
-                clipPath: "polygon(3% 0, 100% 0, 97% 100%, 0 100%)",
-                animationDelay: leaving ? `${120 + i * 40}ms` : filledStart ? "0ms" : `${i * 50}ms`,
+                left: line.x - line.length / 2,
+                top: centerY + (line.y - 9 - 426),
+                width: line.length,
+                height: 18,
+                transform: `rotate(${BAND_ANGLE}deg)`,
+                justifyContent: line.fromLeft ? "flex-start" : "flex-end",
               }}
-            />
+            >
+              <span
+                className="block h-full rounded-full"
+                style={{
+                  width: line.length * drawn,
+                  backgroundColor: band,
+                  transform: `translateX(${line.fromLeft ? travel : -travel}px)`,
+                }}
+              />
+            </div>
+          );
+        })}
+
+      {/* 내 팀 캐릭터 - 아래에서 튀어 올라 오른쪽 아래가 잘린다 */}
+      <div
+        className="absolute"
+        style={{
+          left: police ? 29 : 23,
+          top: characterTop,
+          transform: `translateY(${pose.y * visibleHeight}px) scale(${pose.sx}, ${pose.sy})`,
+          transformOrigin: "50% 62.5%",
+        }}
+      >
+        <Image
+          src={`/demo/start_role_${team}.svg`}
+          alt=""
+          width={police ? 427 : 493}
+          height={police ? 470 : 500}
+          style={{ width: police ? 427 : 493, height: "auto", maxWidth: "none" }}
+          priority
+        />
+      </div>
+
+      {/* 글 - 띠와 함께 나타나고 사라지지만 기울지 않는다 */}
+      <div
+        className="absolute"
+        style={{
+          left: 30,
+          right: 20,
+          top: centerY + (273 - 426),
+          opacity: contentOpacity,
+          transform: `translateX(${contentShift}px)`,
+        }}
+      >
+        <p className="text-[16px] font-medium leading-none" style={{ color: police ? appColors.black600 : appColors.black200 }}>
+          {app.startRoleLabel}
+        </p>
+        <div className="font-scdream mt-[22px]" style={{ marginLeft: -5, color: onBand }}>
+          {title.map((line, i) => (
+            <p
+              key={i}
+              className="whitespace-nowrap text-[45px] leading-none tracking-[-0.32px]"
+              style={{ marginTop: i > 0 ? 18 : 0 }}
+            >
+              <Accented text={line} accent={titleAccent} color={accent} />
+            </p>
           ))}
         </div>
-        <div
-          className={`absolute inset-0 ${leaving ? "demo-band-content-out" : "demo-band-content-in"}`}
-          style={leaving ? undefined : { animationDelay: filledStart ? "150ms" : "560ms" }}
+        <p className="mt-[24px] text-[24px] font-bold leading-none" style={{ color: onBand }}>
+          <Accented text={app.startRoleSentence(role)} accent={role} color={accent} />
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- ②③ 대기·설명 장면
+
+const BAND_REVEAL_MS = 980;
+const bandOpenCurve = cubic(0.7, 0, 0.25, 1);
+
+/** 역할 띠 모양 → 화면 전체로 펼치는 clip-path (band_transition.dart _BandClipper) */
+function bandClip(open: number, width: number, height: number) {
+  const cx = width / 2;
+  const cy = height / 2 + BAND_OFFSET_Y * BAND_S;
+  const a = (BAND_ANGLE * Math.PI) / 180;
+  const h = BAND_HEIGHT / 2;
+  const band = (x: number, y: number) => [
+    cx + (x * Math.cos(a) - y * Math.sin(a)) * BAND_S,
+    cy + (x * Math.sin(a) + y * Math.cos(a)) * BAND_S,
+  ];
+  const from = [band(-195, -h), band(195, -h), band(195, h), band(-195, h)];
+  const to = [
+    [0, 0],
+    [width, 0],
+    [width, height],
+    [0, height],
+  ];
+  const points = from.map(([fx, fy], i) => {
+    const [tx, ty] = to[i];
+    return `${fx + (tx - fx) * open}px ${fy + (ty - fy) * open}px`;
+  });
+  return `polygon(${points.join(", ")})`;
+}
+
+const mmss = (sec: number) =>
+  `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+
+/** 바닥을 지나가는 경찰차 (police_car_drive.dart: 192x141, 7초에 한 번 가로지르며 통통 튄다) */
+function PoliceCarDrive({ reduce }: { reduce: boolean }) {
+  return (
+    <div className="absolute inset-x-0 overflow-visible" style={{ bottom: 42, height: 144 }}>
+      <span
+        className={`absolute bottom-0 block ${reduce ? "" : "demo-car-drive"}`}
+        style={{ left: reduce ? 184 : undefined }}
+      >
+        <span className={`block ${reduce ? "" : "demo-car-bounce"}`}>
+          <Image src="/demo/icon_police_car.svg" alt="" width={192} height={141} />
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function ChaseScene({
+  team,
+  releaseAt,
+  onClose,
+  reduce,
+}: {
+  team: Team;
+  releaseAt: number;
+  onClose?: () => void;
+  reduce: boolean;
+}) {
+  const { app } = useDemoCopy();
+  const police = team === "police";
+  const now = useNow(250);
+  const reveal = useClock(!reduce);
+  const { ref, height } = useBoxHeight();
+  const [missionOpen, setMissionOpen] = useState(false);
+  const [ruleOpen, setRuleOpen] = useState(false);
+  const [openedAt] = useState(() => Date.now());
+
+  const rules = police
+    ? [app.startRuleQrArrest, app.startRulePing, app.startRuleRobberReveal(DEMO_REVEAL_MINUTES), app.startRuleZoneLock]
+    : [app.startRuleQrCaught, app.startRuleMyReveal(DEMO_REVEAL_MINUTES), app.startRulePing, app.startRuleJailbreak];
+  // 규칙을 펼쳐 읽는 동안은 넘기지 않는다
+  const [pausedIndex, setPausedIndex] = useState<number | null>(null);
+  const readClock = Math.max(0, (now || openedAt) - openedAt);
+  const ruleIndex = pausedIndex ?? Math.floor(readClock / DEMO_RULE_INTERVAL_MS) % rules.length;
+
+  const left = now ? Math.max(0, Math.ceil((releaseAt - now) / 1000)) : Math.ceil((releaseAt - openedAt) / 1000);
+  const finalCount = left <= 10;
+  const accent = police ? appColors.blue : appColors.green;
+  const teamName = police ? appColors.blueVer2Rich : appColors.green800;
+  const open = reduce ? 1 : interval(reveal, 380, BAND_REVEAL_MS, bandOpenCurve);
+
+  const card = (
+    icon: ReactNode,
+    label: string,
+    body: string,
+    expanded: boolean,
+    toggle: () => void,
+    keyId?: string,
+  ) => (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        toggle();
+      }}
+      className="flex w-full items-start gap-[6px] rounded-[16px] px-[16px] py-[18px] text-left shadow-[0_4px_16px_rgba(8,10,12,0.06)]"
+      style={{ backgroundColor: police ? appColors.blueVer2_50 : appColors.black900 }}
+    >
+      <span className="mt-0 shrink-0">{icon}</span>
+      <span key={keyId} className={`min-w-0 flex-1 ${keyId ? "demo-fade-in" : ""}`}>
+        <span className="block text-[14px] leading-[1.4]" style={{ color: police ? appColors.black600 : appColors.black200 }}>
+          {label}
+        </span>
+        <span
+          className={`mt-[4px] block text-[14px] font-semibold leading-[1.16] ${expanded ? "" : "truncate"}`}
+          style={{ color: police ? appColors.black : appColors.white }}
         >
-          {children}
+          {body}
+        </span>
+      </span>
+    </button>
+  );
+
+  return (
+    <div
+      ref={ref}
+      role={onClose ? "button" : undefined}
+      tabIndex={onClose ? 0 : undefined}
+      onClick={onClose}
+      className="fixed inset-0 z-30 overflow-hidden text-left"
+      style={{
+        backgroundColor: police ? appColors.blueVer2_50 : appColors.black900,
+        clipPath: open < 1 ? bandClip(open, W, height) : undefined,
+      }}
+    >
+      {/* 땅이 아래에 붙도록 아래 기준으로 채운다. 긴 화면은 하늘 위쪽이 잘린다 */}
+      <Image
+        src={`/demo/start_wait_${police ? "day" : "night"}.webp`}
+        alt=""
+        fill
+        sizes="393px"
+        className="object-cover object-bottom"
+        priority
+      />
+      <PoliceCarDrive reduce={reduce} />
+
+      <div className="absolute inset-x-0 bottom-0 overflow-y-auto" style={{ top: 118 }}>
+        {/* 팀 이름 → 라벨 → 큰 숫자 → 한 줄 안내 */}
+        <div className="flex h-[24px] items-center justify-center gap-[6px]">
+          <span
+            className="block size-[24px]"
+            style={{
+              backgroundColor: teamName,
+              WebkitMask: `url(/demo/icon_role_${team}_${police ? "lightmode" : "darkmode"}.svg) center / contain no-repeat`,
+              mask: `url(/demo/icon_role_${team}_${police ? "lightmode" : "darkmode"}.svg) center / contain no-repeat`,
+            }}
+          />
+          <span className="text-[20px] font-bold leading-none" style={{ color: teamName }}>
+            {police ? app.teamPolice : app.teamRobber}
+          </span>
+        </div>
+        <p
+          className="mt-[48px] flex h-[16px] items-center justify-center text-[16px] font-semibold"
+          style={{ color: police ? appColors.black500 : appColors.black200 }}
+        >
+          {app.startWaitCountdownLabel}
+        </p>
+        <p className="mt-[14px] flex h-[80px] items-center justify-center">
+          <span
+            className="font-scdream text-[80px] leading-none tracking-[-0.32px] tabular-nums transition-transform duration-200"
+            style={{ color: accent, transform: finalCount ? "scale(1.2)" : undefined }}
+          >
+            {mmss(left)}
+          </span>
+        </p>
+        <p
+          className="mt-[14px] text-center text-[18px] font-semibold"
+          style={{ color: police ? appColors.black700 : appColors.white }}
+        >
+          {police ? app.startWaitPoliceTitle : app.startWaitRobberTitle}
+        </p>
+
+        <div className="mt-[50px] flex flex-col gap-[18px] px-[16px] pb-[60px]">
+          {card(
+            police ? (
+              <Image src="/demo/icon_flag.svg" alt="" width={20} height={20} />
+            ) : (
+              // 도둑 깃발은 같은 그림의 색만 초록으로 바꾼다
+              <span
+                className="block size-[20px]"
+                style={{
+                  backgroundColor: appColors.green,
+                  WebkitMask: "url(/demo/icon_flag.svg) center / contain no-repeat",
+                  mask: "url(/demo/icon_flag.svg) center / contain no-repeat",
+                }}
+              />
+            ),
+            police ? app.startMissionPoliceLabel : app.startMissionRobberLabel,
+            police ? app.startMissionPolice : app.startMissionRobber,
+            missionOpen,
+            () => setMissionOpen((v) => !v),
+          )}
+          {card(
+            <Image src="/demo/icon_bulb.svg" alt="" width={20} height={20} />,
+            app.startRulesCounter(ruleIndex + 1, rules.length),
+            rules[ruleIndex],
+            ruleOpen,
+            () => {
+              setRuleOpen((v) => !v);
+              setPausedIndex((p) => (p === null ? ruleIndex : null));
+            },
+            String(ruleIndex),
+          )}
+        </div>
+      </div>
+
+      {/* 도둑 설명은 화면을 누르면 닫히고 지도로 간다. 경찰 대기는 출동 전까지 닫을 수 없다 */}
+      {onClose && (
+        <p
+          className="absolute inset-x-[16px] text-center text-[14px] leading-[1.4]"
+          style={{ bottom: 14, color: police ? appColors.black500 : appColors.black200 }}
+        >
+          {app.startExplainerTapHint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- ④ 출동 카운팅
+
+const COUNT_LEAD_MS = 5000;
+const COVER_MS = 1000;
+export const DISPATCH_OVERLAY_LEAD_MS = COUNT_LEAD_MS + COVER_MS;
+const GO_HOLD_MS = 1200;
+const IRIS_MS = 1000;
+export const DISPATCH_DONE_AFTER_MS = GO_HOLD_MS + IRIS_MS;
+const EFFECT_FROM_MS = 4000;
+
+/** dispatchCountdownFrame (start_flow.dart) - 출동 시각과 지금 시각만으로 정한다 */
+function dispatchFrame(releaseAt: number, now: number) {
+  const remaining = releaseAt - now;
+  if (remaining > 0) {
+    const e = Math.min(1, Math.max(0, (EFFECT_FROM_MS - remaining) / EFFECT_FROM_MS));
+    return {
+      seconds: Math.ceil(remaining / 1000) as number | null,
+      cover: Math.min(1, Math.max(0, (COUNT_LEAD_MS + COVER_MS - remaining) / COVER_MS)),
+      intensity: e ** 1.6,
+      iris: 0,
+    };
+  }
+  return {
+    seconds: null as number | null,
+    cover: 1,
+    intensity: 1,
+    iris: Math.min(1, Math.max(0, (-remaining - GO_HOLD_MS) / IRIS_MS)),
+  };
+}
+
+const SIREN_W = 185;
+const SIREN_H = 229;
+const GAP = 46;
+const NUMBER_H = 80;
+const PIVOT_FROM_SIREN_TOP = 152;
+
+function DispatchCountdown({ releaseAt, reduce }: { releaseAt: number; reduce: boolean }) {
+  const { app } = useDemoCopy();
+  const clock = useClock();
+  const { ref, height } = useBoxHeight();
+  const [mountedAt] = useState(() => Date.now());
+  const now = mountedAt + clock;
+  const f = dispatchFrame(releaseAt, now);
+  const intensity = reduce ? 0 : f.intensity;
+  const covering = f.cover < 1;
+  const remaining = releaseAt - now;
+  const go = f.seconds === null;
+  // 숫자가 바뀐 뒤 흐른 초 - 숫자 튀기기와 사이렌 번쩍임에 쓴다
+  const sinceSecond = go ? -remaining / 1000 : (Math.ceil(remaining / 1000) * 1000 - remaining) / 1000;
+
+  // 빛줄기 각도 - 세질수록 빨리 돈다(초당 80° → 840°). 세기 곡선(e^1.6)을 그대로 적분한다
+  const tau = (EFFECT_FROM_MS - remaining) / 1000;
+  const boosted = tau <= 0 ? 0 : tau <= 4 ? (4 * (tau / 4) ** 2.6) / 2.6 : 4 / 2.6 + (tau - 4);
+  const angle = (clock / 1000) * 80 + 760 * boosted;
+
+  const groupTop = (height - (SIREN_H + GAP + NUMBER_H)) / 2;
+  const pivot = { x: W / 2, y: groupTop + PIVOT_FROM_SIREN_TOP };
+  const pop = reduce ? 1 : 1 + 0.2 * Math.max(0, 1 - sinceSecond / 0.25);
+  const flare = Math.max(0, 1 - sinceSecond / (go ? 0.3 : 0.45));
+  const glow = intensity > 0 ? (4 + 62 * intensity) * (0.6 + 0.4 * flare) : 0;
+  let shake = { x: 0, y: 0 };
+  if (!reduce && f.seconds === 1) {
+    const a = 3 * (1 - Math.min(1, sinceSecond) * 0.5);
+    // 프레임마다 다른 값이 필요해 시각에서 흔들림을 만든다(Math.random 대신 결정적인 값)
+    shake = { x: Math.sin(clock * 0.9) * a, y: Math.cos(clock * 1.3) * a };
+  }
+
+  const farthest = Math.max(
+    ...[
+      [0, 0],
+      [W, 0],
+      [0, height],
+      [W, height],
+    ].map(([x, y]) => Math.hypot(x - pivot.x, y - pivot.y)),
+  );
+  let mask: string | undefined;
+  if (!reduce && covering) {
+    const r = (1 - easeInOut(f.cover)) * farthest;
+    mask = `radial-gradient(circle at ${pivot.x}px ${pivot.y}px, transparent ${r}px, #000 ${r + 0.5}px)`;
+  } else if (!reduce && f.iris > 0) {
+    const r = easeInOut(f.iris) * farthest;
+    mask = `radial-gradient(circle at ${pivot.x}px ${pivot.y}px, transparent ${r}px, #000 ${r + 0.5}px)`;
+  }
+
+  // 빛줄기 방향 쪽 화면을 그 색으로 물들인다
+  const toward = ((angle - 90) * Math.PI) / 180;
+  const redAt = { x: 50 + 60 * Math.cos(toward), y: 47 + 60 * Math.sin(toward) };
+  const blueAt = { x: 100 - redAt.x, y: 94 - redAt.y };
+  const tint = 0.5 * intensity * intensity;
+  const sirenMask = "url(/demo/icon_siren_counting.svg) center / contain no-repeat";
+  const spread = Math.min(1, Math.max(0, (intensity - 0.25) / 0.6));
+  const beams = (widthDeg: number, alpha: number) => {
+    const w = widthDeg;
+    const red = `rgba(255,59,48,${alpha})`;
+    const blue = `rgba(34,100,255,${alpha})`;
+    return `conic-gradient(from ${angle}deg at ${pivot.x}px ${pivot.y}px, transparent 0deg, ${red} ${w / 2}deg, transparent ${w}deg, transparent 180deg, ${blue} ${180 + w / 2}deg, transparent ${180 + w}deg, transparent 360deg)`;
+  };
+  const beamMask = `radial-gradient(circle at ${pivot.x}px ${pivot.y}px, #000 6%, rgba(0,0,0,0.85) 30%, transparent 70%)`;
+
+  const layer: CSSProperties = mask ? { WebkitMaskImage: mask, maskImage: mask } : {};
+
+  return (
+    <div
+      ref={ref}
+      className={`fixed inset-0 z-50 overflow-hidden ${f.iris > 0 ? "pointer-events-none" : ""}`}
+      style={layer}
+      aria-live="assertive"
+    >
+      <div className="absolute inset-0" style={{ backgroundColor: PURE_BLACK }} />
+      {intensity > 0 && (
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(circle at ${redAt.x}% ${redAt.y}%, rgba(255,59,48,${tint}), transparent 60%), radial-gradient(circle at ${blueAt.x}% ${blueAt.y}%, rgba(34,100,255,${tint}), transparent 60%)`,
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: [beams(26, 0.18 + 0.82 * intensity), spread > 0 ? beams(70, 0.55 * spread) : null]
+                .filter(Boolean)
+                .join(", "),
+              WebkitMaskImage: beamMask,
+              maskImage: beamMask,
+            }}
+          />
+        </>
+      )}
+      <div className="absolute inset-0" style={{ transform: `translate(${shake.x}px, ${shake.y}px)` }}>
+        {glow > 0 && (
+          <span
+            className="absolute block"
+            style={{
+              left: (W - SIREN_W) / 2,
+              top: groupTop,
+              width: SIREN_W,
+              height: SIREN_H,
+              backgroundColor: appColors.red,
+              WebkitMask: sirenMask,
+              mask: sirenMask,
+              filter: `blur(${glow / 2}px)`,
+            }}
+          />
+        )}
+        <Image
+          src="/demo/icon_siren_counting.svg"
+          alt=""
+          width={SIREN_W}
+          height={SIREN_H}
+          className="absolute"
+          style={{ left: (W - SIREN_W) / 2, top: groupTop }}
+          priority
+        />
+        <div
+          className="absolute flex items-center justify-center"
+          style={{ left: 16, right: 16, top: groupTop + SIREN_H + GAP, height: NUMBER_H }}
+        >
+          <span
+            className="font-scdream whitespace-nowrap text-[80px] leading-none tracking-[-0.32px] text-white"
+            style={{ transform: `scale(${pop})` }}
+          >
+            {go ? app.dispatchGo : covering ? "" : f.seconds}
+          </span>
         </div>
       </div>
     </div>
   );
 }
 
-// ① 역할 배너 (start_banners.dart: 띠 154, 머묾 2.35초, 뒤를 어둡게 덮고 탭으로 넘긴다)
-function RoleBanner({
+// ---------------------------------------------------------------- 흐름
+
+// 게임 시작 흐름 (game_page.dart). [releaseAt] 은 경찰 출동 시각(ms) - 지도의 카운트다운과 같은 값이다.
+// 역할 배너 → (경찰) 대기 장면 / (도둑) 설명 장면 → 출동 6초 전 카운팅이 덮고, "출동!" 뒤 원형으로 열린다.
+// 경찰은 카운팅이 열리기 시작할 때, 도둑은 설명을 닫을 때(또는 카운팅이 열릴 때) [onStarted] 로 알린다.
+export function DemoGameStart({
   team,
-  onLeaving,
-  onDone,
+  releaseAt,
+  onStarted,
 }: {
   team: Team;
-  onLeaving: () => void;
-  onDone: () => void;
+  releaseAt: number;
+  onStarted: () => void;
 }) {
-  const { app } = useDemoCopy();
-  return (
-    <StripeBanner team={team} bandHeight={154} holdMs={2350} dimBehind tapToSkip onLeaving={onLeaving} onDone={onDone}>
-      <div className="flex h-full items-center" style={{ paddingLeft: 52 * S, color: onBandColor(team) }}>
-        <Image
-          src={`/demo/start_role_${team}.svg`}
-          alt=""
-          width={139}
-          height={154}
-          style={{ width: 88 * S, height: "auto" }}
-        />
-        <div className="min-w-0" style={{ marginLeft: 10 * S }}>
-          <p className="text-[14px] leading-none">{app.startRoleLabel}</p>
-          <p className="text-[28px] font-semibold leading-none" style={{ marginTop: 6 * S }}>
-            {team === "police" ? app.roleCop : app.roleRobber}
-          </p>
-          <p className="text-[14px] leading-[1.4]" style={{ marginTop: 6 * S, width: 160 * S }}>
-            {team === "police" ? app.startMissionPolice : app.startMissionRobber}
-          </p>
-        </div>
-      </div>
-    </StripeBanner>
-  );
-}
+  const reduce = useReducedMotion();
+  const [finished, setFinished] = useState(false);
+  const ms = useClock(!finished);
+  const [mountedAt] = useState(() => Date.now());
+  const [sceneClosed, setSceneClosed] = useState(false);
+  const startedRef = useRef(false);
+  const now = mountedAt + ms;
 
-// ④ 출동 배너 (start_banners.dart: 띠 168, 머묾 1.7초, 지도를 바로 쓰게 터치를 막지 않는다).
-// 쥐와 고양이가 왼쪽 밖에서 달려 들어온다. 고양이가 0.16초 늦다.
-// [filledStart] 는 대기 장면이 끝나고 이어질 때다 - 줄이 빨려 들지 않고 그 자리에 나타난다
-export function DispatchBanner({
-  team,
-  filledStart = false,
-  onDone,
-}: {
-  team: Team;
-  filledStart?: boolean;
-  onDone: () => void;
-}) {
-  const { app } = useDemoCopy();
-  return (
-    <StripeBanner team={team} bandHeight={168} holdMs={1700} filledStart={filledStart} onDone={onDone}>
-      <div className="relative h-full overflow-hidden" style={{ color: onBandColor(team) }}>
-        <div className="absolute text-center" style={{ top: 14 * S, left: 45 * S, width: 300 * S }}>
-          <p className="text-[14px]">{team === "police" ? app.dispatchPoliceLead : app.dispatchRobberLead}</p>
-          <p className="mt-[6px] text-[28px] font-semibold leading-none">
-            {team === "police" ? app.dispatchPoliceMain : app.dispatchRobberMain}
-          </p>
-        </div>
-        <span className="demo-runner-in absolute" style={{ left: 205 * S, bottom: 18 * S, width: 65 * S }}>
-          <Image
-            src="/demo/start_chase_robber.svg"
-            alt=""
-            {...CHASE_SIZE.robber}
-            className="demo-run h-auto w-full"
-            style={RUN_TIMING.robber}
-          />
-        </span>
-        <span
-          className="demo-runner-in absolute"
-          style={{ left: 95 * S, bottom: 14 * S, width: 69 * S, animationDelay: "160ms" }}
-        >
-          <Image
-            src="/demo/start_chase_police.svg"
-            alt=""
-            {...CHASE_SIZE.police}
-            className="demo-run h-auto w-full"
-            style={RUN_TIMING.police}
-          />
-        </span>
-      </div>
-    </StripeBanner>
-  );
-}
-
-// 멀어지는 캐릭터의 원근 (domain/recede.dart). 같은 속도로 멀어지면 크기와 지평선까지의 거리가
-// 1/거리로 줄어 처음엔 빨리, 멀수록 천천히 작아진다. 경찰 시점은 쥐, 도둑 시점은 고양이다
-const HORIZON_Y = 400;
-const RECEDE = {
-  robber: { startWidth: 96, endWidth: 30, startFeetY: 464.7, startCenterX: 168, vanishX: 295, aspect: 243 / 248 },
-  police: { startWidth: 92, endWidth: 30, startFeetY: 485.6, startCenterX: 70, vanishX: 77, aspect: 323 / 272 },
-};
-
-function recede(progress: number, team: Team) {
-  const spec = RECEDE[team];
-  const f = 1 / (1 + (spec.startWidth / spec.endWidth - 1) * progress);
-  const width = spec.startWidth * f;
-  const feetY = HORIZON_Y + (spec.startFeetY - HORIZON_Y) * f;
-  const centerX = spec.vanishX + (spec.startCenterX - spec.vanishX) * f;
-  return { width, left: centerX - width / 2, top: feetY - width * spec.aspect };
-}
-
-const mmss = (sec: number) =>
-  `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
-
-// ② 경찰 대기 / ③ 도둑 설명 (chase_scene.dart). 앱바까지 덮는 장면이다.
-// 앞 캐릭터는 내 팀, 멀어지는 쪽은 상대 팀이고 경찰은 낮, 도둑은 밤 배경이다.
-// 앱은 경찰 대기가 방 설정 시간(최소 1분)만큼 지도를 막지만, 데모에서 그대로 두면 체험이
-// 멈춘다. 그래서 몇 초로 줄이고(lib/demo/scenes.ts) 경찰도 눌러서 넘길 수 있게 했다.
-function ChaseScene({ team, onDone }: { team: Team; onDone: () => void }) {
-  const { app } = useDemoCopy();
-  const police = team === "police";
-  const total = police ? DEMO_POLICE_WAIT_SECONDS : DEMO_EXPLAINER_SECONDS;
-  const accent = bandColor(team);
-  const rules = police
-    ? [app.startRuleQrArrest, app.startRulePing, app.startRuleRobberReveal(DEMO_REVEAL_MINUTES), app.startRuleZoneLock]
-    : [app.startRuleQrCaught, app.startRuleMyReveal(DEMO_REVEAL_MINUTES), app.startRulePing, app.startRuleJailbreak];
-  const [elapsed, setElapsed] = useState(0);
-  const [ruleIndex, setRuleIndex] = useState(0);
+  const roleOn = ms < ROLE_BANNER_MS;
+  const sceneShown = ms >= ROLE_REVEAL_AT_MS;
+  const overlayOn = now >= releaseAt - DISPATCH_OVERLAY_LEAD_MS && now < releaseAt + DISPATCH_DONE_AFTER_MS;
+  const irisStarted = now >= releaseAt + GO_HOLD_MS;
+  // 장면은 카운팅이 열리기 시작하면 걷는다 - 그 아래는 지도다
+  const sceneOn = sceneShown && !sceneClosed && !irisStarted;
 
   useEffect(() => {
-    const t = window.setInterval(() => setElapsed((n) => n + 1), 1000);
-    return () => window.clearInterval(t);
-  }, []);
+    if (startedRef.current) return;
+    if (irisStarted || (team === "robber" && sceneClosed)) {
+      startedRef.current = true;
+      onStarted();
+    }
+  }, [irisStarted, sceneClosed, team, onStarted]);
+
+  const done = now >= releaseAt + DISPATCH_DONE_AFTER_MS && !sceneOn && !roleOn;
+  // 다 끝나면 프레임 시계를 멈춘다
   useEffect(() => {
-    const t = window.setInterval(() => setRuleIndex((n) => (n + 1) % rules.length), DEMO_RULE_INTERVAL_MS);
-    return () => window.clearInterval(t);
-  }, [rules.length]);
-  useEffect(() => {
-    if (elapsed >= total) onDone();
-  }, [elapsed, total, onDone]);
-
-  const left = Math.max(0, total - elapsed);
-  // 도둑 설명이 끝나도 경찰 출동까지는 남아 있어, 지도의 카운트다운으로 그대로 이어지는 값을 보여 준다
-  const countdown = police ? left : left + ROBBER_POLICE_START_SECONDS;
-  const farTeam: Team = police ? "robber" : "police";
-  const far = recede(Math.min(1, elapsed / total), farTeam);
-
-  return (
-    <button
-      type="button"
-      onClick={onDone}
-      className="absolute inset-0 z-30 block overflow-hidden text-left"
-      style={{ backgroundColor: police ? appColors.black100 : appColors.black900 }}
-    >
-      <Image
-        src={`/demo/start_wait_town_${police ? "day" : "night"}.webp`}
-        alt=""
-        width={786}
-        height={1708}
-        className="absolute inset-x-0 top-0 w-full"
-        style={{ height: "auto" }}
-      />
-      <span
-        className="absolute transition-all duration-1000 ease-linear"
-        style={{ left: far.left * S, top: far.top * S, width: far.width * S }}
-      >
-        <Image
-          src={`/demo/start_chase_${farTeam}.svg`}
-          alt=""
-          {...CHASE_SIZE[farTeam]}
-          className="demo-run h-auto w-full"
-          style={RUN_TIMING[farTeam]}
-        />
-      </span>
-      {/* 경찰은 출동 전까지 숨을 고르며 기다리고 도둑은 달린다 */}
-      <span className="absolute" style={{ left: (police ? 20 : 134) * S, top: (police ? 400 : 392) * S, width: 96 * S }}>
-        <Image
-          src={`/demo/start_chase_${team}.svg`}
-          alt=""
-          {...CHASE_SIZE[team]}
-          className={`${police ? "demo-breathe" : "demo-run"} h-auto w-full`}
-          style={police ? undefined : RUN_TIMING[team]}
-        />
-      </span>
-
-      <span className="absolute inset-x-0 flex flex-col items-center" style={{ top: 116 * S }}>
-        <span className="flex items-center text-[12px]" style={{ height: 18 * S, color: police ? appColors.black600 : appColors.black400 }}>
-          {app.startWaitCountdownLabel}
-        </span>
-        <span
-          className="flex items-center text-[56px] font-semibold tabular-nums leading-none"
-          style={{ height: 72 * S, color: accent }}
-        >
-          {mmss(countdown)}
-        </span>
-      </span>
-      <span
-        className="absolute inset-x-0 text-center text-[18px] font-semibold"
-        style={{ top: 212 * S, color: police ? appColors.black : appColors.white }}
-      >
-        {police ? app.startWaitPoliceTitle : app.startWaitRobberTitle}
-      </span>
-
-      {/* 규칙 (앞 캐릭터 발 아래, 폭 205). 앱은 5초마다 바뀌지만 장면이 짧아 줄였다 */}
-      <span key={ruleIndex} className="demo-footprint absolute block" style={{ left: 20 * S, top: 525 * S, width: 205 * S }}>
-        <span className="block text-[12px] font-semibold" style={{ color: accent }}>
-          {app.startRulesCounter(ruleIndex + 1, rules.length)}
-        </span>
-        <span
-          className="block text-[14px] leading-[1.4]"
-          style={{ marginTop: 4 * S, color: police ? appColors.black800 : appColors.black100 }}
-        >
-          {rules[ruleIndex]}
-        </span>
-      </span>
-      <span className="absolute text-[12px]" style={{ left: 20 * S, bottom: 24 * S, color: appColors.black400 }}>
-        {app.startTapToMap}
-      </span>
-      {/* 도둑 설명은 저절로 닫혀서 남은 시간 막대를 둔다 (높이 3) */}
-      {!police && (
-        <span className="absolute inset-x-0 bottom-0 h-[3px]">
-          <span
-            className="block h-full transition-[width] duration-1000 ease-linear"
-            style={{ width: `${(left / total) * 100}%`, backgroundColor: accent }}
-          />
-        </span>
-      )}
-    </button>
-  );
-}
-
-// 게임 시작 흐름 (game_page.dart). 역할 배너가 빠지면서 뒤에 장면이 드러나고, 장면이 끝나면
-// [onStarted] 로 알린다. 경찰은 그 위로 출동 배너가 이어지고, 도둑의 출동 배너는
-// 지도의 카운트다운이 끝날 때 뜬다(DemoInGameRobber).
-export function DemoGameStart({ team, onStarted }: { team: Team; onStarted: () => void }) {
-  const [roleOn, setRoleOn] = useState(true);
-  const [sceneOn, setSceneOn] = useState(false);
-  const [dispatchOn, setDispatchOn] = useState(false);
-
-  const showScene = useCallback(() => setSceneOn(true), []);
-  const hideRole = useCallback(() => setRoleOn(false), []);
-  const hideDispatch = useCallback(() => setDispatchOn(false), []);
-  const finishScene = useCallback(() => {
-    setSceneOn(false);
-    setDispatchOn(team === "police");
-    onStarted();
-  }, [team, onStarted]);
+    if (!done) return;
+    const t = window.setTimeout(() => setFinished(true), 0);
+    return () => window.clearTimeout(t);
+  }, [done]);
+  if (done || finished) return null;
 
   return (
     <>
-      {sceneOn && <ChaseScene team={team} onDone={finishScene} />}
-      {roleOn && <RoleBanner team={team} onLeaving={showScene} onDone={hideRole} />}
-      {dispatchOn && <DispatchBanner team={team} filledStart onDone={hideDispatch} />}
+      {sceneOn && (
+        <ChaseScene
+          team={team}
+          releaseAt={releaseAt}
+          reduce={reduce}
+          onClose={team === "robber" ? () => setSceneClosed(true) : undefined}
+        />
+      )}
+      {roleOn && <RoleBanner team={team} reduce={reduce} />}
+      {overlayOn && <DispatchCountdown releaseAt={releaseAt} reduce={reduce} />}
     </>
   );
 }

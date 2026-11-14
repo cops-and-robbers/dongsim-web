@@ -50,11 +50,11 @@ const ko = {
         },
         {
           title: "구역 그리기",
-          description: "지도 위에 플레이 구역과 감옥을 드래그로 그려요.",
+          description: "지도 위에 원이나 핀으로 플레이 구역과 감옥을 그려요.",
         },
         {
           title: "팀 정하기",
-          description: "닉네임을 정하고 경찰이나 도둑을 자유롭게 선택해요.",
+          description: "방에 들어오면 팀이 정해지고, 대기실에서 언제든 바꿀 수 있어요.",
         },
         {
           title: "이제 뛰면 돼요",
@@ -66,7 +66,7 @@ const ko = {
     features: {
       title1: "복잡한 건 앱에 맡기고",
       title2: "즐기기만 하세요",
-      sub: "위치 공유, 구역 체크, 팀 채팅까지 앱이 책임집니다. 이제 게임만 즐기세요.",
+      sub: "위치 공개와 구역 확인, 팀 채팅은 앱이 맡으니 뛰는 데만 집중하면 돼요.",
       items: [
         {
           title: "주기적으로 남는 발자국",
@@ -74,9 +74,9 @@ const ko = {
             "설정한 주기마다 도둑 위치가 발자국으로 찍혀요. 경찰이 따라갈 유일한 단서예요.",
         },
         {
-          title: "구역과 감옥, 손끝으로",
+          title: "점점 좁아지는 구역",
           description:
-            "지도를 드래그해서 플레이 구역과 감옥을 그려요. 구역 밖으로 나가면 바로 경고가 떠요.",
+            "방장이 켜면 시간이 갈수록 구역이 좁아져서, 끝으로 갈수록 숨을 곳이 줄어요.",
         },
         {
           title: "팀원에게만 닿는 대화",
@@ -99,23 +99,21 @@ const ko = {
       wantedName: "치즈 도둑",
       bounty: "현상금 🧀 듬뿍",
     },
-    v3Notice: {
-      badge: "v3 새 소식",
-      tag: "v3 업데이트",
-      title: "경찰과 도둑이 새로워졌어요",
+    updateNotice: {
+      badge: "v4 새 소식",
+      tag: "v4 업데이트",
+      title: "경찰과 도둑이 한 번 더 달라졌어요",
       highlights: [
         {
-          title: "같이 뛸 사람을 구해요",
-          description:
-            "'토요일에 동네 공원에서 뛰실 분!' 이런 글을 보고 마음에 들면 바로 참여할 수 있어요.",
+          title: "구역이 점점 좁아져요",
+          description: "방장이 켜면 게임 중에 구역이 네 번에 걸쳐 좁아져요.",
         },
         {
-          title: "약속은 채팅방에서 잡아요",
-          description:
-            "참여하면 채팅방이 열려서, 번호 몰라도 약속을 잡고 게임 초대까지 받을 수 있어요.",
+          title: "방장이 누르면 바로 시작해요",
+          description: "준비 버튼 없이, 두 팀 인원만 확인하면 바로 출발해요.",
         },
       ],
-      demoCta: "웹에서 미리 체험하기",
+      demoCta: "웹에서 미리 해 보기",
       close: "닫기",
     },
   },
@@ -130,12 +128,12 @@ const ko = {
     meta: {
       title: "게임 소개",
       description:
-        "경찰과 도둑(경도) - GPS와 실시간 지도가 진행을 관리하는 위치 기반 술래잡기. 지도에 구역 그리기, 발자국 추적, QR 체포, 팀 채팅까지 4가지 핵심 기능을 소개합니다.",
+        "경찰과 도둑(경도) 하는 법을 정리하고, 좁아지는 구역과 발자국, QR 체포 같은 앱 기능을 실제 화면으로 보여 줘요.",
     },
     hero: {
       title1: "경찰과 도둑,",
       title2: "이렇게 플레이해요",
-      lead: "구역 그리고, 발자국 쫓고, QR로 잡고, 팀끼리 대화까지. 앱 하나에 다 들어 있어요.",
+      lead: "어릴 때 하던 경찰과 도둑 그대로 뛰면 되고, 판단은 앱이 도와줘요.",
     },
     rules: {
       heading: "경찰과 도둑, 이렇게 해요",
@@ -145,32 +143,32 @@ const ko = {
         {
           title: "팀부터 나눠요",
           play: "경찰 할 사람, 도둑 할 사람을 정해요. 도둑이 좀 더 많아야 쫓고 쫓기는 맛이 나요.",
-          app: "방 만들고 초대 코드만 돌리면 끝이에요.",
+          app: "초대 코드를 보내면 친구가 같은 방에 들어오고, 팀은 대기실에서 바꿀 수 있어요.",
         },
         {
           title: "구역을 정해요",
           play: "여기서부터 저기까지, 도망 다닐 수 있는 범위를 정해요. 잡힌 도둑이 들어갈 감옥 자리도 하나 골라요.",
-          app: "호스트가 지도에 손가락으로 그리면 돼요. 구역 밖으로 나가면 화면이 잠겨요.",
+          app: "방장이 지도에 원이나 핀으로 구역을 그리고, 그 밖으로 나가면 화면이 잠겨요.",
         },
         {
           title: "도둑이 먼저 도망가요",
           play: "경찰이 열까지 세는 동안 도둑은 최대한 멀리 흩어져요.",
-          app: "몇 분 뒤에 출동할지 정해 두면, 그때까지 앱이 경찰을 붙잡아 둬요.",
+          app: "정해 둔 시간 동안 경찰을 기다리게 했다가, 사이렌이 울리면 출동해요.",
         },
         {
           title: "쫓고, 잡아요",
-          play: "도둑을 찾았으면 달려가서 잡으면 돼요.",
-          app: "도둑의 QR을 찍어야 체포예요. 잡았네 안 잡혔네 싸울 일이 없어요. 도둑 위치는 정해진 시간마다 발자국으로 떠요.",
+          play: "도둑을 찾으면 달려가서 터치해요.",
+          app: "터치한 뒤 도둑의 QR까지 찍어야 체포라서, 잡았네 안 잡혔네 다툴 일이 없어요. 도둑 위치는 정해진 시간마다 발자국으로 떠요.",
         },
         {
           title: "잡히면 감옥, 터치하면 탈옥",
           play: "잡힌 도둑은 감옥에서 기다려요. 아직 안 잡힌 동료가 몰래 와서 터치하면 다시 도망갈 수 있어요.",
-          app: "동료 도둑의 터치를 받으면 감옥 밖으로 나가요. 탈옥은 앱이 알아서 처리해요.",
+          app: "동료의 터치를 받고 감옥 밖으로 나가 3초가 지나면 앱이 탈옥으로 처리해요.",
         },
         {
           title: "이기는 법",
           play: "도둑을 다 잡으면 경찰이 이겨요. 시간이 끝날 때까지 한 명이라도 살아남으면 도둑 승리예요.",
-          app: "남은 시간이랑 몇 명 잡았는지는 화면에 계속 떠요.",
+          app: "남은 시간과 남은 도둑 수가 화면과 잠금 화면에 계속 떠요.",
         },
       ],
     },
@@ -178,11 +176,21 @@ const ko = {
       {
         title: "지도에 구역을 그려요",
         description:
-          "호스트가 지도를 드래그하면 원형 플레이 구역이 그려져요. 감옥 위치까지 손끝으로 지정하고 바로 게임을 시작하세요.",
+          "방장이 지도에 원을 그리거나 핀을 찍어 구역을 정하고, 그 안에 감옥 자리도 함께 골라요.",
         checks: [
-          "드래그로 원형 구역 자유 설정",
-          "구역 내부에 감옥 영역 지정",
-          "이탈 시 화면 잠김",
+          "원이나 핀으로 구역 설정",
+          "구역 안에 감옥 지정",
+          "구역 밖으로 나가면 화면 잠김",
+        ],
+      },
+      {
+        title: "구역이 점점 좁아져요",
+        description:
+          "방장이 구역 축소를 켜면 원형 구역이 게임 중에 네 번에 걸쳐 좁아져서, 끝으로 갈수록 숨을 곳이 줄어요.",
+        checks: [
+          "켜고 끄는 건 방장 선택",
+          "다음 축소까지 남은 시간 표시",
+          "구역 밖에 오래 머문 도둑은 자동 체포",
         ],
       },
       {
@@ -190,44 +198,44 @@ const ko = {
         description:
           "방장이 정한 주기마다 도둑의 위치가 발자국으로 공개돼요. 공개 전에 자리를 옮기지 않으면 그대로 잡힐 수 있어요.",
         checks: [
-          "방장이 정한 주기로 위치 공개",
-          "이전 발자국은 다음 공개까지 유지",
-          "다음 공개까지 실시간 카운트",
+          "공개 주기는 0~30분 중에 선택",
+          "다음 공개까지 남은 시간 표시",
         ],
       },
       {
-        title: "QR 스캔으로 공정하게 체포해요",
+        title: "터치하고 QR로 체포해요",
         description:
-          "경찰이 도둑의 QR을 스캔하는 순간 바로 체포돼요. 실제로 마주쳐야 성립되니까 공정한 경기가 이어져요.",
-        checks: ["스캔 한 번이면 바로 체포", "도둑이 본인 QR을 직접 표시"],
+          "도둑을 터치한 뒤 QR을 찍으면 바로 체포돼요. QR은 30초만 유효해서 미리 캡처해 둘 수 없어요.",
+        checks: ["스캔 한 번이면 바로 체포", "도둑은 메뉴에서 내 QR 열기"],
       },
       {
-        title: "팀원에게만 닿는 대화",
+        title: "우리 팀끼리만 작전을 짜요",
         description:
-          "경찰은 경찰끼리, 도둑은 도둑끼리. 전략이 상대 팀으로 새어나가지 않아요.",
+          "경찰은 경찰끼리, 도둑은 도둑끼리 나눈 대화는 상대 팀에 보이지 않아요.",
         checks: [
-          "경찰·도둑 채널 완전 분리",
-          "전체 공지 채널 별도 제공",
-          "실시간 메시지 동기화",
+          "팀 채팅과 전체 채팅 따로",
+          "지도를 길게 눌러 팀에게 핑",
+          "실시간 메시지",
+        ],
+      },
+      {
+        title: "끝나면 팀마다 MVP가 나와요",
+        description:
+          "게임이 끝나면 팀마다 MVP를 한 명씩 뽑고, 내가 뛴 거리와 지나온 길도 지도로 남겨 줘요.",
+        checks: [
+          "경찰은 가장 많이 잡은 사람, 도둑은 가장 덜 잡힌 사람",
+          "이동 거리와 경로 지도",
+          "결과 이미지 저장과 공유",
         ],
       },
       {
         title: "동네에서 같이 뛸 사람을 찾아요",
         description:
-          "같이 할 친구가 부족해도 괜찮아요. 동네 모집 글에서 장소랑 시간, 남은 자리를 보고 마음에 드는 판에 들어가면 돼요.",
+          "같이 할 친구가 부족하면 동네 모집 글을 둘러보세요. 마음에 드는 판에 들어가면 채팅방에서 바로 약속을 잡을 수 있어요.",
         checks: [
-          "장소·시간·인원 한 줄로 확인",
-          "모집 상태를 배지로 표시",
-          "글쓰기 버튼으로 바로 모집 시작",
-        ],
-      },
-      {
-        title: "약속은 채팅방에서 잡아요",
-        description:
-          "참여를 누르면 같은 판 사람들과의 채팅방이 생겨요. 연락처를 주고받지 않아도, 몇 시에 어디서 만날지 여기서 정하면 돼요.",
-        checks: [
+          "장소·시간·인원을 한눈에",
+          "댓글로 먼저 물어보기",
           "참여하면 바로 채팅방 입장",
-          "연락처 교환 없이 약속 확정",
         ],
       },
     ],
@@ -236,43 +244,53 @@ const ko = {
       {
         question: "몇 명이서 할 수 있나요?",
         answer:
-          "최대 150명까지 가능합니다. 경찰 팀과 도둑 팀으로 나눠서 진행합니다.",
+          "2명부터 최대 150명까지 할 수 있고, 경찰과 도둑이 한 명씩은 있어야 시작돼요.",
       },
       {
         question: "한 판에 얼마나 걸리나요?",
-        answer: "기본 30분이고, 방장이 더 짧게도 길게도 정할 수 있습니다.",
+        answer: "방장이 10분부터 3시간까지 정할 수 있는데, 처음이라면 30분을 추천해요.",
       },
       {
         question: "도둑 위치는 경찰한테 어떻게 공개되나요?",
         answer:
-          "방장이 정한 주기마다 도둑의 위치가 경찰 지도에 발자국으로 표시됩니다.",
+          "실시간으로 계속 보이지는 않고, 방장이 정한 주기마다 경찰 지도에 발자국으로 찍혀요.",
       },
       {
         question: "경찰은 도둑을 어떻게 잡나요?",
-        answer: "도둑을 따라잡은 뒤, 도둑 화면의 QR을 스캔하면 체포됩니다.",
+        answer: "도둑을 따라잡아 터치한 뒤, 도둑 화면의 QR을 찍으면 체포돼요.",
       },
       {
         question: "감옥에 갇히면 끝인가요?",
-        answer: "아닙니다. 갇혀도 팀원이 구해주면 다시 도망칠 수 있습니다.",
+        answer: "아니에요. 동료가 터치해 주면 감옥 밖으로 나가 다시 도망칠 수 있어요.",
+      },
+      {
+        question: "구역이 줄어들기도 하나요?",
+        answer:
+          "방장이 구역 축소를 켜면 원형 구역이 게임 중에 네 번에 걸쳐 좁아져요. 핀으로 그린 구역에서는 쓸 수 없어요.",
+      },
+      {
+        question: "MVP는 어떻게 정해지나요?",
+        answer:
+          "경찰은 가장 많이 잡은 사람, 도둑은 가장 덜 잡힌 사람이 MVP가 되고, 같으면 더 많이 뛴 사람이 뽑혀요.",
       },
       {
         question: "같은 팀끼리만 대화할 수 있나요?",
         answer:
-          "경찰과 도둑의 채팅방이 분리되어 있어, 상대 팀은 대화를 볼 수 없습니다.",
+          "팀 채팅은 우리 팀만 볼 수 있고, 모두와 이야기할 땐 전체 채팅을 쓰면 돼요.",
       },
       {
         question: "아이폰과 안드로이드가 같이 할 수 있나요?",
-        answer: "네, 기종과 관계없이 함께 플레이할 수 있습니다.",
+        answer: "네, 기종과 상관없이 함께 할 수 있어요.",
       },
       {
         question: "위치 정보는 안전하게 처리되나요?",
         answer:
-          "게임이 진행되는 동안에만 위치를 수집하고, 게임이 끝나면 멈춥니다. 자세한 내용은 위치정보 이용약관에서 확인할 수 있습니다.",
+          "게임이 진행되는 동안에만 위치를 모으고 끝나면 바로 멈춰요. 자세한 내용은 위치정보 이용약관에서 볼 수 있어요.",
         link: { label: "위치정보 이용약관 보기", href: "/location" },
       },
       {
         question: "무료인가요?",
-        answer: "네, 무료로 다운로드하여 플레이할 수 있습니다.",
+        answer: "네, 무료로 받아서 바로 할 수 있어요.",
       },
     ],
   },
@@ -431,11 +449,11 @@ const en: Messages = {
         },
         {
           title: "Draw the zone",
-          description: "Drag on the map to set your play area and the jail.",
+          description: "Set your play area and the jail on the map with a circle or pins.",
         },
         {
           title: "Pick teams",
-          description: "Set a nickname and jump in as a cop or a robber.",
+          description: "You get a team when you join, and you can switch anytime in the waiting room.",
         },
         {
           title: "Now just run",
@@ -447,7 +465,7 @@ const en: Messages = {
     features: {
       title1: "Let the app do the work,",
       title2: "you just play",
-      sub: "Live location sharing, boundary alerts, team chat - the app handles it all. You just play.",
+      sub: "Location reveals, zone checks, and team chat are on the app, so you can focus on running.",
       items: [
         {
           title: "Footprints on a timer",
@@ -455,9 +473,9 @@ const en: Messages = {
             "At the interval you set, each robber's location appears as a footprint - the cops' only clue.",
         },
         {
-          title: "Draw your zone and jail",
+          title: "A zone that keeps shrinking",
           description:
-            "Drag out your play area and jail right on the map. Step outside the boundary and you'll get an instant alert.",
+            "When the host turns it on, the zone closes in as time goes by, leaving fewer places to hide.",
         },
         {
           title: "Team-only chat",
@@ -480,20 +498,18 @@ const en: Messages = {
       wantedName: "Cheese Thief",
       bounty: "Reward: 🧀 loads",
     },
-    v3Notice: {
-      badge: "What's new in v3",
-      tag: "v3 update",
-      title: "Cops and Robbers just got a big update",
+    updateNotice: {
+      badge: "What's new in v4",
+      tag: "v4 update",
+      title: "Cops and Robbers got another upgrade",
       highlights: [
         {
-          title: "Find people to run with",
-          description:
-            "Short on players? Browse recruiting posts, check the spot, time, and open slots, and jump into a game you like.",
+          title: "The zone keeps shrinking",
+          description: "When the host turns it on, the zone closes in four times during the game.",
         },
         {
-          title: "Plan it in the group chat",
-          description:
-            "Joining a post opens a chat with everyone in it. Set the plan and get your game invite right there - no swapping numbers.",
+          title: "The host starts with one tap",
+          description: "No more Ready button. Check both teams and you're off.",
         },
       ],
       demoCta: "Try it on the web first",
@@ -511,12 +527,12 @@ const en: Messages = {
     meta: {
       title: "How to Play Cops and Robbers - Rules & Game Guide",
       description:
-        "Learn the cops and robbers rules - teams, the zone, jail breaks, and how to win. Then see how the GPS app draws the zone, tracks footprints, and runs the tag for you.",
+        "Learn the cops and robbers rules - teams, the zone, jail breaks, and how to win. Then see the app in action: a shrinking zone, footprints, QR arrests, and team MVPs.",
     },
     hero: {
       title1: "Cops and Robbers,",
       title2: "here's how it plays",
-      lead: "Draw your zone, track the footprints, scan to catch, and chat with your team. All in one app.",
+      lead: "Play it just like you did as a kid, and let the app make the close calls.",
     },
     rules: {
       heading: "How to play cops and robbers",
@@ -526,32 +542,32 @@ const en: Messages = {
         {
           title: "Split into teams",
           play: "Pick your cops and your robbers. A few extra robbers keep the chase alive.",
-          app: "Create a room and invite friends with a code.",
+          app: "Send an invite code and friends land in the same room, where anyone can switch teams.",
         },
         {
           title: "Set the zone",
           play: "Agree on the boundaries, and pick one spot to be the jail.",
-          app: "The host draws the zone and jail right on the map. Step outside and your screen locks.",
+          app: "The host draws the zone on the map with a circle or pins, and stepping outside locks your screen.",
         },
         {
           title: "Robbers run first",
           play: "While the cops count down, the robbers scatter and hide.",
-          app: "The app counts down the head start for you.",
+          app: "The cops wait out the head start, then the siren sounds and they're off.",
         },
         {
           title: "Chase and tag",
-          play: "Cops hunt down robbers - one tag and you're caught.",
-          app: "A tag counts when a cop scans the robber's QR. Footprints appear on the map to guide the chase.",
+          play: "Spot a robber, run them down, and tag them.",
+          app: "After the tag, the cop scans the robber's QR to lock in the arrest, so there's no arguing about who got caught. Footprints show where robbers were at each interval.",
         },
         {
           title: "Jail and jailbreak",
           play: "Caught robbers wait in jail. A teammate can sneak in and tag them free.",
-          app: "Once a fellow robber tags you, walk out of the jail. The app handles your escape.",
+          app: "Once a teammate tags you, step out of the jail and the app counts it as an escape after 3 seconds.",
         },
         {
           title: "Win the game",
           play: "Cops win by catching every robber. If even one is still free when time runs out, the robbers take it.",
-          app: "The timer and arrest count update live.",
+          app: "Time left and robbers left stay on your screen and your lock screen.",
         },
       ],
     },
@@ -559,11 +575,21 @@ const en: Messages = {
       {
         title: "Draw your zone on the map",
         description:
-          "The host drags on the map to draw a circular play area. Place the jail and start playing.",
+          "The host sets the zone by drawing a circle or dropping pins on the map, then picks a jail spot inside it.",
         checks: [
-          "Freely draw a circular zone by dragging",
-          "Mark a jail area inside the zone",
+          "Set the zone with a circle or pins",
+          "Mark a jail inside the zone",
           "The screen locks if you leave the zone",
+        ],
+      },
+      {
+        title: "The zone keeps shrinking",
+        description:
+          "When the host turns on Shrinking area, the circle closes in four times during the game, so there are fewer places to hide as the clock runs down.",
+        checks: [
+          "The host turns it on or off",
+          "Countdown to the next shrink",
+          "Robbers who stay outside too long get caught automatically",
         ],
       },
       {
@@ -571,47 +597,44 @@ const en: Messages = {
         description:
           "At the interval the host sets, each robber's location is revealed as a footprint. Keep moving before the next reveal, or you might get caught.",
         checks: [
-          "Location revealed on the host's interval",
-          "Old footprints stay until the next drop",
-          "Live countdown to the next reveal",
+          "Pick a reveal interval from 0 to 30 minutes",
+          "Countdown to the next reveal",
         ],
       },
       {
-        title: "Catch with a QR scan",
+        title: "Tag, then scan the QR",
         description:
-          "The moment a cop scans a robber's QR, they're caught. It only counts face to face, so every match stays fair.",
-        checks: [
-          "One scan and they're caught",
-          "Robbers show their own QR",
-        ],
+          "Tag a robber and scan their QR to make the arrest on the spot. Each QR only works for 30 seconds, so a screenshot won't cut it.",
+        checks: ["One scan and they're caught", "Robbers open My QR from the menu"],
       },
       {
-        title: "Team-only chat",
+        title: "Plan with your own team",
         description:
-          "Cops with cops, robbers with robbers. Your strategy never leaks to the other side.",
+          "Cops talk with cops, robbers with robbers, and the other side never sees your messages.",
         checks: [
-          "Separate channels for each team",
-          "A separate channel for all-player notices",
+          "Separate team chat and global chat",
+          "Long-press the map to ping your team",
           "Messages update instantly",
+        ],
+      },
+      {
+        title: "Each team gets an MVP",
+        description:
+          "When the game ends, each team names one MVP, and the app maps out how far you ran and where you went.",
+        checks: [
+          "Cops: most arrests. Robbers: caught the fewest times",
+          "Distance and route map",
+          "Save and share your result as an image",
         ],
       },
       {
         title: "Find neighbors to run with",
         description:
-          "Short on players? Recruiting posts from your area gather in one place - check the spot, the time, and the open slots, then jump in.",
+          "Short on players? Browse recruiting posts from your area, and once you join one, settle the meetup right in its chat room.",
         checks: [
           "Place, time, and headcount at a glance",
-          "A status badge shows what's still open",
-          "Start recruiting with one tap",
-        ],
-      },
-      {
-        title: "Plan the meetup in chat",
-        description:
-          "Join a post and a chat room with that group is ready. No swapping contact info - just settle on when and where to meet.",
-        checks: [
+          "Ask questions in the comments first",
           "You're in the chat as soon as you join",
-          "No contact info needed to make plans",
         ],
       },
     ],
@@ -620,32 +643,42 @@ const en: Messages = {
       {
         question: "How many people can play?",
         answer:
-          "Up to 150. You split into a cops team and a robbers team.",
+          "Anywhere from 2 to 150 players, as long as there's at least one cop and one robber to start.",
       },
       {
         question: "How long is one game?",
         answer:
-          "30 minutes by default, and the host can make it shorter or longer.",
+          "The host picks anything from 10 minutes to 3 hours, and 30 minutes is a good place to start.",
       },
       {
         question: "How is a robber's location shown to the cops?",
         answer:
-          "At the interval the host sets, each robber's location shows up as a footprint on the cops' map.",
+          "It isn't live. At the interval the host sets, each robber's location drops as a footprint on the cops' map.",
       },
       {
         question: "How do cops catch a robber?",
         answer:
-          "Catch up to the robber, then scan the QR on their screen to make the arrest.",
+          "Catch up and tag the robber, then scan the QR on their screen to make the arrest.",
       },
       {
         question: "Is it over once you're in jail?",
         answer:
-          "No. Even in jail, a teammate can free you and you're back on the run.",
+          "No. When a teammate tags you, step out of the jail and you're back on the run.",
+      },
+      {
+        question: "Does the zone get smaller?",
+        answer:
+          "If the host turns on Shrinking area, the circle closes in four times during the game. It isn't available for zones drawn with pins.",
+      },
+      {
+        question: "How is the MVP chosen?",
+        answer:
+          "The cop with the most arrests and the robber caught the fewest times are the MVPs, and ties go to whoever ran farther.",
       },
       {
         question: "Can only teammates chat with each other?",
         answer:
-          "Cops and robbers have separate chat rooms, so the other team can't see your messages.",
+          "Team chat is just for your team, and global chat is there when you want to talk to everyone.",
       },
       {
         question: "Can iPhone and Android play together?",
@@ -816,11 +849,11 @@ const ja: Messages = {
         },
         {
           title: "エリアを描く",
-          description: "地図をドラッグして、プレイエリアと牢屋を描く。",
+          description: "地図に円かピンで、プレイエリアと牢屋を描く。",
         },
         {
           title: "チームを決める",
-          description: "ニックネームを決めて、警察か泥棒を自由に選ぶ。",
+          description: "部屋に入るとチームが決まり、待機室でいつでも変えられる。",
         },
         {
           title: "あとは走るだけ",
@@ -832,7 +865,7 @@ const ja: Messages = {
     features: {
       title1: "面倒なことはアプリに任せて、",
       title2: "遊ぶだけ",
-      sub: "位置共有、エリア判定、チームチャットまで、ぜんぶアプリにおまかせ。あとはゲームを楽しむだけ。",
+      sub: "位置の公開もエリア判定もチームチャットもアプリにおまかせ。走ることに集中できます。",
       items: [
         {
           title: "一定間隔で残る足跡",
@@ -840,9 +873,9 @@ const ja: Messages = {
             "設定した間隔ごとに、泥棒の位置が足跡として残る。警察が追える唯一の手がかり。",
         },
         {
-          title: "エリアと牢屋を指先で",
+          title: "だんだん狭まるエリア",
           description:
-            "地図をドラッグして、プレイエリアと牢屋を設定。エリアの外に出ると、すぐに警告が届く。",
+            "ホストがオンにすると時間とともにエリアが狭まり、終盤ほど隠れる場所が減っていく。",
         },
         {
           title: "仲間だけのチームチャット",
@@ -865,20 +898,18 @@ const ja: Messages = {
       wantedName: "チーズ泥棒",
       bounty: "賞金 🧀 たっぷり",
     },
-    v3Notice: {
-      badge: "v3の新機能",
-      tag: "v3アップデート",
-      title: "ケイドロが大きく新しくなりました",
+    updateNotice: {
+      badge: "v4の新機能",
+      tag: "v4アップデート",
+      title: "ケイドロがまた新しくなりました",
       highlights: [
         {
-          title: "一緒に走る仲間を探せます",
-          description:
-            "人数が足りなくても大丈夫。募集の投稿から場所・時間・残り枠を見て、気になるゲームに参加できます。",
+          title: "エリアがだんだん狭まる",
+          description: "ホストがオンにすると、ゲーム中にエリアが4回に分けて狭まります。",
         },
         {
-          title: "約束はグループチャットで",
-          description:
-            "参加すると同じゲームの仲間とチャットが開きます。連絡先を交換しなくても、約束もゲームへの招待もそこで完結します。",
+          title: "ホストのワンタップでスタート",
+          description: "準備ボタンはなくなりました。両チームの人数を確認したらすぐ出発です。",
         },
       ],
       demoCta: "まずウェブで体験する",
@@ -896,12 +927,12 @@ const ja: Messages = {
     meta: {
       title: "ケイドロ（警泥）の遊び方 - ルールとゲーム紹介",
       description:
-        "ケイドロのルールをチーム分けから牢屋・脱獄、勝敗まで整理。GPSと地図で進行を支えるリアル鬼ごっこアプリも紹介します。",
+        "ケイドロのルールをチーム分けから牢屋・脱獄、勝敗まで整理。狭まるエリアや足跡、QR逮捕、チームMVPなど、アプリの機能も実際の画面で紹介します。",
     },
     hero: {
       title1: "ケイドロは、",
       title2: "こうやって遊ぶ",
-      lead: "エリアを描いて、足跡を追って、QRでつかまえて、仲間と連携。ぜんぶアプリひとつに。",
+      lead: "子どものころのケイドロをそのまま走って、判定はアプリにおまかせ。",
     },
     rules: {
       heading: "ケイドロの遊び方",
@@ -911,32 +942,32 @@ const ja: Messages = {
         {
           title: "チームに分かれる",
           play: "警察と泥棒、ふたつのチームに分かれます。泥棒を少し多めにすると追いかけっこが盛り上がります。",
-          app: "ルームを作って、招待コードで仲間を集めます。",
+          app: "招待コードを送れば友だちが同じ部屋に入ってきて、チームは待機室で変えられます。",
         },
         {
           title: "エリアを決める",
           play: "どこまで逃げていいか範囲を決めて、つかまった泥棒が入る牢屋の場所をひとつ選びます。",
-          app: "ホストが地図にエリアと牢屋を描きます。外に出ると画面がロックされます。",
+          app: "ホストが地図に円かピンでエリアを描き、その外に出ると画面がロックされます。",
         },
         {
           title: "泥棒が先に逃げる",
           play: "警察が数を数えている間に、泥棒は散らばって隠れます。",
-          app: "警察の出動までの時間は、アプリが代わりに数えてくれます。",
+          app: "決めた時間だけ警察を待たせて、サイレンが鳴ったら出動です。",
         },
         {
           title: "追いかけて、つかまえる",
-          play: "警察が泥棒を見つけてタッチしたら逮捕です。",
-          app: "泥棒のQRをスキャンすると逮捕が成立。一定間隔で足跡が公開され、追跡を助けます。",
+          play: "泥棒を見つけたら走って追いかけ、タッチします。",
+          app: "タッチしたあと泥棒のQRまでスキャンして逮捕になるので、つかまった・つかまってないでもめません。泥棒の位置は決まった間隔で足跡として表示されます。",
         },
         {
           title: "牢屋と救出",
           play: "つかまった泥棒は牢屋で待ちます。仲間がこっそり近づいてタッチすれば復活、また逃げられます。",
-          app: "仲間の泥棒にタッチされたら、牢屋の外に出ましょう。脱獄の処理はアプリが自動で行います。",
+          app: "仲間にタッチしてもらって牢屋の外に出ると、3秒後にアプリが脱獄として処理します。",
         },
         {
           title: "勝負が決まる",
           play: "泥棒を全員つかまえたら警察の勝ち。時間切れまでひとりでも逃げ切れば泥棒の勝ちです。",
-          app: "残り時間と逮捕状況はリアルタイムで表示されます。",
+          app: "残り時間と残りの泥棒の数は、画面にもロック画面にも表示され続けます。",
         },
       ],
     },
@@ -944,11 +975,21 @@ const ja: Messages = {
       {
         title: "地図にエリアを描く",
         description:
-          "ホストが地図をドラッグして、プレイエリアを作る。牢屋の位置も指先で決めて、すぐにゲーム開始。",
+          "ホストが地図に円を描くかピンを打ってエリアを決め、その中に牢屋の場所も選びます。",
         checks: [
-          "ドラッグで円形エリアを自由に設定",
-          "エリア内に牢屋エリアを指定",
+          "円かピンでエリアを設定",
+          "エリア内に牢屋を指定",
           "エリアを出ると画面がロック",
+        ],
+      },
+      {
+        title: "エリアがだんだん狭まる",
+        description:
+          "ホストがエリア縮小をオンにすると、円形のエリアがゲーム中に4回に分けて狭まり、終盤ほど隠れる場所が減っていきます。",
+        checks: [
+          "オン・オフはホストが選ぶ",
+          "次の縮小までの残り時間を表示",
+          "エリアの外に長くいる泥棒は自動で逮捕",
         ],
       },
       {
@@ -956,47 +997,44 @@ const ja: Messages = {
         description:
           "ホストが決めた間隔ごとに、泥棒の位置が足跡として公開される。公開前に動かないと、そのままつかまることも。",
         checks: [
-          "ホストが決めた間隔で位置を公開",
-          "前の足跡は次の公開まで残る",
-          "次の公開までリアルタイムでカウント",
+          "公開間隔は0〜30分から選択",
+          "次の公開までの残り時間を表示",
         ],
       },
       {
-        title: "QRスキャンでフェアに逮捕",
+        title: "タッチしてQRで逮捕",
         description:
-          "警察が泥棒のQRをスキャンした瞬間に逮捕。実際に出会わないと逮捕できないから、最後までフェア。",
-        checks: [
-          "スキャン一回ですぐ逮捕",
-          "泥棒が自分のQRを提示",
-        ],
+          "泥棒にタッチしてQRをスキャンすれば、その場で逮捕です。QRは30秒しか使えないので、スクショしておくことはできません。",
+        checks: ["スキャン一回ですぐ逮捕", "泥棒はメニューからマイQRを開く"],
       },
       {
-        title: "仲間だけのチームチャット",
+        title: "仲間だけで作戦会議",
         description:
-          "警察は警察同士、泥棒は泥棒同士。作戦が相手チームに漏れない。",
+          "警察は警察同士、泥棒は泥棒同士で話した内容は、相手チームには見えません。",
         checks: [
-          "警察・泥棒チャンネルを完全分離",
-          "全体アナウンス用チャンネルも用意",
+          "チームチャットと全体チャットを分けて表示",
+          "地図を長押ししてチームにピン",
           "メッセージをリアルタイムで共有",
+        ],
+      },
+      {
+        title: "終わったらチームごとにMVP",
+        description:
+          "ゲームが終わるとチームごとにMVPをひとり選び、走った距離と通ったルートも地図に残してくれます。",
+        checks: [
+          "警察はいちばん多く逮捕した人、泥棒はいちばんつかまらなかった人",
+          "移動距離とルートの地図",
+          "結果を画像で保存・シェア",
         ],
       },
       {
         title: "近所で一緒に走る仲間を探そう",
         description:
-          "人数が足りなくても大丈夫。近くの募集から場所と時間、残り枠を見て、気になるゲームに参加しよう。",
+          "人数が足りなければ近くの募集をのぞいてみて。気になるゲームに参加すれば、チャットルームですぐに約束を決められます。",
         checks: [
           "場所・時間・人数をひと目で確認",
-          "募集状況はバッジで表示",
-          "ボタンひとつで募集開始",
-        ],
-      },
-      {
-        title: "約束はチャットで決めよう",
-        description:
-          "参加すると、同じゲームのメンバーとのチャットルームができる。連絡先を交換しなくても、集合時間と場所はここで決めればOK。",
-        checks: [
+          "コメントで先に質問できる",
           "参加したらすぐチャットに入れる",
-          "連絡先の交換はいらない",
         ],
       },
     ],
@@ -1005,30 +1043,40 @@ const ja: Messages = {
       {
         question: "何人で遊べますか？",
         answer:
-          "最大150人まで。警察チームと泥棒チームに分かれて進めます。",
+          "2人から最大150人まで遊べて、警察と泥棒が1人ずついればスタートできます。",
       },
       {
         question: "1試合どれくらいかかりますか？",
-        answer: "基本は30分。ホストがもっと短くも長くも設定できます。",
+        answer: "ホストが10分から3時間まで決められて、はじめてなら30分がおすすめです。",
       },
       {
         question: "泥棒の位置はどうやって警察に公開されますか？",
         answer:
-          "ホストが決めた間隔ごとに、泥棒の位置が警察の地図に足跡として表示されます。",
+          "リアルタイムでずっと見えるわけではなく、ホストが決めた間隔ごとに警察の地図に足跡として表示されます。",
       },
       {
         question: "警察は泥棒をどうやってつかまえますか？",
         answer:
-          "泥棒に追いついたら、泥棒の画面のQRをスキャンすると逮捕できます。",
+          "泥棒に追いついてタッチしたあと、泥棒の画面のQRをスキャンすると逮捕できます。",
       },
       {
         question: "牢屋に入ったら終わりですか？",
-        answer: "いいえ。つかまっても、味方が助ければまた逃げられます。",
+        answer: "いいえ。仲間にタッチしてもらえば、牢屋の外に出てまた逃げられます。",
+      },
+      {
+        question: "エリアが狭くなることもありますか？",
+        answer:
+          "ホストがエリア縮小をオンにすると、円形のエリアがゲーム中に4回に分けて狭まります。ピンで描いたエリアでは使えません。",
+      },
+      {
+        question: "MVPはどうやって決まりますか？",
+        answer:
+          "警察はいちばん多く逮捕した人、泥棒はいちばんつかまらなかった人がMVPになり、同じ場合はより多く走った人が選ばれます。",
       },
       {
         question: "味方同士だけでチャットできますか？",
         answer:
-          "警察と泥棒のチャットは分かれているので、相手チームには見えません。",
+          "チームチャットは自分のチームだけが見られて、みんなと話したいときは全体チャットを使えます。",
       },
       {
         question: "iPhoneとAndroidは一緒に遊べますか？",
@@ -1037,7 +1085,7 @@ const ja: Messages = {
       {
         question: "位置情報は安全に扱われますか？",
         answer:
-          "位置情報はゲーム中だけ取得し、ゲームが終わると止まります。",
+          "位置情報はゲーム中だけ取得し、ゲームが終わるとすぐに止まります。",
       },
       {
         question: "無料ですか？",
