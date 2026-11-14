@@ -83,7 +83,7 @@ function StripeBanner({
   const stripeClass = leaving ? "demo-stripe-out" : filledStart ? "demo-stripe-filled" : "demo-stripe-in";
   return (
     <div
-      className={`absolute inset-0 z-40 overflow-hidden ${tapToSkip ? "" : "pointer-events-none"}`}
+      className={`fixed inset-0 z-40 overflow-hidden ${tapToSkip ? "" : "pointer-events-none"}`}
       onClick={tapToSkip ? () => setSkip(true) : undefined}
     >
       {dimBehind && <div className={`absolute inset-0 bg-black/50 ${leaving ? "demo-dim-out" : "demo-dim-in"}`} />}

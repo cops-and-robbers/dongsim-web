@@ -35,7 +35,7 @@ export function DemoGameOver({ team, onDone }: { team: Team; onDone: () => void 
 
   if (phase === "over" || phase === "tease") {
     return (
-      <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 px-[36px]">
+      <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/50 px-[36px]">
         <div
           className={`flex w-full flex-col items-center rounded-[24px] px-[16px] py-[42px] text-center ${phase === "tease" ? "demo-gameover-shake" : "demo-rise-fade"}`}
           style={{ backgroundColor: dark ? appColors.black : appColors.white }}
@@ -67,7 +67,7 @@ export function DemoGameOver({ team, onDone }: { team: Team; onDone: () => void 
     <button
       type="button"
       onClick={() => (phase === "loser" ? setPhase("winner") : onDone())}
-      className="absolute inset-0 z-20 flex flex-col items-center justify-center"
+      className="fixed inset-0 z-20 flex flex-col items-center justify-center"
       style={{ backgroundColor: dark ? appColors.black : appColors.blueVer2_50 }}
     >
       <span key={phase} className="demo-fade-in flex flex-col items-center">

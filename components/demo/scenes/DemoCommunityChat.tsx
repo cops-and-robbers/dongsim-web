@@ -222,7 +222,7 @@ export function DemoCommunityChat({
 
       {/* 초대장 다이얼로그 (app_dialog.dart - 거절/입장 2버튼) */}
       {dialogOpen && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 px-[36px]">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 px-[36px]">
           <div
             className="w-full rounded-[24px] px-[12px] pb-[16px] pt-[20px]"
             style={{ backgroundColor: appColors.white }}
