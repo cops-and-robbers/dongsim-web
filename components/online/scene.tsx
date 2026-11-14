@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { textWidth, useSceneCopy } from "./copy";
 
 // 온라인 게임 장면을 그리는 부품. 실제 판을 찍지 않고, 게임과 같은 에셋과 같은 그리기 규칙으로 직접 배치한다.
 // 값은 모두 게임 저장소(cops-and-robbers-web-game)에서 옮겼다:
@@ -257,8 +258,8 @@ export function Flower({ x, y, size = 22 }: { x: number; y: number; size?: numbe
 
 /** 감옥 마당과 감옥(client/game.js bakeMap). 문 앞 원 GATE_R 235, 감옥 r 175, 위에 "감옥" 글자판 */
 export function Jail({ theme, x, y }: { theme: Theme; x: number; y: number }) {
-  const T = THEMES[theme];
-  const w = 60 + 78, sy = y - 175 - 62;
+  const T = THEMES[theme], c = useSceneCopy();
+  const w = Math.max(60, textWidth(c.jail, 30)) + 78, sy = y - 175 - 62;
   return (
     <g>
       <circle cx={x} cy={y} r={235} fill={T.plaza} stroke={T.night ? "#5A6A90" : "#F6F9FB"} strokeWidth={8} />
@@ -269,7 +270,7 @@ export function Jail({ theme, x, y }: { theme: Theme; x: number; y: number }) {
       <circle cx={x - w / 2 + 28} cy={sy + 25} r={15} fill="#E2574C" />
       <image href="/online/siren.svg" x={x - w / 2 + 19} y={sy + 14} width={18} height={22} />
       <text x={x + 16} y={sy + 36} textAnchor="middle" fontSize={30} fontWeight={800} fill="#fff">
-        감옥
+        {c.jail}
       </text>
     </g>
   );
@@ -425,7 +426,7 @@ export function Clock({ time, out = 0 }: { time: string; out?: number }) {
 
 /** 위치 공개까지 남은 시간(#reveal). 178x45, 경찰은 경광등과 "도둑 위치 공개", 도둑은 가면과 "내 위치 공개". 5초 남으면 노란 바탕(#reveal.soon) */
 export function RevealChip({ team, sec, progress, soon = false }: { team: "police" | "robber"; sec: number; progress: number; soon?: boolean }) {
-  const c = soon ? "#fff" : TEAM[team];
+  const c = soon ? "#fff" : TEAM[team], copy = useSceneCopy();
   return (
     <Box x={373} y={8} w={178} h={45} r={16} fill={soon ? "#FFD24D" : "#fff"}>
       {soon && <circle cx={395} cy={29} r={12} fill={TEAM.police} />}
@@ -447,13 +448,13 @@ export function RevealChip({ team, sec, progress, soon = false }: { team: "polic
         />
       )}
       <text x={415} y={33} fontSize={13} fontWeight={700} fill={soon ? "#1D232B" : "#5D6F83"}>
-        {team === "police" ? "도둑 위치 공개" : "내 위치 공개"}
+        {team === "police" ? copy.revealCop : copy.revealRob}
       </text>
       <text x={526} y={36} textAnchor="end" fontSize={19} fontWeight={900} fill="#1E232A">
         {sec}
       </text>
       <text x={538} y={36} textAnchor="end" fontSize={12} fontWeight={700} fill="#1E232A" opacity={0.85}>
-        초
+        {copy.sec}
       </text>
       <rect x={381} y={46} width={162} height={3} rx={1.5} fill={soon ? "rgba(29,35,43,.15)" : "#EEF1F4"} />
       <rect x={381} y={46} width={162 * Math.max(0, Math.min(1, progress))} height={3} rx={1.5} fill={soon ? "#1D232B" : TEAM[team]} />
@@ -508,20 +509,20 @@ export function Stamina({ team, value = 1, lobby = false }: { team: "police" | "
 
 /** 달리기(#btnRun) 72, 잡기(#btnCatch) 92. 도둑은 잡기가 없어 달리기가 오른쪽 아래 끝으로 간다 */
 export function Buttons({ team, ready = false }: { team: "police" | "robber"; ready?: boolean }) {
-  const run = team === "police" ? [668, 324] : [794, 342];
+  const run = team === "police" ? [668, 324] : [794, 342], c = useSceneCopy();
   return (
     <g>
       <circle cx={run[0]} cy={run[1]} r={36} fill="rgba(30,35,42,.78)" style={{ filter: SHADOW }} />
       <Paw x={run[0] - 12} y={run[1] - 17} w={24} fill="#fff" />
       <text x={run[0]} y={run[1] + 17} textAnchor="middle" fontSize={15} fontWeight={800} fill="#fff">
-        달리기
+        {c.run}
       </text>
       {team === "police" && (
         <g>
           {ready && <circle cx={780} cy={328} r={48.5} fill="none" stroke="#FFD24D" strokeWidth={5} />}
           <circle cx={780} cy={328} r={46} fill={TEAM.police} style={{ filter: SHADOW }} />
-          <text x={780} y={335} textAnchor="middle" fontSize={19} fontWeight={800} fill="#fff">
-            잡기
+          <text x={780} y={335} textAnchor="middle" fontSize={c.catch.length > 3 ? 16 : 19} fontWeight={800} fill="#fff">
+            {c.catch}
           </text>
         </g>
       )}
@@ -531,7 +532,8 @@ export function Buttons({ team, ready = false }: { team: "police" | "robber"; re
 
 /** 짧은 알림(#toast). 14px 800, 위 106, 편 색 바탕 */
 export function Toast({ text, team }: { text: string; team: "police" | "robber" }) {
-  const w = Array.from(text).length * 13.6 + 28;
+  // 한국어, 일본어는 글자 수로(원래 계산 그대로), 영어는 좁은 글자를 따로 센다
+  const w = /[A-Za-z]/.test(text) ? textWidth(text, 14) + 28 : Array.from(text).length * 13.6 + 28;
   return (
     <g>
       <rect x={W / 2 - w / 2} y={106} width={w} height={32} rx={14} fill={TEAM[team]} style={{ filter: SHADOW }} />

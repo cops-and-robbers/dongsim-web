@@ -90,7 +90,6 @@ export const KO_ONLY_PATHS: readonly string[] = [
   "/event",
   "/photobooth",
   "/p",
-  "/online",
 ];
 
 export function isKoOnlyPath(basePath: string): boolean {
