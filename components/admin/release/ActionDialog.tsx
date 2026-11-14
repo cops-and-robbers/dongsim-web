@@ -344,7 +344,7 @@ function PercentPicker({ choices, value, disabled, onPick }: { choices: number[]
             onClick={() => onPick(f)}
             className="group relative min-w-0 rounded-lg px-2.5 py-1.5 text-left transition-transform active:scale-[0.97]"
           >
-            {on && <motion.span layoutId="pct-pill" transition={SPRING} className="absolute inset-0 rounded-lg bg-sd-inverted-bg" />}
+            {on && <motion.span layoutId="pct-pill" transition={SPRING} className="pointer-events-none absolute inset-0 rounded-lg bg-sd-inverted-bg" />}
             {!on && <span className="absolute inset-0 rounded-lg bg-sd-fill transition-colors group-hover:bg-sd-gray-300" />}
             <span className={`relative block text-[13.5px] font-semibold tabular-nums transition-colors ${on ? "text-sd-inverted-fg" : "text-sd-fg-muted"}`}>{pctLabel(f)}</span>
             <span className={`relative block whitespace-nowrap text-[10.5px] transition-colors ${on ? "text-sd-inverted-fg/80" : "text-sd-fg-subtle"}`}>{`${Math.round(1 / f)}명 중 1명`}</span>

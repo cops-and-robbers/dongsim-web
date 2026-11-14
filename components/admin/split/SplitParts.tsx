@@ -37,7 +37,9 @@ export function GroupHead({ children, right }: { children: ReactNode; right?: Re
   );
 }
 
-// 고른 줄 바탕이 한 줄에서 다음 줄로 미끄러져 옮겨 간다(사이드바 메뉴와 같은 용수철). 지금 어디를 보고 있는지 눈이 따라간다
+// 고른 줄 바탕이 한 줄에서 다음 줄로 미끄러져 옮겨 간다(사이드바 메뉴와 같은 용수철). 지금 어디를 보고 있는지 눈이 따라간다.
+// 미끄러지는 바탕은 클릭을 받지 않는다(pointer-events-none). 고른 버튼 안에 있어서 옮겨 가는 동안 옆 버튼을 덮고
+// 그 위의 클릭을 가로챘다(#325, 탭을 바꾼 직후 반대쪽 탭이 안 눌림)
 const SLIDE = { type: "spring", stiffness: 520, damping: 40, mass: 0.8 } as const;
 
 /** 목록 한 줄. 고른 줄은 강조색 바탕이고 보조 기술에 현재 항목으로 알린다 */
@@ -51,7 +53,7 @@ export function ListRow({ href, current, children, onClick }: { href: string; cu
       className={`relative isolate flex min-h-[58px] w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${current ? "" : "hover:bg-sd-pressed"}`}
     >
       {/* isolate 안의 -z 라 줄 바탕 위, 글자 아래에 깔린다 */}
-      {current && <motion.span layoutId="split-row-current" aria-hidden className="absolute inset-0 -z-10 rounded-xl bg-accent-weak" transition={SLIDE} />}
+      {current && <motion.span layoutId="split-row-current" aria-hidden className="pointer-events-none absolute inset-0 -z-10 rounded-xl bg-accent-weak" transition={SLIDE} />}
       {children}
     </Link>
   );
@@ -68,7 +70,7 @@ export function Chip({ on, onClick, children, group = "chips" }: { on: boolean; 
         on ? "font-semibold text-sd-surface" : "font-medium text-sd-fg-muted hover:bg-sd-gray-300"
       }`}
     >
-      {on && <motion.span layoutId={`chip-on-${group}`} aria-hidden className="absolute inset-0 -z-10 rounded-full bg-sd-fg" transition={SLIDE} />}
+      {on && <motion.span layoutId={`chip-on-${group}`} aria-hidden className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-sd-fg" transition={SLIDE} />}
       {children}
     </button>
   );
@@ -106,7 +108,7 @@ export function Segmented<T extends string>({
               on ? "font-bold text-sd-fg" : "font-semibold text-sd-fg-subtle hover:text-sd-fg-muted"
             }`}
           >
-            {on && <motion.span layoutId={`seg-${group}`} aria-hidden className="absolute inset-0 -z-10 rounded-[9px] bg-sd-surface shadow-[0_1px_2px_rgba(2,32,71,0.1)]" transition={SLIDE} />}
+            {on && <motion.span layoutId={`seg-${group}`} aria-hidden className="pointer-events-none absolute inset-0 -z-10 rounded-[9px] bg-sd-surface shadow-[0_1px_2px_rgba(2,32,71,0.1)]" transition={SLIDE} />}
             {o.label}
           </button>
         );

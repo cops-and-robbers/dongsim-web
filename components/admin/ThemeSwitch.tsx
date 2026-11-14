@@ -29,7 +29,7 @@ export function ThemeSwitch() {
             {active && (
               <motion.span
                 layoutId="themeActive"
-                className="absolute inset-0 rounded-full bg-sd-surface shadow-sm"
+                className="pointer-events-none absolute inset-0 rounded-full bg-sd-surface shadow-sm"
                 transition={{ type: "spring", stiffness: 420, damping: 32 }}
               />
             )}

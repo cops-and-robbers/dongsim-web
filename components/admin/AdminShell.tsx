@@ -42,7 +42,7 @@ function NavLink({ item, active, count, notice, order }: { item: NavItem; active
       {active && (
         <motion.span
           layoutId="navHighlight"
-          className="absolute inset-0 rounded-lg bg-accent-weak"
+          className="pointer-events-none absolute inset-0 rounded-lg bg-accent-weak"
           transition={{ type: "spring", stiffness: 400, damping: 32 }}
         />
       )}
