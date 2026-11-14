@@ -75,7 +75,12 @@ export function RoomPanel({ id, page = false, userHref }: { id: string; page?: b
         actions={!page && <IconButton label="이 방만 크게 보기" href={`/admin/games/${game.id}`}><ExpandIcon /></IconButton>}
       />
 
-      <AreaCard area={game.area} placeName={place.data?.adminGame?.area?.placeName ?? null} emptyText="방장이 아직 구역을 정하지 않았어요." />
+      <AreaCard
+        area={game.area}
+        placeName={place.data?.adminGame?.area?.placeName ?? null}
+        countryCode={place.data?.adminGame?.area?.countryCode ?? null}
+        emptyText="방장이 아직 구역을 정하지 않았어요."
+      />
 
       <Panel>
         <Stats

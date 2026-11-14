@@ -8,13 +8,15 @@ import { AdminGameHistoriesQuery } from "@/lib/admin/gql/AdminGameHistories";
 import { AdminGameHistoriesPlaceNamesQuery } from "@/lib/admin/gql/AdminGameHistoriesPlaceNames";
 import { END_REASON_LABEL, TEAM_LABEL, gameEndedAt, labelOf } from "@/lib/admin/format";
 import { shortPlaceName } from "@/lib/admin/gameExtras";
+import { isAbroad } from "@/lib/admin/country";
+import { CountryFlag } from "@/components/admin/CountryFlag";
 import { ago, dayName, groupInOrder, kstClock, kstDay } from "@/lib/admin/people";
 import { usePagedQuery } from "@/lib/admin/usePagedQuery";
 import type { LiveRoom } from "@/lib/admin/useLiveRooms";
 import { RecentMenu } from "@/components/admin/RecentViewed";
 import { Chip, EmptyRow, GroupHead, ListHead, ListRow, LiveDot, LoadMore, Tag } from "@/components/admin/split/SplitParts";
 
-type History = AdminGameHistories$data["adminGameHistories"]["content"][number] & { placeName: string | null };
+type History = AdminGameHistories$data["adminGameHistories"]["content"][number] & { placeName: string | null; countryCode: string | null };
 
 /**
  * 거르기. 서버가 끝난 이유(endReason) 하나로만 거를 수 있어 이유마다 칩을 둔다.
@@ -65,11 +67,14 @@ export function GameList({
         // 동네 이름은 운영에 아직 없을 수 있다(BE #241). 없으면 비워 둔다
         fetchQuery<AdminGameHistoriesPlaceNames>(environment, AdminGameHistoriesPlaceNamesQuery, vars, { fetchPolicy: "network-only" })
           .toPromise()
-          .then((p) => new Map((p?.adminGameHistories.content ?? []).map((h) => [h.id, h.area?.placeName ?? null])))
-          .catch(() => new Map<string, string | null>()),
+          .then((p) => new Map((p?.adminGameHistories.content ?? []).map((h) => [h.id, { name: h.area?.placeName ?? null, country: h.area?.countryCode ?? null }])))
+          .catch(() => new Map<string, { name: string | null; country: string | null }>()),
       ]);
       if (!d) throw new Error("no data");
-      return { ...d.adminGameHistories, content: d.adminGameHistories.content.map((h) => ({ ...h, placeName: places.get(h.id) ?? null })) };
+      return {
+        ...d.adminGameHistories,
+        content: d.adminGameHistories.content.map((h) => ({ ...h, placeName: places.get(h.id)?.name ?? null, countryCode: places.get(h.id)?.country ?? null })),
+      };
     },
     [environment, filter],
   );
@@ -143,6 +148,7 @@ function RoomRow({ room, href, current }: { room: LiveRoom; href: string; curren
   const teams = room.people && (room.live || pol + rob > 0) ? `경찰 ${pol} · 도둑 ${rob}` : `${room.participantCount}명`;
   const people = room.isEventGame ? teams : `${teams} / ${room.maxParticipants}명`;
   const meta = [room.placeName ? shortPlaceName(room.placeName) : null, people].filter(Boolean).join(" · ");
+  const abroad = isAbroad(room.countryCode) ? room.countryCode : null;
   return (
     <ListRow href={href} current={current}>
       <span className="min-w-0 flex-1">
@@ -150,8 +156,9 @@ function RoomRow({ room, href, current }: { room: LiveRoom; href: string; curren
           {room.inviteCode}
           {room.isEventGame && <Tag>이벤트</Tag>}
         </b>
-        <small className="mt-px block truncate text-[12.5px] text-sd-fg-subtle" title={room.placeName ?? undefined}>
-          {meta}
+        <small className="mt-px flex items-center gap-1.5 truncate text-[12.5px] text-sd-fg-subtle" title={room.placeName ?? undefined}>
+          {abroad && <CountryFlag code={abroad} size={11} />}
+          <span className="truncate">{meta}</span>
         </small>
       </span>
       <span className="flex shrink-0 flex-col items-end gap-[3px] text-[12.5px] text-sd-fg-subtle">
@@ -168,6 +175,8 @@ function RoomRow({ room, href, current }: { room: LiveRoom; href: string; curren
 function HistoryRow({ h, href, current }: { h: History; href: string; current: boolean }) {
   const host = h.hostUserId ? h.participants.find((p) => p.userId === h.hostUserId)?.nickname : null;
   const place = h.placeName ? shortPlaceName(h.placeName) : null;
+  // 해외 동네 이름은 그 나라 말로 와서 국기가 없으면 어디인지 바로 안 읽힌다
+  const abroad = isAbroad(h.countryCode) ? h.countryCode : null;
   const meta = [place, `체포 ${h.arrestedRobberCount}/${h.totalRobberCount}`, host ? `${host} 님의 방` : null].filter(Boolean).join(" · ");
   const cop = h.winnerTeam === "POLICE";
   return (
@@ -178,8 +187,9 @@ function HistoryRow({ h, href, current }: { h: History; href: string; current: b
           <span className="truncate font-medium text-sd-fg-subtle">· {labelOf(END_REASON_LABEL, h.endReason)}</span>
           {h.isEventGame && <Tag>이벤트</Tag>}
         </b>
-        <small className="mt-px block truncate text-[12.5px] text-sd-fg-subtle" title={h.placeName ?? undefined}>
-          {meta}
+        <small className="mt-px flex items-center gap-1.5 truncate text-[12.5px] text-sd-fg-subtle" title={h.placeName ?? undefined}>
+          {abroad && <CountryFlag code={abroad} size={11} />}
+          <span className="truncate">{meta}</span>
         </small>
       </span>
       <span className="flex shrink-0 flex-col items-end gap-[3px] text-[12.5px] tabular-nums text-sd-fg-subtle">
