@@ -86,6 +86,8 @@ function useScrollEdges() {
 }
 
 const WIDE = /^\/admin\/(events\/[^/]+|company)/;
+// 유저와 게임은 목록과 상세 두 칸 화면이라 폭을 다 쓴다(#315). 가운데로 좁히면 두 칸 사이와 메뉴 옆에 빈 띠가 생긴다
+const FULL = /^\/admin\/(users|games)\/?$/;
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -205,7 +207,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         {/* 콘텐츠 */}
         <main className="min-w-0 flex-1 overflow-hidden">
           {/* 행사 하나는 실제 부스 화면을 옆에 띄우고 고쳐서 넓게 쓴다(#221). 작으면 문구가 넘치는지 판단할 수 없다 */}
-          <div className={`mx-auto flex h-full w-full flex-col ${WIDE.test(pathname) ? "max-w-7xl" : "max-w-5xl"}`}>
+          <div className={`mx-auto flex h-full w-full flex-col ${FULL.test(pathname) ? "max-w-none" : WIDE.test(pathname) ? "max-w-7xl" : "max-w-5xl"}`}>
             {children}
           </div>
         </main>
