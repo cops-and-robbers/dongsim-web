@@ -6,8 +6,8 @@
 
 | 자리 | 하는 일 |
 | --- | --- |
-| 홈 소개 칸(`components/home/OnlineGameTeaserSection.tsx`) | "만들고 있어요"와 `/online` 링크. 게임이 한국어만 있어 한국어 홈에만 둬요 |
-| `/online`(`app/(ko)/online/page.tsx`) | 게임의 `GET /status` 를 30초마다 서버에서 읽어 버튼을 바꿔요. 한국어 전용(`KO_ONLY_PATHS`) |
+| 홈 소개 칸(`components/home/OnlineGameTeaserSection.tsx`) | "만들고 있어요"와 `/online` 링크. 한국어 홈에만 둬요 |
+| `/online`, `/en/online`, `/ja/online` | 본문은 `components/online/OnlineSections.tsx` 하나를 언어만 바꿔 써요(#317). 게임의 `GET /status` 를 30초마다 서버에서 읽어 버튼을 바꿔요. 버튼은 그 언어의 게임 주소(`/play`, `/en/play`, `/ja/play`)로 보내서, 게임 쪽 링크 미리보기도 그 언어로 나와요(`lib/webgame.ts` `webgamePlayUrl`) |
 | 어드민 "온라인 게임" | 상태를 바꿔요. `docs/admin-ui.md` |
 
 ## 게임 장면은 실제 게임과 같게 배치해요
@@ -22,7 +22,14 @@
 - 조금씩 움직여요(걷기, 고개 내밀기, 공개 표시 퍼짐, 지나가는 경찰). 움직임을 줄이도록 설정한 사람에게는 멈춰요
 - 게임 화면이 바뀌면 같이 고쳐요. 가로 폰 틀은 `components/online/LandscapeFrame.tsx`
 
-헤더에는 한국어에서만 "온라인 게임" 메뉴를 둬요(`lib/i18n/chrome.ts`).
+- 장면 속 글자(감옥, 달리기, 잡기, 이름표, 알림, 대기실 버튼)는 `components/online/copy.ts` 에 언어별로 있어요. 게임 화면 문구(`cops-and-robbers-web-game` `client/i18n.js`)와 같은 말을 써요. 영어, 일본어는 글자 길이에 맞춰 대기실 버튼 폭을 넓히고, 한국어는 원래 크기 그대로예요
+
+헤더에는 세 언어 모두 "온라인 게임" 메뉴를 둬요(`lib/i18n/chrome.ts`). 홈 소개 칸은 아직 한국어 홈에만 있어요.
+
+### 영어, 일본어 페이지
+
+- 문구는 `lib/i18n/messages.ts` 의 `online`. 공유 카드 그림은 게임의 언어별 카드 그림(`og-en.png`, `og-ja.png`)과 같아요
+- 점검 안내에 어드민이 적은 말은 한국어라 영어, 일본어 페이지에서는 정해진 안내만 보여 줘요. 다시 여는 시각은 한국 시간으로 적어요(영어는 "KST" 를 붙여요)
 
 ## 폰에서 깜빡임 (2026-11-07, #213)
 

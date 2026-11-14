@@ -77,11 +77,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         languages: alternateLanguages(BASE_URL),
       },
     },
-    {
-      url: `${BASE_URL}/online`,
-      changeFrequency: "monthly",
+    ...(["/online", "/en/online", "/ja/online"] as const).map((url) => ({
+      url: `${BASE_URL}${url}`,
+      changeFrequency: "monthly" as const,
       priority: 0.8,
-    },
+      alternates: { languages: alternateLanguages(BASE_URL, "/online") },
+    })),
     {
       url: `${BASE_URL}/game`,
       changeFrequency: "monthly",
