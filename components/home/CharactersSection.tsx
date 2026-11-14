@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import CopIcon from "@/components/characters/CopIcon";
@@ -7,6 +8,7 @@ import RobberIcon from "@/components/characters/RobberIcon";
 import { useTheme, type Team } from "@/components/ThemeProvider";
 import { SHOEPRINT_PATH } from "@/components/icons/Footprint";
 import type { Messages } from "@/lib/i18n/messages";
+import RoleBannerOverlay from "./RoleBannerOverlay";
 
 const PATTERN_COLORS = {
   blueLight: "#3F63D9",
@@ -128,6 +130,7 @@ type RoleCardProps = {
   selectedLabel: string;
   pickLabel: string;
   ariaLabel: string;
+  onPick: (team: Team) => void;
   children: React.ReactNode;
 };
 
@@ -139,6 +142,7 @@ function RoleCard({
   selectedLabel,
   pickLabel,
   ariaLabel,
+  onPick,
   children,
 }: RoleCardProps) {
   const { team, setTeam } = useTheme();
@@ -161,7 +165,10 @@ function RoleCard({
   return (
     <button
       type="button"
-      onClick={() => setTeam(targetTeam)}
+      onClick={() => {
+        setTeam(targetTeam);
+        onPick(targetTeam);
+      }}
       aria-pressed={isSelected}
       aria-label={ariaLabel}
       className={`group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-3xl bg-white text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:bg-app-black dark:hover:shadow-2xl ${
@@ -215,8 +222,24 @@ export default function CharactersSection({
 }: {
   copy: Messages["home"]["characters"];
 }) {
+  // 팀을 고른 순간 앱의 역할 배너가 화면 위로 펼쳐진다. 움직임 줄이기 설정이면 테마만 바뀐다
+  const [banner, setBanner] = useState<{ team: Team; key: number } | null>(null);
+  const pick = useCallback((team: Team) => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setBanner({ team, key: Date.now() });
+  }, []);
+  const closeBanner = useCallback(() => setBanner(null), []);
+
   return (
     <section className="bg-slate-50 py-24 transition-colors duration-500 sm:py-32 dark:bg-app-black-900">
+      {banner && (
+        <RoleBannerOverlay
+          key={banner.key}
+          team={banner.team}
+          copy={copy.banner}
+          onDone={closeBanner}
+        />
+      )}
       <Container>
         <ScrollReveal animation="fadeInUp">
           <div className="max-w-2xl">
@@ -239,6 +262,7 @@ export default function CharactersSection({
               selectedLabel={copy.selected}
               pickLabel={copy.pick}
               ariaLabel={copy.pickAria.replace("{name}", copy.cop.name)}
+              onPick={pick}
             >
               <CopIcon className="h-full w-auto" />
             </RoleCard>
@@ -253,6 +277,7 @@ export default function CharactersSection({
               selectedLabel={copy.selected}
               pickLabel={copy.pick}
               ariaLabel={copy.pickAria.replace("{name}", copy.robber.name)}
+              onPick={pick}
             >
               <RobberIcon className="h-full w-auto" />
             </RoleCard>

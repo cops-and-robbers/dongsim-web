@@ -30,6 +30,22 @@ const ko = {
       selected: "선택됨",
       pick: "팀 선택",
       pickAria: "{name} 팀 선택",
+      // 팀을 고르면 뜨는 역할 배너 - 앱 4.0.1 게임 시작 장면 문구(l10n) 그대로
+      banner: {
+        label: "내 역할",
+        police: {
+          title: "도둑을 찾아\n모두 체포해요!",
+          titleAccent: "체포해요!",
+          sentence: "이번 판은 경찰이에요",
+          role: "경찰",
+        },
+        robber: {
+          title: "경찰을 피해\n끝까지 도망쳐요!",
+          titleAccent: "도망쳐요!",
+          sentence: "이번 판은 도둑이에요",
+          role: "도둑",
+        },
+      },
       cop: {
         name: "경찰",
         summary: "공개되는 발자국을 쫓아 도둑을 모두 잡으세요.",
@@ -428,6 +444,22 @@ const en: Messages = {
       selected: "Selected",
       pick: "Pick side",
       pickAria: "Pick the {name}",
+      // 팀을 고르면 뜨는 역할 배너 - 앱 4.0.1 게임 시작 장면 문구(l10n) 그대로
+      banner: {
+        label: "Your role",
+        police: {
+          title: "Find the Robbers,\narrest them all!",
+          titleAccent: "arrest them all!",
+          sentence: "You're a Cop this round",
+          role: "Cop",
+        },
+        robber: {
+          title: "Dodge the Cops,\nrun until the end!",
+          titleAccent: "run until the end!",
+          sentence: "You're a Robber this round",
+          role: "Robber",
+        },
+      },
       cop: {
         name: "Cops",
         summary: "Track the footprints and tag every robber.",
@@ -828,6 +860,22 @@ const ja: Messages = {
       selected: "選択中",
       pick: "チーム選択",
       pickAria: "{name}チームを選択",
+      // 팀을 고르면 뜨는 역할 배너 - 앱 4.0.1 게임 시작 장면 문구(l10n) 그대로
+      banner: {
+        label: "あなたの役割",
+        police: {
+          title: "泥棒を見つけて\n全員逮捕しよう!",
+          titleAccent: "全員逮捕しよう!",
+          sentence: "このラウンドは警察です",
+          role: "警察",
+        },
+        robber: {
+          title: "警察をかわして\n最後まで逃げ切ろう!",
+          titleAccent: "最後まで逃げ切ろう!",
+          sentence: "このラウンドは泥棒です",
+          role: "泥棒",
+        },
+      },
       cop: {
         name: "警察",
         summary: "残された足跡を追って、泥棒を全員つかまえろ。",

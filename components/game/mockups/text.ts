@@ -19,6 +19,8 @@ export type MockupText = {
   location: { timer: string; countdown: string };
   /** 구역 축소 화면 (gameRevealShrinkCountdown / gameShrinkNotice, #668) */
   shrink: { timer: string; countdown: string; notice: string };
+  /** MVP 목업에 나오는 닉네임 (앱이 만들어 주는 형식) */
+  mvpNames: { police: string; robber: string };
   /** 결과 카드 (game_over_result_dialog.dart) */
   result: {
     win: string;
@@ -86,6 +88,7 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
       countdown: "위치 공개 02:41 | 구역 축소 00:48",
       notice: "구역이 줄었어요 (2/4)",
     },
+    mvpNames: { police: "든든한보안관3402", robber: "민첩한괴도5308" },
     result: {
       win: "승리",
       tabAll: "전체",
@@ -173,6 +176,7 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
       countdown: "Reveal 02:41 | Shrink 00:48",
       notice: "The area got smaller (2/4)",
     },
+    mvpNames: { police: "SteadySheriff3402", robber: "SwiftPhantom5308" },
     result: {
       win: "Win",
       tabAll: "All",
@@ -260,6 +264,7 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
       countdown: "位置公開 02:41 | 縮小 00:48",
       notice: "エリアが狭くなりました (2/4)",
     },
+    mvpNames: { police: "たのもしい保安官3402", robber: "すばやい怪盗5308" },
     result: {
       win: "勝利",
       tabAll: "全体",

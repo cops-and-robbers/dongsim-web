@@ -14,7 +14,7 @@ import { MOCKUP_TEXT } from "./text";
 // 인게임 화면 한 벌. 상단 바 64 + 지도(구역은 테두리만 blue800, 감옥 red500)
 // + 지도 아래 버튼 줄(내 위치, + 메뉴, 채팅). 발자국 색만 시점에 따라 다르다.
 // [shrinkNotice] 를 주면 구역 원이 한 단계 줄어드는 순간과 그 안내를 보여 준다.
-function InGameScreen({
+export function InGameScreen({
   dark,
   timer,
   countdown,
