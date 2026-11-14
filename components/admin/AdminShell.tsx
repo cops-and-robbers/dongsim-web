@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
+import { MotionConfig, motion } from "motion/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ToastProvider } from "@/components/admin/Toast";
 import { TeamProvider } from "@/components/admin/team/TeamProvider";
@@ -25,13 +25,15 @@ import { useMaintenanceOn } from "@/lib/admin/useMaintenanceOn";
 import { useWebgamePaused } from "@/lib/admin/useWebgamePaused";
 
 // 데스크톱 사이드바 항목
-function NavLink({ item, active, count, notice }: { item: NavItem; active: boolean; count: number; notice?: string }) {
+// order: 위에서 몇 번째인지. 처음 열 때 메뉴가 그 순서로 차례로 들어온다(globals.css admin-nav-in)
+function NavLink({ item, active, count, notice, order }: { item: NavItem; active: boolean; count: number; notice?: string; order: number }) {
   const { Icon } = item;
   return (
     <Link
       href={item.href}
+      style={{ "--i": order } as React.CSSProperties}
       aria-current={active ? "page" : undefined}
-      className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
+      className={`admin-nav-in relative flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
         active
           ? "text-accent"
           : "text-sd-fg-subtle hover:bg-sd-pressed hover:text-sd-fg-muted active:bg-sd-selected"
@@ -89,6 +91,17 @@ const WIDE = /^\/admin\/(events\/[^/]+|company)/;
 // 유저와 게임은 목록과 상세 두 칸 화면이라 폭을 다 쓴다(#315). 가운데로 좁히면 두 칸 사이와 메뉴 옆에 빈 띠가 생긴다
 const FULL = /^\/admin\/(users|games)\/?$/;
 
+// 메뉴 항목의 위에서부터 순서(묶음을 건너 이어 센다)
+const NAV_ORDER = new Map(NAV_GROUPS.flatMap((g) => g.items).map((item, i) => [item.href, i]));
+
+// 화면을 옮길 때 본문이 흐림에서 또렷해지며 살짝 올라온다. 나가는 움직임은 두지 않아 누르자마자 바뀐다.
+// 끝나면 filter 를 none 으로 되돌린다. filter 나 transform 이 남으면 본문 안의 fixed 대화상자가 본문에 갇힌다
+const PAGE_IN = {
+  initial: { opacity: 0, y: 10, filter: "blur(6px)" },
+  animate: { opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: { filter: "none" } },
+  transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
+} as const;
+
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isActive = (item: NavItem) => isActiveItem(item, pathname);
@@ -137,11 +150,18 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
+    <MotionConfig reducedMotion="user">
     <ToastProvider>
       <TeamProvider>
       <div className="admin-shell fixed inset-0 z-50 flex flex-col overscroll-none bg-sd-fill text-sd-fg md:flex-row">
         {/* 데스크톱 사이드바. 로고와 계정 줄은 고정하고 가운데 메뉴만 스크롤한다(docs/admin-ui.md "내비게이션") */}
-        <aside className="hidden w-60 shrink-0 flex-col border-r border-sd-line bg-sd-surface md:flex">
+        {/* 처음 열 때 사이드바가 왼쪽에서 밀려 나온다. 화면을 옮길 때는 그대로 있다 */}
+        <motion.aside
+          initial={{ opacity: 0, x: -24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ type: "spring", stiffness: 260, damping: 30 }}
+          className="hidden w-60 shrink-0 flex-col border-r border-sd-line bg-sd-surface md:flex"
+        >
           <div className={`flex h-14 shrink-0 items-center border-b px-5 transition-colors ${edges.top ? "border-sd-hairline" : "border-transparent"}`}>
             <Link href="/admin" className="block py-1">
               <img
@@ -165,6 +185,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                     {group.items.map((item) => (
                       <NavLink
                         key={item.href}
+                        order={NAV_ORDER.get(item.href) ?? 0}
                         item={item}
                         active={isActive(item)}
                         count={countOf(item)}
@@ -187,7 +208,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               <AccountRow />
             </div>
           </div>
-        </aside>
+        </motion.aside>
 
         {/* 모바일 상단 헤더. 메뉴, 테마, 로그아웃은 하단 "전체"로 옮기고 점검 알림만 남긴다 */}
         <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-sd-line bg-sd-surface px-4 md:hidden">
@@ -207,9 +228,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         {/* 콘텐츠 */}
         <main className="min-w-0 flex-1 overflow-hidden">
           {/* 행사 하나는 실제 부스 화면을 옆에 띄우고 고쳐서 넓게 쓴다(#221). 작으면 문구가 넘치는지 판단할 수 없다 */}
-          <div className={`mx-auto flex h-full w-full flex-col ${FULL.test(pathname) ? "max-w-none" : WIDE.test(pathname) ? "max-w-7xl" : "max-w-5xl"}`}>
+          <motion.div
+            key={pathname}
+            {...PAGE_IN}
+            className={`mx-auto flex h-full w-full flex-col ${FULL.test(pathname) ? "max-w-none" : WIDE.test(pathname) ? "max-w-7xl" : "max-w-5xl"}`}
+          >
             {children}
-          </div>
+          </motion.div>
         </main>
 
         {/* 모바일 하단 탭 바와 전체 메뉴 */}
@@ -218,5 +243,6 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <CommandPalette />
       </TeamProvider>
     </ToastProvider>
+    </MotionConfig>
   );
 }
