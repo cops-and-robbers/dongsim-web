@@ -27,8 +27,6 @@ function untilText(iso: string | null, locale: Locale): string {
   return new Intl.DateTimeFormat(INTL[locale], { timeZone: "Asia/Seoul", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(t);
 }
 
-const DOT = { soon: "bg-slate-400", open: "bg-brand-green", pause: "bg-brand-red" } as const;
-
 function Play({ status, medium, locale, copy }: { status: WebgameStatus; medium: string; locale: Locale; copy: OnlineCopy }) {
   if (status.mode === "open") {
     return (
@@ -74,12 +72,9 @@ export default async function OnlineSections({ locale }: { locale: Locale }) {
       <section className="border-b border-slate-200 dark:border-white/10">
         <Container className="grid items-center gap-12 py-20 sm:py-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] lg:gap-14 lg:py-28">
           <ScrollReveal animation="fadeInUp">
+            {/* 제목 위 상태 알약은 두지 않는다(#321). 열려 있는지는 버튼이 눌리는지로, 못 누르는 까닭은 버튼 옆 안내로 이미 보인다 */}
             <div className="flex flex-col items-start">
-              <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:bg-white/10 dark:text-slate-300">
-                <span className={`h-1.5 w-1.5 rounded-full ${DOT[status.mode]}`} />
-                {copy.badge[status.mode]}
-              </span>
-              <h1 className="mt-5 text-balance text-5xl font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-6xl dark:text-white">
+              <h1 className="text-balance text-5xl font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-6xl dark:text-white">
                 {copy.title[0]}
                 <br />
                 {copy.title[1]}
