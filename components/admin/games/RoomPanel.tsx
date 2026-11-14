@@ -161,7 +161,7 @@ function Team({ label, tone, people, userHref, right }: { label: string; tone?: 
           <Link key={p.userId} href={userHref(p.userId)} className="-mx-2 flex min-w-0 items-center gap-1.5 rounded-[9px] px-2 py-1.5 text-[14px] font-medium text-sd-fg hover:bg-sd-pressed">
             <span className="truncate">{p.nickname}</span>
             {p.isHost && <span className="shrink-0 text-[11px] font-bold text-accent">방장</span>}
-            {p.status === "JAILED" && <span className="shrink-0 text-[11px] font-bold text-sd-critical">수감</span>}
+            {p.team === "ROBBER" && p.status === "JAILED" && <span className="shrink-0 text-[11px] font-bold text-sd-critical">수감</span>}
           </Link>
         ))}
       </div>
