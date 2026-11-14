@@ -20,7 +20,7 @@ export function SplitView({
 }: {
   list: ReactNode;
   detail: ReactNode;
-  /** 고른 항목. 없으면 null. 바뀌면 상세 칸을 맨 위로 올리고 살짝 올라오며 바뀐다 */
+  /** 고른 항목. 없으면 null. 바뀌면 상세 칸을 맨 위로 올리고 카드가 차례로 떠오른다(폰은 오른쪽에서 밀려 들어온다) */
   selectionKey: string | null;
   /** 좁은 화면에서 "목록으로" 갈 주소 */
   closeHref: string;
@@ -54,7 +54,7 @@ export function SplitView({
             </Link>
           </div>
         )}
-        <div key={selectionKey ?? "none"} className="mx-auto flex max-w-[720px] flex-col gap-3 px-4 pt-5 pb-16 motion-safe:animate-[detailenter_0.18s_ease-out] sm:px-7 sm:pt-7">
+        <div key={selectionKey ?? "none"} className="admin-detail-in mx-auto flex max-w-[720px] flex-col gap-3 px-4 pt-5 pb-16 sm:px-7 sm:pt-7">
           {detail}
         </div>
       </section>
