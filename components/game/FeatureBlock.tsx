@@ -11,6 +11,7 @@ import {
   CommunityListMockup,
   CommunityChatMockup,
 } from "./PhoneMockup";
+import { LazyMvpMockup } from "./mockups/LazySceneMockups";
 import type { GameMockup } from "@/lib/constants";
 import type { Messages } from "@/lib/i18n/messages";
 
@@ -21,6 +22,7 @@ const MOCKUPS = {
   qr: <QrMockup />,
   chat: <ChatMockup />,
   result: <ResultMockup />,
+  mvp: <LazyMvpMockup />,
   communityList: <CommunityListMockup />,
   communityChat: <CommunityChatMockup />,
 };

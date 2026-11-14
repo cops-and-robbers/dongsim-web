@@ -19,7 +19,7 @@ const RESULT = {
   robber: { date: "2026.11.08 17:30", km: "2.05", stats: ["30:00", "2", "1"] },
 } as const;
 
-function ResultCard({ team, t }: { team: "police" | "robber"; t: MockupText["result"] }) {
+export function ResultCard({ team, t }: { team: "police" | "robber"; t: MockupText["result"] }) {
   const robber = team === "robber";
   const accent = robber ? appColors.green : appColors.blue;
   const data = RESULT[team];
