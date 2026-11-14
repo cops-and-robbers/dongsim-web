@@ -17,8 +17,27 @@ export type MockupText = {
     button: string;
   };
   location: { timer: string; countdown: string };
+  /** 구역 축소 화면 (gameRevealShrinkCountdown / gameShrinkNotice, #668) */
+  shrink: { timer: string; countdown: string; notice: string };
+  /** 결과 카드 (game_over_result_dialog.dart) */
+  result: {
+    win: string;
+    tabAll: string;
+    tabMine: string;
+    mvp: string;
+    playtime: string;
+    arrestCount: string;
+    remainingRobbers: string;
+  };
   qr: { scanTitle: string; title: string; message: string; close: string };
-  chat: { title: string; input: string; bubbles: ChatBubbleData[] };
+  chat: {
+    /** chatScopeTeamTitle / chatScopeAllTitle */
+    scopeTeam: string;
+    scopeAll: string;
+    /** 팀 채팅 입력 힌트 */
+    input: string;
+    bubbles: ChatBubbleData[];
+  };
   v3: {
     create: {
       title: string;
@@ -61,6 +80,20 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
     location: {
       timer: "18:42",
       countdown: "다음 도둑 위치 공개까지 2:41",
+    },
+    shrink: {
+      timer: "11:06",
+      countdown: "위치 공개 02:41 | 구역 축소 00:48",
+      notice: "구역이 줄었어요 (2/4)",
+    },
+    result: {
+      win: "승리",
+      tabAll: "전체",
+      tabMine: "개인",
+      mvp: "MVP",
+      playtime: "게임 진행 시간",
+      arrestCount: "체포 횟수",
+      remainingRobbers: "남은 도둑",
     },
     qr: {
       scanTitle: "도둑의 수배 QR을 스캔하세요",
@@ -110,8 +143,9 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
       },
     },
     chat: {
-      title: "팀 채팅",
-      input: "채팅을 입력하세요",
+      scopeTeam: "팀 채팅",
+      scopeAll: "전체 채팅",
+      input: "팀원에게 메시지 보내기",
       bubbles: [
         { name: "상희", text: "공원 입구로 집결하자", side: "left" },
         { name: "혜림", text: "도둑 2명 북쪽 근처", side: "left" },
@@ -133,6 +167,20 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
     location: {
       timer: "18:42",
       countdown: "Until next Robber location reveal: 2:41",
+    },
+    shrink: {
+      timer: "11:06",
+      countdown: "Reveal 02:41 | Shrink 00:48",
+      notice: "The area got smaller (2/4)",
+    },
+    result: {
+      win: "Win",
+      tabAll: "All",
+      tabMine: "Mine",
+      mvp: "MVP",
+      playtime: "Game playtime",
+      arrestCount: "Arrest count",
+      remainingRobbers: "Remaining Robbers",
     },
     qr: {
       scanTitle: "Scan the Robber's wanted QR code",
@@ -182,8 +230,9 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
       },
     },
     chat: {
-      title: "Team chat",
-      input: "Enter chat message",
+      scopeTeam: "Team chat",
+      scopeAll: "Global chat",
+      input: "Message your team",
       bubbles: [
         { name: "Alex", text: "Regroup at the park entrance", side: "left" },
         { name: "Mia", text: "2 robbers near the north side", side: "left" },
@@ -205,6 +254,20 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
     location: {
       timer: "18:42",
       countdown: "次の泥棒の位置公開まで 2:41",
+    },
+    shrink: {
+      timer: "11:06",
+      countdown: "位置公開 02:41 | 縮小 00:48",
+      notice: "エリアが狭くなりました (2/4)",
+    },
+    result: {
+      win: "勝利",
+      tabAll: "全体",
+      tabMine: "個人",
+      mvp: "MVP",
+      playtime: "ゲーム進行時間",
+      arrestCount: "逮捕回数",
+      remainingRobbers: "残りの泥棒",
     },
     qr: {
       scanTitle: "泥棒の指名手配QRをスキャンしてください",
@@ -254,8 +317,9 @@ export const MOCKUP_TEXT: Record<Locale, MockupText> = {
       },
     },
     chat: {
-      title: "チームチャット",
-      input: "チャットを入力してください",
+      scopeTeam: "チームチャット",
+      scopeAll: "全体チャット",
+      input: "チームにメッセージを送る",
       bubbles: [
         { name: "ハル", text: "公園の入口に集合", side: "left" },
         { name: "リン", text: "北側に泥棒が2人", side: "left" },

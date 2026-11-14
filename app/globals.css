@@ -476,6 +476,33 @@ body {
   }
 }
 
+/* 구역 축소 (#668): 원이 한 단계 좁아진 뒤 "구역이 줄었어요" 안내가 뜬다.
+   가운데 정렬은 translate 속성이 맡아서 scale 과 겹치지 않는다 */
+.is-playing .mockup-shrink-ring {
+  animation: mockupShrink 1.4s cubic-bezier(0.65, 0, 0.35, 1) 0.6s forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mockup-shrink-ring,
+  .is-playing .mockup-shrink-ring {
+    animation: none;
+    transform: scale(0.84);
+  }
+}
+@keyframes mockupShrink {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.84);
+  }
+}
+.mockup-shrink-notice {
+  opacity: 0;
+}
+.is-playing .mockup-shrink-notice {
+  animation: mockupFootprintReveal 0.4s ease-out 2s forwards;
+}
+
 /* 부스 미니게임: 두더지 팝업·체포·점수 연출 */
 @keyframes booth-pop {
   0% {
@@ -867,6 +894,7 @@ body {
   }
   .mockup-zone-ring,
   .mockup-footprint,
+  .mockup-shrink-notice,
   .mockup-qr-scan,
   .mockup-chat-bubble,
   .mockup-typed-2,

@@ -3,7 +3,9 @@ import ScrollReveal from "@/components/ui/ScrollReveal";
 import {
   PhoneFrame,
   ZoneMockup,
+  ShrinkMockup,
   LocationMockup,
+  ResultMockup,
   QrMockup,
   ChatMockup,
   CommunityListMockup,
@@ -14,9 +16,11 @@ import type { Messages } from "@/lib/i18n/messages";
 
 const MOCKUPS = {
   zone: <ZoneMockup />,
+  shrink: <ShrinkMockup />,
   location: <LocationMockup />,
   qr: <QrMockup />,
   chat: <ChatMockup />,
+  result: <ResultMockup />,
   communityList: <CommunityListMockup />,
   communityChat: <CommunityChatMockup />,
 };

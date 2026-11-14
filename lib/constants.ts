@@ -142,18 +142,22 @@ export const HOME_FEATURES = [
 
 export type GameMockup =
   | "zone"
+  | "shrink"
   | "location"
   | "qr"
   | "chat"
+  | "result"
   | "communityList"
   | "communityChat";
 
 // 게임 기능 블록의 목업 순서(언어 무관). 카피는 messages.ts의 game.features와 같은 순서로 대응.
+// 4.0.1 기준: 구역 축소(#668)와 팀 MVP 결과가 들어가고, 커뮤니티는 한 블록으로 합쳤다.
 export const GAME_FEATURE_MOCKUPS: GameMockup[] = [
   "zone",
+  "shrink",
   "location",
   "qr",
   "chat",
+  "result",
   "communityList",
-  "communityChat",
 ];
