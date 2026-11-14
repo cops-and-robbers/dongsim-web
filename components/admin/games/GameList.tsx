@@ -7,12 +7,12 @@ import type { AdminGameHistoriesPlaceNames } from "@/__generated__/AdminGameHist
 import { AdminGameHistoriesQuery } from "@/lib/admin/gql/AdminGameHistories";
 import { AdminGameHistoriesPlaceNamesQuery } from "@/lib/admin/gql/AdminGameHistoriesPlaceNames";
 import { END_REASON_LABEL, TEAM_LABEL, gameEndedAt, labelOf } from "@/lib/admin/format";
-import { shortPlaceName } from "@/lib/admin/gameExtras";
+import { shortPlaceName, waitingStage } from "@/lib/admin/gameExtras";
 import { ago, dayName, durationText, groupInOrder, kstClock, kstDay } from "@/lib/admin/people";
 import { usePagedQuery } from "@/lib/admin/usePagedQuery";
 import type { LiveRoom } from "@/lib/admin/useLiveRooms";
 import { RecentMenu } from "@/components/admin/RecentViewed";
-import { Chip, EmptyRow, GroupHead, ListHead, ListRow, LiveDot, LoadMore, Tag } from "@/components/admin/split/SplitParts";
+import { Chip, EmptyRow, GroupHead, ListHead, ListRow, LiveDot, LoadMore, Segmented, Tag } from "@/components/admin/split/SplitParts";
 
 type History = AdminGameHistories$data["adminGameHistories"]["content"][number] & { placeName: string | null };
 
@@ -30,12 +30,19 @@ export const GAME_FILTERS: { value: GameEndReason | ""; label: string }[] = [
 
 const PAGE = 30;
 
+/** 목록 탭(#323). 끝난 판이 기본이고 지금 방은 주소에 ?tab=rooms 로 남긴다 */
+export type GameTab = "done" | "rooms";
+
 /**
  * 게임 목록 칸 (#315, 시안 "경도 어드민 유저와 게임").
- * 방은 하루 평균 4.6개만 만들어져 열린 방만 따로 보는 화면은 대부분 비어 있었다. 그래서 끝난 판과 한 목록에 두고 지금 열린 방을 맨 위에 둔다.
+ * 끝난 판과 지금 방을 두 탭으로 나눈다(#323). 운영진이 주로 보는 건 끝난 판이라 기본이고, 열린 방이 맨 위에 고정돼 있으면
+ * 몇 달째 대기 중인 방까지 끝난 판을 밀어냈다. 방 상태는 대기 중과 게임 중뿐이라(판이 끝나면 다시 대기 중, 빈 방은 지워진다)
+ * 지금 방 탭 안에서 게임 중을 위에, 대기 중을 아래에 묶는다. 게임 중인 방 수는 탭 이름 옆에 붙여 들어가지 않아도 보이게 한다.
  * 끝난 판 줄은 결과 다음에 바로 어디서 했는지가 온다. 게임은 실제 장소에서 하니 위치가 판을 알아보는 가장 큰 단서고, 방장 이름이 두 번째 단서다
  */
 export function GameList({
+  tab,
+  onTab,
   filter,
   onFilter,
   rooms,
@@ -46,6 +53,8 @@ export function GameList({
   roomHref,
   historyHref,
 }: {
+  tab: GameTab;
+  onTab: (t: GameTab) => void;
   filter: GameEndReason | "";
   onFilter: (f: GameEndReason | "") => void;
   rooms: readonly LiveRoom[];
@@ -75,35 +84,51 @@ export function GameList({
   );
   const list = usePagedQuery<History>(filter, fetchPage, refreshKey);
   const days = useMemo(() => groupInOrder(list.items, (h) => kstDay(gameEndedAt(h))), [list.items]);
-  const showRooms = filter === "";
-  const liveCount = rooms.filter((r) => r.live).length;
+  const playing = rooms.filter((r) => r.live);
+  const waiting = rooms.filter((r) => !r.live);
 
   return (
     <>
       <ListHead title="게임" right={<div className="flex items-center gap-1"><SyncLabel at={syncedAt} /><RecentMenu group="game" /></div>}>
-        <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
-          {GAME_FILTERS.map((f) => (
-            <Chip key={f.value || "all"} on={filter === f.value} onClick={() => onFilter(f.value)}>
-              {f.label}
-            </Chip>
-          ))}
-        </div>
-      </ListHead>
-
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-4">
-        {showRooms && (
-          <div>
-            <GroupHead right={roomsReady && rooms.length > 0 ? `게임 중 ${liveCount} · 대기 중 ${rooms.length - liveCount}` : null}>지금 열린 방</GroupHead>
-            {!roomsReady ? (
-              <div aria-busy className="mx-3 my-2 h-12 animate-pulse rounded-xl bg-sd-gray-200" />
-            ) : rooms.length === 0 ? (
-              <EmptyRow>지금 열린 방이 없어요.</EmptyRow>
-            ) : (
-              rooms.map((r) => <RoomRow key={r.id} room={r} href={roomHref(r.id)} current={selected.room === r.id} />)
-            )}
+        <Segmented
+          group="game-tab"
+          label="게임 목록 나누기"
+          value={tab}
+          onChange={onTab}
+          options={[
+            { value: "done", label: "끝난 판" },
+            {
+              value: "rooms",
+              label: (
+                <>
+                  지금 방
+                  {playing.length > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold tabular-nums text-sd-positive" aria-label={`게임 중 ${playing.length}`}>
+                      <LiveDot live />
+                      {playing.length}
+                    </span>
+                  )}
+                </>
+              ),
+            },
+          ]}
+        />
+        {tab === "done" && (
+          <div className="-mx-5 flex gap-1.5 overflow-x-auto px-5 [scrollbar-width:none]">
+            {GAME_FILTERS.map((f) => (
+              <Chip key={f.value || "all"} group="end-reason" on={filter === f.value} onClick={() => onFilter(f.value)}>
+                {f.label}
+              </Chip>
+            ))}
           </div>
         )}
+      </ListHead>
 
+      {/* 탭마다 스크롤을 따로 둔다. 키를 바꿔 다른 탭에서 내려간 위치를 끌고 오지 않게 한다 */}
+      <div key={tab} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-4">
+        {tab === "rooms" ? (
+          <RoomsTab ready={roomsReady} playing={playing} waiting={waiting} selected={selected.room} roomHref={roomHref} />
+        ) : (
         <div className={`transition-opacity ${list.stale && !list.initial ? "opacity-50" : ""}`}>
           {list.initial ? (
             <div aria-busy className="space-y-2 px-3 pt-4">
@@ -131,7 +156,51 @@ export function GameList({
           )}
           <LoadMore hasMore={list.hasMore} loading={list.loadingMore} failed={list.failed && list.items.length > 0} onMore={list.more} />
         </div>
+        )}
       </div>
+    </>
+  );
+}
+
+// 지금 방 탭. 게임 중이 위, 대기 중이 아래. 게임 중이 없어도 그 묶음 제목은 남겨 "지금은 아무도 안 한다"가 바로 읽히게 한다
+function RoomsTab({
+  ready,
+  playing,
+  waiting,
+  selected,
+  roomHref,
+}: {
+  ready: boolean;
+  playing: readonly LiveRoom[];
+  waiting: readonly LiveRoom[];
+  selected: string | null;
+  roomHref: (id: string) => string;
+}) {
+  if (!ready)
+    return (
+      <div aria-busy className="space-y-2 px-3 pt-4">
+        {Array.from({ length: 4 }, (_, i) => (
+          <div key={i} className="h-12 animate-pulse rounded-xl bg-sd-gray-200" />
+        ))}
+      </div>
+    );
+  if (playing.length + waiting.length === 0) return <EmptyRow>지금 열린 방이 없어요.</EmptyRow>;
+  return (
+    <>
+      <GroupHead right={`${playing.length}개`}>게임 중</GroupHead>
+      {playing.length === 0 ? (
+        <EmptyRow>지금 게임 중인 방이 없어요.</EmptyRow>
+      ) : (
+        playing.map((r) => <RoomRow key={r.id} room={r} href={roomHref(r.id)} current={selected === r.id} />)
+      )}
+      {waiting.length > 0 && (
+        <>
+          <GroupHead right={`${waiting.length}개`}>대기 중</GroupHead>
+          {waiting.map((r) => (
+            <RoomRow key={r.id} room={r} href={roomHref(r.id)} current={selected === r.id} />
+          ))}
+        </>
+      )}
     </>
   );
 }
@@ -142,11 +211,12 @@ function RoomRow({ room, href, current }: { room: LiveRoom; href: string; curren
   const rob = room.people?.filter((p) => p.team === "ROBBER").length ?? 0;
   const teams = room.people && (room.live || pol + rob > 0) ? `경찰 ${pol} · 도둑 ${rob}` : `${room.participantCount}명`;
   const people = room.isEventGame ? teams : `${teams} / ${room.maxParticipants}명`;
-  const meta = [room.placeName ? shortPlaceName(room.placeName) : null, people].filter(Boolean).join(" · ");
+  // 대기 중인 방은 시작 전인지, 몇 판 하고 쉬는 중인지를 붙인다. 몇 달째 대기 중인 방(앱을 끄고 나가지 않은 방)도 이걸로 가려진다
+  const meta = [room.placeName ? shortPlaceName(room.placeName) : null, people, room.live ? null : waitingStage(room.roundNumber)].filter(Boolean).join(" · ");
   return (
     <ListRow href={href} current={current}>
       <span className="min-w-0 flex-1">
-        <b className="flex items-center gap-1.5 text-[15px] font-bold tracking-[0.06em] text-sd-fg tabular-nums">
+        <b className={`flex items-center gap-1.5 text-[15px] font-bold tracking-[0.06em] tabular-nums ${room.live ? "text-sd-fg" : "text-sd-fg-muted"}`}>
           {room.inviteCode}
           {room.isEventGame && <Tag>이벤트</Tag>}
         </b>
