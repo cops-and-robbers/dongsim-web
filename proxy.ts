@@ -60,8 +60,11 @@ export function proxy(request: NextRequest) {
   폰트 조각, 캐릭터 그림, 링크 미리 읽기마다 돌아서 홈 한 번에 68번, 최근 12시간
   5,800번 중 99%가 아무 일 없이 통과만 했다. 그게 Vercel CPU 사용량의 절반이었다.
 
-  1. 구 도메인(서브도메인 포함)은 모든 경로를 보내야 하니 host 로 골라 전 경로
-  2. /admin 은 어느 도메인이든(메인 도메인에서 404 로 숨긴다)
+  1. 구 도메인(서브도메인 포함)은 모든 경로를 보내야 하니 host 로 골라 전 경로.
+     지금은 Vercel 도메인 설정이 먼저 308 로 넘겨서 여기까지 오지 않는다(2026-11-15 확인).
+     도메인 설정을 바꿔 이 프로젝트가 직접 받게 되면 다시 일한다
+  2. /admin 은 메인 도메인에서만(404 로 숨긴다). admin 서브도메인과 로컬은 그냥 통과시키는
+     것뿐이라 빼 둔다. 어드민 메뉴가 화면마다 미리 읽어 한 번 열 때 수십 번 돌았다(#337)
   3. admin 서브도메인의 루트(관리자 화면으로 바꿔 보여 준다)
 
   host 조건은 공식 문서에 있는 header 형식으로 쓴다. 값은 앞뒤가 고정된 정규식이고
@@ -73,8 +76,8 @@ export const config = {
       source: "/((?!_next/).*)",
       has: [{ type: "header", key: "host", value: "(?:.+\\.)?copsnro66ers\\.site(?::\\d+)?" }],
     },
-    "/admin",
-    "/admin/:path*",
+    { source: "/admin", missing: [{ type: "header", key: "host", value: "(?:admin\\..+|localhost|127\\.0\\.0\\.1)(?::\\d+)?" }] },
+    { source: "/admin/:path*", missing: [{ type: "header", key: "host", value: "(?:admin\\..+|localhost|127\\.0\\.0\\.1)(?::\\d+)?" }] },
     {
       source: "/",
       has: [{ type: "header", key: "host", value: "admin\\..+" }],
