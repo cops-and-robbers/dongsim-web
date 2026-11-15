@@ -6,15 +6,32 @@
 
 | 자리 | 하는 일 |
 | --- | --- |
-| 홈 소개 칸(`components/home/OnlineGameTeaserSection.tsx`) | "만들고 있어요"와 `/online` 링크. 한국어 홈에만 둬요 |
+| 홈 소개 칸(`components/home/OnlineGameTeaserSection.tsx`) | 실제 판의 한 장면과 `/online` 링크, 놀이 방식 칩 셋(누르면 `/online` 의 그 장으로). 한국어 홈에만 둬요 |
 | `/online`, `/en/online`, `/ja/online` | 본문은 `components/online/OnlineSections.tsx` 하나를 언어만 바꿔 써요(#317). 게임의 `GET /status` 를 30초마다 서버에서 읽어 버튼을 바꿔요. 버튼은 그 언어의 게임 주소(`/play`, `/en/play`, `/ja/play`)로 보내서, 게임 쪽 링크 미리보기도 그 언어로 나와요(`lib/webgame.ts` `webgamePlayUrl`) |
 | 어드민 "온라인 게임" | 상태를 바꿔요. `docs/admin-ui.md` |
+
+## 놀이 방식 셋을 흐름으로 소개해요 (#333)
+
+`/online` 은 첫 화면 다음에 놀이 방식 카드 셋(01 기본 판, 02 구역 축소, 03 좀비 모드)을 두고, 그 순서대로 세 장을 이어요. 처음 온 사람은 기본 판부터 읽고, 익숙한 사람은 카드를 눌러 바로 그 장으로 내려가요(`#classic`, `#shrink`, `#zombie`).
+
+| 장 | 보여 주는 것 | 장면 |
+| --- | --- | --- |
+| 01 기본 판 | 편 고르기, 숨기, 위치 공개, 구출 | `LobbyScene`, `HideScene`, `RevealScene`, `JailScene` |
+| 02 구역 축소 | 흰 선이 다음 구역, 10초 전 알림, 밖이면 들킴, 경찰도 같은 선 안 | `ShrinkScene`(`components/online/modeScenes.tsx`) |
+| 03 좀비 모드 | 물리면 좀비, 무전과 구조차, 누가 이기는지, 판 균형 셋 | `BiteScene`, `VanScene` |
+
+- 숫자와 규칙은 게임 저장소 `docs/shrink.md`, `docs/zombie.md` 를 따라요(구역은 네 번, 경계는 8초 동안 걸어 들어옴, 물리면 2초 뒤 좀비, 구조차는 끝나기 50초 전, 차 옆 1초). 게임 값이 바뀌면 문구(`messages.ts` 의 `online.shrink`, `online.zombie`)와 장면을 같이 고쳐요
+- 장 색은 기본 판이 사이트 색(라이트 파랑, 다크 초록), 구역 축소가 게임 경계 빨강, 좀비 모드가 게임 좀비 보라예요. 경찰 파랑, 도둑 초록 어느 한쪽을 새 놀이 방식의 얼굴로 쓰지 않아요
+- 장면은 판의 시간을 줄여 보여 줘요. 시계, 칸, 알림 숫자를 같은 비율로 같이 줄여서 장면 안에서는 서로 맞아요
+- 좀비 그림은 게임 `client/zombie.js` 의 피부색 바꾸기와 붕대 그대로예요(`rig/chars.js` 의 `zombieSvg`). 카드와 승패 칸에 쓰는 정지 그림 `public/online/zombie-*.svg` 도 같은 코드로 뽑았어요. 구조차 그림 `public/online/van.svg` 는 게임 `client/brand/car.svg` 의 파랑을 노랑으로 바꾼 거예요
 
 ## 게임 장면은 실제 게임과 같게 배치해요
 
 `components/online/scenes.tsx`(쫓기, 숨기, 위치 공개, 감옥)와 `components/online/LobbyScene.tsx`(대기실)는 실제 판을 찍은 그림이 아니에요. 게임과 같은 에셋과 같은 그리기 규칙으로 자리를 잡아 SVG 로 그렸어요. 부품은 `components/online/scene.tsx`.
 
 - 캡처 대신 배치한 까닭: 실제 판을 찍으면 원하는 순간이 잘 안 잡히고, 안내 띠나 구역선이 끼어들고, 줄이면 뭉개져요. 배치하면 어떤 크기에서도 선명하고 보여 줄 순간만 골라요
+- 캐릭터 엔진(`components/online/rig`)에는 좀비 걸음(`shambleSide`, `shambleFront`), 물기, 물린 뒤 비틀거리기, 좀비로 다시 만들기(`GameStage` 의 `api.turn`)도 옮겼어요
+- 바닥은 장면 범위 전체에 깔아요. 전에는 카메라 둘레만 깔아서 시야가 아래나 오른쪽 끝에 닿으면 하얗게 비었어요
 - 에셋: 캐릭터는 게임 `client/playground.html` 의 `SVGS` 를 `public/online/` 에 그대로 꺼냈고, 수풀, 나무, 작은 나무, 꽃은 게임 `client/brand/map` 모양 그대로예요
 - 그리기 규칙: 지도 색과 시야(510, 가까이 150, 각 1.15 라디안, 0.72 부터 흐려짐)는 `shared/logic.js`, 길(64칸 줄), 건물(지붕, 벽, 창 격자, 문, 실외기, 70 높게), 생울타리, 쓰레기통, 감옥, 위치 공개 표시는 `client/game.js` 의 그리기 코드, 분필은 `client/lobby.js` 의 같은 씨앗을 옮겼어요
 - 화면 위 표시: 폰 가로 844x390 에서 실제 게임과 대기실의 위치, 크기, 색을 재서 옮겼어요(소리 38, 시간 75x43, 위치 공개 178x45, 미니맵 112x84, 조이스틱 112, 달리기 72, 잡기 92, 방 코드 143x53 등). 카메라 확대도 게임과 같은 0.5417
