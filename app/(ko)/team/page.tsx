@@ -33,8 +33,8 @@ export const metadata: Metadata = {
   },
 };
 
-// 어드민이 저장하면 바로 버리고, 놓쳐도 5분 안에 새로 그린다 (#250)
-export const revalidate = 300;
+// 어드민이 저장하면 바로 버리고(#250), 놓쳐도 1시간 안에 새로 그린다(#335)
+export const revalidate = 3600;
 
 export default function TeamPage() {
   return <TeamSections locale="ko" />;

@@ -41,8 +41,8 @@ export const metadata: Metadata = {
   },
 };
 
-// 미니게임 칸은 어드민 "행사"에서 정한 기간에만 보인다(#219). 1분마다 다시 그려 기간을 따라간다
-export const revalidate = 60;
+// 미니게임 칸은 어드민 "행사"에서 정한 기간에만 보인다(#219). 저장하면 바로 버리고, 기간은 5분마다 다시 그려 따라간다(#335)
+export const revalidate = 300;
 
 export default async function HomeEnPage() {
   const updateLive = await isUpdateAnnouncementLive();

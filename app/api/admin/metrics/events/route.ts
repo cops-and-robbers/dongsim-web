@@ -6,6 +6,7 @@ import { actorName } from "@/lib/admin/server/remoteConfig";
 import { recordChange } from "@/lib/changes/server";
 import { diffValues, type ChangeAction } from "@/lib/changes/model";
 import { loadEvents } from "@/lib/metrics/staff";
+import { expireEvents } from "@/lib/event/server";
 
 /**
  * 지표 차트에 겹쳐 그릴 일정을 넣고, 고치고, 지운다 (#145, #165).
@@ -107,6 +108,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (typeof fields === "string") return NextResponse.json({ error: fields }, { status: 400 });
   const { data, error } = await db().from("metrics_events").insert({ day, ...fields }).select(`id, ${ROW}`).single();
   if (error) return failure(error.message);
+  // 행사 날이 바뀌면 홈 팝업, 포토부스, /event 가 고르는 "지금 행사"도 바뀐다
+  expireEvents();
   await record(req, "add", null, data as Row);
   return NextResponse.json({ id: data.id }, { status: 201 });
 }
@@ -122,6 +125,7 @@ export async function PATCH(req: Request): Promise<NextResponse> {
   const before = await readRow(id);
   const { error } = await db().from("metrics_events").update(fields).eq("id", id);
   if (error) return failure(error.message);
+  expireEvents();
   if (before) await record(req, "edit", before, { ...before, ...fields } as Row);
   return new NextResponse(null, { status: 204 });
 }
@@ -134,6 +138,7 @@ export async function DELETE(req: Request): Promise<NextResponse> {
   const before = await readRow(id);
   const { error } = await db().from("metrics_events").delete().eq("id", id);
   if (error) return failure(error.message);
+  expireEvents();
   await record(req, "remove", before, null);
   return new NextResponse(null, { status: 204 });
 }

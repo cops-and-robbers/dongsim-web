@@ -175,8 +175,9 @@ export const metadata: Metadata = {
   },
 };
 
-// 행사 팝업과 미니게임 칸은 어드민 "행사"에서 정한 기간에만 보인다(#219). 1분마다 다시 그려 기간을 따라간다
-export const revalidate = 60;
+// 행사 팝업과 미니게임 칸은 어드민 "행사"에서 정한 기간에만 보인다(#219). 저장하면 바로 버리고(EVENT_TAG),
+// 기간이 시작하고 끝나는 것은 5분마다 다시 그려 따라간다. 안쪽 캐시가 더 짧으면 그게 페이지 주기가 된다(#335)
+export const revalidate = 300;
 
 export default async function HomePage() {
   const copy = getMessages("ko").home;

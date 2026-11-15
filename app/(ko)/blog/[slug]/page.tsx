@@ -4,9 +4,10 @@ import { getPost, getPosts } from "@/lib/blog/store";
 import { getMessages } from "@/lib/i18n/messages";
 import { SITE_URL } from "@/lib/constants";
 
-// 본문은 5분 주기로 재생성. 새 슬러그는 첫 요청 때 온디맨드로 생성된다.
+// 본문은 동기화가 고친 글만 바로 버리고 데운다. 시간 주기(1시간)는 놓쳤을 때를 위한 것(#335).
+// 새 슬러그는 첫 요청 때 온디맨드로 생성된다.
 // (이미지는 프록시가 자체 캐시하므로 페이지 캐시 수명과 무관하게 안전하다.)
-export const revalidate = 300;
+export const revalidate = 3600;
 
 // DB 가 잠깐 죽었다고 배포가 실패하면 안 된다. 빠진 글은 첫 요청 때 만들어진다
 export async function generateStaticParams() {
