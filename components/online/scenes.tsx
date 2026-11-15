@@ -27,7 +27,8 @@ type Box = [number, number, number, number, number];
 function mapOf(theme: Theme, roads: Road[], grass: number[][], flowers: number[][], extra?: React.ReactNode) {
   return (
     <>
-      <Ground theme={theme} cam={[-300, -300]} roads={roads} />
+      {/* 바닥은 장면 범위(BOUNDS) 전체에 깐다. 카메라가 따라가다 바닥 밖이 하얗게 비어 보이지 않게 */}
+      <Ground theme={theme} cam={[-300, -300]} roads={roads} size={[BOUNDS[2] + 1200, BOUNDS[3] + 800]} />
       {extra}
       {grass.map(([x, y]) => <Grass key={`g${x}${y}`} theme={theme} x={x} y={y} />)}
       {flowers.map(([x, y, s]) => <Flower key={`f${x}${y}`} x={x} y={y} size={s} />)}

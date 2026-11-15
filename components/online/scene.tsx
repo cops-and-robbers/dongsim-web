@@ -56,7 +56,7 @@ export function Scene({ label, cam, world, hud }: { label: string; cam: [number,
 export type Road = { x: number; y: number; w: number; h: number };
 
 /** 바닥과 길. 길은 64칸마다 가로세로 보도 줄(굵기 3), 교차로는 줄을 지운다 */
-export function Ground({ theme, cam, roads }: { theme: Theme; cam: [number, number]; roads: Road[] }) {
+export function Ground({ theme, cam, roads, size = [VW, VH] }: { theme: Theme; cam: [number, number]; roads: Road[]; size?: [number, number] }) {
   const T = THEMES[theme];
   const hs = roads.filter((r) => r.w > r.h), vs = roads.filter((r) => r.w <= r.h);
   const lines = (r: Road) => {
@@ -67,7 +67,7 @@ export function Ground({ theme, cam, roads }: { theme: Theme; cam: [number, numb
   };
   return (
     <g>
-      <rect x={cam[0] - 40} y={cam[1] - 40} width={VW + 80} height={VH + 80} fill={T.ground} />
+      <rect x={cam[0] - 40} y={cam[1] - 40} width={size[0] + 80} height={size[1] + 80} fill={T.ground} />
       {roads.map((r, i) => (
         <rect key={`r${i}`} x={r.x} y={r.y} width={r.w} height={r.h} fill={T.road} />
       ))}
