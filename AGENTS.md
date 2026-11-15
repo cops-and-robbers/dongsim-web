@@ -42,6 +42,7 @@ pnpm build                 # 검증 기준은 이 빌드의 "Compiled successful
 | 행사 링크 짧은 주소 /q/, QR, 링크별 결과 | `docs/metrics-links.md` |
 | QR 인쇄물(어드민 "QR 인쇄물", 디자이너 틀, PDF) | `docs/qr-print.md` |
 | 빌드·배포·환경 문제가 생겼을 때 | `docs/gotchas.md` |
+| Vercel 사용량 경고, `proxy.ts` 매처나 `revalidate` 주기를 바꿀 때 | `docs/gotchas.md` "Vercel 무료 사용량" |
 | 어드민 웹 애플 로그인 설정·문제 해결 | `docs/apple-signin-web.md` |
 | 온라인 게임 입구(`/online`)와 어드민 "온라인 게임" | `docs/online-game.md` |
 | 팀원에게 블로그 글쓰기를 안내할 때 | `docs/blog-writing-guide.md` |
