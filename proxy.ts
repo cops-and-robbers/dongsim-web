@@ -55,8 +55,29 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
+/*
+  위 일이 필요한 요청에만 돌게 좁힌다(#335). 예전에는 `_next` 만 빼고 모든 경로였는데,
+  폰트 조각, 캐릭터 그림, 링크 미리 읽기마다 돌아서 홈 한 번에 68번, 최근 12시간
+  5,800번 중 99%가 아무 일 없이 통과만 했다. 그게 Vercel CPU 사용량의 절반이었다.
+
+  1. 구 도메인(서브도메인 포함)은 모든 경로를 보내야 하니 host 로 골라 전 경로
+  2. /admin 은 어느 도메인이든(메인 도메인에서 404 로 숨긴다)
+  3. admin 서브도메인의 루트(관리자 화면으로 바꿔 보여 준다)
+
+  host 조건은 공식 문서에 있는 header 형식으로 쓴다. 값은 앞뒤가 고정된 정규식이고
+  포트가 붙어 와도 맞게 둔다. 매처를 바꾸면 proxy.test.mjs 를 같이 고친다.
+*/
 export const config = {
-  // 구 도메인 리다이렉트는 모든 경로에서 동작해야 하므로 넓게 잡는다.
-  // Next 내부 산출물(_next)만 빼면 새 도메인 요청은 위 host 검사에서 바로 통과한다.
-  matcher: ["/((?!_next/).*)"],
+  matcher: [
+    {
+      source: "/((?!_next/).*)",
+      has: [{ type: "header", key: "host", value: "(?:.+\\.)?copsnro66ers\\.site(?::\\d+)?" }],
+    },
+    "/admin",
+    "/admin/:path*",
+    {
+      source: "/",
+      has: [{ type: "header", key: "host", value: "admin\\..+" }],
+    },
+  ],
 };
