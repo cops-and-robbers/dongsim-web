@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
-// /online 의 놀이 방식 카드와 장 머리. 기본 판은 사이트 색(라이트 파랑, 다크 초록), 구역 축소는 게임의 경계 빨강,
+// /online 의 놀이 방식 카드와 장 머리. 경도는 사이트 색(라이트 파랑, 다크 초록), 구역 축소는 게임의 경계 빨강,
 // 좀비 모드는 게임의 좀비 보라를 쓴다(cops-and-robbers-web-game shell.html). 경찰과 도둑 어느 편 색도 아니라 두 진영이 대등하게 남는다
 
 export type ModeId = "classic" | "shrink" | "zombie";

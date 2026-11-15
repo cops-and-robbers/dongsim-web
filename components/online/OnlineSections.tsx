@@ -14,7 +14,7 @@ import { readWebgameStatus, webgamePlayUrl } from "@/lib/webgame";
 import type { WebgameStatus } from "@/lib/admin/webgame";
 
 // 경찰과 도둑 온라인 게임 입구. 어떤 게임인지는 실제 판의 순간을 게임 재료로 그린 장면으로 보여 주고,
-// 놀이 방식은 기본 판 → 구역 축소 → 좀비 모드 순서의 세 장으로 읽히게 한다.
+// 놀이 방식은 경도 → 구역 축소 → 좀비 모드 순서의 세 장으로 읽히게 한다.
 // 버튼은 게임의 운영 상태(공개 전, 누구나, 점검 중)를 30초마다 읽어 바꾼다. 근거는 docs/online-game.md
 // 한국어(/online), 영어(/en/online), 일본어(/ja/online)가 같이 쓴다. 문구는 messages.ts 의 online
 type OnlineCopy = ReturnType<typeof getMessages>["online"];
@@ -105,7 +105,7 @@ export default async function OnlineSections({ locale }: { locale: Locale }) {
         </Container>
       </section>
 
-      {/* 놀이 방식 셋. 기본 판에서 시작해 구역 축소, 좀비 모드로 넘어가는 순서로 읽히게 번호를 붙이고, 누르면 그 장으로 내려간다 */}
+      {/* 놀이 방식 셋. 경도에서 시작해 구역 축소, 좀비 모드로 넘어가는 순서로 읽히게 번호를 붙이고, 누르면 그 장으로 내려간다 */}
       <section className="py-16 sm:py-20">
         <Container>
           <ScrollReveal animation="fadeInUp">
@@ -132,7 +132,7 @@ export default async function OnlineSections({ locale }: { locale: Locale }) {
         </Container>
       </section>
 
-      {/* 01 기본 판: 실제 판에서 나오는 순간 네 개 */}
+      {/* 01 경도: 실제 판에서 나오는 순간 네 개 */}
       <section id="classic" className="scroll-mt-20 border-t border-slate-200 pt-20 sm:pt-28 dark:border-white/10">
         <Container>
           <ChapterHead n={1} id="classic" name={copy.modes.items[0].name} title={copy.classic.title} lead={copy.classic.lead} />

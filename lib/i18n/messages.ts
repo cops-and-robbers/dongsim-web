@@ -407,7 +407,7 @@ const ko = {
     modes: {
       title: "익숙해지면 판을 바꿔 보세요",
       items: [
-        { id: "classic", name: "기본 판", line: "숨고, 찾고, 동료를 구해요" },
+        { id: "classic", name: "경도", line: "숨고, 찾고, 동료를 구해요" },
         { id: "shrink", name: "구역 축소", line: "끝으로 갈수록 숨을 곳이 줄어요" },
         { id: "zombie", name: "좀비 모드", line: "물리면 좀비, 구조차를 타면 탈출" },
       ],
@@ -851,7 +851,7 @@ const en: Messages = {
     modes: {
       title: "Got the hang of it? Switch things up",
       items: [
-        { id: "classic", name: "Classic", line: "Hide, seek, and free your team" },
+        { id: "classic", name: "Cops and Robbers", line: "Hide, seek, and free your team" },
         { id: "shrink", name: "Shrinking area", line: "Less room to hide as the round goes on" },
         { id: "zombie", name: "Zombie Mode", line: "Get bitten and you turn. Catch the van to escape" },
       ],
@@ -1293,7 +1293,7 @@ const ja: Messages = {
     modes: {
       title: "慣れてきたら、遊び方を変えてみよう",
       items: [
-        { id: "classic", name: "基本ルール", line: "隠れて、探して、仲間を助ける" },
+        { id: "classic", name: "ケイドロ", line: "隠れて、探して、仲間を助ける" },
         { id: "shrink", name: "エリア縮小", line: "終盤ほど隠れる場所が減っていく" },
         { id: "zombie", name: "ゾンビモード", line: "かまれたらゾンビ、救助車に乗れば脱出" },
       ],

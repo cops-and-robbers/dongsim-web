@@ -8,7 +8,7 @@ import { getMessages } from "@/lib/i18n/messages";
 
 // 경찰과 도둑 온라인 게임 소개. 게임이 한국어만 있어 한국어 홈에만 둔다(docs/online-game.md).
 // 열리고 닫히는 상태는 /online 이 게임 서버에서 읽어 보여 주고, 여기는 실제 판의 한 장면과 들어가는 길만 둔다.
-// 놀이 방식 셋(기본 판, 구역 축소, 좀비 모드)은 /online 의 그 장으로 바로 가는 칩으로 둔다
+// 놀이 방식 셋(경도, 구역 축소, 좀비 모드)은 /online 의 그 장으로 바로 가는 칩으로 둔다
 const MODES = getMessages("ko").online.modes.items;
 
 export default function OnlineGameTeaserSection() {
