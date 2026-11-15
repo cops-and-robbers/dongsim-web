@@ -97,6 +97,8 @@
 
 ### 3-3. 배포
 - Vercel에 `copsandrobbers.app` 연결, 구 도메인 `copsnro66ers.site`는 리다이렉트로 유지.
+  - 2026-11-15 확인: 리다이렉트는 Vercel 프로젝트 도메인 설정(`308 → copsandrobbers.app`)이 한다. 도메인 단계라 `proxy.ts` 보다 먼저라서, `proxy.ts` 의 옛 도메인 301 과 `/.well-known` 예외는 지금 일하지 않는다. 옛 도메인의 `/.well-known/assetlinks.json` 도 308 로 넘어간다(안드로이드 검증기는 리다이렉트를 따라가지 않는다). 옛 도메인 딥링크가 실린 앱이 아직 쓰이면 도메인 설정을 리다이렉트 대신 이 프로젝트 연결로 바꿔야 `proxy.ts` 예외가 다시 일한다
+  - `www.copsnro66ers.site`, `admin.copsnro66ers.site` 는 DNS 가 없다
 
 ---
 

@@ -21,8 +21,11 @@
 - **어디서 쓰나 보는 법:** Vercel Usage → Fluid Active CPU 에서 Projects, Type(function, middleware)
   탭. 경로별은 프로젝트 Observability → Functions(최근 12시간). Middleware 경로별 표는 유료라 예시 데이터만 나온다
 - **`proxy.ts` 매처를 넓게 잡지 않는다.** `_next` 만 빼면 폰트 조각, `public/` 그림, 링크 미리 읽기마다 돈다.
-  홈 한 번에 68번, 사용량의 절반이었다. 도메인으로 고를 일은 매처의 `has: [{ type: "header", key: "host" }]` 로,
-  경로로 고를 일은 경로로 좁힌다. 바꾸면 `lib/proxy.test.mjs` 를 같이 고친다
+  홈 한 번에 68번, 사용량의 절반이었다. 도메인으로 고를 일은 매처의 `has`·`missing: [{ type: "header", key: "host" }]` 로,
+  경로로 고를 일은 경로로 좁힌다. 통과만 시키는 도메인(어드민 서브도메인, 로컬의 `/admin`)은 `missing` 으로 뺀다(#337).
+  바꾸면 `lib/proxy.test.mjs` 를 같이 고친다
+- **미들웨어가 실제로 도는지는 Logs(요청 기록)에서 본다.** 요청마다 `m` 표시가 붙는다. Observability 의 미들웨어 수는
+  몇 분 늦게 들어오고 어드민 사용과 섞여 헷갈린다
 - **페이지 `revalidate` 보다 안쪽 캐시가 짧으면 그게 페이지 주기다.** Next 는 페이지 안의 `fetch`·`unstable_cache`
   주기 중 가장 짧은 것을 페이지에 쓴다. `revalidate = 60` 이던 홈이 행사 캐시 30초 때문에 30초마다 다시 만들어졌다.
   주기를 바꿀 때는 그 페이지가 읽는 캐시까지 같이 본다
