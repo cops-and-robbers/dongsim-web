@@ -38,7 +38,7 @@
 | `/api/admin/search`, `/api/admin/search/requested` | 지표 "검색" 탭: 구글 판정, 새 페이지 진행, 검색 실적을 읽고, 서치 콘솔에서 색인을 요청했다는 기록을 남김. `docs/search-indexing.md` |
 | `/api/metrics/gsc` | 매일 05:43 수집(크론 시크릿). 구글 URL 검사, 검색 실적, 사이트맵 상태, 새 주소 알림 |
 
-`/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 옛 도메인 리다이렉트와 `/admin` 숨기기를 하는 `proxy.ts`(그 요청에만 돈다, #335)도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/(en)/en/*`·`app/(ja)/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
+`/rss.xml`(route)과 `sitemap.ts`, `robots.ts`, 메인 도메인의 `/admin` 숨기기와 어드민 서브도메인 루트를 맡는 `proxy.ts`(그 요청에만 돈다, #335, #337. 옛 도메인 리다이렉트는 지금 Vercel 도메인 설정이 먼저 한다, `docs/domain-migration-checklist.md`)도 `app/` 루트(또는 프로젝트 루트)에 있다. 영어·일본어는 `app/(en)/en/*`·`app/(ja)/ja/*` 얇은 라우트가 공용 `*Sections` 래퍼를 렌더한다.
 
 페이지는 언어별 묶음 `app/(ko)`·`app/(en)`·`app/(ja)` 아래에 있고, 묶음마다 루트 레이아웃이 있다(#301). 묶음 폴더는 주소에 들어가지 않는다. 루트 레이아웃이 하나면 서버가 언어를 몰라 `<html lang>` 을 `ko` 로만 보내서 나눴다. 세 레이아웃은 `app/_root/RootDocument.tsx` 를 `lang` 만 바꿔 쓰고 메타데이터도 같다. 다른 묶음의 페이지로 가면 페이지를 한 번 새로 읽는다. `notFound()` 404는 묶음마다 있는 `not-found.tsx` 가, 어떤 라우트에도 없는 주소는 `app/global-not-found.tsx` 가 그린다.
 
