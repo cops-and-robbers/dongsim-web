@@ -56,7 +56,7 @@ export function Scene({ label, cam, world, hud }: { label: string; cam: [number,
 export type Road = { x: number; y: number; w: number; h: number };
 
 /** 바닥과 길. 길은 64칸마다 가로세로 보도 줄(굵기 3), 교차로는 줄을 지운다 */
-export function Ground({ theme, cam, roads }: { theme: Theme; cam: [number, number]; roads: Road[] }) {
+export function Ground({ theme, cam, roads, size = [VW, VH] }: { theme: Theme; cam: [number, number]; roads: Road[]; size?: [number, number] }) {
   const T = THEMES[theme];
   const hs = roads.filter((r) => r.w > r.h), vs = roads.filter((r) => r.w <= r.h);
   const lines = (r: Road) => {
@@ -67,7 +67,7 @@ export function Ground({ theme, cam, roads }: { theme: Theme; cam: [number, numb
   };
   return (
     <g>
-      <rect x={cam[0] - 40} y={cam[1] - 40} width={VW + 80} height={VH + 80} fill={T.ground} />
+      <rect x={cam[0] - 40} y={cam[1] - 40} width={size[0] + 80} height={size[1] + 80} fill={T.ground} />
       {roads.map((r, i) => (
         <rect key={`r${i}`} x={r.x} y={r.y} width={r.w} height={r.h} fill={T.road} />
       ))}
@@ -462,21 +462,46 @@ export function RevealChip({ team, sec, progress, soon = false }: { team: "polic
   );
 }
 
-/** 미니맵(#mini). 112x84, 모서리 12, 흰 테두리 3. 안은 구역선과 건물 칸, 감옥, 내 자리 */
-export function MiniMap({ theme, me, team, dots = [] }: { theme: Theme; me: [number, number]; team: "police" | "robber"; dots?: [number, number][] }) {
+const MINI_ZONE = "M733 52 C731 30 752 17 776 18 C802 19 820 28 821 49 C822 70 800 82 774 81 C748 80 735 70 733 52 Z";
+/** 구역을 감옥(미니맵 가운데) 쪽으로 k 배 줄인다(게임 zone.js zonePath) */
+const miniK = (k: number) => `translate(776 50) scale(${k}) translate(-776 -50)`;
+
+/** 미니맵(#mini). 112x84, 모서리 12, 흰 테두리 3. 안은 구역선과 건물 칸, 감옥, 내 자리.
+ *  zone 을 주면 구역 축소 판처럼 지금 구역 밖을 어둡게, 지금 경계 빨간 선, 다음 구역 흰 선(zone.js drawZoneMini).
+ *  좀비 판(zombie)은 감옥 대신 구조차 노란 칸(zombie.js drawMini) */
+export function MiniMap({ theme, me, team, dots = [], zone, vans = [], meColor, zombie = false }: { theme: Theme; me: [number, number]; team: "police" | "robber"; dots?: [number, number][]; zone?: { k: number; next: number | null; id: string }; vans?: [number, number][]; meColor?: string; zombie?: boolean }) {
   const T = THEMES[theme];
   return (
     <g>
       <rect x={720} y={8} width={112} height={84} rx={12} fill={T.ground} stroke="#fff" strokeWidth={3} style={{ filter: SHADOW }} />
-      <path d="M733 52 C731 30 752 17 776 18 C802 19 820 28 821 49 C822 70 800 82 774 81 C748 80 735 70 733 52 Z" fill="none" stroke="#E2574C" strokeWidth={1} />
+      {!zone && <path d={MINI_ZONE} fill="none" stroke="#E2574C" strokeWidth={1} />}
       {[[742, 34, 7, 12], [753, 30, 6, 16], [770, 26, 9, 6], [786, 34, 8, 10], [800, 30, 6, 8], [748, 56, 10, 6], [764, 58, 6, 12], [784, 60, 10, 8], [802, 54, 6, 10]].map(([x, y, w, h]) => (
         <rect key={`${x}${y}`} x={x} y={y} width={w} height={h} fill={T.night ? "#6A7FA8" : "#B9D6F2"} />
       ))}
-      <circle cx={776} cy={50} r={6} fill="none" stroke={T.night ? "#C9CFDC" : "#8A97A6"} strokeWidth={1} />
+      {!zombie && <circle cx={776} cy={50} r={6} fill="none" stroke={T.night ? "#C9CFDC" : "#8A97A6"} strokeWidth={1} />}
+      {zone && (
+        <g>
+          <mask id={`mz-${zone.id}`}>
+            <rect x={720} y={8} width={112} height={84} fill="#fff" />
+            <path d={MINI_ZONE} transform={miniK(zone.k)} fill="#000" />
+          </mask>
+          <rect x={721.5} y={9.5} width={109} height={81} rx={11} fill="rgba(29,35,43,.32)" mask={`url(#mz-${zone.id})`} />
+          <path d={MINI_ZONE} transform={miniK(zone.k)} fill="none" stroke="#E2574C" strokeWidth={1.4} vectorEffect="non-scaling-stroke" />
+          {zone.next !== null && (
+            <g transform={miniK(zone.next)}>
+              <path d={MINI_ZONE} fill="none" stroke="rgba(29,35,43,.4)" strokeWidth={2.2} vectorEffect="non-scaling-stroke" />
+              <path d={MINI_ZONE} fill="none" stroke="#fff" strokeWidth={1.2} vectorEffect="non-scaling-stroke" />
+            </g>
+          )}
+        </g>
+      )}
+      {vans.map(([x, y], i) => (
+        <rect key={`v${i}`} x={x - 5} y={y - 4} width={10} height={8} rx={2} fill="#FFC83D" stroke={INK} strokeWidth={1.5} />
+      ))}
       {dots.map(([x, y], i) => (
         <circle key={i} cx={x} cy={y} r={2.4} fill="#E2574C" />
       ))}
-      <circle cx={me[0]} cy={me[1]} r={2.6} fill={TEAM[team]} stroke={INK} strokeWidth={0.8} />
+      <circle cx={me[0]} cy={me[1]} r={2.6} fill={meColor ?? TEAM[team]} stroke={INK} strokeWidth={0.8} />
     </g>
   );
 }
@@ -492,8 +517,8 @@ export function Joystick() {
 }
 
 /** 체력(#stam). 왼쪽 흰 원 28 안에 발바닥, 막대 높이 10 편 색. 판에서는 폭 234, 대기실에서는 174 */
-export function Stamina({ team, value = 1, lobby = false }: { team: "police" | "robber"; value?: number; lobby?: boolean }) {
-  const c = TEAM[team];
+export function Stamina({ team, value = 1, lobby = false, color }: { team: "police" | "robber"; value?: number; lobby?: boolean; color?: string }) {
+  const c = color ?? TEAM[team];
   const x0 = lobby ? 271 : 292, y0 = lobby ? 348 : 350, bw = lobby ? 174 : 234;
   return (
     <g>
@@ -531,16 +556,127 @@ export function Buttons({ team, ready = false }: { team: "police" | "robber"; re
 }
 
 /** 짧은 알림(#toast). 14px 800, 위 106, 편 색 바탕 */
-export function Toast({ text, team }: { text: string; team: "police" | "robber" }) {
+export function Toast({ text, team, fill, ink = "#fff" }: { text: string; team?: "police" | "robber"; fill?: string; ink?: string }) {
   // 한국어, 일본어는 글자 수로(원래 계산 그대로), 영어는 좁은 글자를 따로 센다
   const w = /[A-Za-z]/.test(text) ? textWidth(text, 14) + 28 : Array.from(text).length * 13.6 + 28;
   return (
     <g>
-      <rect x={W / 2 - w / 2} y={106} width={w} height={32} rx={14} fill={TEAM[team]} style={{ filter: SHADOW }} />
-      <text x={W / 2} y={127} textAnchor="middle" fontSize={14} fontWeight={800} fill="#fff">
+      <rect x={W / 2 - w / 2} y={106} width={w} height={32} rx={14} fill={fill ?? TEAM[team ?? "police"]} style={{ filter: SHADOW }} />
+      <text x={W / 2} y={127} textAnchor="middle" fontSize={14} fontWeight={800} fill={ink}>
         {text}
       </text>
     </g>
+  );
+}
+
+// ── 구역 축소(게임 client/zone.js, shell.html 의 #zone, #lock, #edge) ──
+
+/** 미니맵 아래 구역 축소 칸(#zone). 폰 가로에서 최소 폭 112, 오른쪽 12, 미니맵 아래. 네 칸 막대는 판 전체에서 몇 번째 축소인지 */
+export function ZoneChip({ label, value, state = "", done, fill }: { label: string; value: string; state?: "" | "soon" | "hot" | "moving"; done: number; fill: number }) {
+  const hot = state === "hot" || state === "moving";
+  const num = hot ? "#E2574C" : state === "soon" ? "#E08A00" : INK, bar = hot ? "#E2574C" : state === "soon" ? "#FFB800" : "#5D6F83";
+  const w = Math.max(112, 6 + 16 + 4 + textWidth(label, 11) + 6 + textWidth(value, 14) + 8), x = 832 - w, y = 100;
+  const seg = (w - 16 - 9) / 4;
+  return (
+    <Box x={x} y={y} w={w} h={30} r={12}>
+      <g transform={`translate(${x + 6} ${y + 5}) scale(0.8)`} fill="none" strokeLinecap="round">
+        <circle cx={10} cy={10} r={8} strokeDasharray="3.2 2.4" strokeWidth={1.8} stroke="#E2574C" />
+        <circle cx={10} cy={10} r={4.2} strokeWidth={1.9} stroke={INK} />
+      </g>
+      <text x={x + 26} y={y + 18} fontSize={11} fontWeight={700} fill={hot ? "#E2574C" : "#5D6F83"}>
+        {label}
+      </text>
+      <text x={x + w - 8} y={y + 19} textAnchor="end" fontSize={14} fontWeight={800} fill={num} style={{ fontVariantNumeric: "tabular-nums" }}>
+        {value}
+      </text>
+      {[0, 1, 2, 3].map((i) => (
+        <g key={i}>
+          <rect x={x + 8 + i * (seg + 3)} y={y + 23} width={seg} height={3} rx={1.5} fill={i < done ? "rgba(226,87,76,.45)" : "#EEF1F4"} />
+          {i === done && <rect x={x + 8 + i * (seg + 3)} y={y + 23} width={seg * Math.max(0, Math.min(1, fill))} height={3} rx={1.5} fill={bar} />}
+        </g>
+      ))}
+    </Box>
+  );
+}
+
+/** 아래 가운데 안내 띠(#lock). 빨강은 구역 밖, 주황(warn)은 곧 밖이 될 때 */
+export function LockBar({ text, warn = false }: { text: string; warn?: boolean }) {
+  const w = (/[A-Za-z]/.test(text) ? textWidth(text, 15) : Array.from(text).length * 15) + 36;
+  return (
+    <g>
+      <rect x={W / 2 - w / 2} y={288} width={w} height={38} rx={14} fill={warn ? "#FFB800" : "#E2574C"} />
+      <text x={W / 2} y={312} textAnchor="middle" fontSize={15} fontWeight={800} fill={warn ? INK : "#fff"}>
+        {text}
+      </text>
+    </g>
+  );
+}
+
+/** 화면 가장자리 빛. 좀비 모드에서 안 보이는 좀비가 가까우면 분홍으로 뛴다(#zHeart). 구역 밖의 붉은 빛(#edge)과 같은 모양 */
+export function EdgeGlow({ color, k }: { color: string; k: number }) {
+  if (k <= 0) return null;
+  return (
+    <g opacity={k}>
+      <rect x={-30} y={-30} width={W + 60} height={H + 60} fill="none" stroke={color} strokeWidth={90} style={{ filter: "blur(18px)" }} />
+    </g>
+  );
+}
+
+// ── 좀비 모드(게임 client/zombie.js, shell.html 의 좀비 줄) ──
+
+export const ZB = { zombie: "#7A5BD6", survivor: "#E5A800", van: "#FFC83D", pip: "#8E6FE0", danger: "#E2574C" } as const;
+
+/** 좀비 판의 시간 칸: 아래 점은 노랑 생존자, 테두리만 노랑은 탄 사람, 보라는 좀비 */
+export function ZClock({ time, free, escaped = 0, zombies }: { time: string; free: number; escaped?: number; zombies: number }) {
+  const pips = [...Array(free).fill("s"), ...Array(escaped).fill("e"), ...Array(zombies).fill("z")] as string[];
+  const x0 = 329.5 - (pips.length * 9 + (pips.length - 1) * 4) / 2;
+  return (
+    <Box x={292} y={9} w={75} h={43} r={16}>
+      <text x={329.5} y={31} textAnchor="middle" fontSize={20} fontWeight={800} fill={INK} style={{ fontVariantNumeric: "tabular-nums" }}>
+        {time}
+      </text>
+      {pips.map((p, i) => (
+        <circle key={i} cx={x0 + 4.5 + i * 13} cy={42.5} r={p === "e" ? 3.6 : 4.5} fill={p === "z" ? ZB.pip : p === "e" ? "#fff" : ZB.van} stroke={p === "e" ? ZB.van : "rgba(29,35,43,.12)"} strokeWidth={p === "e" ? 1.8 : 1} />
+      ))}
+    </Box>
+  );
+}
+
+/** 좀비 판 생존자의 위 칸. 무전 전에는 "내 위치 공개", 무전 뒤 "구조차 오기까지", 서면 노란 바탕 "구조차가 섰어요"(#reveal.van) */
+export function VanChip({ label, n, progress = 0, here = false, van = true }: { label: string; n?: number; progress?: number; here?: boolean; van?: boolean }) {
+  const copy = useSceneCopy();
+  return (
+    <Box x={373} y={8} w={178} h={45} r={16} fill={here ? ZB.van : "#fff"}>
+      {van ? (
+        <image href="/online/van.svg" x={381} y={20} width={26} height={19} />
+      ) : (
+        <g transform="translate(386 20) scale(1.15)">
+          <path d="M7.99974 1C11.678 1 14.6655 4.00967 14.6655 7.7153V14.1166H1.33398V7.7153C1.33398 4.00967 4.31963 1 7.99974 1Z" fill="#F5383B" />
+          <path d="M8.00086 4.99219C9.75616 4.99219 11.1834 6.42816 11.1834 8.19834V12.2749H4.81836V8.19834C4.81836 6.43 6.24374 4.99219 8.00086 4.99219Z" fill="#F76062" />
+          <path d="M0 14.2457C0 14.6626 0.335384 15.0004 0.749146 15.0004H15.2509C15.6646 15.0004 16 14.6626 16 14.2457V13.4727H0V14.2457Z" fill="#494949" />
+          <path d="M16 11.7313C16 11.3144 15.6646 10.9766 15.2509 10.9766H0.749146C0.335384 10.9766 0 11.3144 0 11.7313V12.5851H16V11.7313Z" fill="#494949" />
+        </g>
+      )}
+      <text x={413} y={33} fontSize={13} fontWeight={700} fill={here ? "#3A2A00" : "#5D6F83"}>
+        {label}
+      </text>
+      {n !== undefined && (
+        <>
+          <text x={526} y={36} textAnchor="end" fontSize={19} fontWeight={900} fill="#1E232A">
+            {n}
+          </text>
+          <text x={538} y={36} textAnchor="end" fontSize={12} fontWeight={700} fill="#1E232A" opacity={0.85}>
+            {copy.sec}
+          </text>
+        </>
+      )}
+      {!here && (
+        <>
+          <rect x={381} y={46} width={162} height={3} rx={1.5} fill="#EEF1F4" />
+          <rect x={381} y={46} width={162 * Math.max(0, Math.min(1, progress))} height={3} rx={1.5} fill={van ? ZB.van : ZB.survivor} />
+        </>
+      )}
+    </Box>
   );
 }
 

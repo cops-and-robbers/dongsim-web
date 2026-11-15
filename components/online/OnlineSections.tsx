@@ -8,15 +8,19 @@ import { getMessages } from "@/lib/i18n/messages";
 import LandscapeFrame from "@/components/online/LandscapeFrame";
 import { ChaseScene, HideScene, JailScene, RevealScene } from "@/components/online/scenes";
 import { LobbyScene } from "@/components/online/LobbyScene";
+import { BiteScene, ShrinkScene, VanScene } from "@/components/online/modeScenes";
+import { ChapterHead, MODE_STYLE, ModeArt, type ModeId } from "@/components/online/ModeParts";
 import { readWebgameStatus, webgamePlayUrl } from "@/lib/webgame";
 import type { WebgameStatus } from "@/lib/admin/webgame";
 
 // 경찰과 도둑 온라인 게임 입구. 어떤 게임인지는 실제 판의 순간을 게임 재료로 그린 장면으로 보여 주고,
+// 놀이 방식은 경도 → 구역 축소 → 좀비 모드 순서의 세 장으로 읽히게 한다.
 // 버튼은 게임의 운영 상태(공개 전, 누구나, 점검 중)를 30초마다 읽어 바꾼다. 근거는 docs/online-game.md
 // 한국어(/online), 영어(/en/online), 일본어(/ja/online)가 같이 쓴다. 문구는 messages.ts 의 online
 type OnlineCopy = ReturnType<typeof getMessages>["online"];
 
 const SCENES = [<LobbyScene key="lobby" />, <HideScene key="hide" />, <RevealScene key="reveal" />, <JailScene key="jail" />];
+const ZOMBIE_SCENES = [<BiteScene key="bite" />, <VanScene key="van" />];
 const INTL = { ko: "ko-KR", en: "en-US", ja: "ja-JP" } as const;
 
 /** 예정 시각을 "11월 7일 오후 9:30" 처럼(한국 시간). 지났으면 보여 주지 않는다 */
@@ -101,29 +105,130 @@ export default async function OnlineSections({ locale }: { locale: Locale }) {
         </Container>
       </section>
 
-      {/* 어떤 게임인지: 실제 판에서 나오는 순간 네 개 */}
-      {copy.features.map((f, i) => {
-        const reversed = i % 2 === 1;
-        return (
-          <section key={f.title} className="py-16 sm:py-24">
-            <Container>
-              <div className={`grid items-center gap-8 lg:gap-14 ${reversed ? "lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]"}`}>
+      {/* 놀이 방식 셋. 경도에서 시작해 구역 축소, 좀비 모드로 넘어가는 순서로 읽히게 번호를 붙이고, 누르면 그 장으로 내려간다 */}
+      <section className="py-16 sm:py-20">
+        <Container>
+          <ScrollReveal animation="fadeInUp">
+            <h2 className="text-balance text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">{copy.modes.title}</h2>
+          </ScrollReveal>
+          <ol className="mt-8 grid gap-4 sm:grid-cols-3 sm:gap-5">
+            {copy.modes.items.map((m, i) => (
+              <li key={m.id}>
+                <ScrollReveal animation="fadeInUp" delayMs={i * 80} className="h-full">
+                  <a href={`#${m.id}`} className={`group flex h-full items-center gap-4 rounded-3xl p-4 transition hover:-translate-y-0.5 sm:flex-col sm:items-stretch sm:gap-0 sm:p-5 ${MODE_STYLE[m.id as ModeId].card}`}>
+                    <div className="relative aspect-[4/3] w-28 shrink-0 overflow-hidden rounded-2xl sm:w-full">
+                      <ModeArt id={m.id as ModeId} />
+                    </div>
+                    <div className="min-w-0 sm:mt-4">
+                      <p className={`font-mono text-xs font-bold tabular-nums ${MODE_STYLE[m.id as ModeId].accent}`}>{pad(i + 1)}</p>
+                      <p className="mt-1 text-lg font-bold text-slate-900 sm:text-xl dark:text-white">{m.name}</p>
+                      <p className="mt-1 text-pretty text-sm leading-relaxed text-slate-600 dark:text-slate-300">{m.line}</p>
+                    </div>
+                  </a>
+                </ScrollReveal>
+              </li>
+            ))}
+          </ol>
+        </Container>
+      </section>
+
+      {/* 01 경도: 실제 판에서 나오는 순간 네 개 */}
+      <section id="classic" className="scroll-mt-20 border-t border-slate-200 pt-20 sm:pt-28 dark:border-white/10">
+        <Container>
+          <ChapterHead n={1} id="classic" name={copy.modes.items[0].name} title={copy.classic.title} lead={copy.classic.lead} />
+        </Container>
+        {copy.features.map((f, i) => {
+          const reversed = i % 2 === 1;
+          return (
+            <div key={f.title} className="py-12 sm:py-20">
+              <Container>
+                <div className={`grid items-center gap-8 lg:gap-14 ${reversed ? "lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]"}`}>
+                  <ScrollReveal animation={reversed ? "fadeInRight" : "fadeInLeft"} className={reversed ? "lg:order-2" : ""}>
+                    <p className="font-mono text-xs tabular-nums text-slate-400 dark:text-slate-500">
+                      {pad(i + 1)}  /  {pad(copy.features.length)}
+                    </p>
+                    <h3 className="mt-4 text-balance text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl dark:text-white">{f.title}</h3>
+                    <p className="mt-4 max-w-md text-pretty text-base leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">{f.body}</p>
+                  </ScrollReveal>
+                  <ScrollReveal animation={reversed ? "fadeInLeft" : "fadeInRight"} delayMs={100} className={reversed ? "lg:order-1" : ""}>
+                    <LandscapeFrame>{SCENES[i]}</LandscapeFrame>
+                  </ScrollReveal>
+                </div>
+              </Container>
+            </div>
+          );
+        })}
+      </section>
+
+      {/* 02 구역 축소: 한 장면에 줄어드는 순간을 담고, 옆에 알아 둘 세 가지 */}
+      <section id="shrink" className="scroll-mt-20 bg-slate-50 py-20 sm:py-28 dark:bg-white/[0.03]">
+        <Container>
+          <ChapterHead n={2} id="shrink" name={copy.modes.items[1].name} title={copy.shrink.title} lead={copy.shrink.lead} />
+          <div className="mt-12 grid items-center gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-14">
+            <ScrollReveal animation="fadeInLeft">
+              <LandscapeFrame>
+                <ShrinkScene />
+              </LandscapeFrame>
+            </ScrollReveal>
+            <ScrollReveal animation="fadeInRight" delayMs={100}>
+              <ol className="space-y-6">
+                {copy.shrink.points.map((p, i) => (
+                  <li key={p.title} className="flex gap-4">
+                    <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold tabular-nums ${MODE_STYLE.shrink.dot}`}>{i + 1}</span>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">{p.title}</h3>
+                      <p className="mt-1 text-pretty text-base leading-relaxed text-slate-600 dark:text-slate-300">{p.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </ScrollReveal>
+          </div>
+        </Container>
+      </section>
+
+      {/* 03 좀비 모드: 물리는 순간과 구조차 탈출, 그리고 누가 이기는지와 판 균형 */}
+      <section id="zombie" className="scroll-mt-20 bg-[#F6F3FD] py-20 sm:py-28 dark:bg-[#13111c]">
+        <Container>
+          <ChapterHead n={3} id="zombie" name={copy.modes.items[2].name} title={copy.zombie.title} lead={copy.zombie.lead} />
+          {copy.zombie.steps.map((st, i) => {
+            const reversed = i % 2 === 1;
+            return (
+              <div key={st.title} className={`mt-14 grid items-center gap-8 sm:mt-20 lg:gap-14 ${reversed ? "lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]"}`}>
                 <ScrollReveal animation={reversed ? "fadeInRight" : "fadeInLeft"} className={reversed ? "lg:order-2" : ""}>
-                  <p className="font-mono text-xs tabular-nums text-slate-400 dark:text-slate-500">
-                    {pad(i + 1)}  /  {pad(copy.features.length)}
-                  </p>
-                  <h2 className="mt-4 text-balance text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl dark:text-white">{f.title}</h2>
-                  <p className="mt-4 max-w-md text-pretty text-base leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">{f.body}</p>
+                  <h3 className="text-balance text-2xl font-bold leading-tight tracking-tight text-slate-900 sm:text-3xl dark:text-white">{st.title}</h3>
+                  <p className="mt-4 max-w-md text-pretty text-base leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">{st.body}</p>
                 </ScrollReveal>
                 <ScrollReveal animation={reversed ? "fadeInLeft" : "fadeInRight"} delayMs={100} className={reversed ? "lg:order-1" : ""}>
-                  <LandscapeFrame>{SCENES[i]}</LandscapeFrame>
+                  <LandscapeFrame>{ZOMBIE_SCENES[i]}</LandscapeFrame>
                 </ScrollReveal>
               </div>
-            </Container>
-          </section>
-        );
-      })}
-
+            );
+          })}
+          <ScrollReveal animation="fadeInUp">
+            <div className="mt-16 grid gap-6 rounded-3xl bg-white p-6 ring-1 ring-black/5 sm:mt-24 sm:p-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-center lg:gap-10 dark:bg-white/[0.04] dark:ring-white/10">
+              <div className="flex items-center gap-4">
+                <div className="flex shrink-0 -space-x-3" aria-hidden>
+                  <img src="/online/zombie-police-front.svg" alt="" width={56} height={62} className="h-14 w-auto" />
+                  <img src="/online/robber-front.svg" alt="" width={56} height={62} className="h-12 w-auto self-end" />
+                </div>
+                <p className="text-pretty text-base font-semibold leading-relaxed text-slate-900 sm:text-lg dark:text-white">{copy.zombie.win}</p>
+              </div>
+              <div className="border-t border-slate-200 pt-5 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0 dark:border-white/10">
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{copy.zombie.balance.label}</p>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {copy.zombie.balance.options.map((o) => (
+                    <li key={o} className="rounded-full bg-[#EEE9FB] px-3.5 py-1.5 text-sm font-semibold text-[#5B41AE] dark:bg-white/10 dark:text-[#C9B6FF]">
+                      {o}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{copy.zombie.balance.note}</p>
+              </div>
+            </div>
+          </ScrollReveal>
+        </Container>
+      </section>
       {/* 마지막: 다시 버튼, 그리고 막다른 화면이 되지 않게 오프라인 경찰과 도둑 하나(GOV.UK 서비스 중단 페이지 패턴) */}
       <section className="pb-24 pt-8 sm:pb-32">
         <Container>

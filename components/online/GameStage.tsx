@@ -13,9 +13,16 @@ import { drawChar, makeChar, startAction } from "./rig/chars";
 // 대본이 끝나면 처음부터 다시 돈다. 화면에 보일 때만 돌고, 움직임을 줄이도록 설정한 사람에게는 한 순간에 멈춰 둔다.
 
 export type Team = "police" | "robber";
-export type Cast = { id: string; team: Team; x: number; y: number; tag?: string; me?: boolean; jailed?: boolean };
+// 좀비 모드는 생김새(look)가 편과 따로다. 좀비는 잡는 편(police), 생존자는 도망치는 편(robber)에 얹는다(게임 docs/zombie.md)
+export type Cast = { id: string; team: Team; x: number; y: number; tag?: string; me?: boolean; jailed?: boolean; look?: Team; zombie?: boolean; survivor?: boolean };
 export type Place = { x: number; y: number; inBush?: boolean; hidden?: boolean; shade?: boolean; face?: number; state?: string };
-export type Api = { act: (id: string, name: "catch" | "jail" | "escape", dx?: number) => void; once: (key: string) => boolean; pop: (id: string, amount: number) => void };
+export type Api = {
+  act: (id: string, name: "catch" | "jail" | "escape", dx?: number) => void;
+  once: (key: string) => boolean;
+  pop: (id: string, amount: number) => void;
+  /** 물린 사람을 좀비 그림으로 다시 만들고 좀비 편으로 옮긴다(게임 zombie.js syncChars) */
+  turn: (id: string) => void;
+};
 export type StageScript = {
   length: number; // 초. 끝나면 처음으로
   still: number; // 움직임을 줄인 사람에게 멈춰 보여 줄 순간
@@ -23,9 +30,9 @@ export type StageScript = {
   move: (t: number, api: Api) => Record<string, Place>;
 };
 
-export type Agent = { id: string; team: Team; x: number; y: number; vx: number; vy: number; ix: number; iy: number; state: string; inBush: boolean; isPlayer: boolean; faceA: number };
+export type Agent = { id: string; team: Team; x: number; y: number; vx: number; vy: number; ix: number; iy: number; state: string; inBush: boolean; isPlayer: boolean; faceA: number; look?: Team; zombie?: boolean };
 // drawChar 가 돌려받는 캐릭터. 게임 코드가 만든 객체라 필요한 것만 적는다
-type Char = { el: HTMLDivElement; a: Agent };
+type Char = { el: HTMLDivElement; a: Agent; tag: HTMLDivElement | null };
 
 const VISION = 510, NEAR = 150, CONE = 1.15, BUSH_SEE = 120, TURN = 7;
 
@@ -73,6 +80,9 @@ const STAGE_CSS = `
 .og-stage .tag { position:absolute; left:0; transform:translateX(-50%); white-space:nowrap; font-size:40px; font-weight:700; line-height:1.15; padding:4px 22px 6px; border-radius:999px; background:#fff; color:#1D232B; box-shadow:0 2px 0 rgba(29,35,43,.12); }
 .og-stage .tag.me.police { background:#2A9BEF; color:#fff; }
 .og-stage .tag.me.robber { background:#35C26B; color:#fff; }
+.og-stage .tag.zz { background:#7A5BD6; color:#fff; }
+.og-stage .tag.me.zz { background:#5B41AE; }
+.og-stage .tag.me.zs { background:#E5A800; }
 .og-stage .layer { position:absolute; overflow:visible; pointer-events:none; }
 .og-stage .plane { position:absolute; left:0; top:0; transform-origin:0 0; }
 .og-stage .screen { position:absolute; left:0; top:0; }
@@ -148,13 +158,21 @@ export default function GameStage({
       once: (key) => (fired.has(key) ? false : (fired.add(key), true)),
       // 대기실에서 칸에 들어갈 때처럼 납작했다 튀어나오게(lobby.js morph)
       pop: (aid, amount) => { const c = chars.get(aid) as unknown as { pop: { x: number } } | undefined; if (c) c.pop.x = amount; },
+      turn: (aid) => {
+        const old = chars.get(aid), a = agents.get(aid), cast = script.cast.find((k) => k.id === aid);
+        if (!old || !a) return;
+        old.el.remove();
+        a.team = "police"; a.zombie = true; a.state = "free";
+        chars.set(aid, makeChar(host, a, cast?.tag, cast?.me) as Char);
+      },
     };
     const reset = () => {
       host.replaceChildren();
       chars = new Map(); agents = new Map(); fired.clear(); t = 0;
       for (const c of script.cast) {
-        const a: Agent = { id: c.id, team: c.team, x: c.x, y: c.y, vx: 0, vy: 0, ix: 0, iy: 0, state: c.jailed ? "jailed" : "free", inBush: false, isPlayer: !!c.me, faceA: 0 };
+        const a: Agent = { id: c.id, team: c.team, x: c.x, y: c.y, vx: 0, vy: 0, ix: 0, iy: 0, state: c.jailed ? "jailed" : "free", inBush: false, isPlayer: !!c.me, faceA: 0, look: c.look, zombie: c.zombie };
         const ch = makeChar(host, a, c.tag, c.me) as Char;
+        if (c.survivor) ch.tag?.classList.add("zs");
         if (c.jailed) startAction(ch, "jailed");
         chars.set(c.id, ch); agents.set(c.id, a);
       }

@@ -385,7 +385,7 @@ const ko = {
   online: {
     meta: {
       title: "경찰과 도둑 온라인 게임",
-      description: "밖에 나가지 않고 온라인으로 즐기는 경찰과 도둑이에요. 최대 8명, 한 판 3분이에요.",
+      description: "밖에 나가지 않고 온라인으로 즐기는 경찰과 도둑이에요. 구역이 줄어드는 판과 좀비 모드도 있어요. 최대 8명, 한 판 3분이에요.",
     },
     title: ["경찰과 도둑", "온라인 게임"],
     lead: "밖에 나가지 않고 온라인으로 즐겨 보세요.",
@@ -400,9 +400,38 @@ const ko = {
     features: [
       { title: "팀을 선택하세요", body: "대기실에서 경찰 칸이나 도둑 칸으로 들어가세요." },
       { title: "숨거나 찾으세요", body: "수풀에 들어가면 멀리서는 보이지 않아요. 밖으로 나오면 들켜요." },
-      { title: "35초마다 위치가 공개돼요", body: "도둑 위치가 경찰 지도에 잠깐 표시돼요." },
+      { title: "도둑 위치가 틈틈이 공개돼요", body: "도둑 위치가 경찰 지도에 잠깐 표시돼요." },
       { title: "동료를 구출하세요", body: "잡히면 감옥으로 가요. 같은 편이 문 앞에 잠깐 서 있으면 풀려나요." },
     ],
+    // 놀이 방식 셋을 경도 → 구역 축소 → 좀비 모드 순서로 소개한다. 몇 초인지는 적지 않는다(게임 값과 판 균형마다 달라진다). 판 안 이름과 한 줄은 게임 화면 문구(client/i18n.js)와 같다
+    modes: {
+      title: "익숙해지면 판을 바꿔 보세요",
+      items: [
+        { id: "classic", name: "경도", line: "숨고, 찾고, 동료를 구해요" },
+        { id: "shrink", name: "구역 축소", line: "끝으로 갈수록 숨을 곳이 줄어요" },
+        { id: "zombie", name: "좀비 모드", line: "물리면 좀비, 구조차를 타면 탈출" },
+      ],
+    },
+    classic: { title: "3분 동안 숨고 찾아요", lead: "편을 고르면 도둑은 숨고 경찰은 찾아요. 처음이라면 여기서 시작해요." },
+    shrink: {
+      title: "구역이 점점 줄어들어요",
+      lead: "방장이 켜면 한 판 동안 구역이 네 번 줄어들어서, 끝으로 갈수록 경찰과 도둑이 가까워져요.",
+      points: [
+        { title: "흰 선이 다음 구역이에요", body: "줄어들 자리가 미리 보이고, 줄어들기 직전에 한 번 더 알려 줘요." },
+        { title: "밖에 있으면 들켜요", body: "구역 밖에서는 앞이 잘 안 보이고, 밖에 머문 도둑은 곧 경찰에게 위치가 보여요." },
+        { title: "경찰도 같은 선 안에서 움직여요", body: "경찰도 구역 밖은 보이지 않아서, 두 편 모두 안으로 모여요." },
+      ],
+    },
+    zombie: {
+      title: "물리면 좀비, 구조차를 타면 탈출",
+      lead: "시작하면 한 명이 좀비로 뽑혀요. 나머지는 생존자가 되어 좀비를 피하며 구조차를 기다려요.",
+      steps: [
+        { title: "물리면 좀비 편이 돼요", body: "물린 사람은 잠깐 비틀거리다 좀비로 일어나요. 보이지 않는 좀비가 가까이 오면 화면 가장자리가 두근거려요." },
+        { title: "무전을 듣고 구조차로 가요", body: "판이 끝나 갈 무렵 구조차가 서요. 생존자는 무전으로 정류장을 먼저 알고, 차 옆에서 잠깐 버티면 올라타요." },
+      ],
+      win: "한 명이라도 구조차를 타면 생존자가 이기고, 모두 물리거나 아무도 타지 못하면 좀비가 이겨요.",
+      balance: { label: "판 균형", note: "방장이 방 설정에서 골라요", options: ["생존자 쪽", "반반", "좀비 쪽"] },
+    },
     again: "친구와 함께 즐겨 보세요",
     app: {
       iconAlt: "경찰과 도둑 앱 아이콘",
@@ -802,7 +831,7 @@ const en: Messages = {
   online: {
     meta: {
       title: "Cops and Robbers Online - Play in your browser",
-      description: "Play Cops and Robbers online with friends, no install. Up to 8 players, 3 minutes a round.",
+      description: "Play Cops and Robbers online with friends, no install. Try the shrinking area and Zombie Mode too. Up to 8 players, 3 minutes a round.",
     },
     title: ["Cops and Robbers", "Online"],
     lead: "Play with friends online, right in your browser.",
@@ -816,9 +845,37 @@ const en: Messages = {
     features: [
       { title: "Pick your side", body: "In the lobby, walk into the cops' zone or the robbers' zone." },
       { title: "Hide or seek", body: "In a bush, you can't be seen from afar. Step out and you're spotted." },
-      { title: "Robbers revealed every 35 seconds", body: "Each robber's spot flashes on the cops' map for a moment." },
+      { title: "Robbers get revealed now and then", body: "Each robber's spot flashes on the cops' map for a moment." },
       { title: "Free your teammates", body: "Get caught and you go to jail. A teammate standing at the door for a moment sets you free." },
     ],
+    modes: {
+      title: "Got the hang of it? Switch things up",
+      items: [
+        { id: "classic", name: "Cops and Robbers", line: "Hide, seek, and free your team" },
+        { id: "shrink", name: "Shrinking area", line: "Less room to hide as the round goes on" },
+        { id: "zombie", name: "Zombie Mode", line: "Get bitten and you turn. Catch the van to escape" },
+      ],
+    },
+    classic: { title: "Three minutes of hide and seek", lead: "Pick a side. Robbers hide and cops seek. Start here if you're new." },
+    shrink: {
+      title: "The area shrinks over time",
+      lead: "Turn it on as host and the zone shrinks four times in a round, pulling cops and robbers closer together.",
+      points: [
+        { title: "The white line is the next zone", body: "You see where it's heading ahead of time, with one more heads-up just before it moves." },
+        { title: "Stay outside and you're found", body: "You can barely see outside the zone, and a robber who stays out soon shows up for the cops." },
+        { title: "Cops play inside the same line", body: "Cops can't see outside the zone either, so both sides gather inside." },
+      ],
+    },
+    zombie: {
+      title: "Get bitten and you turn. Catch the van to escape",
+      lead: "One player is drawn as the zombie at the start. Everyone else is a survivor, dodging zombies until the rescue van comes.",
+      steps: [
+        { title: "Get bitten and you turn", body: "A bitten survivor staggers for a moment, then rises as a zombie. When a zombie you can't see gets close, the edges of your screen start to pound." },
+        { title: "Follow the radio to the van", body: "The rescue van arrives as the round nears its end. Survivors hear where it stops over the radio first, then hold on beside it for a moment to climb aboard." },
+      ],
+      win: "If even one survivor boards the van, the survivors win. If everyone gets bitten or nobody makes it, the zombies win.",
+      balance: { label: "Balance", note: "The host picks one in room settings", options: ["Survivor side", "Even", "Zombie side"] },
+    },
     again: "Grab your friends and play",
     app: {
       iconAlt: "Cops and Robbers app icon",
@@ -1216,7 +1273,7 @@ const ja: Messages = {
   online: {
     meta: {
       title: "ケイドロ オンライン - ブラウザですぐ遊べる",
-      description: "インストールなしで、友だちとオンラインでケイドロ。最大8人、1回3分。",
+      description: "インストールなしで、友だちとオンラインでケイドロ。エリア縮小やゾンビモードも。最大8人、1回3分。",
     },
     title: ["ケイドロ", "オンライン"],
     lead: "外に出なくても、オンラインで遊べます。",
@@ -1230,9 +1287,37 @@ const ja: Messages = {
     features: [
       { title: "チームを選ぼう", body: "ロビーで警察エリアか泥棒エリアに入ります。" },
       { title: "隠れる? 探す?", body: "茂みに入ると遠くからは見えません。外に出るとばれます。" },
-      { title: "35秒ごとに位置が公開", body: "泥棒の位置が警察の地図に少しの間表示されます。" },
+      { title: "泥棒の位置がときどき公開", body: "泥棒の位置が警察の地図に少しの間表示されます。" },
       { title: "仲間を助けよう", body: "捕まると牢屋へ。仲間が扉の前に少し立つと出られます。" },
     ],
+    modes: {
+      title: "慣れてきたら、遊び方を変えてみよう",
+      items: [
+        { id: "classic", name: "ケイドロ", line: "隠れて、探して、仲間を助ける" },
+        { id: "shrink", name: "エリア縮小", line: "終盤ほど隠れる場所が減っていく" },
+        { id: "zombie", name: "ゾンビモード", line: "かまれたらゾンビ、救助車に乗れば脱出" },
+      ],
+    },
+    classic: { title: "3分間、隠れて探す", lead: "チームを選んだら、泥棒は隠れて警察は探します。はじめてならここから。" },
+    shrink: {
+      title: "エリアが少しずつ狭まります",
+      lead: "ホストがオンにすると、1回の中でエリアが4回狭くなり、終盤ほど警察と泥棒の距離が近づきます。",
+      points: [
+        { title: "白い線が次のエリア", body: "狭くなる場所が先に見えて、直前にもう一度知らせてくれます。" },
+        { title: "外にいると見つかる", body: "エリアの外ではほとんど見えず、外にとどまった泥棒はすぐ警察に位置が見えます。" },
+        { title: "警察も同じ線の中で動く", body: "警察もエリアの外は見えないので、両チームとも中に集まります。" },
+      ],
+    },
+    zombie: {
+      title: "かまれたらゾンビ、救助車に乗れば脱出",
+      lead: "始まるとひとりがゾンビに選ばれます。残りは生存者になって、ゾンビをよけながら救助車を待ちます。",
+      steps: [
+        { title: "かまれるとゾンビになります", body: "かまれた人は少しふらついたあと、ゾンビになって起き上がります。見えないゾンビが近づくと、画面のふちがドキドキと脈打ちます。" },
+        { title: "無線を聞いて救助車へ", body: "終わりが近づくと救助車が着きます。生存者は無線で停留所を先に知り、車のそばで少し待つと乗り込めます。" },
+      ],
+      win: "生存者がひとりでも救助車に乗れば生存者の勝ち。全員かまれるか、だれも乗れなければゾンビの勝ちです。",
+      balance: { label: "バランス", note: "ホストが部屋の設定で選びます", options: ["生存者寄り", "五分五分", "ゾンビ寄り"] },
+    },
     again: "友だちと遊んでみよう",
     app: {
       iconAlt: "ケイドロアプリのアイコン",
