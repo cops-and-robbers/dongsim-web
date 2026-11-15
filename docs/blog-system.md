@@ -8,7 +8,7 @@
 노션 DB (공개 체크된 글)
   → lib/blog/notion.ts (getPosts(locale) / getAllPosts / getBlocks)
   → components/blog/BlogList.tsx · BlogPost.tsx (언어 무관 공용 화면)
-  → app/(ko)/blog · app/(ja)/ja/blog · app/(en)/en/blog (얇은 로케일 라우트, 목록 ISR 60초 / 본문 300초)
+  → app/(ko)/blog · app/(ja)/ja/blog · app/(en)/en/blog (얇은 로케일 라우트, 동기화가 바꾼 주소를 바로 버림. 시간 주기는 목록, 본문 모두 1시간, #335)
   → components/blog/NotionBlocks.tsx (블록 → 사이트 마크업)
 ```
 

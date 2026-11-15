@@ -11,6 +11,7 @@ import {
 import { MODE_LABEL, validateWebgameChange, type WebgameChange, type WebgameState } from "@/lib/admin/webgame";
 import { recordChange } from "@/lib/changes/server";
 import { diffValues } from "@/lib/changes/model";
+import { expireWebgameStatus } from "@/lib/webgame";
 
 /**
  * 어드민 "온라인 게임" (docs/admin-ui.md). 게임 서버의 운영 상태를 대신 읽고 바꾼다.
@@ -63,6 +64,8 @@ export async function PUT(req: Request): Promise<NextResponse> {
     const before = await readWebgameControl().catch(() => null);
     const actor = await actorName(checked.token);
     const saved = await writeWebgameControl(change, actor);
+    // 입구 페이지(/online)가 바뀐 상태를 바로 보이게 한다
+    expireWebgameStatus();
     const show = (c: { mode: WebgameChange["mode"]; message: string; until: string | null } | null) => c && { mode: MODE_LABEL[c.mode], message: c.message, until: c.until ? c.until.replace("T", " ").slice(0, 16) : "" };
     await recordChange({
       actor,

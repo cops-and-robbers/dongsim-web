@@ -4,7 +4,8 @@ import { getMessages } from "@/lib/i18n/messages";
 import { alternateLanguages } from "@/lib/i18n/config";
 import { SITE_URL } from "@/lib/constants";
 
-export const revalidate = 60;
+// 동기화가 바뀐 목록을 바로 버린다. 주기는 놓쳤을 때를 위한 것(#335)
+export const revalidate = 3600;
 
 const meta = getMessages("ja").blog.meta;
 
