@@ -1,7 +1,7 @@
 /* eslint-disable */ // 게임 저장소 코드를 그대로 옮긴 파일이라 사이트 규칙으로 고치지 않는다
 // 게임 저장소(cops-and-robbers-web-game) client/playground.html 의 캐릭터 엔진(CharRig)을 그대로 옮겼다(65d010c).
 // 사이트 장면의 캐릭터가 게임과 같은 걸음걸이와 동작으로 움직이게 하려고 쓴다. 고칠 때는 게임 쪽을 먼저 고치고 다시 옮긴다.
-// 바꾼 것은 두 줄뿐이다: 맨 앞 export, 맨 끝 window.CharRig 대신 return.
+// 좀비 걸음(shambleSide, shambleFront)은 fb59b29 에서 더 옮겼다. 바꾼 것은 두 줄뿐이다: 맨 앞 export, 맨 끝 window.CharRig 대신 return.
 // 경찰과 도둑 캐릭터 관절 엔진
 // 원본 SVG 조각을 그대로 쓰고, 부위마다 g 로 감싸 변환만 준다. 새로 그리는 도형은 없다.
 // 몸통에 붙은 발·팔은 잘라 내서(clipPath) 따로 움직인다. 잘린 면은 몸 뒤에 숨는다.
@@ -315,6 +315,65 @@ export const CharRig = (function () {
       rig.set("eyes", piv(d.cx, 84, 0, 1, 1, fx * 1.1, 0));
       rig.set("hat", piv(d.cx, 40, hatR.step(-tilt * 1.4, dt), 1, 1, 0, 0));
       rig.set("armL", piv(42, 170, -6 * twitch, 1, 1, 0, 0)); rig.set("armR", piv(138, 170, 6 * twitch, 1, 1, 0, 0));
+    } };
+  };
+
+  // ───────── 좀비 걸음 (docs/zombie.md) ─────────
+  // 팔은 앞으로 뻗은 채 두고, 몸을 앞으로 숙이고, 발을 끌며 절뚝인다. 얼굴·귀·모자는 머리와 한 덩어리로 움직인다.
+  // 걷기는 한 걸음 1.15초쯤, 달리면(ctx.speed) 그만큼 빨라진다
+  const limp = u => { u = ((u % 1) + 1) % 1; return u < 0.5 ? u * 0.8 : 0.4 + (u - 0.5) * 1.2; };
+  const zArm = (fill, edge, len, w) => { const g = document.createElementNS(NS, "g"); g.innerHTML = `<path d="M0 0H${len}" stroke="${edge}" stroke-width="${w + 3}" stroke-linecap="round"/><ellipse cx="${len + 4}" cy="1" rx="${w * 0.77}" ry="${w * 0.7}" fill="${edge}"/><path d="M0 0H${len}" stroke="${fill}" stroke-width="${w}" stroke-linecap="round"/><ellipse cx="${len + 4}" cy="1" rx="${w * 0.67}" ry="${w * 0.6}" fill="${fill}"/>`; return g; };
+  MOTIONS.shambleSide = (rig) => {
+    const d = rig.def; let ph = 0;
+    const headR = new Spring(80, 5), armA = new Spring(90, 6);
+    return { update(dt, ctx = {}) {
+      const speed = ctx.speed ?? 0.9, T = 1.15 / (0.55 + 0.45 * speed);
+      ph = (ph + dt / T) % 1; const u = limp(ph);
+      const y = 3 * Math.abs(Math.sin(u * TAU));
+      rig.all.setAttribute("transform", piv(d.cx, d.ground, 8 + 2.5 * Math.sin(u * TAU * 2 + 0.6), 1, 1, 0, 0));
+      const hr = headR.step(1.5 * Math.sin(u * TAU + 1.4), dt), arm = armA.step(y * 1.6, dt);
+      const ff = footCycle(u, 9, 2, 0.7), bf = footCycle(u + 0.5, 8, 5, 0.65);
+      if (d.name === "robber-side") {
+        rig.set("body", piv(93, 141, 0, 1, 1, 0, y));
+        ["head", "earL", "earR"].forEach(p => rig.set(p, piv(95, 112, hr, 1, 1, 0, y)));
+        (rig.parts.sack || []).forEach(g => g.style.opacity = 0);
+        (rig.parts.backArm || []).forEach(g => g.style.opacity = 0);
+        (rig.parts.frontHand || []).forEach(g => g.querySelectorAll('[fill="#F7DE93"]').forEach(p => p.style.opacity = 0));
+        if (!rig.zArms) { rig.zArms = { far: zArm("#7E9882", "#6A8570", 22, 9.5) }; rig.all.insertBefore(rig.zArms.far, rig.all.firstChild); }
+        rig.zArms.far.setAttribute("transform", `translate(104,${98 + y + arm * 0.9}) rotate(${-10 + arm * 0.4})`);
+        rig.set("frontHand", piv(121, 104, -10, 1, 1, 16, -8 + y + arm * 0.6));
+        rig.set("frontFoot", piv(117, 132, ff.r * 0.5, 1, 1, ff.x * 0.7, ff.y));
+        rig.set("backFoot", piv(71, 136, bf.r * 0.5, 1, 1, bf.x * 0.7, bf.y));
+      } else { // police-side: 원래 팔이 몸에 붙은 선이라 앞으로 뻗은 팔 두 개를 덧그린다
+        rig.set("body", piv(80, 188, 0, 1, 1, 0, y));
+        ["head", "earL", "earR", "hat", "badge"].forEach(p => rig.set(p, piv(85, 140, hr, 1, 1, 0, y)));
+        (rig.parts.baton || []).forEach(g => g.style.opacity = 0);
+        (rig.parts.frontArm || []).forEach(g => g.style.opacity = 0);
+        if (!rig.zArms) {
+          rig.zArms = { far: zArm("#86AE8F", "#6F927A", 30, 15), near: zArm("#AECBB2", "#6F927A", 30, 15) };
+          rig.all.insertBefore(rig.zArms.far, rig.all.firstChild); rig.all.append(rig.zArms.near);
+        }
+        rig.zArms.far.setAttribute("transform", `translate(120,${128 + y + arm * 0.9}) rotate(${-14 + arm * 0.4})`);
+        rig.zArms.near.setAttribute("transform", `translate(114,${140 + y + arm}) rotate(${-8 + arm * 0.5})`);
+        rig.set("frontFoot", piv(110, 180, ff.r * 0.5, 1, 1, ff.x * 0.6, ff.y));
+        rig.set("backFoot", piv(59, 184, bf.r * 0.5, 1, 1, bf.x * 0.6, bf.y));
+      }
+    } };
+  };
+  // 앞모습: 손을 가슴 높이로 들고 좌우로 조금 휘청인다
+  MOTIONS.shambleFront = (rig) => {
+    const d = rig.def, rob = d.name.startsWith("robber"); let ph = 0; const arm = new Spring(90, 6);
+    return { update(dt, ctx = {}) {
+      const speed = ctx.speed ?? 0.9, T = 1.15 / (0.55 + 0.45 * speed);
+      ph = (ph + dt / T) % 1; const u = limp(ph);
+      const sway = 3 * Math.sin(u * TAU), y = 2.5 * Math.abs(Math.sin(u * TAU)), a = arm.step(y * 1.4, dt);
+      rig.all.setAttribute("transform", piv(d.cx, d.ground, sway, 1, 1, 0, y));
+      if (rob) { rig.set("handL", piv(41, 113, 0, 1.12, 1.12, 8, -12 + a)); rig.set("handR", piv(119, 113, 0, 1.12, 1.12, -8, -12 + a * 0.7)); }
+      else { rig.set("armL", piv(42, 170, 0, 1.1, 1.1, 12, -16 + a)); rig.set("armR", piv(138, 170, 0, 1.1, 1.1, -12, -16 + a * 0.7)); }
+      const L = Math.max(0, Math.sin(u * TAU)), R = Math.max(0, -Math.sin(u * TAU));
+      const fl = rob ? [[61, 140], [99, 140]] : [[52, 196], [126, 196]];
+      rig.set("footL", piv(fl[0][0], fl[0][1], 0, 1, 1, 0, -4 * L));
+      rig.set("footR", piv(fl[1][0], fl[1][1], 0, 1, 1, 0, -2 * R));
     } };
   };
 
