@@ -153,9 +153,10 @@ export const getPost = cache(async function getPost(
 
 /**
  * 발행 글이 하나라도 있는 언어. 블로그 목록의 색인 여부와 hreflang 을 정한다(#343).
- * 조회 오류면 null - "글 없음"으로 읽어 noindex 를 캐시하지 않게 한다.
+ * 연결 설정이 없거나(로컬, 미리보기) 조회 오류면 null - "글 없음"으로 읽어 noindex 를 내거나 캐시하지 않게 한다.
  */
 export async function localesWithPosts(): Promise<Set<Locale> | null> {
+  if (!db()) return null;
   try {
     return new Set((await getAllPosts()).map((post) => post.locale));
   } catch {
