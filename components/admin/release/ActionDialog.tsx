@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChangeDialog } from "@/components/admin/ChangeDialog";
 import { AlertIcon, CheckIcon, ChevronDownIcon, ClockIcon } from "@/components/admin/icons";
 import { ReleaseActionError, runReleaseAction } from "@/lib/admin/releaseClient";
-import { obj } from "@/lib/release/board";
+import { obj, subj } from "@/lib/release/board";
 import { NOTE_LANGS, NOTE_MAX, ROLLOUT_STEPS, type Option } from "@/lib/release/options";
 
 // 출시 조작 확인창 (docs/admin-ui.md "출시 조작").
@@ -19,7 +19,9 @@ const pctLabel = (f: number) => (f >= 1 ? "모두에게(100%)" : `${Math.round(f
 const SPRING = { type: "spring", stiffness: 420, damping: 34, mass: 0.8 } as const;
 const FADE = { duration: 0.18, ease: [0.22, 1, 0.36, 1] } as const;
 
-export function ActionDialog({ option, onDone, onClose }: { option: Option; onDone: (message: string) => void; onClose: () => void }) {
+export function ActionDialog({ option, onDone, onClose, onWriteNotes }: { option: Option; onDone: (message: string) => void; onClose: () => void; onWriteNotes?: (focus?: string) => void }) {
+  // App Store 심사 내기: 새로운 기능이 빈 언어가 있으면 애플이 받지 않아서 먼저 채우게 한다
+  const missingNotes = option.id === "ios.submit" ? (option.params.missingNotes ?? []) : [];
   const android = option.platform === "android";
   const isCreate = option.id === "android.createRelease";
   const isRaise = option.id === "android.rolloutSet";
@@ -63,7 +65,7 @@ export function ActionDialog({ option, onDone, onClose }: { option: Option; onDo
     setCheck({ state: "running" });
   };
 
-  const lockOk = option.level === 1 || typed.trim() === option.confirmWord;
+  const lockOk = (option.level === 1 || typed.trim() === option.confirmWord) && missingNotes.length === 0;
   const checkOk = !android || check?.state === "ok";
   const notesOk = !isCreate || !tooLong;
 
@@ -164,7 +166,29 @@ export function ActionDialog({ option, onDone, onClose }: { option: Option; onDo
         </Section>
       )}
 
-      {(android || option.level === 2) && (
+      {missingNotes.length > 0 && (
+        <Section title="먼저 할 일">
+          <div className="rounded-xl bg-sd-warning-weak px-3.5 py-3">
+            <p className="flex items-start gap-2 text-[13.5px] leading-relaxed text-sd-fg">
+              <AlertIcon className="mt-0.5 size-4 flex-none text-sd-warning" />
+              <span>
+                <b className="font-semibold">{subj(missingNotes.join(", "))} 비어 있어요.</b> 애플은 새로운 기능이 언어마다 차 있어야 심사 제출을 받아요.
+              </span>
+            </p>
+            {onWriteNotes && (
+              <button
+                type="button"
+                onClick={() => onWriteNotes(NOTE_LANGS.find((l) => l.label === missingNotes[0])?.language)}
+                className="mt-2.5 inline-flex h-8 items-center rounded-[10px] bg-sd-surface px-3 text-[13px] font-semibold text-sd-fg ring-1 ring-inset ring-sd-line transition hover:bg-sd-fill active:scale-[0.97]"
+              >
+                새로운 기능 쓰러 가기
+              </button>
+            )}
+          </div>
+        </Section>
+      )}
+
+      {(android || option.level === 2) && missingNotes.length === 0 && (
         <Section title="안전 확인">
           <div className="space-y-2.5">
             {check && <CheckRow check={check} />}
