@@ -155,6 +155,8 @@ const ko = {
       heading: "경찰과 도둑, 이렇게 해요",
       sub: "어릴 때 하던 그대로예요. 앱은 옆에서 진행만 봐줘요.",
       appLabel: "앱에서는",
+      // 규칙을 더 길게 다룬 글. 글이 없는 언어는 null(#343)
+      more: { label: "규칙과 꿀팁 자세히 보기", href: "/blog/honey-tips" } as { label: string; href: string } | null,
       steps: [
         {
           title: "팀부터 나눠요",
@@ -599,6 +601,7 @@ const en: Messages = {
       heading: "How to play cops and robbers",
       sub: "The same rules you grew up with. The app just runs the game.",
       appLabel: "In the app",
+      more: null,
       steps: [
         {
           title: "Split into teams",
@@ -1043,6 +1046,7 @@ const ja: Messages = {
       heading: "ケイドロの遊び方",
       sub: "昔ながらのルールそのまま。進行はアプリにおまかせ。",
       appLabel: "アプリでは",
+      more: { label: "ルールとコツを詳しく読む", href: "/ja/blog/keidoro-rules" },
       steps: [
         {
           title: "チームに分かれる",
