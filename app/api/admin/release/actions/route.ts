@@ -3,7 +3,7 @@ import { actorName } from "@/lib/admin/server/remoteConfig";
 import { guard, noStore } from "@/lib/event/adminApi";
 import { runAction } from "@/lib/release/actions";
 import { auditReady, finishLog, isRepeat, startLog } from "@/lib/release/audit";
-import { NOTE_LANGS, NOTE_MAX, ROLLOUT_STEPS, optionsFor, type ActionId } from "@/lib/release/options";
+import { changedNotes, IOS_NOTE_MAX, NOTE_LANGS, NOTE_MAX, ROLLOUT_STEPS, optionsFor, type ActionId } from "@/lib/release/options";
 import { refreshReleaseBoard } from "@/lib/release/server";
 import { readAndroid, readIos, StoreError } from "@/lib/release/stores";
 
@@ -56,6 +56,14 @@ export async function POST(req: Request): Promise<NextResponse> {
     notes = body.notes.map((n) => ({ language: n.language, text: (n.text ?? "").trim() })).filter((n) => n.text);
     if (notes.some((n) => !NOTE_LANGS.some((l) => l.language === n.language) || [...n.text].length > NOTE_MAX))
       return NextResponse.json({ error: `출시 노트는 한국어, 영어, 일본어만, 언어마다 ${NOTE_MAX}자까지예요.` }, { status: 400 });
+  }
+  // App Store 새로운 기능은 세 언어, 언어마다 4000자까지. 비우는 것도 저장한다(애플이 그 언어를 빈 칸으로 둔다). 바뀐 게 없으면 하지 않는다
+  if (id === "ios.whatsNew") {
+    const sent = (body.notes ?? []).map((n) => ({ language: n.language, text: (n.text ?? "").replace(/\r\n/g, "\n").trim() }));
+    if (sent.some((n) => !NOTE_LANGS.some((l) => l.language === n.language) || [...n.text].length > IOS_NOTE_MAX))
+      return NextResponse.json({ error: `새로운 기능은 한국어, 영어, 일본어만, 언어마다 ${IOS_NOTE_MAX}자까지예요.` }, { status: 400 });
+    if (changedNotes(option.params.notes ?? [], sent).length === 0) return NextResponse.json({ error: "바뀐 내용이 없어요." }, { status: 400 });
+    notes = sent;
   }
   const input = { fraction: body.fraction, notes };
 

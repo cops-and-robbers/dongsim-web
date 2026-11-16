@@ -9,7 +9,7 @@
 import { ASC_API } from "../metrics/appstore/auth.ts";
 import { APPSTORE_APP_ID } from "../metrics/config.ts";
 import { ro } from "./board.ts";
-import type { Option } from "./options.ts";
+import { changedNotes, NOTE_LANGS, type Option } from "./options.ts";
 import { ascRequests, productionReleases, type AscRequest, type TrackRelease } from "./requests.ts";
 import { PLAY_API, StoreError, play, playToken, releaseAscToken } from "./stores.ts";
 
@@ -97,6 +97,24 @@ export async function runAction(option: Option, input: { fraction?: number; note
       case "ios.phasedComplete":
         await asc(ascRequests.phased(p.phasedId!, "COMPLETE"), token);
         return { message: "모두에게 냈어요" };
+      case "ios.whatsNew": {
+        // 바뀐 언어만 보낸다. 앞 언어가 들어간 뒤 뒤 언어가 실패하면 어디까지 됐는지 알린다
+        const changed = changedNotes(p.notes ?? [], input.notes ?? []);
+        const done: string[] = [];
+        const name = (language: string) => NOTE_LANGS.find((l) => l.language === language)?.label ?? language;
+        for (const n of changed) {
+          const id = p.noteIds?.[n.language];
+          if (!id) throw new StoreError(`App Store Connect 에 ${name(n.language)} 언어가 없어요. 먼저 App Store Connect 에서 언어를 더해 주세요.`);
+          try {
+            await asc(ascRequests.whatsNew(id, n.text), token);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            throw new StoreError(done.length ? `${done.join(", ")}은 저장했고 ${name(n.language)}에서 멈췄어요. ${msg}` : msg, { status: e instanceof StoreError ? e.status : undefined });
+          }
+          done.push(name(n.language));
+        }
+        return { message: `${option.confirmWord} 새로운 기능을 저장했어요 (${done.join(", ")})` };
+      }
     }
     throw new StoreError("모르는 조작이에요");
   }

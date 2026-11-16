@@ -10,7 +10,7 @@
  *
  * 관리형 게시의 "게시"와 반려 사유 보기는 API 가 없어 콘솔 바로가기로 둔다.
  */
-import { maxCodeOf, obj, pickAndroid, pickIos, playVersion, ro, subj, type AndroidRaw, type IosRaw, type Platform, type PlayRelease } from "./board.ts";
+import { maxCodeOf, NOTE_LOCALES, NOTES_EDITABLE, obj, pickAndroid, pickIos, playVersion, ro, subj, type AndroidRaw, type IosRaw, type Platform, type PlayRelease } from "./board.ts";
 
 export type ActionId =
   | "ios.renameVersion"
@@ -21,6 +21,7 @@ export type ActionId =
   | "ios.phasedPause"
   | "ios.phasedResume"
   | "ios.phasedComplete"
+  | "ios.whatsNew"
   | "android.createRelease"
   | "android.rolloutSet"
   | "android.halt"
@@ -39,6 +40,10 @@ export type OptionParams = {
   notes?: { language: string; text: string }[];
   /** 지금 나가 있는 출시의 노트(새 노트를 쓸 때 본보기) */
   lastNotes?: { language: string; text: string }[];
+  /** iOS 새로운 기능: 언어별 애플 언어 칸 id */
+  noteIds?: Record<string, string>;
+  /** iOS 심사 제출: 새로운 기능이 빈 언어(이름). 비어 있으면 애플이 제출을 받지 않는다 */
+  missingNotes?: string[];
 };
 
 /** Play 출시 노트 언어(우리 스토어 등록정보 언어)와 언어마다 글자 수 한도 */
@@ -48,6 +53,8 @@ export const NOTE_LANGS = [
   { language: "ja-JP", label: "일본어" },
 ];
 export const NOTE_MAX = 500;
+/** App Store 새로운 기능 언어마다 글자 수 한도(애플 4000자) */
+export const IOS_NOTE_MAX = 4000;
 
 export type Option = {
   id: ActionId;
@@ -88,6 +95,7 @@ const UNDOABLE: Record<ActionId, boolean> = {
   "ios.phasedPause": true,
   "ios.phasedResume": true,
   "ios.phasedComplete": false,
+  "ios.whatsNew": true,
   "android.createRelease": true,
   "android.rolloutSet": false,
   "android.halt": true,
@@ -139,6 +147,29 @@ export function iosOptions(raw: IosRaw): Option[] {
     }
   }
 
+  // 새로운 기능(App Store 출시 노트). 출시 화면에서 바로 쓴다. 화면이 본 글과 지금 애플의 글이 같을 때만 저장한다
+  const notes = inflight && raw.notes?.versionId === v.id ? raw.notes : null;
+  if (notes && NOTES_EDITABLE.has(v.state)) {
+    const empty = notes.langs.every((l) => !l.text.trim());
+    out.push({
+      ...base,
+      id: "ios.whatsNew",
+      label: empty ? "새로운 기능 쓰기" : "새로운 기능 고치기",
+      level: 1,
+      expect: sig(`|${notesHash(notes.langs)}`),
+      what: `${v.version}의 App Store 새로운 기능(업데이트 문구)을 저장해요. 심사에 낼 때 함께 나가고, 그 전에는 사용자에게 보이지 않아요.`,
+      undo: "심사에 내기 전까지 언제든 다시 고칠 수 있어요.",
+      reachesUsers: false,
+      primary: false,
+      params: {
+        versionId: v.id,
+        notes: notes.langs.map((l) => ({ language: l.language, text: l.text })),
+        noteIds: Object.fromEntries(notes.langs.filter((l) => l.id).map((l) => [l.language, l.id!])),
+      },
+    });
+  }
+  const missingNotes = notes ? NOTE_LOCALES.filter((l) => !notes.langs.find((x) => x.language === l.language)?.text.trim()).map((l) => l.label) : [];
+
   if (inflight && SUBMITTABLE.has(v.state) && v.build?.state === "VALID") {
     out.push({
       ...base,
@@ -150,7 +181,7 @@ export function iosOptions(raw: IosRaw): Option[] {
       undo: "심사가 끝나기 전에는 제출을 취소할 수 있어요.",
       reachesUsers: false,
       primary: true,
-      params: { versionId: v.id },
+      params: { versionId: v.id, ...(missingNotes.length ? { missingNotes } : {}) },
     });
   }
 
@@ -244,6 +275,7 @@ export function iosOptions(raw: IosRaw): Option[] {
     "ios.phasedPause": { changes: [change("단계적 출시", `${pct} 진행 중`, `${pct}에서 멈춤`)], then: "멈춘 동안은 날짜가 가지 않아요." },
     "ios.phasedResume": { changes: [change("단계적 출시", `${pct}에서 멈춤`, `${pct}부터 다시 진행`)], then: "남은 날 동안 1, 2, 5, 10, 20, 50, 100% 순서로 넓어져요." },
     "ios.phasedComplete": { changes: [change("자동 업데이트", pct, "100%")], then: "출시 화면의 나라별 반영에서 확인할 수 있어요." },
+    "ios.whatsNew": { then: "다 채웠으면 심사에 낼 수 있어요." },
   };
   return out.map((o) => ({ ...o, ...extra[o.id], undoable: UNDOABLE[o.id] }));
 }
@@ -344,6 +376,22 @@ export function androidOptions(raw: AndroidRaw, iosByBuild: Map<string, string> 
     "android.rolloutSet": { then: "출시 화면에서 더 올리거나 바로 모두에게 낼 수 있어요." },
   };
   return out.map((o) => ({ ...o, ...extra[o.id], undoable: UNDOABLE[o.id] }));
+}
+
+/** 화면이 본 새로운 기능의 지문. 그 사이 누가 애플이나 스토어 페이지에서 고쳤으면 달라진다 */
+export function notesHash(langs: { language: string; text: string }[]): string {
+  const text = JSON.stringify(langs.map((l) => [l.language, l.text]));
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16);
+}
+
+/** 바뀐 언어만. 저장할 때 바뀐 칸만 애플에 보낸다 */
+export function changedNotes(before: { language: string; text: string }[], after: { language: string; text: string }[]): { language: string; text: string }[] {
+  return after.filter((a) => (before.find((b) => b.language === a.language)?.text ?? "") !== a.text);
 }
 
 export const optionsFor = (platform: Platform, raw: IosRaw | AndroidRaw): Option[] => (platform === "ios" ? iosOptions(raw as IosRaw) : androidOptions(raw as AndroidRaw));
