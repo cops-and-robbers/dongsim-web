@@ -4,6 +4,7 @@ import HowItWorksSection from "@/components/home/HowItWorksSection";
 import FeaturesSection from "@/components/home/FeaturesSection";
 import MinigameTeaserSection from "@/components/home/MinigameTeaserSection";
 import OnlineGameTeaserSection from "@/components/home/OnlineGameTeaserSection";
+import StoriesSection from "@/components/home/StoriesSection";
 import type { Metadata } from "next";
 import CtaSection from "@/components/home/CtaSection";
 import { getMessages } from "@/lib/i18n/messages";
@@ -235,6 +236,7 @@ export default async function HomePage() {
       <HowItWorksSection copy={copy.how} />
       <FeaturesSection copy={copy.features} />
       <OnlineGameTeaserSection />
+      <StoriesSection locale="ko" tone="slate" />
       {minigame && <MinigameTeaserSection copy={copy.minigame} locale="ko" />}
       <CtaSection copy={copy.finalCta} locale="ko" />
     </>

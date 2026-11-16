@@ -10,6 +10,12 @@ export type Messages = typeof ko;
 
 const ko = {
   home: {
+    // 홈 아래 최근 글 칸. 글이 없는 언어는 칸을 그리지 않는다(#343)
+    stories: {
+      heading: "경도 이야기",
+      sub: "놀이 규칙과 팁, 팀 이야기를 읽어 봐요.",
+      more: "이야기 모두 보기",
+    },
     meta: {
       title: "경찰과 도둑",
       description:
@@ -455,6 +461,11 @@ const ko = {
 
 const en: Messages = {
   home: {
+    stories: {
+      heading: "Stories",
+      sub: "Game rules, playing tips, and stories from our team.",
+      more: "See all stories",
+    },
     meta: {
       title: "Cops and Robbers - Real-Life GPS Tag",
       description:
@@ -900,6 +911,11 @@ const en: Messages = {
 
 const ja: Messages = {
   home: {
+    stories: {
+      heading: "ケイドロのストーリー",
+      sub: "ルールや遊び方のコツ、チームの活動を紹介します。",
+      more: "ストーリー一覧",
+    },
     meta: {
       title: "ケイドロ - GPSリアル鬼ごっこ",
       description:
