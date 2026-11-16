@@ -262,6 +262,14 @@ body {
     color 0.5s ease;
 }
 
+/* 테마를 바꾸는 한 프레임 동안 모든 전환을 끈다(ThemeProvider). 켜 두면 페이지의 수백 요소가 0.5초씩 색을 바꾸며 버벅인다 */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
+}
+
 /* 어드민 스크롤바 - 테마 인식(다크에서 흰 기본 스크롤바 방지) */
 .admin-shell,
 .admin-shell * {

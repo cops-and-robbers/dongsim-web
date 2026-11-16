@@ -145,7 +145,7 @@ function RoleCard({
   onPick,
   children,
 }: RoleCardProps) {
-  const { team, setTeam } = useTheme();
+  const { team } = useTheme();
   const isSelected = team === targetTeam;
   const isPolice = tone === "blue";
 
@@ -165,10 +165,7 @@ function RoleCard({
   return (
     <button
       type="button"
-      onClick={() => {
-        setTeam(targetTeam);
-        onPick(targetTeam);
-      }}
+      onClick={() => onPick(targetTeam)}
       aria-pressed={isSelected}
       aria-label={ariaLabel}
       className={`group relative flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-3xl bg-white text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:bg-app-black dark:hover:shadow-2xl ${
@@ -222,12 +219,20 @@ export default function CharactersSection({
 }: {
   copy: Messages["home"]["characters"];
 }) {
-  // 팀을 고른 순간 앱의 역할 배너가 화면 위로 펼쳐진다. 움직임 줄이기 설정이면 테마만 바뀐다
+  // 팀을 고른 순간 앱의 역할 배너가 화면 위로 펼쳐지고, 배너가 화면을 덮은 뒤에 테마가 바뀐다.
+  // 누르자마자 바꾸면 페이지 전체 색 전환이 배너 움직임과 겹쳐 버벅였다. 움직임 줄이기 설정이면 테마만 바로 바뀐다
+  const { setTeam } = useTheme();
   const [banner, setBanner] = useState<{ team: Team; key: number } | null>(null);
   const pick = useCallback((team: Team) => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setTeam(team);
+      return;
+    }
     setBanner({ team, key: Date.now() });
-  }, []);
+  }, [setTeam]);
+  const applyTeam = useCallback(() => {
+    if (banner) setTeam(banner.team);
+  }, [banner, setTeam]);
   const closeBanner = useCallback(() => setBanner(null), []);
 
   return (
@@ -237,6 +242,7 @@ export default function CharactersSection({
           key={banner.key}
           team={banner.team}
           copy={copy.banner}
+          onCovered={applyTeam}
           onDone={closeBanner}
         />
       )}

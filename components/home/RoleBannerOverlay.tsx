@@ -22,22 +22,28 @@ import type { Messages } from "@/lib/i18n/messages";
 // 띠와 나란한 속도선까지 같은 움직임(lib/demo/start-motion)이다. 두 진영이 같은 연출을 받는다.
 // 앱처럼 지금 보이는 화면 전체를 덮는다(섹션이 화면보다 길어도 누른 자리에서 다 보이게).
 // 앱은 2.35초 머물지만 사이트에서는 화면을 가리는 시간이라 짧게 두고, 누르면 바로 빠진다.
+// 움직임 곡선은 앱 시간(ms)으로 적혀 있어 시계를 SPEED 배로 빨리 돌려 전체를 줄인다(3.2초 → 약 2.3초).
+// 테마는 배경이 화면을 덮은 순간(onCovered) 바꾼다. 바뀌는 페이지는 배너 뒤에 가려진다.
 
 type Team = "police" | "robber";
 
 const ENTER_MS = 900;
 const HOLD_MS = 1600;
 const EXIT_MS = 700;
+const SPEED = 1.4;
+const COVER_MS = 520;
 const BAND_ANGLE = -7;
 const PURE_BLACK = "#000000";
 
 export default function RoleBannerOverlay({
   team,
   copy,
+  onCovered,
   onDone,
 }: {
   team: Team;
   copy: Messages["home"]["characters"]["banner"];
+  onCovered: () => void;
   onDone: () => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -49,7 +55,7 @@ export default function RoleBannerOverlay({
   useEffect(() => {
     const start = performance.now();
     let raf = 0;
-    const tick = () => setMs(performance.now() - start);
+    const tick = () => setMs((performance.now() - start) * SPEED);
     const loop = () => {
       tick();
       raf = requestAnimationFrame(loop);
@@ -71,6 +77,11 @@ export default function RoleBannerOverlay({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  const covered = ms >= COVER_MS;
+  useEffect(() => {
+    if (covered) onCovered();
+  }, [covered, onCovered]);
 
   const done = ms >= exitAt + EXIT_MS;
   useEffect(() => {
