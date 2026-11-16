@@ -1,8 +1,11 @@
+import Link from "next/link";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 
 // 놀이 규칙 섹션 - "경찰과 도둑 하는 법"을 검색해 들어온 사람에게 먼저 답한다.
 // 전통 놀이의 규칙을 단계로 설명하고, 각 단계에 앱이 하는 일을 한 줄로 잇는다.
+// 아래에는 규칙과 전략을 더 길게 다룬 글로 가는 링크를 둔다. 같은 주제를 다룬 페이지끼리 이어야
+// 검색엔진도 두 페이지의 관계를 안다(#343)
 export default function GameRulesSection({
   copy,
 }: {
@@ -11,6 +14,7 @@ export default function GameRulesSection({
     sub: string;
     appLabel: string;
     steps: readonly { title: string; play: string; app: string }[];
+    more: { label: string; href: string } | null;
   };
 }) {
   return (
@@ -60,6 +64,14 @@ export default function GameRulesSection({
             </ScrollReveal>
           ))}
         </ol>
+        {copy.more && (
+          <Link
+            href={copy.more.href}
+            className="mt-10 inline-flex items-center gap-1 text-base font-bold text-brand-blue underline-offset-4 hover:underline dark:text-brand-green"
+          >
+            {copy.more.label} <span aria-hidden>→</span>
+          </Link>
+        )}
       </Container>
     </section>
   );

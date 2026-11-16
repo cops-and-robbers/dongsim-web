@@ -7,6 +7,7 @@ import ArticleJsonLd from "@/components/seo/ArticleJsonLd";
 import Container from "@/components/ui/Container";
 import { formatPostDate } from "@/lib/blog/format";
 import { getPost, getPosts } from "@/lib/blog/store";
+import { relatedPosts } from "@/lib/blog/related";
 import { getMessages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -45,8 +46,7 @@ export default async function BlogPost({
   if (!post) notFound();
 
   const copy = getMessages(locale).blog;
-  // 관련 글 - 같은 언어 최신순에서 현재 글만 빼고 2개.
-  const related = posts.filter((p) => p.id !== post.id).slice(0, 2);
+  const related = relatedPosts(posts, post.id);
 
   // 커버는 이 페이지의 LCP - R2 영구 URL 이라 그대로 미리 불러온다.
   if (post.coverUrl) {

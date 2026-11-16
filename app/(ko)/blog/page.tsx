@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import BlogList from "@/components/blog/BlogList";
 import { getMessages } from "@/lib/i18n/messages";
-import { alternateLanguages } from "@/lib/i18n/config";
+import { blogListIndexing } from "@/lib/blog/listIndex";
+import { localesWithPosts } from "@/lib/blog/store";
 import { SITE_URL } from "@/lib/constants";
 
 // 글이 바뀌면 동기화(/api/blog/sync)가 목록을 버리고 미리 데운다. 시간 주기는 놓쳤을 때를 위한 것이라
@@ -10,18 +11,20 @@ export const revalidate = 3600;
 
 const meta = getMessages("ko").blog.meta;
 
-export const metadata: Metadata = {
-  title: meta.title,
-  description: meta.description,
-  alternates: {
-    canonical: "/blog",
-    languages: {
-      ...alternateLanguages(SITE_URL, "/blog"),
-      "x-default": `${SITE_URL}/blog`,
+// hreflang 은 글이 있는 언어의 목록끼리만 잇는다(#343, lib/blog/listIndex.ts)
+export async function generateMetadata(): Promise<Metadata> {
+  const { index, languages } = blogListIndexing(SITE_URL, "ko", await localesWithPosts());
+  return {
+    title: meta.title,
+    description: meta.description,
+    ...(index ? {} : { robots: { index: false, follow: true } }),
+    alternates: {
+      canonical: "/blog",
+      languages,
+      types: { "application/rss+xml": "/rss.xml" },
     },
-    types: { "application/rss+xml": "/rss.xml" },
-  },
-};
+  };
+}
 
 export default function BlogPage() {
   return <BlogList locale="ko" />;

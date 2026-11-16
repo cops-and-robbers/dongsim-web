@@ -10,6 +10,13 @@ export type Messages = typeof ko;
 
 const ko = {
   home: {
+    // 홈 아래 최근 글 칸. 글이 없는 언어는 칸을 그리지 않는다(#343)
+    stories: {
+      title1: "놀고 만들며",
+      title2: "남긴 이야기들",
+      sub: "규칙과 꿀팁, 팀이 겪은 일을 글로 모아 뒀어요.",
+      more: "이야기 모두 보기",
+    },
     meta: {
       title: "경찰과 도둑",
       description:
@@ -155,6 +162,8 @@ const ko = {
       heading: "경찰과 도둑, 이렇게 해요",
       sub: "어릴 때 하던 그대로예요. 앱은 옆에서 진행만 봐줘요.",
       appLabel: "앱에서는",
+      // 규칙을 더 길게 다룬 글. 글이 없는 언어는 null(#343)
+      more: { label: "규칙과 꿀팁 자세히 보기", href: "/blog/honey-tips" } as { label: string; href: string } | null,
       steps: [
         {
           title: "팀부터 나눠요",
@@ -453,6 +462,12 @@ const ko = {
 
 const en: Messages = {
   home: {
+    stories: {
+      title1: "Stories from the field",
+      title2: "and from the team",
+      sub: "We share game rules, playing tips, and stories from our team.",
+      more: "See all stories",
+    },
     meta: {
       title: "Cops and Robbers - Real-Life GPS Tag",
       description:
@@ -599,6 +614,7 @@ const en: Messages = {
       heading: "How to play cops and robbers",
       sub: "The same rules you grew up with. The app just runs the game.",
       appLabel: "In the app",
+      more: null,
       steps: [
         {
           title: "Split into teams",
@@ -897,6 +913,12 @@ const en: Messages = {
 
 const ja: Messages = {
   home: {
+    stories: {
+      title1: "遊んで、つくって、",
+      title2: "書きとめたストーリー",
+      sub: "ルールや遊び方のコツ、チームの活動を紹介します。",
+      more: "ストーリー一覧",
+    },
     meta: {
       title: "ケイドロ - GPSリアル鬼ごっこ",
       description:
@@ -1043,6 +1065,7 @@ const ja: Messages = {
       heading: "ケイドロの遊び方",
       sub: "昔ながらのルールそのまま。進行はアプリにおまかせ。",
       appLabel: "アプリでは",
+      more: { label: "ルールとコツを詳しく読む", href: "/ja/blog/keidoro-rules" },
       steps: [
         {
           title: "チームに分かれる",
