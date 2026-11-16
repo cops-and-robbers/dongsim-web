@@ -15,7 +15,7 @@ import { APPSTORE_APP_ID, PLAY_PACKAGE } from "../metrics/config.ts";
 import { serviceAccountFromEnv, serviceAccountToken } from "../metrics/google.ts";
 import { db } from "../metrics/db.ts";
 import { productionRelease } from "../metrics/play/releases.ts";
-import type { AndroidRaw, HistoryItem, IosBuild, IosRaw, IosVersion, PlayRelease } from "./board.ts";
+import { NOTE_LOCALES, pickIos, type AndroidRaw, type HistoryItem, type IosBuild, type IosNote, type IosRaw, type IosVersion, type PlayRelease } from "./board.ts";
 
 const TIMEOUT = 15_000;
 
@@ -95,7 +95,30 @@ export async function readIos(now = new Date()): Promise<IosRaw> {
     })
     .sort((x, y) => ((x.submittedAt ?? "") < (y.submittedAt ?? "") ? 1 : -1));
 
-  return { versions: list.map((v) => ({ ...v, build: v.build ? { ...v.build, uploadedAt: iso(v.build.uploadedAt) } : null })), latestBuild, submissions };
+  const versionsOut = list.map((v) => ({ ...v, build: v.build ? { ...v.build, uploadedAt: iso(v.build.uploadedAt) } : null }));
+  const notes = await readNotes(versionsOut, latestBuild, submissions, token);
+  return { versions: versionsOut, latestBuild, submissions, notes };
+}
+
+/**
+ * 진행 중인 버전의 언어별 새로운 기능(whatsNew). 출시 화면에서 바로 쓰려고 읽는다.
+ * 못 읽어도 출시 보드는 그대로 그린다(새로운 기능 칸만 빠진다)
+ */
+async function readNotes(versions: IosVersion[], latestBuild: IosBuild | null, submissions: IosRaw["submissions"], token: string): Promise<IosRaw["notes"]> {
+  const { inflight, rolling } = pickIos({ versions, latestBuild, submissions });
+  if (!inflight || inflight === rolling) return null;
+  try {
+    const r = await asc(`/appStoreVersions/${inflight.id}/appStoreVersionLocalizations?limit=50&fields[appStoreVersionLocalizations]=locale,whatsNew`, token);
+    const byLocale = new Map((r.data ?? []).map((d) => [String(d.attributes?.locale ?? ""), d]));
+    const langs: IosNote[] = NOTE_LOCALES.map((l) => {
+      const d = byLocale.get(l.locale);
+      return { language: l.language, locale: l.locale, id: d?.id ?? null, text: String(d?.attributes?.whatsNew ?? "") };
+    });
+    return { versionId: inflight.id, langs };
+  } catch (e) {
+    console.error("[release] whatsNew", e instanceof StoreError ? (e.detail ?? e.message) : e instanceof Error ? e.message : e);
+    return null;
+  }
 }
 
 /** 애플은 "2026-11-03T00:49:26-08:00" 처럼 미국 서부 시각으로 준다. UTC ISO 로 맞춰 비교와 표시를 쉽게 한다 */

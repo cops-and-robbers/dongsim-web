@@ -21,8 +21,27 @@ const v328: IosVersion = { id: "v328", version: "3.2.8", state: "PREPARE_FOR_SUB
 const build392 = { id: "b392", number: "392", state: "VALID", uploadedAt: "2026-11-07T15:48:56Z", version: "3.2.17" };
 const attached = { ...build392, version: "3.2.8" };
 
+// 다음 버전의 새로운 기능. 실제로는 한국어만 CI 문구를 옮겨 적고 영어, 일본어가 빈 채로 제출하려다 막히는 일이 있었다
+const notesPartial: IosRaw["notes"] = {
+  versionId: "v328",
+  langs: [
+    { language: "ko-KR", locale: "ko", id: "loc-ko", text: "- 출동 5초 전부터 카운트다운을 표시합니다\n- 안정성 개선 및 버그 수정" },
+    { language: "en-US", locale: "en-US", id: "loc-en", text: "" },
+    { language: "ja-JP", locale: "ja", id: "loc-ja", text: "" },
+  ],
+};
+const notesFull: IosRaw["notes"] = {
+  versionId: "v328",
+  langs: [
+    notesPartial.langs[0],
+    { language: "en-US", locale: "en-US", id: "loc-en", text: "- A countdown now appears 5 seconds before the cops head out\n- Stability improvements and bug fixes" },
+    { language: "ja-JP", locale: "ja", id: "loc-ja", text: "- 出動5秒前からカウントダウンを表示します\n- 安定性の改善とバグ修正" },
+  ],
+};
+
 const iosReal: IosRaw = {
   versions: [v328, v327, v326],
+  notes: notesPartial,
   latestBuild: build392,
   submissions: [
     { state: "COMPLETE", submittedAt: "2026-11-01T12:47:58Z" },
@@ -84,7 +103,7 @@ export const SCENARIOS: Record<string, { label: string; input: BoardInput }> = {
     label: "두 스토어 심사 중",
     input: {
       ...base,
-      ios: ios({ state: "IN_REVIEW" }, { submissions: [{ state: "IN_REVIEW", submittedAt: "2026-11-08T00:10:00Z" }, ...iosReal.submissions] }),
+      ios: ios({ state: "IN_REVIEW" }, { notes: notesFull, submissions: [{ state: "IN_REVIEW", submittedAt: "2026-11-08T00:10:00Z" }, ...iosReal.submissions] }),
       android: android([{ name: "392 (3.2.8)", codes: [392], lifecycle: "IN_REVIEW", status: "completed" }, published], { listedAt: "2026-11-08T02:58:00Z" }),
     },
   },
@@ -92,7 +111,7 @@ export const SCENARIOS: Record<string, { label: string; input: BoardInput }> = {
     label: "iOS 반려, Android 승인",
     input: {
       ...base,
-      ios: ios({ state: "REJECTED" }, { submissions: [{ state: "UNRESOLVED_ISSUES", submittedAt: "2026-11-07T22:00:00Z" }] }),
+      ios: ios({ state: "REJECTED" }, { notes: notesFull, submissions: [{ state: "UNRESOLVED_ISSUES", submittedAt: "2026-11-07T22:00:00Z" }] }),
       android: android([{ name: "392 (3.2.8)", codes: [392], lifecycle: "APPROVED_NOT_PUBLISHED", status: "completed" }, published]),
     },
   },
@@ -100,7 +119,7 @@ export const SCENARIOS: Record<string, { label: string; input: BoardInput }> = {
     label: "두 스토어 승인, 출시 기다림",
     input: {
       ...base,
-      ios: ios({ state: "PENDING_DEVELOPER_RELEASE" }, { submissions: [{ state: "COMPLETE", submittedAt: "2026-11-07T22:00:00Z" }] }),
+      ios: ios({ state: "PENDING_DEVELOPER_RELEASE" }, { notes: notesFull, submissions: [{ state: "COMPLETE", submittedAt: "2026-11-07T22:00:00Z" }] }),
       android: android([{ name: "392 (3.2.8)", codes: [392], lifecycle: "APPROVED_NOT_PUBLISHED", status: "completed" }, published]),
     },
   },

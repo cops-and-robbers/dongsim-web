@@ -7,6 +7,12 @@ export type AscRequest = { method: "PATCH" | "POST"; path: string; body: Record<
 const ref = (type: string, id: string) => ({ data: { type, id } });
 
 export const ascRequests = {
+  /** 새로운 기능 고치기 (AppStoreVersionLocalizationUpdateRequest whatsNew) */
+  whatsNew: (localizationId: string, whatsNew: string): AscRequest => ({
+    method: "PATCH",
+    path: `/v1/appStoreVersionLocalizations/${localizationId}`,
+    body: { data: { type: "appStoreVersionLocalizations", id: localizationId, attributes: { whatsNew } } },
+  }),
   /** 버전 칸 이름 바꾸기 (AppStoreVersionUpdateRequest) */
   renameVersion: (versionId: string, versionString: string): AscRequest => ({
     method: "PATCH",
