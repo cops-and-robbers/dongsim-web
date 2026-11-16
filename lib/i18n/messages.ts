@@ -12,8 +12,9 @@ const ko = {
   home: {
     // 홈 아래 최근 글 칸. 글이 없는 언어는 칸을 그리지 않는다(#343)
     stories: {
-      heading: "경도 이야기",
-      sub: "놀이 규칙과 팁, 팀 이야기를 읽어 봐요.",
+      title1: "놀고 만들며",
+      title2: "남긴 이야기들",
+      sub: "규칙과 꿀팁, 팀이 겪은 일을 글로 모아 뒀어요.",
       more: "이야기 모두 보기",
     },
     meta: {
@@ -462,8 +463,9 @@ const ko = {
 const en: Messages = {
   home: {
     stories: {
-      heading: "Stories",
-      sub: "Game rules, playing tips, and stories from our team.",
+      title1: "Stories from the field",
+      title2: "and from the team",
+      sub: "We share game rules, playing tips, and stories from our team.",
       more: "See all stories",
     },
     meta: {
@@ -912,7 +914,8 @@ const en: Messages = {
 const ja: Messages = {
   home: {
     stories: {
-      heading: "ケイドロのストーリー",
+      title1: "遊んで、つくって、",
+      title2: "書きとめたストーリー",
       sub: "ルールや遊び方のコツ、チームの活動を紹介します。",
       more: "ストーリー一覧",
     },
