@@ -206,7 +206,8 @@ function PostCard({ post, onOpen }: { post: DemoCommunityPost; onOpen?: () => vo
     <button
       type="button"
       onClick={onOpen}
-      className={`${cardClass} transition-transform active:scale-[0.98]`}
+      // 버튼은 기본이 내용 폭이라 맨 위 글만 좁아 보였다. 다른 카드처럼 줄을 꽉 채운다
+      className={`${cardClass} block w-full transition-transform active:scale-[0.98]`}
       style={cardStyle}
     >
       {body}
