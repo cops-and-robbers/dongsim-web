@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
+import ArrowPillLink from "@/components/ui/ArrowPillLink";
 import CharacterDuo from "@/components/ui/CharacterDuo";
 import Container from "@/components/ui/Container";
 import ScrollReveal from "@/components/ui/ScrollReveal";
@@ -53,7 +54,7 @@ export default async function StoriesSection({
               </p>
             </div>
           </ScrollReveal>
-          <MoreButton href={listHref} label={copy.more} className="hidden shrink-0 md:inline-flex" />
+          <ArrowPillLink href={listHref} label={copy.more} className="hidden shrink-0 md:inline-flex" />
         </div>
 
         <ul className="-mx-6 mt-14 flex snap-x snap-mandatory scroll-px-6 gap-4 overflow-x-auto px-6 pb-2 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden">
@@ -66,31 +67,9 @@ export default async function StoriesSection({
           ))}
         </ul>
 
-        <MoreButton href={listHref} label={copy.more} className="mt-10 flex w-full md:hidden" />
+        <ArrowPillLink href={listHref} label={copy.more} className="mt-10 flex w-full md:hidden" />
       </Container>
     </section>
-  );
-}
-
-// 사이트 공통 Button 의 outline 모양에 화살표를 더했다. Button 은 inline-block 이라 화살표를 나란히 두려면 여기서 그린다
-function MoreButton({ href, label, className }: { href: string; label: string; className: string }) {
-  return (
-    <Link
-      href={href}
-      className={`group items-center justify-center gap-1.5 rounded-full border border-slate-300 px-7 py-3 text-base font-bold text-slate-700 transition hover:-translate-y-0.5 hover:border-brand-blue hover:text-brand-blue active:scale-95 dark:border-white/15 dark:text-slate-200 dark:hover:border-brand-green dark:hover:text-brand-green ${className}`}
-    >
-      {label}
-      <svg viewBox="0 0 16 16" className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true">
-        <path
-          d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
-      </svg>
-    </Link>
   );
 }
 
