@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import "@/app/globals.css";
 import "@/app/a11y.css";
 import "@/app/i18n.css";
@@ -10,6 +9,7 @@ import Footer from "@/components/layout/Footer";
 import ThemeProvider from "@/components/ThemeProvider";
 import LocaleProvider from "@/components/i18n/LocaleProvider";
 import SkipLink from "@/components/i18n/SkipLink";
+import SiteSpeedInsights from "@/components/layout/SiteSpeedInsights";
 import { SITE_URL } from "@/lib/constants";
 import { HTML_LANG, type Locale } from "@/lib/i18n/config";
 
@@ -208,9 +208,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             <Footer />
           </LocaleProvider>
         </ThemeProvider>
-        {/* Vercel 방문 분석 + 실사용자 Core Web Vitals(RUM) 수집 */}
+        {/* Vercel 방문 분석 + 실사용자 Core Web Vitals(RUM) 수집. 속도 측정은 어드민 화면을 빼고 보낸다(#339) */}
         <Analytics />
-        <SpeedInsights />
+        <SiteSpeedInsights />
       </body>
     </html>
   );
