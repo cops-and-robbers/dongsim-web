@@ -5,12 +5,13 @@ import type { ReactNode } from "react";
 // primary: 브랜드 배경 (라이트=파랑, 다크=초록·검정 글자)
 // inverse: 브랜드색 배경 "위"에 올리는 흰 버튼 (CTA 섹션용)
 // outline: 보조 동작 (다시 찍기, 다른 글 보기 등)
+// danger: 되돌릴 수 없는 동작 (앱의 위험 버튼과 같은 빨강)
 
 type Props = {
   children: ReactNode;
   href?: string;
   onClick?: () => void;
-  variant?: "primary" | "inverse" | "outline";
+  variant?: "primary" | "inverse" | "outline" | "danger";
   size?: "md" | "lg";
   disabled?: boolean;
   type?: "button" | "submit";
@@ -23,6 +24,7 @@ const VARIANT = {
   inverse: "bg-white text-brand-blue shadow-lg dark:text-app-black",
   outline:
     "border border-slate-300 text-slate-600 dark:border-white/15 dark:text-slate-300",
+  danger: "bg-[#FF383C] text-white",
 } as const;
 
 const SIZE = {
