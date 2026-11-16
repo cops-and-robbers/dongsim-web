@@ -6,7 +6,7 @@
 
 | 자리 | 하는 일 |
 | --- | --- |
-| 홈 소개 칸(`components/home/OnlineGameTeaserSection.tsx`) | 실제 판의 한 장면과 `/online` 링크, 놀이 방식 칩 셋(누르면 `/online` 의 그 장으로). 한국어 홈에만 둬요 |
+| 홈 소개 칸(`components/home/OnlineGameTeaserSection.tsx`) | 실제 판의 한 장면과 `/online` 링크, 놀이 방식 세 줄 목록(`/online` 모드 카드와 같은 그림과 한 줄 소개, 누르면 그 장으로). 예전 번호 칩은 무슨 판인지 알려 주지 못해 바꿨어요. 한국어 홈에만 둬요 |
 | `/online`, `/en/online`, `/ja/online` | 본문은 `components/online/OnlineSections.tsx` 하나를 언어만 바꿔 써요(#317). 게임의 `GET /status` 를 서버에서 읽어 버튼을 바꿔요. 어드민에서 상태를 바꾸면 바로 버리고(`expireWebgameStatus`), 게임 서버가 스스로 바꾼 것(끝나는 때가 지남)은 5분마다 따라가요(#335). 버튼은 그 언어의 게임 주소(`/play`, `/en/play`, `/ja/play`)로 보내서, 게임 쪽 링크 미리보기도 그 언어로 나와요(`lib/webgame.ts` `webgamePlayUrl`) |
 | 어드민 "온라인 게임" | 상태를 바꿔요. `docs/admin-ui.md` |
 
