@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState, type ReactNode } from "react";
 import { AppStoreMark, ArrowRightIcon, CheckIcon, ChevronDownIcon, DeviceIcon, ExternalLinkIcon, GooglePlayMark } from "@/components/admin/icons";
 import { consoleLinks } from "@/lib/release/links";
+import { NotesPanel } from "@/components/admin/release/NotesPanel";
 import type { Option } from "@/lib/release/options";
 import {
   PHASED_PERCENT,
@@ -74,7 +75,8 @@ export function StatusPill({ tone, label }: { tone: Tone; label: string }) {
 // ---------- 스토어 카드 ----------
 
 /** 조작 버튼을 켤지와 누를 때 할 일. 화면(page.tsx)이 넘긴다 */
-export type ActControl = { writable: boolean; readOnlyReason?: string; onPick: (o: Option) => void };
+/** focus: 새로운 기능 창을 열 때 처음 커서를 둘 언어 */
+export type ActControl = { writable: boolean; readOnlyReason?: string; onPick: (o: Option, focus?: string) => void };
 
 export function StoreCard({ track, reach, now, act }: { track: Track; reach: Reach; now: number; act: ActControl }) {
   const store = STORE[track.platform];
@@ -113,6 +115,15 @@ export function StoreCard({ track, reach, now, act }: { track: Track; reach: Rea
           <Rail track={track} />
           {!track.action && <Calm track={track} />}
           <Flow track={track} reach={reach} now={now} act={act} />
+          {track.platform === "ios" && track.notes && (
+            <NotesPanel
+              notes={track.notes}
+              option={track.options?.find((o) => o.id === "ios.whatsNew")}
+              writable={act.writable}
+              readOnlyReason={act.readOnlyReason}
+              onEdit={act.onPick}
+            />
+          )}
           {track.platform === "android" && track.queue && <QueueBox queue={track.queue} />}
         </>
       )}
@@ -427,7 +438,7 @@ function Flow({ track, reach, now, act }: { track: Extract<Track, { ok: true }>;
                         )}
                       </div>
                       {here ? (
-                        <StepAction action={here} options={track.options ?? []} act={act}>
+                        <StepAction action={here} options={(track.options ?? []).filter((o) => o.id !== "ios.whatsNew")} act={act}>
                           {progress}
                         </StepAction>
                       ) : (

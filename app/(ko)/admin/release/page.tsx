@@ -8,6 +8,7 @@ import { RefreshIcon } from "@/components/admin/icons";
 import { WorldClock } from "@/components/admin/ops/WorldClock";
 import { Stagger, StaggerItem } from "@/components/admin/motion";
 import { ActionDialog } from "@/components/admin/release/ActionDialog";
+import { NotesDialog } from "@/components/admin/release/NotesDialog";
 import { ActionLogList, HistoryList, Notes, StoreCard, type ActControl } from "@/components/admin/release/Board";
 import { useToast } from "@/components/admin/Toast";
 import type { Option } from "@/lib/release/options";
@@ -31,7 +32,8 @@ export default function ReleasePage() {
   const [scenario, setScenario] = useState("real");
   // 1분마다 읽기와 "다시 읽기"가 겹치면 늦게 온 옛 응답이 새 응답을 덮을 수 있어 마지막 요청만 받는다
   const seq = useRef(0);
-  const [picked, setPicked] = useState<Option | null>(null);
+  // focus: 새로운 기능 창에서 처음 커서를 둘 언어
+  const [picked, setPicked] = useState<{ option: Option; focus?: string } | null>(null);
   const toast = useToast();
 
   // 불러오는 동안 표시(loading)는 "다시 읽기"를 누를 때만 켠다. 처음에는 뼈대가, 1분마다는 조용히 바뀐다
@@ -69,28 +71,43 @@ export default function ReleasePage() {
     };
   }, [load]);
 
-  const act = (b: ReleaseBoard): ActControl => ({ writable: !!b.writable, readOnlyReason: b.readOnlyReason, onPick: setPicked });
+  const act = (b: ReleaseBoard): ActControl => ({ writable: !!b.writable, readOnlyReason: b.readOnlyReason, onPick: (option, focus) => setPicked({ option, focus }) });
+  const notesOption = board?.ios.ok ? board.ios.options?.find((o) => o.id === "ios.whatsNew") : undefined;
+  const closePicked = () => {
+    setPicked(null);
+    load(true);
+  };
+  const donePicked = (message: string) => {
+    setPicked(null);
+    toast(message);
+    load(true);
+  };
 
   return (
     // 움직임은 기기의 "동작 줄이기"를 따른다
     <MotionConfig reducedMotion="user">
     <ScrollPage>
       <AnimatePresence>
-      {picked && (
-        <ActionDialog
-          key={picked.id}
-          option={picked}
-          onClose={() => {
-            setPicked(null);
-            load(true);
-          }}
-          onDone={(message) => {
-            setPicked(null);
-            toast(message);
-            load(true);
-          }}
-        />
-      )}
+      {picked &&
+        (picked.option.id === "ios.whatsNew" ? (
+          <NotesDialog
+            key={picked.option.id}
+            option={picked.option}
+            focus={picked.focus}
+            suggestion={board?.ios.ok ? board.ios.notes?.suggestion : undefined}
+            onClose={closePicked}
+            onDone={donePicked}
+          />
+        ) : (
+          <ActionDialog
+            key={picked.option.id}
+            option={picked.option}
+            // 심사 내기 창에서 빈 언어를 보면 바로 새로운 기능 창으로 넘어간다
+            onWriteNotes={notesOption ? (focus) => setPicked({ option: notesOption, focus }) : undefined}
+            onClose={closePicked}
+            onDone={donePicked}
+          />
+        ))}
       </AnimatePresence>
       <PageHeader
         title="출시"
