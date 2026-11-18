@@ -188,7 +188,7 @@ export default async function OnlineSections({ locale }: { locale: Locale }) {
       </section>
 
       {/* 03 좀비 모드: 물리는 순간과 구조차 탈출, 그리고 누가 이기는지와 판 균형 */}
-      <section id="zombie" className="scroll-mt-20 bg-[#F6F3FD] py-20 sm:py-28 dark:bg-[#13111c]">
+      <section id="zombie" className="scroll-mt-20 bg-[#EEF7F2] py-20 sm:py-28 dark:bg-[#0F1A16]">
         <Container>
           <ChapterHead n={3} id="zombie" name={copy.modes.items[2].name} title={copy.zombie.title} lead={copy.zombie.lead} />
           {copy.zombie.steps.map((st, i) => {
