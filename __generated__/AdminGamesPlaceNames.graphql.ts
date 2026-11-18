@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<95112da8c9df3233eaa86fd7810b27cc>>
+ * @generated SignedSource<<7b5854f2d45e8d9958cf94cb5c02ea03>>
  * @lightSyntaxTransform
  */
 
@@ -19,6 +19,7 @@ export type AdminGamesPlaceNames$variables = {
 export type AdminGamesPlaceNames$data = {
   readonly adminGames: {
     readonly content: ReadonlyArray<{
+      readonly countryCode: string | null | undefined;
       readonly id: string;
       readonly placeName: string | null | undefined;
     }>;
@@ -101,6 +102,13 @@ v4 = [
             "kind": "ScalarField",
             "name": "placeName",
             "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "countryCode",
+            "storageKey": null
           }
         ],
         "storageKey": null
@@ -137,16 +145,16 @@ return {
     "selections": (v4/*:: as any*/)
   },
   "params": {
-    "cacheID": "7ab16cbb41a7981cf901ce9425acb374",
+    "cacheID": "47de57a0f21292d0518be219962f4ab3",
     "id": null,
     "metadata": {},
     "name": "AdminGamesPlaceNames",
     "operationKind": "query",
-    "text": "query AdminGamesPlaceNames(\n  $page: Int\n  $size: Int\n  $status: GameStatus\n  $sortDirection: SortDirection\n) {\n  adminGames(page: $page, size: $size, status: $status, sortDirection: $sortDirection) {\n    content {\n      id\n      placeName\n    }\n  }\n}\n"
+    "text": "query AdminGamesPlaceNames(\n  $page: Int\n  $size: Int\n  $status: GameStatus\n  $sortDirection: SortDirection\n) {\n  adminGames(page: $page, size: $size, status: $status, sortDirection: $sortDirection) {\n    content {\n      id\n      placeName\n      countryCode\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "e8ec0ca6b6ed26727d2a8315a115bf88";
+(node as any).hash = "fb71634499689843fbf4ae88ae6bf2e5";
 
 export default node;
