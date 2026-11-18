@@ -188,7 +188,7 @@ export default async function OnlineSections({ locale }: { locale: Locale }) {
       </section>
 
       {/* 03 좀비 모드: 물리는 순간과 구조차 탈출, 그리고 누가 이기는지와 판 균형 */}
-      <section id="zombie" className="scroll-mt-20 bg-[#F6F3FD] py-20 sm:py-28 dark:bg-[#13111c]">
+      <section id="zombie" className="scroll-mt-20 bg-[#EEF7F2] py-20 sm:py-28 dark:bg-[#0F1A16]">
         <Container>
           <ChapterHead n={3} id="zombie" name={copy.modes.items[2].name} title={copy.zombie.title} lead={copy.zombie.lead} />
           {copy.zombie.steps.map((st, i) => {
@@ -209,8 +209,8 @@ export default async function OnlineSections({ locale }: { locale: Locale }) {
             <div className="mt-16 grid gap-6 rounded-3xl bg-white p-6 ring-1 ring-black/5 sm:mt-24 sm:p-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-center lg:gap-10 dark:bg-white/[0.04] dark:ring-white/10">
               <div className="flex items-center gap-4">
                 <div className="flex shrink-0 -space-x-3" aria-hidden>
-                  <img src="/online/zombie-police-front.svg" alt="" width={56} height={62} className="h-14 w-auto" />
-                  <img src="/online/robber-front.svg" alt="" width={56} height={62} className="h-12 w-auto self-end" />
+                  <img src="/online/zombie-cat.svg" alt="" width={70} height={56} className="h-12 w-auto" />
+                  <img src="/online/survivor-mouse.svg" alt="" width={56} height={50} className="h-11 w-auto self-end" />
                 </div>
                 <p className="text-pretty text-base font-semibold leading-relaxed text-slate-900 sm:text-lg dark:text-white">{copy.zombie.win}</p>
               </div>
@@ -218,7 +218,7 @@ export default async function OnlineSections({ locale }: { locale: Locale }) {
                 <p className="text-sm font-bold text-slate-900 dark:text-white">{copy.zombie.balance.label}</p>
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {copy.zombie.balance.options.map((o) => (
-                    <li key={o} className="rounded-full bg-[#EEE9FB] px-3.5 py-1.5 text-sm font-semibold text-[#5B41AE] dark:bg-white/10 dark:text-[#C9B6FF]">
+                    <li key={o} className="rounded-full bg-[#E6F4EE] px-3.5 py-1.5 text-sm font-semibold text-[#1F6B52] dark:bg-white/10 dark:text-[#A9DCC8]">
                       {o}
                     </li>
                   ))}

@@ -126,15 +126,30 @@ export function ShrinkScene() {
 
 // ───── 좀비 모드 ─────
 
-/** 좀비가 된 순간의 보라 가루(zombie.js syncChars 의 burst) */
+/** 좀비 냥파가 튀어 오르는 순간의 민트 가루(zombie.js sparks 의 burst) */
 function Burst({ x, y, k }: { x: number; y: number; k: number }) {
   if (k <= 0 || k >= 1) return null;
   return (
     <g opacity={1 - k}>
       {Array.from({ length: 14 }, (_, i) => {
         const a = (i / 14) * Math.PI * 2 + 0.3, r = 20 + k * (70 + (i % 3) * 22);
-        return <circle key={i} cx={x + Math.cos(a) * r} cy={y + Math.sin(a) * r * 0.8 - k * 30} r={(i % 2 ? 9 : 6) * (1 - k * 0.5)} fill={i % 3 ? "#9A78E0" : "#C9B6FF"} />;
+        return <circle key={i} cx={x + Math.cos(a) * r} cy={y + Math.sin(a) * r * 0.8 - k * 30} r={(i % 2 ? 9 : 6) * (1 - k * 0.5)} fill={i % 3 ? "#6EB69B" : "#C9F0DF"} />;
       })}
+    </g>
+  );
+}
+
+/** 좀비 냥파 양쪽 볼트에서 튀는 노란 불꽃(zombie.js sparks) */
+function BoltSparks({ x, y, k }: { x: number; y: number; k: number }) {
+  if (k <= 0 || k >= 1) return null;
+  return (
+    <g opacity={1 - k}>
+      {[-1, 1].flatMap((side) =>
+        Array.from({ length: 5 }, (_, i) => {
+          const a = side < 0 ? Math.PI * (0.75 + i * 0.12) : Math.PI * (0.25 - i * 0.12) - 0.2, r = 8 + k * (34 + (i % 2) * 12);
+          return <circle key={`${side}${i}`} cx={x + side * 38 + Math.cos(a) * r} cy={y - 46 - Math.sin(a) * r * 0.9} r={4.5 * (1 - k * 0.6)} fill="#FFE58A" />;
+        }),
+      )}
     </g>
   );
 }
@@ -147,7 +162,7 @@ const heartK = (d: number, t: number) => {
   return [0, 0.35, 0.6, 0.9][lv] * (0.75 + 0.25 * beat * beat);
 };
 
-/** 물리면 좀비: 밤길에서 친구(치즈손)가 좀비에게 물려 2초 비틀거리다 좀비로 일어나고, 생존자(나)는 돌아서 달아난다 */
+/** 물리면 좀비: 밤길에서 친구(치즈손)가 좀비 냥파에게 물려 2초 동안 도둥이에서 냥파로 변하고(냄비가 튕겨 나가고 눌렸다가 튀어 오른다), 생존자(나)는 돌아서 달아난다 */
 export function BiteScene() {
   const c = useSceneCopy();
   const BITE = 2.45, TURN = BITE + 2, RUN = TURN + 0.4;
@@ -160,9 +175,9 @@ export function BiteScene() {
     length: 9,
     still: BITE + 1,
     cast: [
-      { id: "me", team: "robber", look: "robber", x: 1000, y: 440, tag: c.me, me: true, survivor: true },
-      { id: "f", team: "robber", look: "police", x: 300, y: 452, tag: c.names.cheese },
-      { id: "z", team: "police", look: "robber", zombie: true, x: 40, y: 440, tag: c.names.flash },
+      { id: "me", team: "robber", x: 1000, y: 440, tag: c.me, me: true, survivor: true, zmode: true },
+      { id: "f", team: "robber", x: 300, y: 452, tag: c.names.cheese, zmode: true },
+      { id: "z", team: "police", zombie: true, x: 40, y: 440, tag: c.names.flash, zmode: true },
     ],
     move(t, api) {
       if (t > BITE && api.once("bite")) api.act("z", "catch", 1);
@@ -194,6 +209,7 @@ export function BiteScene() {
           <g>
             <Burst x={f.x} y={f.y - 40} k={(t - TURN) / 0.9} />
             <Burst x={f.x} y={f.y - 20} k={(t - TURN - 0.1) / 0.7} />
+            <BoltSparks x={f.x} y={f.y} k={(t - TURN) / 0.5} />
           </g>
         );
       }}
@@ -232,8 +248,8 @@ export function VanScene() {
     length: 9.5,
     still: ARRIVE + 0.6,
     cast: [
-      { id: "me", team: "robber", look: "police", x: 640, y: 440, tag: c.me, me: true, survivor: true },
-      { id: "z", team: "police", look: "robber", zombie: true, x: 300, y: 452 },
+      { id: "me", team: "robber", x: 640, y: 440, tag: c.me, me: true, survivor: true, zmode: true },
+      { id: "z", team: "police", zombie: true, x: 300, y: 452, zmode: true },
     ],
     move(t) {
       return {

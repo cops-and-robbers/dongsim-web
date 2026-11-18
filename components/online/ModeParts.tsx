@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 // /online 의 놀이 방식 카드와 장 머리. 경도는 사이트 색(라이트 파랑, 다크 초록), 구역 축소는 게임의 경계 빨강,
-// 좀비 모드는 게임의 좀비 보라를 쓴다(cops-and-robbers-web-game shell.html). 경찰과 도둑 어느 편 색도 아니라 두 진영이 대등하게 남는다
+// 좀비 모드는 게임의 좀비 냥파 민트를 쓴다(cops-and-robbers-web-game shell.html). 경찰과 도둑 어느 편 색도 아니라 두 진영이 대등하게 남는다
 
 export type ModeId = "classic" | "shrink" | "zombie";
 
@@ -17,9 +17,9 @@ export const MODE_STYLE: Record<ModeId, { card: string; accent: string; dot: str
     dot: "bg-[#E2574C] text-white dark:bg-[#FF8F85] dark:text-app-black",
   },
   zombie: {
-    card: "bg-[#EFEAFB] dark:bg-white/[0.05] dark:ring-1 dark:ring-white/10",
-    accent: "text-[#6B4FC8] dark:text-[#B9A4F5]",
-    dot: "bg-[#7A5BD6] text-white dark:bg-[#B9A4F5] dark:text-app-black",
+    card: "bg-[#E6F4EE] dark:bg-white/[0.05] dark:ring-1 dark:ring-white/10",
+    accent: "text-[#1F6B52] dark:text-[#8FD0B8]",
+    dot: "bg-[#2F8A6B] text-white dark:bg-[#8FD0B8] dark:text-app-black",
   },
 };
 
@@ -51,10 +51,11 @@ export function ModeArt({ id }: { id: ModeId }) {
     );
   }
   return (
-    <div className="absolute inset-0 flex items-end justify-center gap-1 bg-[#33485F] pb-[8%]">
+    // 좀비 모드: 달밤 초록 바탕에 좀비 냥파와 냄비를 쓴 생존자 도둥이(게임 모드 카드와 같은 둘)
+    <div className="absolute inset-0 flex items-end justify-center gap-1 bg-[#1F2D28] pb-[8%]">
       <img src="/online/van.svg" alt="" className="absolute right-[8%] top-[12%] h-[26%] w-auto opacity-90" />
-      <img src="/online/zombie-police-front.svg" alt="" className="h-[62%] w-auto" />
-      <img src="/online/robber-front.svg" alt="" className="h-[50%] w-auto" />
+      <img src="/online/zombie-cat.svg" alt="" className="h-[52%] w-auto" />
+      <img src="/online/survivor-mouse.svg" alt="" className="h-[48%] w-auto" />
     </div>
   );
 }

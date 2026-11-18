@@ -624,9 +624,9 @@ export function EdgeGlow({ color, k }: { color: string; k: number }) {
 
 // ── 좀비 모드(게임 client/zombie.js, shell.html 의 좀비 줄) ──
 
-export const ZB = { zombie: "#7A5BD6", survivor: "#E5A800", van: "#FFC83D", pip: "#8E6FE0", danger: "#E2574C" } as const;
+export const ZB = { zombie: "#2F8A6B", survivor: "#E5A800", van: "#FFC83D", pip: "#6EB69B", danger: "#E2574C" } as const;
 
-/** 좀비 판의 시간 칸: 아래 점은 노랑 생존자, 테두리만 노랑은 탄 사람, 보라는 좀비 */
+/** 좀비 판의 시간 칸: 아래 점은 노랑 생존자, 테두리만 노랑은 탄 사람, 민트는 좀비 */
 export function ZClock({ time, free, escaped = 0, zombies }: { time: string; free: number; escaped?: number; zombies: number }) {
   const pips = [...Array(free).fill("s"), ...Array(escaped).fill("e"), ...Array(zombies).fill("z")] as string[];
   const x0 = 329.5 - (pips.length * 9 + (pips.length - 1) * 4) / 2;
