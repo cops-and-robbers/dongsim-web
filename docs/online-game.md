@@ -22,16 +22,16 @@
 
 - 숫자와 규칙은 게임 저장소 `docs/shrink.md`, `docs/zombie.md` 를 따라요(구역은 네 번, 경계는 8초 동안 걸어 들어옴, 물리면 2초 뒤 좀비, 구조차는 끝나기 50초 전, 차 옆 1초). 게임 값이 바뀌면 문구(`messages.ts` 의 `online.shrink`, `online.zombie`)와 장면을 같이 고쳐요
 - 소개 문구에는 몇 초인지 적지 않아요("35초마다", "10초 전", "50초 전" 대신 "틈틈이", "직전에", "끝나 갈 무렵"). 시간 값은 게임에서 바뀌고 좀비 모드는 판 균형마다 달라서, 적어 두면 금방 틀린 말이 돼요. 장면 그림 속 시계와 칸 숫자는 게임 화면 그대로 둬요
-- 장 색은 경도가 사이트 색(라이트 파랑, 다크 초록), 구역 축소가 게임 경계 빨강, 좀비 모드가 게임 좀비 보라예요. 경찰 파랑, 도둑 초록 어느 한쪽을 새 놀이 방식의 얼굴로 쓰지 않아요
+- 장 색은 경도가 사이트 색(라이트 파랑, 다크 초록), 구역 축소가 게임 경계 빨강, 좀비 모드가 게임 좀비 냥파 민트예요. 경찰 파랑, 도둑 초록 어느 한쪽을 새 놀이 방식의 얼굴로 쓰지 않아요
 - 장면은 판의 시간을 줄여 보여 줘요. 시계, 칸, 알림 숫자를 같은 비율로 같이 줄여서 장면 안에서는 서로 맞아요
-- 좀비 그림은 게임 `client/zombie.js` 의 피부색 바꾸기와 붕대 그대로예요(`rig/chars.js` 의 `zombieSvg`). 카드와 승패 칸에 쓰는 정지 그림 `public/online/zombie-*.svg` 도 같은 코드로 뽑았어요. 구조차 그림 `public/online/van.svg` 는 게임 `client/brand/car.svg` 의 파랑을 노랑으로 바꾼 거예요
+- 좀비 모드 캐릭터는 편으로 정해져요. 좀비는 좀비 냥파, 생존자는 생존자 도둥이예요(게임 `docs/zombie.md` "편과 생김새"). 장면 출연진에 `zmode` 를 켜면 `rig/chars.js` 가 `zombie` 로 둘 중 하나를 골라요. 카드와 승패 칸의 정지 그림 `public/online/zombie-cat.svg`, `public/online/survivor-mouse.svg` 는 디자이너 그림 그대로예요(게임 `client/brand` 와 같은 파일). 구조차 그림 `public/online/van.svg` 는 게임 `client/brand/car.svg` 의 파랑을 노랑으로 바꾼 거예요
 
 ## 게임 장면은 실제 게임과 같게 배치해요
 
 `components/online/scenes.tsx`(쫓기, 숨기, 위치 공개, 감옥)와 `components/online/LobbyScene.tsx`(대기실)는 실제 판을 찍은 그림이 아니에요. 게임과 같은 에셋과 같은 그리기 규칙으로 자리를 잡아 SVG 로 그렸어요. 부품은 `components/online/scene.tsx`.
 
 - 캡처 대신 배치한 까닭: 실제 판을 찍으면 원하는 순간이 잘 안 잡히고, 안내 띠나 구역선이 끼어들고, 줄이면 뭉개져요. 배치하면 어떤 크기에서도 선명하고 보여 줄 순간만 골라요
-- 캐릭터 엔진(`components/online/rig`)에는 좀비 걸음(`shambleSide`, `shambleFront`), 물기, 물린 뒤 비틀거리기, 좀비로 다시 만들기(`GameStage` 의 `api.turn`)도 옮겼어요
+- 캐릭터 엔진(`components/online/rig`)에는 좀비 걸음(`shambleSide`, `shambleFront`), 물기, 도둥이가 냥파로 변하기(냄비가 튕겨 나가고 가지를 놓치고 눌렸다가 냥파로 튀어 오르기, 게임 `client/zombie.js` 의 `turning`, `popIn`), 좀비로 다시 만들기(`GameStage` 의 `api.turn`)도 옮겼어요
 - 바닥은 장면 범위 전체에 깔아요. 전에는 카메라 둘레만 깔아서 시야가 아래나 오른쪽 끝에 닿으면 하얗게 비었어요
 - 에셋: 캐릭터는 게임 `client/playground.html` 의 `SVGS` 를 `public/online/` 에 그대로 꺼냈고, 수풀, 나무, 작은 나무, 꽃은 게임 `client/brand/map` 모양 그대로예요
 - 그리기 규칙: 지도 색과 시야(510, 가까이 150, 각 1.15 라디안, 0.72 부터 흐려짐)는 `shared/logic.js`, 길(64칸 줄), 건물(지붕, 벽, 창 격자, 문, 실외기, 70 높게), 생울타리, 쓰레기통, 감옥, 위치 공개 표시는 `client/game.js` 의 그리기 코드, 분필은 `client/lobby.js` 의 같은 씨앗을 옮겼어요
