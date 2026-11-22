@@ -1202,6 +1202,7 @@ Supabase SQL Editor 에서 `supabase/migrations/0028_admin_changes.sql` 을 한 
 - 추이 카드는 소스마다 들어온 마지막 날을 끝으로 7일을 잡아요. App Store 페이지 조회는 애플이 며칠 늦게 줘서 끝 날짜가 더 앞이에요
 - 게임 수, 승률, 종료 사유, 최근 게임, 처리 대기 건수는 화면이 백엔드에서 바로 읽어요(30초마다 새로)
 - 이번 주 게임은 백엔드 숫자라 운영진이 한 판도 들어 있어요. 운영진을 뺀 수는 지표 화면에서 봐요
+- 평균 게임 시간(#353)은 백엔드 `adminDashboard.averageGameDurationSeconds`, 끝난 판 전체의 진행 시간 평균이에요(`avg(GameResult.durationSeconds)`). 기간을 나누지 않고 운영진 판과 행사 판도 들어 있어요. 개요를 역할별 카드로 바꾸며(#285) 빠졌던 "평균 게임 시간" 칸을 카드로 되살렸어요
 - 로컬에서 개요를 가짜 값으로 보려면 `.env.development.local` 에 `NEXT_PUBLIC_USE_DEV_GRAPHQL=false` 를 둬요. 3000 이 아닌 포트는 개발 서버가 막아요
 
 ## 역할과 카드 (`components/admin/team/RoleSheet.tsx`, #286)
