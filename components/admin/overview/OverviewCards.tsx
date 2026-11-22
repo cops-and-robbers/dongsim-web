@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { Count, Due, Frames, Limit, NextEvent, Note, Post, Queue, Ratio, Stage, Trend, Big } from "@/components/admin/overview/CardViz";
 import { CARDS, pack, type CardKey, type CardResult, type LiveValues, type OverviewData } from "@/lib/admin/overview/cards";
-import { END_REASON_LABEL, labelOf } from "@/lib/admin/format";
+import { END_REASON_LABEL, formatDuration, labelOf } from "@/lib/admin/format";
 import { fetchOverview } from "@/lib/admin/overviewClient";
 
 // 개요의 내 지표 (docs/admin-ui.md "개요 카드"). 서버 카드는 한 번에 부르고, 실시간 카드는 페이지가 읽은 값을 받는다.
@@ -166,6 +166,13 @@ function LiveViz({ k, live }: { k: CardKey; live: LiveValues }) {
       );
     case "win":
       return <Win police={live.win.police} robber={live.win.robber} />;
+    case "dur":
+      return (
+        <>
+          <Big>{formatDuration(live.avgGameSeconds)}</Big>
+          <Note>운영진이 한 판도 평균에 들어 있어요.</Note>
+        </>
+      );
     case "end":
       return <Ends ends={live.ends} />;
     case "games":
