@@ -1,10 +1,10 @@
 {
   "title": "Terms of Service",
-  "effectiveDate": "October 23, 2026",
+  "effectiveDate": "November 30, 2026",
   "sections": [
     {
       "heading": "",
-      "content": "Cops and Robbers Terms of Service\nEffective date: October 23, 2026",
+      "content": "Cops and Robbers Terms of Service\nEffective date: November 30, 2026",
       "items": []
     },
     {
@@ -117,7 +117,11 @@
           "subItems": []
         },
         {
-          "text": "h. Other services the Company develops or provides through partnerships",
+          "text": "h. Team voice radio (provided on a trial basis)",
+          "subItems": []
+        },
+        {
+          "text": "i. Other services the Company develops or provides through partnerships",
           "subItems": []
         },
         {
@@ -145,6 +149,20 @@
         },
         {
           "text": "3. The Company may change the contents, method of use and hours of the Service, and will give notice of such changes within the Service.",
+          "subItems": []
+        }
+      ]
+    },
+    {
+      "heading": "Article 6-2 (Trial Features)",
+      "content": "1. The Company may provide some features on a trial (beta) basis. Trial features may be changed, restricted or discontinued without prior notice, and may become paid features in the future.",
+      "items": [
+        {
+          "text": "2. The Company may temporarily restrict the use of trial features depending on server conditions and similar circumstances.",
+          "subItems": []
+        },
+        {
+          "text": "3. Unless there is intent or negligence on the part of the Company, the Company does not guarantee the quality or continuity of trial features.",
           "subItems": []
         }
       ]
@@ -235,7 +253,11 @@
           "subItems": []
         },
         {
-          "text": "m. Any other unlawful or improper act",
+          "text": "m. Use the voice radio to insult, defame, harass or otherwise offend others, or record or distribute another user's voice without that user's consent",
+          "subItems": []
+        },
+        {
+          "text": "n. Any other unlawful or improper act",
           "subItems": []
         },
         {
@@ -277,6 +299,10 @@
           "subItems": []
         },
         {
+          "text": "g. Users should stay aware of their surroundings and traffic while using the voice radio as well.",
+          "subItems": []
+        },
+        {
           "text": "2. Users should confirm that they are in a state of health suited to the physical activity involved.",
           "subItems": []
         },
@@ -315,6 +341,11 @@
           "subItems": []
         }
       ]
+    },
+    {
+      "heading": "Article 9-3 (Reports and Suggestions)",
+      "content": "The Company may freely use the content of bug reports and suggestions submitted by users to improve the Service, without any separate compensation.",
+      "items": []
     },
     {
       "heading": "Article 10 (Disclaimer - General)",
@@ -517,6 +548,10 @@
         {
           "text": "3. Unless there is intent or negligence on the part of the Company, the Company is not liable for problems arising in a user's relationship with a third party met through the game or the community service.",
           "subItems": []
+        },
+        {
+          "text": "4. The Company does not record or store the content of the voice radio and therefore cannot provide any material relating to it. Unless there is intent or negligence on the part of the Company, the Company is not liable for disputes between users arising through the voice radio.",
+          "subItems": []
         }
       ]
     },
@@ -694,7 +729,7 @@
     },
     {
       "heading": "Supplementary Provisions",
-      "content": "These Terms take effect on June 29, 2026.\n\nThese amended Terms (adding the community service provisions and adjusting the liability standards) take effect on September 8, 2026.\n\nThese amended Terms (reflecting game record storage and team MVP selection features) take effect on October 23, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.\n\nContact: copsnro66ers@gmail.com",
+      "content": "These Terms take effect on June 29, 2026.\n\nThese amended Terms (adding the community service provisions and adjusting the liability standards) take effect on September 8, 2026.\n\nThese amended Terms (reflecting game record storage and team MVP selection features) take effect on October 23, 2026.\n\nThese amended Terms (adding the provisions on trial features such as the voice radio, and on reports and suggestions) take effect on November 30, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.\n\nContact: copsnro66ers@gmail.com",
       "items": []
     }
   ]
