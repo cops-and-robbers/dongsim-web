@@ -169,22 +169,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
-    // 영어·일본어 블로그. 글이 아직 없어도 목록은 넣어 색인을 시작한다.
-    ...(["en", "ja"] as const).flatMap((locale) => [
-      {
-        url: `${BASE_URL}${localizedPath("/blog", locale)}`,
+    // 영어·일본어 블로그. 글이 없는 언어의 목록은 "첫 글 준비 중"뿐인 빈 페이지라 넣지 않는다.
+    // 그 목록은 글이 생길 때까지 noindex 다(#343, lib/blog/listIndex.ts)
+    ...(["en", "ja"] as const)
+      .filter((locale) => allPosts.some((post) => post.locale === locale))
+      .flatMap((locale) => [
+        {
+          url: `${BASE_URL}${localizedPath("/blog", locale)}`,
           changeFrequency: "weekly" as const,
-        priority: 0.6,
-      },
-      ...allPosts
-        .filter((post) => post.locale === locale)
-        .map((post) => ({
-          url: `${BASE_URL}${localizedPath(`/blog/${post.slug}`, locale)}`,
-          ...lastModifiedOf(post),
-          changeFrequency: "monthly" as const,
-          priority: 0.7,
-        })),
-    ]),
+          priority: 0.6,
+        },
+        ...allPosts
+          .filter((post) => post.locale === locale)
+          .map((post) => ({
+            url: `${BASE_URL}${localizedPath(`/blog/${post.slug}`, locale)}`,
+            ...lastModifiedOf(post),
+            changeFrequency: "monthly" as const,
+            priority: 0.7,
+          })),
+      ]),
     // 법적 문서(#299), 체험 페이지, 계정 삭제 페이지(#272)는 넣지 않는다. 검색으로 찾아올 페이지가 아니고,
     // 사이트맵에 넣으면 "검색에 내보낼 주소"라고 알리는 셈이라 사이트 평가를 끌어내린다.
     // 페이지는 그대로 열리고 푸터·링크로 크롤링된다.

@@ -1,10 +1,10 @@
 {
   "title": "Privacy Policy",
-  "effectiveDate": "October 30, 2026",
+  "effectiveDate": "November 30, 2026",
   "sections": [
     {
       "heading": "",
-      "content": "Cops and Robbers Privacy Policy\nEffective date: October 30, 2026\nLast updated: October 30, 2026",
+      "content": "Cops and Robbers Privacy Policy\nEffective date: November 30, 2026\nLast updated: November 30, 2026",
       "items": []
     },
     {
@@ -110,6 +110,22 @@
             "Purpose: providing the community board, post chat, comments and notifications; handling reports and maintaining order in the community",
             "Retention: a post is kept until its author deletes it; deleting a post also immediately deletes that post's comments, chat messages, likes, bookmarks and notification history. A comment deleted individually is no longer shown to other users, but the original is kept on the server until the post is deleted so that the reply structure is preserved. Posts, comments and chat messages already published are not deleted when the member withdraws; the author's name is anonymised. They can be deleted directly in the app before withdrawal. The community notification history covers the most recent 60 days in the app. Reports are kept for handling and for maintaining order in the community.",
             "Note: recruitment posts and comments may be visible to users who are not signed in and to visitors to the Company's website."
+          ]
+        },
+        {
+          "text": "j. Voice radio data",
+          "subItems": [
+            "Data: voice captured by the microphone while using the radio, and radio usage time",
+            "Purpose: relaying voice in real time between participants on the same team, and operating and maintaining the quality of the service",
+            "Retention: voice is only relayed in real time and is not recorded or stored. Radio usage time follows the retention period for game records (④)."
+          ]
+        },
+        {
+          "text": "k. Reports and enquiries",
+          "subItems": [
+            "Data: the content of bug reports and enquiries written by the user",
+            "Purpose: checking errors, responding to enquiries and improving the service",
+            "Retention: for the duration of the service"
           ]
         },
         {
@@ -224,6 +240,14 @@
         {
           "text": "l. Receiving and handling reports, and maintaining order in the community",
           "subItems": []
+        },
+        {
+          "text": "m. Providing the team voice radio",
+          "subItems": []
+        },
+        {
+          "text": "n. Checking and responding to bug reports and enquiries",
+          "subItems": []
         }
       ]
     },
@@ -271,7 +295,7 @@
       "content": "In the community service, unlike real-time collection during a game, location data is used temporarily at the moment the user uses a feature, while the app is on screen (foreground).",
       "items": [
         {
-          "text": "a. Writing a recruitment post: the meetup coordinates chosen by the user are converted into an administrative-district and lot-number address shown on the post. For the conversion, coordinates in Korea are sent to VWorld, operated by the Korean Ministry of Land, Infrastructure and Transport, and coordinates outside Korea are sent to Geoapify (see Section 7).",
+          "text": "a. Writing a recruitment post: the meetup coordinates chosen by the user are converted into an administrative-district and lot-number address shown on the post. For the conversion, the coordinates are sent to VWorld, operated by the Korean Ministry of Land, Infrastructure and Transport, or to Geoapify (see Section 7).",
           "subItems": []
         },
         {
@@ -280,6 +304,10 @@
         },
         {
           "text": "The meetup location shown on a post is a place the user chose for the post, not a real-time location. Details are governed by Article 4-2 of the Location Data Terms.",
+          "subItems": []
+        },
+        {
+          "text": "To operate the service, the coordinates of a game area chosen by the user may also be converted into an address in the same way.",
           "subItems": []
         }
       ]
@@ -393,14 +421,14 @@
         {
           "text": "VWorld (Korean Ministry of Land, Infrastructure and Transport)",
           "subItems": [
-            "Outsourced work: converting the meetup coordinates of community recruitment posts into addresses (coordinates within Korea)",
+            "Outsourced work: converting the coordinates of places chosen by the user (meetup places, game areas and the like) into addresses (coordinates within Korea)",
             "Retention and use period: within the scope of the outsourced work (in accordance with each provider's privacy policy)"
           ]
         },
         {
           "text": "KEPTAGO LTD (operator of Geoapify)",
           "subItems": [
-            "Outsourced work: converting the meetup coordinates of community recruitment posts into addresses (coordinates outside Korea)",
+            "Outsourced work: converting the coordinates of places chosen by the user (meetup places, game areas and the like) into addresses",
             "Retention and use period: within the scope of the outsourced work (in accordance with each provider's privacy policy)"
           ]
         },
@@ -451,13 +479,13 @@
           "subItems": []
         },
         {
-          "text": "Separately from the transfer above, data is transferred as follows to convert the meetup coordinates of community recruitment posts into addresses (coordinates outside Korea only).",
+          "text": "Separately from the transfer above, data is transferred as follows to convert the coordinates of places chosen by the user (meetup places, game areas and the like) into addresses.",
           "subItems": [
             "Recipient: KEPTAGO LTD (operator of Geoapify)",
             "Contact: https://www.geoapify.com",
             "Country: Cyprus",
-            "When and how: sent over the network (HTTPS) when a post is created with a meetup location outside Korea",
-            "Data transferred: meetup coordinates",
+            "When and how: sent over the network (HTTPS) when an address conversion is needed",
+            "Data transferred: coordinates of the place chosen by the user",
             "Recipient's purpose of use: converting coordinates into an address",
             "Recipient's retention and use period: within the scope of the outsourced work (in accordance with Geoapify's privacy policy)"
           ]
@@ -510,6 +538,14 @@
         },
         {
           "text": "k. Game records (game record items in 2-1 ④, and route coordinates after the service begins): stored for the duration of service operation; on withdrawal, the member number (including the host's member number) is deleted and the nickname is replaced with \"알수없음\" (\"unknown\"), and the remaining records are kept to preserve the records of other users who participated in the same game (the retention period for route coordinates will be announced when the service begins)",
+          "subItems": []
+        },
+        {
+          "text": "l. Voice radio: voice is not stored; radio usage time is kept together with the game records in item k",
+          "subItems": []
+        },
+        {
+          "text": "m. Reports and enquiries: stored for the duration of the service",
           "subItems": []
         },
         {
@@ -693,7 +729,7 @@
     },
     {
       "heading": "[Supplementary Provisions]",
-      "content": "This Privacy Policy takes effect on June 29, 2026.\n\nThis amended Policy (reflecting the processing of community activity data and related changes) takes effect on September 8, 2026.\n\nThis amended Policy (storage of cumulative distance travelled and team MVP selection in connection with game record retention, addition of a basis for route storage, and correction of the retention period for game activity data) takes effect on October 23, 2026.\n\nThis amended Policy (deletion of member numbers and replacement of nicknames in game records on withdrawal) takes effect on October 30, 2026.\n\nThe Korean text of this Policy is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
+      "content": "This Privacy Policy takes effect on June 29, 2026.\n\nThis amended Policy (reflecting the processing of community activity data and related changes) takes effect on September 8, 2026.\n\nThis amended Policy (storage of cumulative distance travelled and team MVP selection in connection with game record retention, addition of a basis for route storage, and correction of the retention period for game activity data) takes effect on October 23, 2026.\n\nThis amended Policy (deletion of member numbers and replacement of nicknames in game records on withdrawal) takes effect on October 30, 2026.\n\nThis amended Policy (adding voice radio data and reports and enquiries, and adjusting the scope of coordinate-to-address conversion) takes effect on November 30, 2026.\n\nThe Korean text of this Policy is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
       "items": []
     }
   ]

@@ -16,22 +16,25 @@ export const defaultSettings = (): SettingValues =>
     DEMO_SETTING_FIELDS.map((f) => [f.id, f.initial]),
   ) as SettingValues;
 
-// 기본 정보 입력 (basic_settings_form.dart + number_pad.dart 실측).
-// 한 항목씩 묻고 답한 카드가 아래로 쌓인다. 키패드는 화면에 고정이고
-// 답한 카드를 탭하면 키패드가 그 항목을 다시 겨냥한다.
+// 설정 항목 고치기 (basic_settings_form.dart + number_pad.dart 실측).
+// 4.0.1 부터 기본 정보를 따로 묻지 않고, 최종 확인에서 행을 누르면 이 화면이
+// 열린다. 네 항목이 모두 펼쳐진 채 [editTarget]만 키패드가 겨냥하고,
+// 확인 한 번으로 돌아간다. 다른 카드를 탭하면 키패드가 그 항목을 겨냥한다.
 export function DemoCreateBasic({
   initial,
+  editTarget,
   onBack,
   onDone,
 }: {
   initial: SettingValues;
+  editTarget: DemoSettingFieldId;
   onBack: () => void;
   onDone: (values: SettingValues) => void;
 }) {
   const { app } = useDemoCopy();
   const [values, setValues] = useState(initial);
-  const [revealed, setRevealed] = useState(1);
-  const [activeId, setActiveId] = useState<DemoSettingFieldId>("participants");
+  const revealed = DEMO_SETTING_FIELDS.length;
+  const [activeId, setActiveId] = useState<DemoSettingFieldId>(editTarget);
   // 키패드로 건드린 항목 - 안 건드린 활성 항목은 값이 흐리게 보인다.
   // ref 미러는 빠른 연타에서도 직전 입력을 정확히 보기 위한 것
   const [touched, setTouched] = useState<Set<DemoSettingFieldId>>(new Set());
@@ -79,22 +82,11 @@ export function DemoCreateBasic({
     markTouched(activeId);
   };
 
-  const activeValid = values[activeId] >= active.min && values[activeId] <= active.max;
-  const isLast = revealed >= DEMO_SETTING_FIELDS.length;
-  const allValid = DEMO_SETTING_FIELDS.every(
+  const ctaEnabled = DEMO_SETTING_FIELDS.every(
     (f) => values[f.id] >= f.min && values[f.id] <= f.max,
   );
-  const ctaEnabled = isLast ? allValid : activeValid;
 
-  const onCta = () => {
-    if (!isLast) {
-      const next = DEMO_SETTING_FIELDS[revealed];
-      setRevealed((n) => n + 1);
-      setActiveId(next.id);
-      return;
-    }
-    onDone(values);
-  };
+  const onCta = () => onDone(values);
 
   // 카드 아래 안내/경고 줄 (game_setting_values_editor.dart의 힌트 규칙)
   const hintOf = (id: DemoSettingFieldId): { text: string; warning: boolean } | null => {
@@ -175,7 +167,7 @@ export function DemoCreateBasic({
           color: ctaEnabled ? appColors.white : appColors.black400,
         }}
       >
-        {isLast ? app.completeSetup : app.next}
+        {app.confirm}
       </button>
 
       {/* 키패드 (number_pad.dart: 높이 361, 배경 #F4FAFF, 빠른 추가 칩 3개) */}

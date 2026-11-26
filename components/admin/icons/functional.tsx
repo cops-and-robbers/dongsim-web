@@ -522,3 +522,25 @@ export function GlobeIcon({ className }: IconProps) {
     </Line>
   );
 }
+
+export function SplitViewIcon({ className }: IconProps) {
+  // Lucide 'panel-right'. 목록 옆에 상세가 붙는 두 칸 보기. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M15 3v18" />
+    </Line>
+  );
+}
+
+export function TableViewIcon({ className }: IconProps) {
+  // Lucide 'table'. 열이 있는 표 보기. 원본 path 그대로.
+  return (
+    <Line className={className}>
+      <path d="M12 3v18" />
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M3 15h18" />
+    </Line>
+  );
+}

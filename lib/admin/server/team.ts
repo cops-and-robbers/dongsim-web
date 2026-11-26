@@ -3,6 +3,7 @@
  */
 import { db } from "@/lib/metrics/db";
 import { canManage, cleanKeys, type Member, type Role, type RoleInput, type Team } from "@/lib/admin/team";
+import { parseListView, type ListView } from "@/lib/admin/listView";
 
 const ROLES = "admin_roles";
 const MEMBERS = "admin_members";
@@ -102,6 +103,28 @@ export async function saveLayout(userId: string, cards: string[] | null, roleKey
   if (error) throw noLayout(error.message) ? new LayoutMissing() : new Error(error.message);
   if (!data) throw new Error("구성원을 찾지 못했어요.");
   return toMember(data as unknown as MemberRow, roles);
+}
+
+export class ListViewMissing extends Error {}
+/** 0029 SQL 을 실행하기 전이면 목록 보기 칸이 없다 */
+const noListView = (message: string) => /list_view/.test(message);
+
+/** 내가 고른 목록 보기(docs/admin-ui.md "목록 보기 고르기"). 고른 적 없거나 칸이 아직 없으면 null */
+export async function readListView(userId: string): Promise<ListView | null> {
+  const { data, error } = await db().from(MEMBERS).select("list_view").eq("user_id", userId).maybeSingle();
+  if (error) {
+    if (noListView(error.message)) return null;
+    throw new Error(error.message);
+  }
+  return parseListView((data as { list_view?: unknown } | null)?.list_view);
+}
+
+/** 내 목록 보기. 나만 고치므로 다른 사람과 부딪히지 않는다 */
+export async function saveListView(userId: string, view: ListView): Promise<ListView> {
+  const { data, error } = await db().from(MEMBERS).update({ list_view: view }).eq("user_id", userId).select("list_view").maybeSingle();
+  if (error) throw noListView(error.message) ? new ListViewMissing() : new Error(error.message);
+  if (!data) throw new Error("구성원을 찾지 못했어요.");
+  return parseListView((data as { list_view?: unknown }).list_view) ?? view;
 }
 
 export async function readManager(id: string): Promise<boolean> {

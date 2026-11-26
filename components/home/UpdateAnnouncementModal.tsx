@@ -9,17 +9,18 @@ import { useLocale } from "@/components/i18n/LocaleProvider";
 import { getMessages } from "@/lib/i18n/messages";
 import { localizedPath } from "@/lib/i18n/config";
 
-// 앱 v3 대규모 개편을 알리는 홈 전용 모달 (#99).
+// 앱 큰 업데이트를 알리는 홈 전용 모달 (v3 #99 에서 시작, 지금은 v4).
 // [enabled] 는 서버에서 스토어 라이브 버전을 보고 판단해 내려준다
 // (lib/app-version.ts) - 심사 통과 전에는 렌더 자체가 없다.
-// 노출 정책: 방문자당 1회(localStorage). 닫은 뒤에는 좌하단
-// "v3 새 소식" 배지로 언제든 다시 열 수 있다.
+// 노출 정책: 방문자당 버전마다 1회(localStorage). 닫은 뒤에는 좌하단
+// "새 소식" 배지로 언제든 다시 열 수 있다. 다음 큰 업데이트 때는 문구와
+// SEEN_KEY 의 버전, lib/app-version.ts 의 UPDATE_NOTICE_MAJOR 를 함께 올린다.
 
-const SEEN_KEY = "v3-notice:seen";
+const SEEN_KEY = "v4-notice:seen";
 
-export default function V3AnnouncementModal({ enabled }: { enabled: boolean }) {
+export default function UpdateAnnouncementModal({ enabled }: { enabled: boolean }) {
   const locale = useLocale();
-  const copy = getMessages(locale).home.v3Notice;
+  const copy = getMessages(locale).home.updateNotice;
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export default function V3AnnouncementModal({ enabled }: { enabled: boolean }) {
       {open && (
         <Modal
           onClose={close}
-          labelledBy="v3-notice-title"
+          labelledBy="update-notice-title"
           contentClassName="w-full max-w-lg"
         >
           <div
@@ -79,7 +80,7 @@ export default function V3AnnouncementModal({ enabled }: { enabled: boolean }) {
                 {copy.tag}
               </p>
               <h2
-                id="v3-notice-title"
+                id="update-notice-title"
                 className="mt-2 text-2xl font-extrabold text-brand-ink dark:text-white"
               >
                 {copy.title}
@@ -95,7 +96,7 @@ export default function V3AnnouncementModal({ enabled }: { enabled: boolean }) {
                   <p className="break-keep font-bold text-brand-ink dark:text-white">
                     {item.title}
                   </p>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 break-keep text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                     {item.description}
                   </p>
                 </li>
@@ -103,7 +104,7 @@ export default function V3AnnouncementModal({ enabled }: { enabled: boolean }) {
             </ul>
 
             <div className="mt-6 flex flex-col items-center gap-4">
-              <DownloadButtons placement="v3_notice" />
+              <DownloadButtons placement="v4_notice" />
               {/* 모바일 엄지가 닿는 우하단에 닫기를 둔다 - 우상단 X만으로는 멀다 */}
               <div className="flex w-full items-center justify-between">
                 <Link

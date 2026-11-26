@@ -13,89 +13,82 @@ import { useDemoCopy } from "../demo-copy";
 // 첫 칸이 + 슬롯(black100, icon_change)이고 카드는 팀 캐릭터 SVG 72x84 다.
 // 팀 이동은 앱과 같이 상대 팀의 + 슬롯을 탭해서 한다.
 //
+// 4.0.1 부터 준비 단계가 없다(#661). 참가자 하단은 빈자리이고, 방장이
+// 게임 시작을 누르면 두 팀 인원을 보여 주는 확인창을 거쳐 바로 시작한다.
 // [host] 모드(방 만들기 코스)에서는 내가 방장이다. 참가자들이 각본대로
-// 입장·준비하고, 전원 준비되면 하단의 게임 시작 버튼이 켜진다.
+// 들어오고, 경찰과 도둑이 한 명씩 생기면 게임 시작 버튼이 켜진다.
+// 참가자 모드는 방장(각본)이 잠시 뒤 시작한다. [waitForTeamMove] 면
+// 내가 팀을 옮긴 뒤에 시작한다 - 해볼 일을 마칠 때까지 기다린다.
 //
 // 도둑 팀이면 화면 전체가 다크다 (waiting_room_page.dart, team_section, participant_card).
 // 팀은 상태바 색도 함께 바꾸므로 DemoApp 이 들고 있다.
 
-type Member = { name: string; host?: boolean; ready?: boolean };
-type Guest = { name: string; team: "police" | "robber"; ready: boolean };
+type Member = { name: string; host?: boolean };
+type Guest = { name: string; team: "police" | "robber" };
 
-// 방장 시점 각본 - 입장 시점(ms)과 준비 시점(ms)
-const GUEST_SCRIPT: readonly {
-  name: string;
-  team: "police" | "robber";
-  joinAt: number;
-  readyAt: number;
-}[] = [
-  { name: "든든한보안관3402", team: "police", joinAt: 1200, readyAt: 3400 },
-  { name: "잽싼그림자7215", team: "robber", joinAt: 2400, readyAt: 4600 },
+// 방장 시점 각본 - 입장 시점(ms)
+const GUEST_SCRIPT: readonly (Guest & { joinAt: number })[] = [
+  { name: "든든한보안관3402", team: "police", joinAt: 1200 },
+  { name: "잽싼그림자7215", team: "robber", joinAt: 2400 },
 ];
+
+// 참가자 시점에서 방장이 시작하기까지(ms). 팀을 옮긴 뒤라면 조금 더 빨리
+const HOST_START_MS = 5000;
+const HOST_START_AFTER_MOVE_MS = 2400;
 
 export function DemoWaitingRoom({
   host = false,
+  waitForTeamMove = false,
   myTeam,
   onTeamChange,
   onTeamMoved,
-  onReady,
   onStart,
   onLeave,
 }: {
   host?: boolean;
+  waitForTeamMove?: boolean;
   myTeam: "police" | "robber";
   onTeamChange: (team: "police" | "robber") => void;
   onTeamMoved: () => void;
-  onReady: () => void;
   onStart: (myTeam: "police" | "robber") => void;
   onLeave: () => void;
 }) {
   const { app } = useDemoCopy();
   const dark = myTeam === "robber";
-  const [ready, setReady] = useState(false);
+  const [moved, setMoved] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [startOpen, setStartOpen] = useState(false);
   const [guests, setGuests] = useState<Guest[]>([]);
 
-  // 참가자 모드: 준비를 마치면 잠시 뒤 방장이 게임을 시작한다
+  // 참가자 모드: 방장(각본)이 잠시 뒤 게임을 시작한다
   useEffect(() => {
-    if (host || !ready) return;
-    const t = window.setTimeout(() => onStart(myTeam), 2000);
+    if (host || (waitForTeamMove && !moved)) return;
+    const t = window.setTimeout(
+      () => onStart(myTeam),
+      moved ? HOST_START_AFTER_MOVE_MS : HOST_START_MS,
+    );
     return () => window.clearTimeout(t);
-  }, [host, ready, myTeam, onStart]);
+  }, [host, waitForTeamMove, moved, myTeam, onStart]);
 
-  // 방장 모드: 각본대로 참가자가 들어오고 준비를 마친다
+  // 방장 모드: 각본대로 참가자가 들어온다
   useEffect(() => {
     if (!host) return;
-    const timers: number[] = [];
-    for (const g of GUEST_SCRIPT) {
-      timers.push(
-        window.setTimeout(
-          () => setGuests((prev) => [...prev, { name: g.name, team: g.team, ready: false }]),
-          g.joinAt,
-        ),
-        window.setTimeout(
-          () =>
-            setGuests((prev) =>
-              prev.map((p) => (p.name === g.name ? { ...p, ready: true } : p)),
-            ),
-          g.readyAt,
-        ),
-      );
-    }
+    const timers = GUEST_SCRIPT.map((g) =>
+      window.setTimeout(
+        () => setGuests((prev) => [...prev, { name: g.name, team: g.team }]),
+        g.joinAt,
+      ),
+    );
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [host]);
 
-  const allReady = guests.length === GUEST_SCRIPT.length && guests.every((g) => g.ready);
-
-  const me: Member = host
-    ? { name: ME, host: true, ready: true }
-    : { name: ME, ready };
+  const me: Member = host ? { name: ME, host: true } : { name: ME };
   const scripted = (team: "police" | "robber"): Member[] =>
     host
       ? guests.filter((g) => g.team === team)
       : team === "police"
-        ? [{ name: "든든한보안관3402", host: true, ready: true }]
-        : [{ name: "잽싼그림자7215", ready: true }];
+        ? [{ name: "든든한보안관3402", host: true }]
+        : [{ name: "잽싼그림자7215" }];
 
   const police: Member[] = [
     ...scripted("police"),
@@ -106,9 +99,11 @@ export function DemoWaitingRoom({
     ...(myTeam === "robber" ? [me] : []),
   ];
 
-  // 캐릭터는 레디 상태를 SVG 파일이 표현한다 (participant_card.dart)
-  const charSrc = (team: "police" | "robber", isReady: boolean) =>
-    `/demo/${team}-${isReady ? "ready" : "notready"}.svg`;
+  // 서버와 같은 시작 조건 - 경찰과 도둑 각 1명 이상 (waiting_room_page.dart canStart)
+  const canStart = police.length > 0 && robber.length > 0;
+
+  // 대기방 캐릭터는 모두 ready.svg 다 (participant_card.dart, 준비 단계 제거 뒤)
+  const charSrc = (team: "police" | "robber") => `/demo/${team}-ready.svg`;
 
   const card = (team: "police" | "robber", member: Member) => {
     const mine = member.name === ME;
@@ -116,7 +111,7 @@ export function DemoWaitingRoom({
       <div key={member.name} className="demo-footprint flex w-[72px] flex-col items-center">
         <div className="h-[84px] w-[72px]">
           <Image
-            src={charSrc(team, member.host || member.ready || false)}
+            src={charSrc(team)}
             alt=""
             width={72}
             height={84}
@@ -143,8 +138,9 @@ export function DemoWaitingRoom({
       key="add"
       type="button"
       onClick={() => {
-        if (ready || myTeam === team) return;
+        if (myTeam === team) return;
         onTeamChange(team);
+        setMoved(true);
         onTeamMoved();
       }}
       className="flex w-[72px] flex-col items-center"
@@ -232,50 +228,83 @@ export function DemoWaitingRoom({
         {section("robber", app.teamRobber, robber)}
       </div>
 
-      {/* 하단 버튼 (waiting_room_page.dart _buildBottomButton):
-          방장은 전원 준비 시 켜지는 게임 시작, 참가자는 준비 토글 */}
+      {/* 하단 자리 (waiting_room_page.dart _buildBottomButton): 방장은 게임 시작,
+          참가자는 버튼 높이만큼 빈자리라 방장이 바뀌어도 목록이 들썩이지 않는다 */}
       <div className="shrink-0 px-[20px] pb-[20px] pt-[12px]">
         {host ? (
           <button
             type="button"
-            disabled={!allReady}
-            onClick={() => onStart(myTeam)}
+            disabled={!canStart}
+            onClick={() => setStartOpen(true)}
             className={`flex h-[56px] w-full items-center justify-center rounded-[12px] text-[18px] transition-transform active:scale-95 ${dark ? "font-moneygraphy" : "font-semibold"}`}
             style={
-              allReady
+              canStart
                 ? dark
                   ? { backgroundColor: appColors.green, color: appColors.black }
                   : { backgroundColor: appColors.blue, color: appColors.white }
                 : dark
-                  ? { backgroundColor: appColors.black800, color: appColors.black500 }
+                  ? { backgroundColor: appColors.black800, color: appColors.green }
                   : { backgroundColor: appColors.black200, color: appColors.black400 }
             }
           >
             {app.startGame}
           </button>
         ) : (
-          <button
-            type="button"
-            onClick={() => {
-              // 시작되기 전까지는 앱처럼 다시 눌러 준비를 취소한다
-              if (!ready) onReady();
-              setReady(!ready);
-            }}
-            className={`flex h-[56px] w-full items-center justify-center rounded-[12px] text-[18px] transition-transform active:scale-95 ${dark ? "font-moneygraphy" : "font-semibold"}`}
-            style={
-              ready
-                ? dark
-                  ? { backgroundColor: appColors.black800, color: appColors.green }
-                  : { backgroundColor: appColors.blue100, color: appColors.blue }
-                : dark
-                  ? { backgroundColor: appColors.green, color: appColors.black }
-                  : { backgroundColor: appColors.blue, color: appColors.white }
-            }
-          >
-            {ready ? app.cancelReady : app.ready}
-          </button>
+          <div className="h-[56px]" />
         )}
       </div>
+
+      {/* 시작 확인 (dialogStartGame + start_game_team_preview.dart): 두 팀 캐릭터와
+          인원을 보여 주고, 확인하면 기다림 없이 바로 시작한다 */}
+      {startOpen && (
+        <DemoConfirmDialog
+          dark={dark}
+          tone="primary"
+          title={app.startDialogTitle}
+          confirmText={app.startGame}
+          onCancel={() => setStartOpen(false)}
+          onConfirm={() => {
+            setStartOpen(false);
+            onStart(myTeam);
+          }}
+        >
+          <div className="flex items-center">
+            {(
+              [
+                ["police", app.startDialogPolice(police.length), police.length],
+                ["robber", app.startDialogRobber(robber.length), robber.length],
+              ] as const
+            ).map(([team, label, count], i) => (
+              <div key={team} className="flex flex-1 items-center">
+                {i === 1 && (
+                  <span
+                    className="h-[64px] w-px"
+                    style={{ backgroundColor: dark ? appColors.black800 : appColors.black100 }}
+                  />
+                )}
+                <div
+                  className="flex flex-1 flex-col items-center"
+                  style={{ opacity: count === 0 ? 0.4 : 1 }}
+                >
+                  <Image
+                    src={charSrc(team)}
+                    alt=""
+                    width={56}
+                    height={64}
+                    className="h-[64px] w-[56px] object-contain"
+                  />
+                  <span
+                    className={`mt-[8px] text-[14px] ${dark ? "font-moneygraphy" : "font-semibold"}`}
+                    style={{ color: dark ? appColors.white : appColors.black800 }}
+                  >
+                    {label}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DemoConfirmDialog>
+      )}
 
       {/* 방 나가기 확인 (dialogLeaveRoom 문구 그대로) */}
       {leaveOpen && (

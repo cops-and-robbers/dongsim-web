@@ -22,6 +22,7 @@ export const AdminGamesQuery = graphql`
         maxParticipants
         isEventGame
         participantCount
+        roundNumber
         createdAt
       }
       totalElements

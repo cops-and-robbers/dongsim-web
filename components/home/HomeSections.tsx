@@ -4,6 +4,7 @@ import HowItWorksSection from "./HowItWorksSection";
 import FeaturesSection from "./FeaturesSection";
 import MinigameTeaserSection from "./MinigameTeaserSection";
 import CtaSection from "./CtaSection";
+import StoriesSection from "./StoriesSection";
 import type { Locale } from "@/lib/i18n/config";
 import { getMessages } from "@/lib/i18n/messages";
 import { showHomeMinigame } from "@/lib/event/server";
@@ -18,6 +19,7 @@ export default async function HomeSections({ locale }: { locale: Locale }) {
       <CharactersSection copy={copy.characters} />
       <HowItWorksSection copy={copy.how} />
       <FeaturesSection copy={copy.features} />
+      <StoriesSection locale={locale} />
       {minigame && <MinigameTeaserSection copy={copy.minigame} locale={locale} />}
       <CtaSection copy={copy.finalCta} locale={locale} />
     </>

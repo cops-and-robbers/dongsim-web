@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// 온라인 게임 화면 전환 탭. 운영 상태를 바꾸는 일과 판을 지켜보는 일은 하는 순간이 달라 화면을 나눈다(게임 메뉴의 GameTabs 와 같은 모양)
+// 온라인 게임 화면 전환 탭. 운영 상태를 바꾸는 일과 판을 지켜보는 일은 하는 순간이 달라 화면을 나눈다
 const TABS = [
   { href: "/admin/webgame", label: "운영 상태" },
   { href: "/admin/webgame/monitor", label: "모니터링" },

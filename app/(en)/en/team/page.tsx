@@ -25,7 +25,8 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 300;
+// 어드민이 저장하면 바로 버린다. 주기는 놓쳤을 때를 위한 것(#335)
+export const revalidate = 3600;
 
 export default function TeamEnPage() {
   return <TeamSections locale="en" />;

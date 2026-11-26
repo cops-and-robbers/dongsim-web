@@ -21,7 +21,7 @@ export function DemoJoinDialog({
   const full = code.length === 6;
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 px-[36px]">
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/50 px-[36px]">
       <div
         className="w-full rounded-[24px] px-[20px] pb-[20px] pt-[28px]"
         style={{ backgroundColor: appColors.white }}

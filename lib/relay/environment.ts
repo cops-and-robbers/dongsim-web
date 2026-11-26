@@ -55,9 +55,15 @@ const fetchFn: FetchFunction = async (request, variables) => {
   return response.json();
 };
 
+// 어드민 GraphQL 의 id 는 표마다 따로 매긴 숫자라 타입이 달라도 겹친다(게임 1번과 끝난 판 1번).
+// Relay 는 기본으로 id 하나로 레코드를 합쳐서, 두 타입이 한 스토어에 들어오면 서로의 값을 덮어쓴다(#315 에서 방과 끝난 판을 한 목록에 두며 드러남).
+// 그래서 타입 이름을 붙여 "AdminGame:1", "AdminGameHistory:1" 로 나눈다. id 가 없는 레코드는 Relay 가 정한 대로 둔다
+const getDataID = (fieldValue: { [key: string]: unknown }, typeName: string) => (fieldValue.id == null ? undefined : `${typeName}:${String(fieldValue.id)}`);
+
 export function createEnvironment(): Environment {
   return new Environment({
     network: Network.create(fetchFn),
     store: new Store(new RecordSource()),
+    getDataID,
   });
 }

@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<acf759ff93e060ea71146126a52c77dd>>
+ * @generated SignedSource<<2a9aa33ac5a4319223415197aaf298a2>>
  * @lightSyntaxTransform
  */
 
@@ -29,13 +29,17 @@ export type AdminGameHistories$data = {
       readonly endReason: GameEndReason;
       readonly endedAt: string | null | undefined;
       readonly gameId: string;
+      readonly hostUserId: string | null | undefined;
       readonly id: string;
+      readonly isEventGame: boolean | null | undefined;
       readonly participants: ReadonlyArray<{
         readonly nickname: string;
         readonly status: ParticipantStatus;
         readonly team: Team;
         readonly userId: string | null | undefined;
       }>;
+      readonly roundNumber: number | null | undefined;
+      readonly startedAt: string | null | undefined;
       readonly totalArrestCount: number;
       readonly totalPoliceCount: number;
       readonly totalRobberCount: number;
@@ -129,6 +133,13 @@ v4 = [
             "alias": null,
             "args": null,
             "kind": "ScalarField",
+            "name": "roundNumber",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
             "name": "winnerTeam",
             "storageKey": null
           },
@@ -192,7 +203,28 @@ v4 = [
             "alias": null,
             "args": null,
             "kind": "ScalarField",
+            "name": "startedAt",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
             "name": "endedAt",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "isEventGame",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "hostUserId",
             "storageKey": null
           },
           {
@@ -297,16 +329,16 @@ return {
     "selections": (v4/*:: as any*/)
   },
   "params": {
-    "cacheID": "0a4f4526fe62f0d2404752faedf5da75",
+    "cacheID": "ea289c87abb85f5dc75fedec917fe24a",
     "id": null,
     "metadata": {},
     "name": "AdminGameHistories",
     "operationKind": "query",
-    "text": "query AdminGameHistories(\n  $page: Int\n  $size: Int\n  $endReason: GameEndReason\n  $sortDirection: SortDirection\n) {\n  adminGameHistories(page: $page, size: $size, endReason: $endReason, sortDirection: $sortDirection) {\n    content {\n      id\n      gameId\n      winnerTeam\n      endReason\n      totalPoliceCount\n      totalRobberCount\n      arrestedRobberCount\n      totalArrestCount\n      durationSeconds\n      areaType\n      createdAt\n      endedAt\n      participants {\n        userId\n        nickname\n        team\n        status\n      }\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
+    "text": "query AdminGameHistories(\n  $page: Int\n  $size: Int\n  $endReason: GameEndReason\n  $sortDirection: SortDirection\n) {\n  adminGameHistories(page: $page, size: $size, endReason: $endReason, sortDirection: $sortDirection) {\n    content {\n      id\n      gameId\n      roundNumber\n      winnerTeam\n      endReason\n      totalPoliceCount\n      totalRobberCount\n      arrestedRobberCount\n      totalArrestCount\n      durationSeconds\n      areaType\n      createdAt\n      startedAt\n      endedAt\n      isEventGame\n      hostUserId\n      participants {\n        userId\n        nickname\n        team\n        status\n      }\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "409b9dc089d159c9cc562eead81a6331";
+(node as any).hash = "d1481d6c47941780d73f352cfbb83808";
 
 export default node;

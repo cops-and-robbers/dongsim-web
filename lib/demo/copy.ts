@@ -27,9 +27,27 @@ export type DemoAppStrings = {
   teamPolice: string;
   teamRobber: string;
   personCount: (n: number) => string;
-  /** buttonReady / buttonCancelReady */
-  ready: string;
-  cancelReady: string;
+  /** dialogStartGameTitle / dialogStartGamePoliceCount / dialogStartGameRobberCount (#661, 준비 단계 제거) */
+  startDialogTitle: string;
+  startDialogPolice: (n: number) => string;
+  startDialogRobber: (n: number) => string;
+  /** shrinkTitle / shrinkDescOff / shrinkDescOn / shrinkLockTooSmall / shrinkLockNotCircle (#668) */
+  shrinkTitle: string;
+  shrinkDescOff: string;
+  shrinkDescOn: (start: string, end: string) => string;
+  shrinkLockTooSmall: string;
+  shrinkLockNotCircle: string;
+  /** gameShrinkNotice / gameShrinkFinalNotice / gameRevealShrinkCountdown (#668) */
+  shrinkNotice: (stage: number) => string;
+  shrinkFinalNotice: string;
+  revealShrinkCountdown: (reveal: string, shrink: string) => string;
+  /** gameMenuOpen / gameMenuClose / gameMenuGrid / gameMenuParticipants / gameMenuArrest / gameMenuMyQr */
+  menuOpen: string;
+  menuClose: string;
+  menuGrid: string;
+  menuParticipants: string;
+  menuArrest: string;
+  menuMyQr: string;
   /** dialogLeaveRoom* / gameLeaveConfirm* / buttonLeave */
   leaveRoomTitle: string;
   leaveRoomMessage: string;
@@ -53,17 +71,26 @@ export type DemoAppStrings = {
   /** gameChatBackToMap / gameGridToggle */
   chatBackToMap: string;
   gridToggle: string;
-  /** startRoleLabel / gameRoleCopLabel / gameRoleRobberLabel / startMission* */
+  /** startRoleLabel / gameRoleCopLabel / gameRoleRobberLabel / startTitle* (\n 으로 두 줄) / startRoleSentence */
   startRoleLabel: string;
   roleCop: string;
   roleRobber: string;
+  startTitlePolice: string;
+  startTitleRobber: string;
+  startTitlePoliceAccent: string;
+  startTitleRobberAccent: string;
+  startRoleSentence: (role: string) => string;
+  /** startMission*Label / startMission* */
+  startMissionPoliceLabel: string;
+  startMissionRobberLabel: string;
   startMissionPolice: string;
   startMissionRobber: string;
   /** startWaitCountdownLabel / startWaitPoliceTitle / startWaitRobberTitle */
   startWaitCountdownLabel: string;
   startWaitPoliceTitle: string;
   startWaitRobberTitle: string;
-  /** startRulesCounter / startRule* / startTapToMap */
+  /** startGuideLabel / startRulesCounter / startRule* / startExplainerTapHint */
+  startGuideLabel: string;
   startRulesCounter: (current: number, total: number) => string;
   startRuleQrArrest: string;
   startRulePing: string;
@@ -72,21 +99,21 @@ export type DemoAppStrings = {
   startRuleQrCaught: string;
   startRuleMyReveal: (minutes: number) => string;
   startRuleJailbreak: string;
-  startTapToMap: string;
-  /** dispatchPolice* / dispatchRobber* */
-  dispatchPoliceLead: string;
-  dispatchPoliceMain: string;
-  dispatchRobberLead: string;
-  dispatchRobberMain: string;
+  startExplainerTapHint: string;
+  /** dispatchCountdownGo */
+  dispatchGo: string;
   /** gameOverBannerTitle / gameOverReasonAllArrested / gameOverReasonTimeUp */
   gameOverTitle: string;
   gameOverAllArrested: string;
   gameOverTimeUp: string;
-  /** mvpRevealTease / labelPoliceTeamMvp / labelRobberTeamMvp / mvpRevealTapToContinue / labelMvp */
+  /** mvpRevealTease / labelPoliceTeamMvp / labelRobberTeamMvp / mvpRevealTapToContinue / mvpRevealTitle / mvpReveal*Subtitle */
   mvpTease: string;
   mvpPolice: string;
   mvpRobber: string;
   mvpTapContinue: string;
+  mvpTitle: string;
+  mvpPoliceSubtitle: string;
+  mvpRobberSubtitle: string;
   labelMvp: string;
   /** tabResultTeam / tabResultMine */
   tabResultTeam: string;
@@ -321,8 +348,23 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       teamPolice: "경찰팀",
       teamRobber: "도둑팀",
       personCount: (n) => `${n}명`,
-      ready: "준비",
-      cancelReady: "준비 취소",
+      startDialogTitle: "게임을 시작할까요?",
+      startDialogPolice: (n) => `경찰 ${n}명`,
+      startDialogRobber: (n) => `도둑 ${n}명`,
+      shrinkTitle: "구역 축소",
+      shrinkDescOff: "구역이 점점 줄어들어요",
+      shrinkDescOn: (a, b) => `${a} → ${b}까지 줄어요`,
+      shrinkLockTooSmall: "구역이 작아서 쓸 수 없어요",
+      shrinkLockNotCircle: "원형 구역에서만 쓸 수 있어요",
+      shrinkNotice: (n) => `구역이 줄었어요 (${n}/4)`,
+      shrinkFinalNotice: "마지막 구역이에요. 더 줄어들지 않아요",
+      revealShrinkCountdown: (r, k) => `위치 공개 ${r} | 구역 축소 ${k}`,
+      menuOpen: "메뉴 열기",
+      menuClose: "메뉴 닫기",
+      menuGrid: "좌표",
+      menuParticipants: "참가자",
+      menuArrest: "체포",
+      menuMyQr: "내 QR",
       leaveRoomTitle: "방을 나갈까요?",
       leaveRoomMessage: "나가면 다시 초대코드를 입력해야 해요",
       leaveGameTitle: "게임에서 나갈까요?",
@@ -342,12 +384,20 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRoleLabel: "내 역할",
       roleCop: "경찰",
       roleRobber: "도둑",
+      startTitlePolice: "도둑을 찾아\n모두 체포해요!",
+      startTitleRobber: "경찰을 피해\n끝까지 도망쳐요!",
+      startTitlePoliceAccent: "체포해요!",
+      startTitleRobberAccent: "도망쳐요!",
+      startRoleSentence: (role) => `이번 판은 ${role}이에요`,
+      startMissionPoliceLabel: "경찰 팀 미션",
+      startMissionRobberLabel: "도둑 팀 미션",
       startMissionPolice: "도둑을 찾아 QR로 모두 체포하세요",
-      startMissionRobber: "끝날 때까지 잡히지 말고 도망치세요",
+      startMissionRobber: "게임이 끝날 때까지 잡히지 말고 도망치세요",
       startWaitCountdownLabel: "경찰 출동까지",
-      startWaitPoliceTitle: "도둑이 도망치는 중이에요",
-      startWaitRobberTitle: "경찰에게서 멀어지는 중이에요",
-      startRulesCounter: (current, total) => `게임 규칙 ${current}/${total}`,
+      startWaitPoliceTitle: "도둑이 도망치는 중이에요!",
+      startWaitRobberTitle: "경찰에게서 멀어지세요!",
+      startGuideLabel: "게임 안내",
+      startRulesCounter: (current, total) => `게임 안내 ${current}/${total}`,
       startRuleQrArrest: "도둑의 QR을 스캔하면 체포돼요",
       startRulePing: "지도를 길게 누르면 핑을 찍어 우리 팀에 알릴 수 있어요",
       startRuleRobberReveal: (minutes) => `도둑 위치는 ${minutes}분마다 경찰에게 공개돼요`,
@@ -355,18 +405,18 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRuleQrCaught: "경찰이 내 QR을 스캔하면 잡혀요",
       startRuleMyReveal: (minutes) => `내 위치는 ${minutes}분마다 경찰에게 공개돼요`,
       startRuleJailbreak: "잡히면 감옥에 들어갔다가 밖으로 나가 3초가 지나면 탈옥돼요",
-      startTapToMap: "탭하면 지도로 돌아가요",
-      dispatchPoliceLead: "시간이 됐어요",
-      dispatchPoliceMain: "출동!",
-      dispatchRobberLead: "경찰이 출동했어요",
-      dispatchRobberMain: "조심!",
+      startExplainerTapHint: "화면을 누르면 지도로 가요",
+      dispatchGo: "출동!",
       gameOverTitle: "게임 종료!",
       gameOverAllArrested: "도둑이 모두 체포됐어요!",
       gameOverTimeUp: "제한 시간이 끝났어요!",
       mvpTease: "MVP는 누굴까?!",
       mvpPolice: "경찰 팀 MVP",
       mvpRobber: "도둑 팀 MVP",
-      mvpTapContinue: "탭하면 넘어가요",
+      mvpTapContinue: "화면을 누르면 다음 결과로 넘어가요",
+      mvpTitle: "게임 결과",
+      mvpPoliceSubtitle: "경찰 팀 최고의 활약",
+      mvpRobberSubtitle: "도둑 팀 최고의 활약",
       labelMvp: "MVP",
       tabResultTeam: "전체",
       tabResultMine: "개인",
@@ -411,7 +461,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       basicTitle: "기본 정보를 설정해요",
       basicHint: "게임을 진행할 때, 꼭 필요한 정보들이에요",
       reviewTitle: "최종 설정을 확인해요",
-      reviewHint: "방 생성 전 마지막으로 설정을 확인할까요?",
+      reviewHint: "추천값으로 채워 뒀어요. 바꿀 항목만 눌러요",
       participantsHint: "최소 2명부터 게임 진행이 가능해요",
       noShareWarning: "도둑의 위치가 공유되지 않아요!",
       policePrefix: "도둑 시작 후",
@@ -506,10 +556,9 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       waiting: {
         id: "waiting",
         title: "대기실",
-        intro: "시작 전에 모이는 방이에요. 팀은 언제든 바꿀 수 있어요.",
+        intro: "시작 전에 모이는 방이고, 방장이 시작하기 전까지 팀을 바꿀 수 있어요.",
         tasks: [
-          { id: "waiting-team", label: "경찰팀의 교체 버튼을 눌러 팀을 옮겨 보세요" },
-          { id: "waiting-ready", label: "준비 버튼을 눌러 보세요" },
+          { id: "waiting-team", label: "경찰팀의 교체 칸을 눌러 팀을 옮겨 보세요" },
         ],
       },
       ingame: {
@@ -564,21 +613,24 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       },
       createBasic: {
         id: "createBasic",
-        title: "기본 정보",
-        intro: "키패드로 하나씩 정해요. 위의 칩으로 빠르게 더할 수도 있어요.",
-        tasks: [{ id: "create-basic", label: "네 항목을 채우고 완료하기를 눌러 보세요" }],
+        title: "설정 고치기",
+        intro: "키패드로 숫자를 바꾸고, 위의 칩으로 빠르게 더할 수도 있어요.",
+        tasks: [],
       },
       createConfirm: {
         id: "createConfirm",
         title: "최종 확인",
-        intro: "설정이 한눈에 보여요. 행을 누르면 고치러 갈 수 있어요.",
-        tasks: [{ id: "create-confirm", label: "방 만들기를 눌러 보세요" }],
+        intro: "추천값이 이미 들어 있으니 바꾸고 싶은 줄만 누르면 돼요.",
+        tasks: [
+          { id: "create-shrink", label: "구역 축소를 켜 보세요" },
+          { id: "create-confirm", label: "방 만들기를 눌러 보세요" },
+        ],
       },
       hostWaiting: {
         id: "hostWaiting",
         title: "방장 대기실",
-        intro: "친구들이 들어오고 있어요. 모두 준비되면 시작할 수 있어요.",
-        tasks: [{ id: "host-start", label: "모두 준비되면 게임 시작을 눌러 보세요" }],
+        intro: "친구들이 들어오고 있어요. 경찰과 도둑이 한 명씩만 있으면 바로 시작할 수 있어요.",
+        tasks: [{ id: "host-start", label: "게임 시작을 누르고 두 팀 인원을 확인해 보세요" }],
       },
       homeCommunity: {
         id: "homeCommunity",
@@ -607,15 +659,15 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       waitingRobber: {
         id: "waitingRobber",
         title: "대기실",
-        intro: "이번 판, 나는 도둑이에요. 이대로 준비하면 돼요.",
-        tasks: [{ id: "waiting-robber-ready", label: "준비 버튼을 눌러 보세요" }],
+        intro: "이번 판은 도둑이에요. 방장이 곧 게임을 시작해요.",
+        tasks: [],
       },
       ingameRobber: {
         id: "ingameRobber",
         title: "도주전",
         intro: "곧 경찰이 출발해요. 내 위치는 주기마다 발자국으로 공개돼요.",
         tasks: [
-          { id: "robber-qr", label: "수배 QR을 열어 확인해 보세요" },
+          { id: "robber-qr", label: "가운데 메뉴에서 내 QR을 열어 보세요" },
           { id: "robber-ping", label: "지도를 길게 눌러 경찰 위치에 핑을 남겨 보세요" },
           { id: "robber-chat", label: "채팅으로 팀에게 상황을 알려 보세요" },
         ],
@@ -637,7 +689,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         },
         steps: [
           { label: "친구 방에 들어가요", short: "방 입장", scenes: ["home", "join"] },
-          { label: "팀을 정하고 준비해요", short: "팀 준비", scenes: ["waiting"] },
+          { label: "경찰팀으로 옮겨요", short: "팀 고르기", scenes: ["waiting"] },
           { label: "발자국을 따라 도둑을 쫓아요", short: "추격", scenes: ["ingame"] },
           { label: "체포하고 기록 카드를 받아요", short: "체포", scenes: ["victory"] },
         ],
@@ -652,7 +704,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         },
         steps: [
           { label: "친구 방에 들어가요", short: "방 입장", scenes: ["home", "join"] },
-          { label: "도둑팀으로 준비해요", short: "팀 준비", scenes: ["waitingRobber"] },
+          { label: "도둑팀으로 시작을 기다려요", short: "대기실", scenes: ["waitingRobber"] },
           { label: "발자국을 숨기며 달아나요", short: "도주", scenes: ["ingameRobber"] },
           { label: "끝까지 살아남아 승리해요", short: "생존", scenes: ["victoryRobber"] },
         ],
@@ -668,8 +720,8 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         steps: [
           { label: "방 만들기를 시작해요", short: "홈", scenes: ["homeCreate"] },
           { label: "구역과 감옥을 그려요", short: "구역", scenes: ["createZone", "createJail"] },
-          { label: "게임 정보를 정해요", short: "설정", scenes: ["createBasic", "createConfirm"] },
-          { label: "친구를 모아 게임을 시작해요", short: "시작", scenes: ["hostWaiting"] },
+          { label: "설정을 확인하고 구역 축소를 켜요", short: "설정", scenes: ["createConfirm", "createBasic"] },
+          { label: "두 팀이 모이면 게임을 시작해요", short: "시작", scenes: ["hostWaiting"] },
         ],
         finish: "ingame",
       },
@@ -771,8 +823,23 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       teamPolice: "Cop team",
       teamRobber: "Robber team",
       personCount: (n) => `${n} people`,
-      ready: "Ready",
-      cancelReady: "Cancel",
+      startDialogTitle: "Start the game?",
+      startDialogPolice: (n) => `Cops: ${n}`,
+      startDialogRobber: (n) => `Robbers: ${n}`,
+      shrinkTitle: "Shrinking area",
+      shrinkDescOff: "The area shrinks over time",
+      shrinkDescOn: (a, b) => `Shrinks ${a} → ${b}`,
+      shrinkLockTooSmall: "The area is too small",
+      shrinkLockNotCircle: "Circle areas only",
+      shrinkNotice: (n) => `The area got smaller (${n}/4)`,
+      shrinkFinalNotice: "This is the final area. It won't shrink anymore",
+      revealShrinkCountdown: (r, k) => `Reveal ${r} | Shrink ${k}`,
+      menuOpen: "Open menu",
+      menuClose: "Close menu",
+      menuGrid: "Grid",
+      menuParticipants: "Players",
+      menuArrest: "Arrest",
+      menuMyQr: "My QR",
       leaveRoomTitle: "Would you like to leave the room?",
       leaveRoomMessage: "You will need to enter the invite code again to rejoin",
       leaveGameTitle: "Leave the game?",
@@ -792,12 +859,20 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRoleLabel: "Your role",
       roleCop: "Cop",
       roleRobber: "Robber",
-      startMissionPolice: "Find the Robbers and arrest them all by QR",
-      startMissionRobber: "Don't get caught until time runs out",
+      startTitlePolice: "Find the Robbers,\narrest them all!",
+      startTitleRobber: "Dodge the Cops,\nrun until the end!",
+      startTitlePoliceAccent: "arrest them all!",
+      startTitleRobberAccent: "run until the end!",
+      startRoleSentence: (role) => `You're a ${role} this round`,
+      startMissionPoliceLabel: "Cop team mission",
+      startMissionRobberLabel: "Robber team mission",
+      startMissionPolice: "Find the Robbers and arrest them all with QR",
+      startMissionRobber: "Stay free and keep running until the game ends",
       startWaitCountdownLabel: "Cops move out in",
-      startWaitPoliceTitle: "The Robbers are getting away",
-      startWaitRobberTitle: "You're getting away from the Cops",
-      startRulesCounter: (current, total) => `Game rules ${current}/${total}`,
+      startWaitPoliceTitle: "The Robbers are getting away!",
+      startWaitRobberTitle: "Get away from the Cops!",
+      startGuideLabel: "Game guide",
+      startRulesCounter: (current, total) => `Game guide ${current}/${total}`,
       startRuleQrArrest: "Scan a Robber's QR to arrest them",
       startRulePing: "Long-press the map to drop a ping for your team",
       startRuleRobberReveal: (minutes) => `Robber locations are revealed to the Cops every ${minutes} min`,
@@ -805,18 +880,18 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRuleQrCaught: "You're caught when the Cops scan your QR",
       startRuleMyReveal: (minutes) => `Your location is revealed to the Cops every ${minutes} min`,
       startRuleJailbreak: "If caught, you go to Jail. Step outside for 3 seconds to escape",
-      startTapToMap: "Tap to return to the map",
-      dispatchPoliceLead: "Time's up",
-      dispatchPoliceMain: "Move out!",
-      dispatchRobberLead: "The Cops are moving",
-      dispatchRobberMain: "Watch out!",
+      startExplainerTapHint: "Tap anywhere to go to the map",
+      dispatchGo: "Let's go!",
       gameOverTitle: "Game over!",
       gameOverAllArrested: "All Robbers have been arrested!",
       gameOverTimeUp: "The time limit has expired!",
       mvpTease: "Who's the MVP?!",
       mvpPolice: "Cops team MVP",
       mvpRobber: "Robber team MVP",
-      mvpTapContinue: "Tap to continue",
+      mvpTapContinue: "Tap the screen to see the next result",
+      mvpTitle: "Game results",
+      mvpPoliceSubtitle: "Top player on the Cops team",
+      mvpRobberSubtitle: "Top player on the Robber team",
       labelMvp: "MVP",
       tabResultTeam: "All",
       tabResultMine: "Mine",
@@ -861,7 +936,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       basicTitle: "Set up basic information",
       basicHint: "This information is essential for running the game",
       reviewTitle: "Verify final settings",
-      reviewHint: "Shall we check the settings one last time before creating the room?",
+      reviewHint: "Filled in with recommended values. Tap only what you want to change",
       participantsHint: "A minimum of 2 players is required to play the game",
       noShareWarning: "The Robbers' locations will not be shared!",
       policePrefix: "After Robbers start,",
@@ -957,10 +1032,9 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       waiting: {
         id: "waiting",
         title: "Waiting room",
-        intro: "This is where everyone gathers. You can switch teams any time.",
+        intro: "This is where everyone gathers. Switch teams any time before the host starts.",
         tasks: [
           { id: "waiting-team", label: "Tap the swap slot on the cop team" },
-          { id: "waiting-ready", label: "Tap Ready" },
         ],
       },
       ingame: {
@@ -1015,21 +1089,24 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       },
       createBasic: {
         id: "createBasic",
-        title: "Basic info",
-        intro: "Set each value on the keypad. The chips above add fast.",
-        tasks: [{ id: "create-basic", label: "Fill all four, then tap Done" }],
+        title: "Edit a setting",
+        intro: "Change the number on the keypad. The chips above add fast.",
+        tasks: [],
       },
       createConfirm: {
         id: "createConfirm",
         title: "Final check",
-        intro: "Everything at a glance. Tap a row to go fix it.",
-        tasks: [{ id: "create-confirm", label: "Tap Create room" }],
+        intro: "Recommended values are already in. Tap only the rows you want to change.",
+        tasks: [
+          { id: "create-shrink", label: "Turn on Shrinking area" },
+          { id: "create-confirm", label: "Tap Create room" },
+        ],
       },
       hostWaiting: {
         id: "hostWaiting",
         title: "Host's room",
-        intro: "Friends are joining. Once everyone's ready, you can start.",
-        tasks: [{ id: "host-start", label: "When all are ready, tap Game start" }],
+        intro: "Friends are joining. Once there's a cop and a robber, you can start.",
+        tasks: [{ id: "host-start", label: "Tap Game start and check both teams" }],
       },
       homeCommunity: {
         id: "homeCommunity",
@@ -1058,15 +1135,15 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       waitingRobber: {
         id: "waitingRobber",
         title: "Waiting room",
-        intro: "This round, you're a robber. Just ready up as you are.",
-        tasks: [{ id: "waiting-robber-ready", label: "Tap Ready" }],
+        intro: "This round, you're a robber. The host is about to start.",
+        tasks: [],
       },
       ingameRobber: {
         id: "ingameRobber",
         title: "The getaway",
         intro: "The cops start soon. Your location drops as footprints at intervals.",
         tasks: [
-          { id: "robber-qr", label: "Open your wanted QR code" },
+          { id: "robber-qr", label: "Open My QR from the center menu" },
           { id: "robber-ping", label: "Long-press the map to ping the cops" },
           { id: "robber-chat", label: "Tell your team what's happening in chat" },
         ],
@@ -1088,7 +1165,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         },
         steps: [
           { label: "Join a friend's room", short: "Join", scenes: ["home", "join"] },
-          { label: "Pick a team and ready up", short: "Team", scenes: ["waiting"] },
+          { label: "Switch to the cop team", short: "Team", scenes: ["waiting"] },
           { label: "Follow footprints, chase the robber", short: "Chase", scenes: ["ingame"] },
           { label: "Make the arrest, get your record", short: "Arrest", scenes: ["victory"] },
         ],
@@ -1103,7 +1180,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         },
         steps: [
           { label: "Join a friend's room", short: "Join", scenes: ["home", "join"] },
-          { label: "Ready up on the robber team", short: "Team", scenes: ["waitingRobber"] },
+          { label: "Wait on the robber team", short: "Lobby", scenes: ["waitingRobber"] },
           { label: "Run while hiding your footprints", short: "Run", scenes: ["ingameRobber"] },
           { label: "Survive to the end and win", short: "Survive", scenes: ["victoryRobber"] },
         ],
@@ -1119,8 +1196,8 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         steps: [
           { label: "Start creating a room", short: "Home", scenes: ["homeCreate"] },
           { label: "Draw the playground and jail", short: "Zone", scenes: ["createZone", "createJail"] },
-          { label: "Set the game rules", short: "Rules", scenes: ["createBasic", "createConfirm"] },
-          { label: "Gather friends and start", short: "Start", scenes: ["hostWaiting"] },
+          { label: "Check the settings and turn on shrinking", short: "Rules", scenes: ["createConfirm", "createBasic"] },
+          { label: "Start once both teams are in", short: "Start", scenes: ["hostWaiting"] },
         ],
         finish: "ingame",
       },
@@ -1222,8 +1299,23 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       teamPolice: "警察チーム",
       teamRobber: "泥棒チーム",
       personCount: (n) => `${n}人`,
-      ready: "準備完了",
-      cancelReady: "準備取消",
+      startDialogTitle: "ゲームを開始しますか？",
+      startDialogPolice: (n) => `警察${n}人`,
+      startDialogRobber: (n) => `泥棒${n}人`,
+      shrinkTitle: "エリア縮小",
+      shrinkDescOff: "エリアが少しずつ狭まります",
+      shrinkDescOn: (a, b) => `${a} → ${b}まで縮小`,
+      shrinkLockTooSmall: "エリアが小さくて使えません",
+      shrinkLockNotCircle: "円形エリアのみ使えます",
+      shrinkNotice: (n) => `エリアが狭くなりました (${n}/4)`,
+      shrinkFinalNotice: "最後のエリアです。これ以上狭くなりません",
+      revealShrinkCountdown: (r, k) => `位置公開 ${r} | 縮小 ${k}`,
+      menuOpen: "メニューを開く",
+      menuClose: "メニューを閉じる",
+      menuGrid: "座標",
+      menuParticipants: "参加者",
+      menuArrest: "逮捕",
+      menuMyQr: "マイQR",
       leaveRoomTitle: "待機室から退室しますか",
       leaveRoomMessage: "退室すると、再度招待コードを入力する必要があります",
       leaveGameTitle: "ゲームから退場しますか",
@@ -1243,12 +1335,20 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRoleLabel: "あなたの役割",
       roleCop: "警察",
       roleRobber: "泥棒",
+      startTitlePolice: "泥棒を見つけて\n全員逮捕しよう!",
+      startTitleRobber: "警察をかわして\n最後まで逃げ切ろう!",
+      startTitlePoliceAccent: "全員逮捕しよう!",
+      startTitleRobberAccent: "最後まで逃げ切ろう!",
+      startRoleSentence: (role) => `このラウンドは${role}です`,
+      startMissionPoliceLabel: "警察チームのミッション",
+      startMissionRobberLabel: "泥棒チームのミッション",
       startMissionPolice: "泥棒を見つけてQRで全員逮捕しましょう",
-      startMissionRobber: "終了まで捕まらずに逃げ切りましょう",
+      startMissionRobber: "ゲームが終わるまで捕まらずに逃げ切りましょう",
       startWaitCountdownLabel: "警察出動まで",
-      startWaitPoliceTitle: "泥棒が逃げています",
-      startWaitRobberTitle: "警察から離れています",
-      startRulesCounter: (current, total) => `ゲームルール ${current}/${total}`,
+      startWaitPoliceTitle: "泥棒が逃げています！",
+      startWaitRobberTitle: "警察から離れましょう！",
+      startGuideLabel: "ゲーム案内",
+      startRulesCounter: (current, total) => `ゲーム案内 ${current}/${total}`,
       startRuleQrArrest: "泥棒のQRをスキャンすると逮捕できます",
       startRulePing: "地図を長押しするとピンで味方に知らせられます",
       startRuleRobberReveal: (minutes) => `泥棒の位置は${minutes}分ごとに警察に公開されます`,
@@ -1256,18 +1356,18 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       startRuleQrCaught: "警察にQRをスキャンされると捕まります",
       startRuleMyReveal: (minutes) => `あなたの位置は${minutes}分ごとに警察に公開されます`,
       startRuleJailbreak: "捕まると牢屋に入り、外に出て3秒たつと脱獄できます",
-      startTapToMap: "タップすると地図に戻ります",
-      dispatchPoliceLead: "時間です",
-      dispatchPoliceMain: "出動！",
-      dispatchRobberLead: "警察が出動しました",
-      dispatchRobberMain: "気をつけて！",
+      startExplainerTapHint: "画面をタップすると地図に移動します",
+      dispatchGo: "いくぞ！",
       gameOverTitle: "ゲーム終了！",
       gameOverAllArrested: "泥棒が全員逮捕されました！",
       gameOverTimeUp: "制限時間が終了しました！",
       mvpTease: "MVPは誰だ!?",
       mvpPolice: "警察チームMVP",
       mvpRobber: "泥棒チームMVP",
-      mvpTapContinue: "タップして次へ",
+      mvpTapContinue: "画面をタップして次の結果を見る",
+      mvpTitle: "ゲーム結果",
+      mvpPoliceSubtitle: "警察チームで一番の活躍",
+      mvpRobberSubtitle: "泥棒チームで一番の活躍",
       labelMvp: "MVP",
       tabResultTeam: "全体",
       tabResultMine: "個人",
@@ -1312,7 +1412,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       basicTitle: "基本情報を設定します",
       basicHint: "ゲームを進行する際、必ず必要な情報です",
       reviewTitle: "最終設定を確認します",
-      reviewHint: "待機室を作る前に最後に設定を確認しましょうか",
+      reviewHint: "おすすめの値を入れました。変えたい項目だけタップしてください",
       participantsHint: "最低2人からゲームの進行が可能です",
       noShareWarning: "泥棒の位置が公開されません！",
       policePrefix: "泥棒スタートから",
@@ -1408,10 +1508,9 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       waiting: {
         id: "waiting",
         title: "待機室",
-        intro: "スタート前に集まる部屋です。チームはいつでも変えられます。",
+        intro: "スタート前に集まる部屋です。ホストが始めるまでチームを変えられます。",
         tasks: [
           { id: "waiting-team", label: "警察チームの交代スロットをタップ" },
-          { id: "waiting-ready", label: "「準備完了」をタップ" },
         ],
       },
       ingame: {
@@ -1466,21 +1565,24 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       },
       createBasic: {
         id: "createBasic",
-        title: "基本情報",
-        intro: "キーパッドで1つずつ決めます。上のチップで素早く足せます。",
-        tasks: [{ id: "create-basic", label: "4項目を埋めて「完了する」をタップ" }],
+        title: "設定を直す",
+        intro: "キーパッドで数字を変えます。上のチップで素早く足せます。",
+        tasks: [],
       },
       createConfirm: {
         id: "createConfirm",
         title: "最終確認",
-        intro: "設定がひと目で見えます。行をタップすると直しに行けます。",
-        tasks: [{ id: "create-confirm", label: "「待機室を作る」をタップ" }],
+        intro: "おすすめの値が入っています。変えたい行だけタップすればOKです。",
+        tasks: [
+          { id: "create-shrink", label: "「エリア縮小」をオンにする" },
+          { id: "create-confirm", label: "「待機室を作る」をタップ" },
+        ],
       },
       hostWaiting: {
         id: "hostWaiting",
         title: "ホストの待機室",
-        intro: "友だちが入ってきています。全員準備できたら始められます。",
-        tasks: [{ id: "host-start", label: "全員準備できたら「ゲーム開始」をタップ" }],
+        intro: "友だちが入ってきています。警察と泥棒が1人ずついれば始められます。",
+        tasks: [{ id: "host-start", label: "「ゲーム開始」をタップして両チームの人数を確認" }],
       },
       homeCommunity: {
         id: "homeCommunity",
@@ -1509,15 +1611,15 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
       waitingRobber: {
         id: "waitingRobber",
         title: "待機室",
-        intro: "今回は泥棒です。このまま準備すればOKです。",
-        tasks: [{ id: "waiting-robber-ready", label: "「準備完了」をタップ" }],
+        intro: "今回は泥棒です。もうすぐホストがゲームを始めます。",
+        tasks: [],
       },
       ingameRobber: {
         id: "ingameRobber",
         title: "逃走戦",
         intro: "まもなく警察が出発します。自分の位置は定期的に足あとで公開されます。",
         tasks: [
-          { id: "robber-qr", label: "指名手配QRを開いて確認" },
+          { id: "robber-qr", label: "真ん中のメニューから「マイQR」を開く" },
           { id: "robber-ping", label: "地図を長押しして警察の位置にピンを残す" },
           { id: "robber-chat", label: "チャットでチームに状況を共有" },
         ],
@@ -1539,7 +1641,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         },
         steps: [
           { label: "友だちの部屋に入る", short: "入室", scenes: ["home", "join"] },
-          { label: "チームを決めて準備", short: "準備", scenes: ["waiting"] },
+          { label: "警察チームに移る", short: "チーム", scenes: ["waiting"] },
           { label: "足あとを追って泥棒を追跡", short: "追跡", scenes: ["ingame"] },
           { label: "逮捕して記録カードをもらう", short: "逮捕", scenes: ["victory"] },
         ],
@@ -1554,7 +1656,7 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         },
         steps: [
           { label: "友だちの部屋に入る", short: "入室", scenes: ["home", "join"] },
-          { label: "泥棒チームで準備", short: "準備", scenes: ["waitingRobber"] },
+          { label: "泥棒チームで開始を待つ", short: "待機室", scenes: ["waitingRobber"] },
           { label: "足あとを隠しながら逃げる", short: "逃走", scenes: ["ingameRobber"] },
           { label: "最後まで生き残って勝利", short: "生存", scenes: ["victoryRobber"] },
         ],
@@ -1570,8 +1672,8 @@ export const DEMO_COPY: Record<Locale, DemoCopy> = {
         steps: [
           { label: "部屋づくりを始める", short: "ホーム", scenes: ["homeCreate"] },
           { label: "エリアと牢屋を描く", short: "エリア", scenes: ["createZone", "createJail"] },
-          { label: "ゲームのルールを決める", short: "設定", scenes: ["createBasic", "createConfirm"] },
-          { label: "友だちを集めてスタート", short: "開始", scenes: ["hostWaiting"] },
+          { label: "設定を確かめてエリア縮小をオン", short: "設定", scenes: ["createConfirm", "createBasic"] },
+          { label: "両チームがそろったらスタート", short: "開始", scenes: ["hostWaiting"] },
         ],
         finish: "ingame",
       },

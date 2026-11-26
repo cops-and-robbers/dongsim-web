@@ -6,7 +6,7 @@ import { SITE_URL } from "@/lib/constants";
 export const metadata: Metadata = {
   title: "경찰과 도둑 하는 법 - 규칙과 게임 소개",
   description:
-    "경찰과 도둑(경도) 하는 법을 팀 나누기부터 감옥 탈출, 승리 조건까지 정리했어요. GPS와 실시간 지도가 진행을 맡는 위치 기반 술래잡기 앱도 함께 소개해요.",
+    "경찰과 도둑(경도) 하는 법을 팀 나누기와 감옥 탈출, 승리 조건 순서로 정리했어요. 좁아지는 구역과 발자국, QR 체포 같은 앱 기능도 실제 화면으로 보여 줘요.",
   keywords: [
     "경찰과 도둑 게임",
     "경도 게임 방법",
@@ -16,6 +16,8 @@ export const metadata: Metadata = {
     "발자국 추적 게임",
     "QR 체포",
     "구역 그리기",
+    "구역 축소",
+    "팀 MVP",
     "팀 채팅 게임",
     "야외 모바일 게임",
     "공원 게임 앱",
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "경찰과 도둑 하는 법 - 규칙과 게임 소개",
     description:
-      "구역 그리기, 발자국 추적, QR 체포, 팀 채팅. 술래잡기에 필요한 모든 게 앱 하나에 담겨 있어요.",
+      "어릴 때 하던 경찰과 도둑 그대로 뛰면 되고, 판단은 앱이 도와줘요.",
     url: "/game",
     type: "article",
     locale: "ko_KR",

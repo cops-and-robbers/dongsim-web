@@ -1,10 +1,10 @@
 {
   "title": "Location Data Terms",
-  "effectiveDate": "October 30, 2026",
+  "effectiveDate": "November 30, 2026",
   "sections": [
     {
       "heading": "",
-      "content": "Cops and Robbers Location Data Terms\nEffective date: October 30, 2026",
+      "content": "Cops and Robbers Location Data Terms\nEffective date: November 30, 2026",
       "items": []
     },
     {
@@ -97,7 +97,7 @@
       "content": "1. For the community location-based services in Article 3, Paragraph 1, f and g, the Company uses personal location data as follows. This takes place temporarily, while the app is on screen (foreground), at the moment the user uses the feature, and never in the background.",
       "items": [
         {
-          "text": "a. Writing a recruitment post: the meetup coordinates the user picks on the map are converted into an administrative-district and lot-number address shown on the post. For the conversion, coordinates within Korea are sent to the VWorld open spatial-data platform operated by the Korean Ministry of Land, Infrastructure and Transport, and coordinates outside Korea are sent to the address-conversion API of Geoapify (operated by KEPTAGO LTD, Cyprus).",
+          "text": "a. Writing a recruitment post: the meetup coordinates the user picks on the map are converted into an administrative-district and lot-number address shown on the post. For the conversion, the coordinates are sent to the VWorld open spatial-data platform operated by the Korean Ministry of Land, Infrastructure and Transport, or to the address-conversion API of Geoapify (operated by KEPTAGO LTD, Cyprus).",
           "subItems": []
         },
         {
@@ -106,6 +106,10 @@
         },
         {
           "text": "2. The location shown on a post is a meetup place the user chose for the post, not the user's real-time location. Posts containing a meetup location may, under the Terms of Service, be visible to users who are not signed in and on the Company's website.",
+          "subItems": []
+        },
+        {
+          "text": "3. To operate the service, the Company may also convert the coordinates of a game area chosen by the user into an address in the same way as in paragraph 1(a).",
           "subItems": []
         }
       ]
@@ -328,7 +332,7 @@
           "subItems": []
         },
         {
-          "text": "Address: __",
+          "text": "Address: Room 304B, Student Union Building, 114 Gunja-ro, Gwangjin-gu, Seoul, Republic of Korea",
           "subItems": []
         },
         {
@@ -361,7 +365,7 @@
     },
     {
       "heading": "Supplementary Provisions",
-      "content": "These Terms take effect on May 19, 2026.\n\nThese amended Terms (adding the community location-based services, the new Article 4-2, and adjusting the compensation and disclaimer standards) take effect on September 8, 2026.\n\nThese amended Terms (adding the game record storage service and adjusting the retention standards for personal location data) take effect on October 23, 2026.\n\nThese amended Terms (deletion of member numbers and replacement of nicknames in game records on withdrawal) take effect on October 30, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
+      "content": "These Terms take effect on May 19, 2026.\n\nThese amended Terms (adding the community location-based services, the new Article 4-2, and adjusting the compensation and disclaimer standards) take effect on September 8, 2026.\n\nThese amended Terms (adding the game record storage service and adjusting the retention standards for personal location data) take effect on October 23, 2026.\n\nThese amended Terms (deletion of member numbers and replacement of nicknames in game records on withdrawal) take effect on October 30, 2026.\n\nThese amended Terms (adding the conversion of game area coordinates into addresses, and stating the Company's address) take effect on November 30, 2026.\n\nThe Korean text of these Terms is the original. The English version is a translation provided for reference. In the event of any discrepancy in interpretation between the English and Korean versions, the Korean version prevails. This does not apply to the provisions for users outside the Republic of Korea, which are set out in the English version in order to address the laws of other countries and apply to such users regardless of that principle.",
       "items": []
     }
   ]

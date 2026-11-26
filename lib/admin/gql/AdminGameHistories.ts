@@ -17,6 +17,7 @@ export const AdminGameHistoriesQuery = graphql`
       content {
         id
         gameId
+        roundNumber
         winnerTeam
         endReason
         totalPoliceCount
@@ -26,7 +27,10 @@ export const AdminGameHistoriesQuery = graphql`
         durationSeconds
         areaType
         createdAt
+        startedAt
         endedAt
+        isEventGame
+        hostUserId
         participants {
           userId
           nickname

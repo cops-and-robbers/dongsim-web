@@ -121,7 +121,8 @@ const readSource = async (): Promise<Source> => {
   return { records, people };
 };
 
-const cachedSource = unstable_cache(readSource, ["company-profile-source"], { tags: [COMPANY_TAG], revalidate: 300 });
+// 저장하면 바로 버리니(expireSite) 시간 주기는 놓쳤을 때를 위한 것이다. 짧으면 팀 페이지도 그만큼 자주 다시 만들어진다(#335)
+const cachedSource = unstable_cache(readSource, ["company-profile-source"], { tags: [COMPANY_TAG], revalidate: 3600 });
 
 async function source(): Promise<Source> {
   const isDev = process.env.NODE_ENV !== "production";

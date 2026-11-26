@@ -33,7 +33,7 @@ function Tabs<T extends string>({ value, onChange, items, label }: { value: T; o
         const on = it.value === value;
         return (
           <button key={it.value} type="button" role="tab" aria-selected={on} onClick={() => onChange(it.value)} className={`relative rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors ${on ? "text-sd-fg" : "text-sd-fg-subtle hover:text-sd-fg-muted"}`}>
-            {on && <motion.span layoutId={gid} className="absolute inset-0 rounded-lg bg-sd-surface shadow-sm" transition={{ type: "spring", stiffness: 400, damping: 32 }} />}
+            {on && <motion.span layoutId={gid} className="pointer-events-none absolute inset-0 rounded-lg bg-sd-surface shadow-sm" transition={{ type: "spring", stiffness: 400, damping: 32 }} />}
             <span className="relative z-10 inline-flex items-center gap-1.5">
               {it.label}
               {!!it.count && <span className="min-w-4 rounded-full bg-accent px-1 text-center text-[11px] font-bold tabular-nums leading-4 text-accent-fg">{it.count}</span>}

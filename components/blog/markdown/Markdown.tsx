@@ -12,6 +12,7 @@ import rehypeHighlight from "rehype-highlight";
 import { remarkCallout } from "./remark-callout";
 import { remarkToggle } from "./remark-toggle";
 import { remarkHighlight } from "./remark-highlight";
+import { remarkParagraphs, separateBlocks } from "./remark-paragraphs";
 import { CodeBlock } from "./CodeBlock";
 /*
   파서는 YouTube.tsx 가 아니라 순수 함수 파일에서 직접 가져온다.
@@ -42,7 +43,10 @@ function textOf(node?: HastNode): string {
  * 노션이 내는 <br> 만 하드 브레이크로 되살린다.
  */
 export function Markdown({ children }: { children: string }) {
-  const normalized = children.replace(/<br\s*\/?>\n?/gi, "  \n");
+  // 목록 뒤 블록·구분선 떼기(#349)는 하드 브레이크를 보고 판단하므로 <br> 을 바꾼 다음에 한다
+  const normalized = separateBlocks(
+    children.replace(/<br\s*\/?>\n?/gi, "  \n"),
+  );
 
   // 같은 제목이 두 번 나와도 앵커 id 가 겹치지 않게 이 렌더 안에서만 센다
   const seen = new Map<string, number>();
@@ -334,6 +338,8 @@ export function Markdown({ children }: { children: string }) {
         remarkGfm,
         remarkCjkFriendly,
         remarkCjkFriendlyGfmStrikethrough,
+        // 노션 블록 경계(줄바꿈 한 번)를 문단으로 - 형광펜·콜아웃·토글보다 먼저 (#349)
+        remarkParagraphs,
         remarkHighlight,
         remarkCallout,
         remarkToggle,

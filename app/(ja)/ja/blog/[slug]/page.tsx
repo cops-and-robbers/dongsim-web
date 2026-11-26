@@ -4,7 +4,8 @@ import { getPost, getPosts } from "@/lib/blog/store";
 import { getMessages } from "@/lib/i18n/messages";
 import { SITE_URL } from "@/lib/constants";
 
-export const revalidate = 300;
+// 동기화가 고친 글을 바로 버린다. 주기는 놓쳤을 때를 위한 것(#335)
+export const revalidate = 3600;
 
 // DB 가 잠깐 죽었다고 배포가 실패하면 안 된다. 빠진 글은 첫 요청 때 만들어진다
 export async function generateStaticParams() {

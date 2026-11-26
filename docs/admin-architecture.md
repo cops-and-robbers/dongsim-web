@@ -49,7 +49,7 @@
 
 ## 폴더 지도
 
-- `lib/admin/gql/` - Relay 쿼리·뮤테이션 정의 (`UpdateEventGame` 은 BE #214, `AdminUserGameHistories` 는 BE #227. 운영 서버 배포 전엔 화면이 따로 알린다)
+- `lib/admin/gql/` - Relay 쿼리·뮤테이션 정의 (`UpdateEventGame` 은 BE #214, `AdminUserGameHistories` 는 BE #227, 무전과 동네 이름(`*Radio`, `*PlaceName`)은 BE #239·#241. 운영 서버 배포 전엔 `lib/admin/useOptionalQuery.ts` 로 따로 읽어 화면이 깨지지 않는다)
 - `lib/relay/environment.ts` - 네트워크 계층, 목/실서버 라우팅
 - `lib/admin/auth/` - 로그인·토큰·세션
 - `lib/admin/notices/api.ts` - 공지 REST 클라이언트

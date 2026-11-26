@@ -90,6 +90,7 @@ function Overview() {
   const liveValues: LiveValues = {
     weeklyGames: d.weeklyGameCount,
     win: { police: d.winRateByTeam.policeWinRate, robber: d.winRateByTeam.robberWinRate },
+    avgGameSeconds: d.averageGameDurationSeconds,
     ends: [...d.endReasonDistribution],
     games: games.adminGames.content.map((g) => ({ id: g.id, inviteCode: g.inviteCode, status: g.status, participantCount: g.participantCount, maxParticipants: g.maxParticipants })),
     pending: counts,

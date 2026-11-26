@@ -1,8 +1,12 @@
 /**
  * 행사 설정을 저장소에서 읽고 쓴다 (#219). 서버 전용이다.
  *
- * 포토부스, 홈 팝업, /event, 홈 미니게임 칸이 요청마다 "지금 행사"를 고른다. 같은 값을 30초 동안 나눠 쓰고,
- * 어드민이 저장하면 바로 버린다(EVENT_TAG). 저장소를 못 읽으면 마지막으로 코드에 있던 행사 값으로 돈다.
+ * 포토부스, 홈 팝업, /event, 홈 미니게임 칸이 요청마다 "지금 행사"를 고른다. 같은 값을 5분 동안 나눠 쓰고,
+ * 어드민이 행사 설정이나 일정(행사 날)을 저장하면 바로 버린다(EVENT_TAG). 저장소를 못 읽으면 마지막으로 코드에 있던 행사 값으로 돈다.
+ *
+ * 이 캐시 주기가 홈 페이지의 다시 그리는 주기보다 짧으면 홈이 그 주기로 다시 만들어진다(Next 가 짧은 쪽을 쓴다).
+ * 30초였을 때 홈이 30초마다 다시 만들어져 Vercel CPU 를 썼다(#335). "지금 행사" 고르기는 캐시 밖에서 하니
+ * 기간이 시작하고 끝나는 시점은 이 주기와 상관없다.
  */
 import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/lib/metrics/db";
@@ -52,8 +56,11 @@ async function readMinigame(): Promise<HomeMinigame> {
   return v && isKstTime(v.from) && isKstTime(v.until) ? { from: v.from, until: v.until } : null;
 }
 
-const cachedConfigured = unstable_cache(readConfigured, ["event-settings-all"], { tags: [EVENT_TAG], revalidate: 30 });
-const cachedMinigame = unstable_cache(readMinigame, ["event-home-minigame"], { tags: [EVENT_TAG], revalidate: 30 });
+const cachedConfigured = unstable_cache(readConfigured, ["event-settings-all"], { tags: [EVENT_TAG], revalidate: 300 });
+const cachedMinigame = unstable_cache(readMinigame, ["event-home-minigame"], { tags: [EVENT_TAG], revalidate: 300 });
+
+/** 행사 값을 읽는 캐시와 그 값을 쓴 페이지(홈 등)를 버린다. 행사 설정 말고 일정(행사 날)을 바꿀 때도 부른다 */
+export const expireEvents = () => revalidateTag(EVENT_TAG, { expire: 0 });
 
 /** 저장소가 멈춰도 화면은 서야 한다. 못 읽으면 null */
 async function configuredOrNull(): Promise<Configured[] | null> {

@@ -70,7 +70,14 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
 
     const root = document.documentElement;
     const isDark = team === "robber";
+    // 색 전환을 끈 채로 한 번에 바꾸고, 새 색이 칠해진 뒤 다시 켠다(globals.css .theme-switching)
+    root.classList.add("theme-switching");
     root.classList.toggle("dark", isDark);
+    void getComputedStyle(root).backgroundColor;
+    const done = () => root.classList.remove("theme-switching");
+    const raf = requestAnimationFrame(() => requestAnimationFrame(done));
+    // 화면 갱신이 멈춘 탭(숨은 창)에서도 전환이 꺼진 채 남지 않게 타이머로 받친다
+    const timer = window.setTimeout(done, 150);
 
     const metaThemeColor = document.querySelector<HTMLMetaElement>(
       'meta[name="theme-color"]'
@@ -81,6 +88,11 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
 
     // 파비콘도 같은 토글에 맞춰 교체(첫 마운트는 위에서 걸러져 인라인 값 유지)
     applyFavicon(isDark);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+      done();
+    };
   }, [team]);
 
   return (

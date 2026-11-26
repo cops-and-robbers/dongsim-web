@@ -1,198 +1,99 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { useLazyLoadQuery } from "react-relay";
-import type { AdminGames } from "@/__generated__/AdminGames.graphql";
-import { AdminGamesQuery } from "@/lib/admin/gql/AdminGames";
-import {
-  PageHeader,
-  Card,
-  Pagination,
-  EmptyBlock,
-  TableSkeleton,
-  ListPage,
-} from "@/components/admin/Parts";
-import { Table, Th, Tr, Td } from "@/components/admin/Table";
-import { GameStatusBadge, Pill } from "@/components/admin/StatusBadge";
-import { SegmentedControl } from "@/components/admin/SegmentedControl";
-import { GameTabs } from "@/components/admin/GameTabs";
-import { RecentMenu } from "@/components/admin/RecentViewed";
-import { Button } from "@/components/admin/Button";
-import { InviteCode } from "@/components/admin/InviteCode";
+import { useCallback, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { GameEndReason } from "@/__generated__/AdminGameHistories.graphql";
 import QueryBoundary from "@/components/admin/QueryBoundary";
-import { formatDate } from "@/lib/admin/format";
+import { GAME_FILTERS, GameList, type GameTab } from "@/components/admin/games/GameList";
+import { HistoryPanel } from "@/components/admin/games/HistoryPanel";
+import { GamesTable } from "@/components/admin/games/GamesTable";
+import { useListView } from "@/components/admin/ListViewProvider";
+import { RoomPanel } from "@/components/admin/games/RoomPanel";
+import { DetailState, PanelSkeleton, setSameScreenUrl } from "@/components/admin/split/SplitParts";
+import { SplitView } from "@/components/admin/split/SplitView";
 import { useLiveRefresh } from "@/lib/admin/useLiveRefresh";
-import { useClampPage, useListParams, useListScroll } from "@/lib/admin/useListParams";
+import { useLiveRooms } from "@/lib/admin/useLiveRooms";
 
-// 게임은 끝나도 FINISHED로 남지 않고 다시 WAITING이 되며, 방이 비면 삭제된다.
-// 그래서 조회되는 상태는 대기중·진행중 둘뿐이다. 지난 게임은 '지난 게임' 화면에서 본다.
-type StatusFilter = "" | "WAITING" | "IN_PROGRESS";
-const PAGE_SIZE = 20;
-
-const PARAMS = { status: ["", "WAITING", "IN_PROGRESS"], dir: ["DESC", "ASC"] } as const;
-
+// 게임 (#315, docs/admin-ui.md "유저와 게임 두 칸 화면"). 끝난 판과 지금 방을 두 탭으로 보고 오른쪽에서 연다(#323).
+// 탭, 거르기, 고른 방과 판을 주소(?tab=, ?f=, ?room=, ?h=)에 남겨 새로 고치거나 링크로 보내도 같은 화면이 열린다.
 export default function GamesPage() {
-  const { current, shown, dim, set } = useListParams(PARAMS);
-  const [fetchKey, setFetchKey] = useState(0);
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const f = params.get("f");
+  const filter = (GAME_FILTERS.some((x) => x.value === f) ? f : "") as GameEndReason | "";
+  const room = params.get("room");
+  const history = room ? null : params.get("h");
+  // 탭을 적지 않은 방 링크(유저 상세의 "○○ 방에서 게임 중")는 방이 보이는 지금 방 탭으로 연다
+  const t = params.get("tab");
+  const tab: GameTab = t === "rooms" || (t === null && room) ? "rooms" : "done";
 
-  return (
-    <ListPage>
-      <PageHeader title="게임" description="지금 열려 있는 게임 방이에요. 화면을 보고 있는 동안 30초마다 목록을 새로 불러와요." />
-
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <GameTabs />
-        <SegmentedControl<StatusFilter>
-          value={current.status}
-          onChange={(v) => set({ status: v })}
-          options={[
-            { label: "전체", value: "" },
-            { label: "대기중", value: "WAITING" },
-            { label: "진행중", value: "IN_PROGRESS" },
-          ]}
-        />
-        <SegmentedControl<"DESC" | "ASC">
-          value={current.dir}
-          onChange={(v) => set({ dir: v })}
-          options={[
-            { label: "최신순", value: "DESC" },
-            { label: "오래된순", value: "ASC" },
-          ]}
-        />
-        <RecentMenu group="game" />
-      </div>
-
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <QueryBoundary
-          pending={<TableSkeleton />}
-          onRetry={() => setFetchKey((k) => k + 1)}
-        >
-          <GamesResults
-            variables={{
-              page: shown.page,
-              size: PAGE_SIZE,
-              status: shown.status || undefined,
-              sortDirection: shown.dir,
-            }}
-            fetchKey={fetchKey}
-            dim={dim}
-            onPage={(page) => set({ page })}
-            emptyAction={
-              shown.status !== "" ? (
-                <Button
-                  variant="neutral"
-                  size="sm"
-                  onClick={() => set({ status: "", dir: "DESC", page: 0 })}
-                >
-                  필터 초기화
-                </Button>
-              ) : undefined
-            }
-          />
-        </QueryBoundary>
-      </Card>
-    </ListPage>
+  const hrefWith = useCallback(
+    (patch: Record<string, string | null>) => {
+      const next = new URLSearchParams(params.toString());
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === null || v === "") next.delete(k);
+        else next.set(k, v);
+      }
+      const q = next.toString();
+      return q ? `${pathname}?${q}` : pathname;
+    },
+    [params, pathname],
   );
-}
 
-function GamesResults({
-  variables,
-  fetchKey,
-  dim,
-  onPage,
-  emptyAction,
-}: {
-  variables: AdminGames["variables"];
-  fetchKey: number;
-  dim: boolean;
-  onPage: (p: number) => void;
-  emptyAction?: ReactNode;
-}) {
-  // 방 상태는 앱에서 바뀐다. 보던 목록은 그대로 두고 뒤에서 새로 받아 바꾼다(lib/admin/useLiveRefresh.ts)
+  // 방 상태는 앱에서 바뀌어 화면을 보는 동안 30초마다 새로 받는다(lib/admin/useLiveRefresh.ts). 끝난 판 첫 쪽도 같은 차례에 다시 읽어 새 판을 붙인다
   const live = useLiveRefresh();
-  const data = useLazyLoadQuery<AdminGames>(AdminGamesQuery, variables, {
-    fetchKey: `${fetchKey}-${live}`,
-    fetchPolicy: "store-and-network",
-  });
-  const pageData = data.adminGames;
-  const scrollRef = useListScroll();
-  const over = useClampPage(pageData, onPage);
+  const rooms = useLiveRooms(live);
+  const userHref = (userId: string) => `/admin/users?u=${userId}`;
 
-  if (over) return null;
-
-  if (pageData.content.length === 0) {
-    const filtered = variables.status != null;
-    return (
-      <div className="flex min-h-0 flex-1 items-center justify-center">
-        <EmptyBlock
-          title={filtered ? "조건에 맞는 방이 없어요" : "열려 있는 방이 없어요"}
-          description={
-            filtered
-              ? "필터를 바꾸거나 초기화해 보세요."
-              : "새 게임 방이 만들어지면 여기에 표시돼요."
-          }
-          action={emptyAction}
-        />
-      </div>
-    );
-  }
+  // 표로 보기를 고른 사람은 표로 본다(docs/admin-ui.md "목록 보기 고르기"). 다른 화면의 "이 방 보기"(?room=, ?h=)로
+  // 들어오면 표에는 옆 칸이 없으니 그 방이나 판을 전체 화면으로 연다
+  const { view } = useListView();
+  const router = useRouter();
+  const full = view !== "table" ? null : room ? `/admin/games/${room}` : history ? `/admin/games/history/${history}` : null;
+  useEffect(() => {
+    if (full) router.replace(full);
+  }, [full, router]);
+  if (full) return null;
+  if (view === "table") return <GamesTable rooms={rooms.rooms} roomsReady={rooms.status !== "loading"} refreshKey={live} />;
 
   return (
-    <div
-      className={`flex min-h-0 flex-1 flex-col transition-opacity ${dim ? "pointer-events-none opacity-50" : ""}`}
-    >
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
-      <Table
-        sticky
-        head={
-          <>
-            <Th>초대코드</Th>
-            <Th>상태</Th>
-            <Th>인원</Th>
-            <Th>라운드</Th>
-            <Th>구분</Th>
-            <Th className="text-right">생성일</Th>
-          </>
-        }
-      >
-        {pageData.content.map((g, i) => (
-          <Tr key={g.id} index={i} href={`/admin/games/${g.id}`}>
-            <Td>
-              <InviteCode code={g.inviteCode} gameId={g.id} />
-            </Td>
-            <Td>
-              <GameStatusBadge status={g.status} />
-            </Td>
-            <Td className="tabular-nums text-sd-fg-subtle">
-              {g.participantCount}
-              <span className="text-sd-disabled">
-                /{g.maxParticipants}
-              </span>
-            </Td>
-            <Td className="text-sd-fg-subtle">
-              {g.roundDurationMinutes}분
-            </Td>
-            <Td>
-              {g.isEventGame ? (
-                <Pill tone="slate">이벤트</Pill>
-              ) : (
-                <span className="text-sd-disabled">일반</span>
-              )}
-            </Td>
-            <Td className="text-right text-sd-fg-subtle">
-              {formatDate(g.createdAt)}
-            </Td>
-          </Tr>
-        ))}
-      </Table>
-      </div>
-
-      <Pagination
-        page={pageData.page}
-        totalPages={pageData.totalPages}
-        totalElements={pageData.totalElements}
-        size={pageData.size}
-        onPage={onPage}
-      />
-    </div>
+    <SplitView
+      listLabel="게임 목록"
+      detailLabel="게임 상세"
+      selectionKey={room ? `room-${room}` : history ? `h-${history}` : null}
+      closeHref={hrefWith({ room: null, h: null })}
+      list={
+        <GameList
+          tab={tab}
+          // 탭과 거르기는 서버를 다녀오지 않고 주소만 바꿔 누르는 즉시 바뀐다(#325)
+          onTab={(v) => setSameScreenUrl(hrefWith({ tab: v === "rooms" ? "rooms" : room ? "done" : null }))}
+          filter={filter}
+          onFilter={(v) => setSameScreenUrl(hrefWith({ f: v || null }))}
+          rooms={rooms.rooms}
+          roomsReady={rooms.status !== "loading"}
+          syncedAt={rooms.syncedAt}
+          refreshKey={live}
+          selected={{ room, history }}
+          roomHref={(id) => hrefWith({ room: id, h: null })}
+          historyHref={(id) => hrefWith({ h: id, room: null })}
+        />
+      }
+      detail={
+        room ? (
+          <QueryBoundary key={`room-${room}`} pending={<PanelSkeleton />}>
+            <RoomPanel id={room} userHref={userHref} />
+          </QueryBoundary>
+        ) : history ? (
+          <QueryBoundary key={`h-${history}`} pending={<PanelSkeleton />}>
+            <HistoryPanel id={history} userHref={userHref} />
+          </QueryBoundary>
+        ) : (
+          <DetailState
+            title={tab === "rooms" ? "왼쪽에서 방을 골라 주세요" : "왼쪽에서 판을 골라 주세요"}
+            body={tab === "rooms" ? "게임 중인 방이 위에, 대기 중인 방이 아래에 있어요." : "끝난 판은 날짜별로 이어져요. 지금 열린 방은 \"지금 방\"에 있어요."}
+          />
+        )
+      }
+    />
   );
 }

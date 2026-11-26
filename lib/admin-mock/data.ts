@@ -34,6 +34,8 @@ export interface MockUser {
   allowMarketingPush: boolean;
   createdAt: string;
   device: MockDevice | null;
+  // 지금까지 쓴 무전 시간(초, BE #239). 경찰을 안 해 봤거나 무전을 안 쓴 사람은 0
+  radioSeconds: number;
 }
 
 export interface MockLatLng {
@@ -51,6 +53,8 @@ export interface MockArea {
   jailRadiusInMeters: number | null;
   playgroundPolygon: MockLatLng[] | null;
   jailPolygon: MockLatLng[] | null;
+  // 동네 이름(BE #241). 아직 못 찾았거나 주소가 없으면 null
+  placeName?: string | null;
 }
 
 export interface MockResult {
@@ -154,11 +158,11 @@ const NOUN = [
 
 const SOCIALS: readonly SocialType[] = ["KAKAO", "GOOGLE", "APPLE"];
 const PARKS = [
-  { lat: 36.1194, lng: 128.1074, region: "김천 직지문화공원" },
-  { lat: 37.5445, lng: 127.0374, region: "서울 성수" },
-  { lat: 37.5202, lng: 127.1216, region: "서울 잠실" },
-  { lat: 37.5301, lng: 127.0668, region: "서울 뚝섬" },
-  { lat: 35.1687, lng: 129.0596, region: "부산시민공원" },
+  { lat: 36.1194, lng: 128.1074, region: "김천 직지문화공원", placeName: "경상북도 김천시 교동" },
+  { lat: 37.5445, lng: 127.0374, region: "서울 성수", placeName: "서울특별시 성동구 성수동1가" },
+  { lat: 37.5202, lng: 127.1216, region: "서울 잠실", placeName: "서울특별시 송파구 방이동" },
+  { lat: 37.5301, lng: 127.0668, region: "서울 뚝섬", placeName: "서울특별시 광진구 자양동" },
+  { lat: 35.1687, lng: 129.0596, region: "부산시민공원", placeName: "부산광역시 부산진구 범전동" },
 ] as const;
 
 const N_USERS = 137;
@@ -197,6 +201,8 @@ export const users: MockUser[] = Array.from({ length: N_USERS }, (_, i) => {
     device: hasDevice
       ? { deviceType: chance(0.55) ? "IOS" : "ANDROID", createdAt }
       : null,
+    // 다른 목 값이 바뀌지 않게 난수 대신 번호로 정한다. 셋 중 하나는 안 썼고, 나머지는 몇 분에서 두 시간 남짓
+    radioSeconds: i % 3 === 0 ? 0 : ((i * 7919) % 8000) + 30,
   };
 });
 
@@ -299,6 +305,9 @@ for (let i = 0; i < N_GAMES; i++) {
     }
   }
 
+  // 여섯 방에 하나는 동네 이름을 아직 못 찾은 곳으로 둔다(BE 는 한 번에 5곳까지만 찾는다)
+  if (area) area.placeName = (i + 1) % 6 === 0 ? null : park.placeName;
+
   // 참가자 구성
   const count = Math.min(maxParticipants, range(2, Math.max(2, maxParticipants)));
   const chosen = new Set<number>();
@@ -368,6 +377,24 @@ for (let i = 0; i < N_GAMES; i++) {
           Math.floor(result!.totalRobberCount * rand())
         ),
         durationSeconds: roundDurationMinutes * 60 - range(0, 300),
+        roundNumber: r,
+        endedAt: createdAt,
+      });
+    }
+  }
+
+  // 판이 끝나면 방은 다시 대기 중이 된다. 대기 중 방 셋 중 하나는 이미 몇 판 한 방으로 둔다(#323 "3판 하고 대기").
+  // 난수를 더 쓰면 뒤의 목 데이터가 모두 바뀌어서 번호로만 정한다
+  if (status === "WAITING" && i % 3 === 1) {
+    const played = (i % 4) + 1;
+    for (let r = 1; r <= played; r += 1) {
+      results.push({
+        winnerTeam: r % 2 ? "POLICE" : "ROBBER",
+        endReason: END_REASONS[r % END_REASONS.length],
+        totalPoliceCount: 2,
+        totalRobberCount: 3,
+        arrestedRobberCount: r % 4,
+        durationSeconds: roundDurationMinutes * 60 - 60 * r,
         roundNumber: r,
         endedAt: createdAt,
       });
@@ -520,6 +547,8 @@ export function queryGames(args: {
     isEventGame: g.isEventGame,
     participantCount: participants.filter((p) => p.gameId === g.id).length,
     createdAt: g.createdAt,
+    placeName: g.area?.placeName ?? null,
+    roundNumber: g.results.length + (g.status === "IN_PROGRESS" ? 1 : 0),
   }));
 
   return paginate(summaries, page, size);

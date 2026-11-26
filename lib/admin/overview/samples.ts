@@ -26,6 +26,7 @@ export const SAMPLE_CARDS: Partial<Record<CardKey, CardResult>> = {
 export const SAMPLE_LIVE: LiveValues = {
   weeklyGames: 86,
   win: { police: 48, robber: 52 },
+  avgGameSeconds: 742,
   ends: [
     { endReason: "ALL_ARRESTED", count: 31 },
     { endReason: "TIME_OVER", count: 38 },

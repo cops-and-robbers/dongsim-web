@@ -9,7 +9,7 @@ import { Building, Bush, Buttons, Clock, Flower, Grass, Ground, Jail, Joystick, 
 // 숫자는 게임 값이다: 달리기 230, 전력 질주 경찰 322 도둑 316, 잡는 거리 74, 구출 2.2초, 위치 공개 35초마다.
 
 /** 대본의 동선: [초, x, y] 사이를 곧게 잇는다 */
-function path(t: number, keys: [number, number, number][]): { x: number; y: number } {
+export function path(t: number, keys: [number, number, number][]): { x: number; y: number } {
   if (t <= keys[0][0]) return { x: keys[0][1], y: keys[0][2] };
   for (let i = 1; i < keys.length; i++) {
     if (t <= keys[i][0]) {
@@ -20,23 +20,24 @@ function path(t: number, keys: [number, number, number][]): { x: number; y: numb
   const l = keys[keys.length - 1];
   return { x: l[1], y: l[2] };
 }
-const clock = (left: number) => `${Math.floor(Math.max(0, left) / 60)}:${String(Math.floor(Math.max(0, left) % 60)).padStart(2, "0")}`;
+export const clock = (left: number) => `${Math.floor(Math.max(0, left) / 60)}:${String(Math.floor(Math.max(0, left) % 60)).padStart(2, "0")}`;
 
-type Box = [number, number, number, number, number];
+export type Box = [number, number, number, number, number];
 /** 지도 층: 바닥, 길, 풀, 꽃. 건물, 나무, 수풀은 캐릭터와 앞뒤를 가리도록 따로 쌓는다 */
-function mapOf(theme: Theme, roads: Road[], grass: number[][], flowers: number[][], extra?: React.ReactNode) {
+export function mapOf(theme: Theme, roads: Road[], grass: number[][], flowers: number[][], extra?: React.ReactNode) {
   return (
     <>
-      <Ground theme={theme} cam={[-300, -300]} roads={roads} />
+      {/* 바닥은 장면 범위(BOUNDS) 전체에 깐다. 카메라가 따라가다 바닥 밖이 하얗게 비어 보이지 않게 */}
+      <Ground theme={theme} cam={[-300, -300]} roads={roads} size={[BOUNDS[2] + 1200, BOUNDS[3] + 800]} />
       {extra}
       {grass.map(([x, y]) => <Grass key={`g${x}${y}`} theme={theme} x={x} y={y} />)}
       {flowers.map(([x, y, s]) => <Flower key={`f${x}${y}`} x={x} y={y} size={s} />)}
     </>
   );
 }
-const buildingSprites = (theme: Theme, bs: Box[]) =>
+export const buildingSprites = (theme: Theme, bs: Box[]) =>
   bs.map(([x, y, w, h, tone]) => ({ y: y + h, node: <Building theme={theme} x={x} y={y} w={w} h={h} tone={tone} door={1} ac={[0.55, 0.3]} /> }));
-const BOUNDS: [number, number, number, number] = [-300, -300, 2400, 1400];
+export const BOUNDS: [number, number, number, number] = [-300, -300, 2400, 1400];
 
 /** 대표 장면: 낮 동네. 경찰(나)이 길을 걷다 수풀에서 뛰쳐나온 도둑을 보고 쫓아가 잡는다 */
 export function ChaseScene() {

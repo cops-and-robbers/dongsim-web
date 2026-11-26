@@ -54,6 +54,21 @@ export type Rollout = { percent: number; day?: number; paused: boolean };
 /** Play 관리형 게시 대기열. 승인됐지만 아직 안 나간 것들 */
 export type PublishQueue = { release: string | null; listing: string[] };
 
+/**
+ * App Store 다음 버전의 "새로운 기능"(출시 노트) 칸. 출시 화면에서 바로 쓴다(docs/admin-ui.md "새로운 기능").
+ * 애플은 업데이트마다 이 칸이 언어마다 차 있어야 심사 제출을 받는다
+ */
+export type NotesPanel = {
+  version: string;
+  /** 지금 고칠 수 있는지. 심사에 냈거나 승인된 버전은 애플이 고치지 못하게 한다 */
+  editable: boolean;
+  /** 고칠 수 없는 까닭 */
+  locked?: string;
+  langs: { language: string; label: string; text: string; missing: boolean; noLocale: boolean }[];
+  /** 같은 버전의 Play 출시 노트(가져오기에 쓴다) */
+  suggestion?: { language: string; text: string }[];
+};
+
 export type Track =
   | {
       platform: Platform;
@@ -73,6 +88,8 @@ export type Track =
       queue?: PublishQueue;
       /** 어드민에서 바로 할 수 있는 조작(options.ts). 서버가 붙인다 */
       options?: Option[];
+      /** iOS 만. 진행 중인 버전의 새로운 기능 */
+      notes?: NotesPanel;
     }
   | { platform: Platform; ok: false; error: string; href: string };
 
@@ -115,9 +132,13 @@ export type IosVersion = {
   /** 단계적 출시를 켰을 때만. state: INACTIVE, ACTIVE, PAUSED, COMPLETE */
   phased: { id?: string; state: string; day: number; startDate?: string | null } | null;
 };
+/** 버전의 언어별 "새로운 기능". id 는 애플의 언어 칸(appStoreVersionLocalization). 그 언어 칸이 없으면 null */
+export type IosNote = { language: string; locale: string; id: string | null; text: string };
 export type IosRaw = {
   /** 새 것 먼저 */
   versions: IosVersion[];
+  /** 진행 중인 버전의 새로운 기능. 진행 중인 버전이 없거나 못 읽었으면 없다 */
+  notes?: { versionId: string; langs: IosNote[] } | null;
   /** 가장 최근에 올라온 빌드(버전에 안 붙은 것 포함) */
   latestBuild: IosBuild | null;
   /** 심사 제출 묶음. 새 것 먼저 */
@@ -406,7 +427,41 @@ export function iosTrack(raw: IosRaw, lookup: BoardInput["lookup"], now = Date.n
   const steps = [slot, build, submit, review, release, rollout, reach];
   const current = currentStep(steps);
   const track = { platform: "ios" as const, ok: true as const, live: liveOut, inflight: inflight ? { version: inflight.version, build: inflight.build?.number } : null, steps, current, rollout: rolloutOut };
-  return { ...track, status: statusOf(steps[current]), action: actionOf("ios", steps[current], track.inflight ?? liveOut, now) };
+  const notes = inflight && inflight !== rolling ? notesPanel(raw, inflight) : undefined;
+  return { ...track, status: statusOf(steps[current]), action: actionOf("ios", steps[current], track.inflight ?? liveOut, now), ...(notes ? { notes } : {}) };
+}
+
+/** 새로운 기능을 고칠 수 있는 버전 상태. 애플이 심사 전과 반려 뒤에만 받는다 */
+export const NOTES_EDITABLE = new Set(["PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED", "METADATA_REJECTED", "INVALID_BINARY"]);
+/** 출시 노트 언어. Play 출시 노트와 같은 세 언어이고, App Store 언어 칸 이름은 다르다 */
+export const NOTE_LOCALES = [
+  { language: "ko-KR", locale: "ko", label: "한국어" },
+  { language: "en-US", locale: "en-US", label: "영어" },
+  { language: "ja-JP", locale: "ja", label: "일본어" },
+];
+
+function notesPanel(raw: IosRaw, v: IosVersion): NotesPanel | undefined {
+  if (!raw.notes || raw.notes.versionId !== v.id) return undefined;
+  const editable = NOTES_EDITABLE.has(v.state);
+  const locked = editable
+    ? undefined
+    : IOS_APPROVED.has(v.state)
+      ? "승인된 버전이라 애플이 고치지 못하게 해요. 다음 버전에서 써요."
+      : "심사에 낸 뒤에는 고칠 수 없어요. 심사를 취소하면 다시 고칠 수 있어요.";
+  const langs = NOTE_LOCALES.map((l) => {
+    const n = raw.notes!.langs.find((x) => x.language === l.language);
+    const text = n?.text ?? "";
+    return { language: l.language, label: l.label, text, missing: !text.trim(), noLocale: !n?.id };
+  });
+  return { version: v.version, editable, ...(locked ? { locked } : {}), langs };
+}
+
+/** 같은 버전의 Play 출시 노트. App Store 새로운 기능을 쓸 때 가져올 수 있게 붙인다 */
+// 두 스토어는 같은 빌드 번호를 쓴다. 내부 테스트 출시 이름은 CI 가 붙인 것("1.1.31")이라 버전보다 빌드 번호로 먼저 찾는다
+export function playNotesFor(raw: AndroidRaw, version: string, build: string | undefined, iosByBuild: Map<string, string>): { language: string; text: string }[] | undefined {
+  const all = [...raw.production, ...raw.internal].filter((r) => r.notes?.some((x) => x.text.trim()));
+  const rel = (build ? all.find((r) => r.codes.map(String).includes(build)) : undefined) ?? all.find((r) => playVersion(r, iosByBuild) === version);
+  return rel?.notes?.filter((n) => n.text.trim());
 }
 
 // ---------- Android ----------
@@ -558,6 +613,12 @@ export function buildBoard(input: BoardInput): ReleaseBoard {
   const androidBuild = android.ok && android.inflight?.build;
   if (iosBuild && androidBuild && iosBuild !== androidBuild)
     notes.push({ tone: "idle", title: `두 스토어의 새 빌드 번호가 달라요 (iOS ${iosBuild}, Android ${androidBuild})`, reason: "두 스토어에 같은 코드가 나가는지 확인할 수 있어요" });
+
+  // App Store 새로운 기능 칸에 같은 버전의 Play 출시 노트를 붙인다(가져오기)
+  if (ios.ok && ios.notes && !isError(input.android) && !isError(input.ios)) {
+    const suggestion = playNotesFor(input.android, ios.notes.version, ios.inflight?.build, iosVersionsByBuild(input.ios));
+    if (suggestion?.length) ios.notes = { ...ios.notes, suggestion };
+  }
 
   const reach: Reach = input.lookup
     ? {

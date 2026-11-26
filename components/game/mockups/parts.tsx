@@ -46,12 +46,15 @@ export function ZoneCircle({
   top = "50%",
   filled = true,
   stroke = appColors.blue800,
+  smooth = false,
 }: {
   size: number;
   left?: string;
   top?: string;
   filled?: boolean;
   stroke?: string;
+  /** 크기·중심이 바뀔 때 부드럽게 옮긴다 (구역 축소) */
+  smooth?: boolean;
 }) {
   return (
     <span
@@ -63,6 +66,7 @@ export function ZoneCircle({
         top,
         backgroundColor: filled ? `${appColors.blue}29` : "transparent",
         borderColor: stroke,
+        transition: smooth ? "width 1.2s ease-in-out, height 1.2s ease-in-out, left 1.2s ease-in-out, top 1.2s ease-in-out" : undefined,
       }}
     />
   );
@@ -120,27 +124,46 @@ export function ChatInputField({ hint, dark }: { hint: string; dark: boolean }) 
   );
 }
 
-// 접힌 채팅 시트 - 인게임 화면 하단에 항상 붙어 있다 (chat_overlay.dart 최소 스냅).
-// 드래그 핸들 + 입력바 + 홈 인디케이터 영역까지가 한 덩어리다.
-export function CollapsedChatSheet({
-  hint,
-  dark,
-}: {
-  hint: string;
-  dark: boolean;
-}) {
-  return (
-    <div
-      className="shrink-0 rounded-t-[20px] shadow-[0_-8px_24px_rgba(15,23,42,0.35)]"
+// 인게임 지도 아래 버튼 줄 (4.0.1 game_page.dart): 왼쪽 내 위치, 가운데 + 메뉴
+// (game_fab_menu.dart: 원 56, 경찰 파랑 원 + 흰 + / 도둑 검정 원 + 초록 +),
+// 오른쪽 채팅. 좌우 버튼은 56 둥근 사각(radius 16, 아이콘 32)이고 bottom 은 38 + 세이프 34.
+// 지도 위에 겹쳐 그리므로 부모는 relative 여야 한다.
+export function MapBottomBar({ dark }: { dark: boolean }) {
+  const accent = dark ? appColors.green : appColors.blue;
+  const square = dark
+    ? { backgroundColor: appColors.black, boxShadow: "1px 1px 8px rgba(8,10,12,0.4)" }
+    : { backgroundColor: appColors.white, boxShadow: "1px 1px 8px rgba(8,10,12,0.1)" };
+  const icon = (src: string, color: string) => (
+    <span
+      className="block size-[32px]"
       style={{
-        backgroundColor: dark ? appColors.black900 : appColors.black100,
+        backgroundColor: color,
+        WebkitMask: `url(${src}) center / contain no-repeat`,
+        mask: `url(${src}) center / contain no-repeat`,
       }}
-    >
-      <SheetHandle dark={dark} />
-      <div className="px-[20px] pb-[8px]">
-        <ChatInputField hint={hint} dark={dark} />
-      </div>
-      <div className="h-[34px]" />
+    />
+  );
+  return (
+    <div className="pointer-events-none absolute inset-x-[20px] bottom-[72px] flex items-center justify-between">
+      <span className="flex size-[56px] items-center justify-center rounded-[16px]" style={square}>
+        {icon("/demo/mage_location-fill.svg", dark ? appColors.green500 : appColors.blue500)}
+      </span>
+      <span
+        className="flex size-[56px] items-center justify-center rounded-full shadow-[1px_1px_8px_rgba(8,10,12,0.1)]"
+        style={{ backgroundColor: dark ? appColors.black : appColors.blue }}
+      >
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+          <path
+            d="M12 5v14M5 12h14"
+            stroke={dark ? appColors.green : appColors.white}
+            strokeWidth="2.4"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+      <span className="flex size-[56px] items-center justify-center rounded-[16px]" style={square}>
+        {icon("/demo/icon_comment.svg", accent)}
+      </span>
     </div>
   );
 }

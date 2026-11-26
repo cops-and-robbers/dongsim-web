@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<6654877fdff848c373acac46d3932e22>>
+ * @generated SignedSource<<915ddf78cc5e6f09bb4b3e08ade0833f>>
  * @lightSyntaxTransform
  */
 
@@ -26,6 +26,7 @@ export type AdminGames$data = {
       readonly maxParticipants: number;
       readonly participantCount: number;
       readonly roundDurationMinutes: number;
+      readonly roundNumber: number;
       readonly status: GameStatus;
     }>;
     readonly page: number;
@@ -151,6 +152,13 @@ v4 = [
             "alias": null,
             "args": null,
             "kind": "ScalarField",
+            "name": "roundNumber",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
             "name": "createdAt",
             "storageKey": null
           }
@@ -217,16 +225,16 @@ return {
     "selections": (v4/*:: as any*/)
   },
   "params": {
-    "cacheID": "d783be36ab0f68d9ec1e1976e5412522",
+    "cacheID": "5a421ef26fee7c56cb5366f5d9177ea5",
     "id": null,
     "metadata": {},
     "name": "AdminGames",
     "operationKind": "query",
-    "text": "query AdminGames(\n  $page: Int\n  $size: Int\n  $status: GameStatus\n  $sortDirection: SortDirection\n) {\n  adminGames(page: $page, size: $size, status: $status, sortDirection: $sortDirection) {\n    content {\n      id\n      inviteCode\n      status\n      roundDurationMinutes\n      maxParticipants\n      isEventGame\n      participantCount\n      createdAt\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
+    "text": "query AdminGames(\n  $page: Int\n  $size: Int\n  $status: GameStatus\n  $sortDirection: SortDirection\n) {\n  adminGames(page: $page, size: $size, status: $status, sortDirection: $sortDirection) {\n    content {\n      id\n      inviteCode\n      status\n      roundDurationMinutes\n      maxParticipants\n      isEventGame\n      participantCount\n      roundNumber\n      createdAt\n    }\n    totalElements\n    totalPages\n    page\n    size\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "81eb11f972805151f31da785314acd7f";
+(node as any).hash = "c3fd2ab5000a1b7f94a09af05d98a981";
 
 export default node;

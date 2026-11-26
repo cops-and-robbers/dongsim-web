@@ -82,8 +82,10 @@ export function courseProgress(course: DemoCourse, sceneId: DemoSceneId) {
   };
 }
 
-// 방 만들기 기본 정보 4항목 (game_setting_values_editor.dart의
-// GameSettingField 실측: 최소·최대와 키패드 빠른 추가 3개)
+// 방 만들기 설정 4항목 (game_setting_values_editor.dart의
+// GameSettingField 실측: 최소·최대와 키패드 빠른 추가 3개).
+// initial 은 4.0.1 최종 확인에 처음 채워 두는 추천값(recommended*)이다.
+// 참여 인원 상한은 출시된 앱(4.0.1)과 서버 main 기준이다. 다음 배포에서 50명으로 내려간다(BE #235).
 export type DemoSettingFieldId =
   | "participants"
   | "roundDuration"
@@ -97,10 +99,10 @@ export const DEMO_SETTING_FIELDS: readonly {
   initial: number;
   quickAmounts: readonly [number, number, number];
 }[] = [
-  { id: "participants", min: 2, max: 150, initial: 2, quickAmounts: [5, 10, 20] },
+  { id: "participants", min: 2, max: 150, initial: 10, quickAmounts: [5, 10, 20] },
   { id: "roundDuration", min: 10, max: 180, initial: 30, quickAmounts: [5, 10, 30] },
   { id: "locationShare", min: 0, max: 30, initial: 5, quickAmounts: [3, 5, 10] },
-  { id: "policeWait", min: 1, max: 10, initial: 3, quickAmounts: [1, 3, 5] },
+  { id: "policeWait", min: 1, max: 10, initial: 5, quickAmounts: [1, 3, 5] },
 ];
 
 // 인게임 각본 - 발자국이 찍히는 위치와 간격(ms). 구역 원 안쪽 경로다.
@@ -130,8 +132,6 @@ export const POLICE_CHASE_PATH = [
   { left: "48%", top: "44%" },
 ] as const;
 
-/** 경찰이 출발하기까지의 카운트다운(초) - 도둑에게 주어지는 선행 시간이다 */
-export const ROBBER_POLICE_START_SECONDS = 12;
 /** 도둑 라운드의 남은 시간(초). 0이 되면 생존 승리다 */
 export const ROBBER_ROUND_SECONDS = 40;
 /** 내 위치가 공개되는 간격(ms) - 발자국이 찍히고 내 점이 옮겨 가는 주기 */
@@ -140,16 +140,28 @@ export const ROBBER_REVEAL_INTERVAL_MS = 7000;
 export const POLICE_STEP_INTERVAL_MS = 6000;
 
 // 마이페이지의 앱 버전 표기 (#88). 데모가 맞춘 앱 버전이다.
-export const DEMO_APP_VERSION = "3.2.7";
+export const DEMO_APP_VERSION = "4.0.1";
+
+// 구역 축소 (#668, shrink_schedule.dart). 최종 반경 = floor(max(감옥 + 100, min(시작 x 40%, 200))).
+// 원형 플레이그라운드에서만 켤 수 있고, 시작 반경이 감옥 + 100 이하이면 잠긴다.
+export const SHRINK_JAIL_MARGIN_M = 100;
+export const SHRINK_STAGES = 4;
+export function shrinkFinalRadius(startRadius: number, jailRadius: number) {
+  return Math.floor(Math.max(jailRadius + SHRINK_JAIL_MARGIN_M, Math.min(startRadius * 0.4, 200)));
+}
+/** 데모 인게임에서 구역이 한 단계 줄어드는 간격(초). 앱은 (게임 시간 - 경찰 대기) / 5 분이다 */
+export const DEMO_SHRINK_INTERVAL_SECONDS = 9;
 
 // 방문자의 닉네임. 대기실, 참가자, MVP 공개가 같은 사람을 가리킨다
 export const DEMO_MY_NAME = "민첩한괴도5308";
 
-// 게임 시작 장면 (앱 start/chase_scene.dart). 앱은 경찰 대기가 방 설정 시간(최소 1분)만큼, 도둑 설명이 20초 지도를 덮는다.
-// 데모에서 그대로 두면 체험이 멈춰서 몇 초로 줄이고, 앱과 달리 경찰 대기도 눌러서 넘길 수 있게 한다.
-export const DEMO_POLICE_WAIT_SECONDS = 8;
-export const DEMO_EXPLAINER_SECONDS = 8;
-/** 규칙 줄이 바뀌는 간격(ms). 앱은 5초인데 장면이 짧아 한두 줄만 보이므로 줄였다 */
-export const DEMO_RULE_INTERVAL_MS = 3000;
+// 게임 시작 장면 (앱 4.0.1 start/*.dart). 앱은 경찰 대기가 방 설정 시간(최소 1분)이라
+// 데모에서 그대로 두면 체험이 멈춘다. 역할 배너가 끝난 뒤 출동까지를 몇 초로 줄인다.
+// 출동 6초 전부터는 출동 카운팅(5~1, "출동!")이 화면을 덮는다.
+export const DEMO_POLICE_WAIT_SECONDS = 14;
+/** 도둑 코스의 출동 시각 - 설명 장면을 읽고 지도로 간 뒤에도 몇 초 남게 한다 */
+export const DEMO_ROBBER_RELEASE_SECONDS = 18;
+/** 게임 안내 카드가 바뀌는 간격(ms). 앱과 같다 */
+export const DEMO_RULE_INTERVAL_MS = 5000;
 /** 규칙 문구에 들어가는 위치 공개 주기(분). 방 설정의 기본값이다 */
 export const DEMO_REVEAL_MINUTES = 5;

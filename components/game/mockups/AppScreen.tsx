@@ -9,32 +9,46 @@ export const STATUS_BAR_INSET = 59;
 // 사용자가 스크롤로 도착하기 전에 연출이 끝나 버린다.
 export const MOCKUP_VIEW = { threshold: 0.45, rootMargin: "0px" };
 
-// 컨테이너 실제 폭을 재서 앱 원본 좌표계(393)를 프레임에 맞추는 배율을 구한다.
+const APP_WIDTH = 393;
+const APP_HEIGHT = 852;
+
+// 컨테이너 실제 크기를 재서 앱 원본 좌표계(폭 393)를 프레임에 맞추는 배율과,
+// 그 배율에서 화면을 꽉 채우는 세로 길이를 구한다.
 // CSS 컨테이너 단위는 브라우저·중첩 조건을 타서, 관측값으로 확실하게 건다.
 function useAppScale() {
   const ref = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0);
+  const [box, setBox] = useState({ scale: 0, height: APP_HEIGHT });
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const update = () => setScale(el.clientWidth / 393);
+    const update = () => {
+      const scale = el.clientWidth / APP_WIDTH;
+      setBox({
+        scale,
+        height: scale ? el.clientHeight / scale : APP_HEIGHT,
+      });
+    };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  return { ref, scale };
+  return { ref, ...box };
 }
 
-// 앱 화면을 원본 좌표계(393x852)로 그리는 레이어. 안쪽에서는 앱 위젯의
+// 앱 화면을 원본 좌표계(폭 393)로 그리는 레이어. 안쪽에서는 앱 위젯의
 // 픽셀 값을 환산 없이 그대로 쓴다.
+// 세로는 852 로 고정하지 않고 프레임을 꽉 채운다. 폰 프레임 비율(9:19, 테두리 포함)이
+// 393x852 와 달라서, 고정하면 작은 폰에서 화면 아래(홈 인디케이터 자리)에 몇 px 틈이
+// 생기고 다이얼로그의 어두운 덮개도 그 틈을 덮지 못했다. 큰 폰에서는 반대로 아래가 잘렸다.
 function AppScaled({ children }: { children: ReactNode }) {
-  const { ref, scale } = useAppScale();
+  const { ref, scale, height } = useAppScale();
   return (
     <div ref={ref} className="absolute inset-0">
       <div
-        className="flex h-[852px] w-[393px] origin-top-left flex-col"
+        className="flex w-[393px] origin-top-left flex-col"
         style={{
+          height,
           transform: `scale(${scale})`,
           visibility: scale ? "visible" : "hidden",
         }}

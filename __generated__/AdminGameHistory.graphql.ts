@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<683ebf5b94bdee667d20c91cf1c6bd51>>
+ * @generated SignedSource<<f5909eadb85ccfc7fbbf49cf08c6d85d>>
  * @lightSyntaxTransform
  */
 
@@ -41,7 +41,10 @@ export type AdminGameHistory$data = {
     readonly endReason: GameEndReason;
     readonly endedAt: string | null | undefined;
     readonly gameId: string;
+    readonly hostUserId: string | null | undefined;
     readonly id: string;
+    readonly isEventGame: boolean | null | undefined;
+    readonly locationRevealIntervalMinutes: number | null | undefined;
     readonly participants: ReadonlyArray<{
       readonly arrestCount: number;
       readonly arrestedCount: number;
@@ -51,6 +54,9 @@ export type AdminGameHistory$data = {
       readonly team: Team;
       readonly userId: string | null | undefined;
     }>;
+    readonly roundNumber: number | null | undefined;
+    readonly shrinkFinalRadiusInMeters: number | null | undefined;
+    readonly startedAt: string | null | undefined;
     readonly totalArrestCount: number;
     readonly totalPoliceCount: number;
     readonly totalRobberCount: number;
@@ -126,6 +132,13 @@ v3 = [
         "alias": null,
         "args": null,
         "kind": "ScalarField",
+        "name": "roundNumber",
+        "storageKey": null
+      },
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
         "name": "winnerTeam",
         "storageKey": null
       },
@@ -183,7 +196,42 @@ v3 = [
         "alias": null,
         "args": null,
         "kind": "ScalarField",
+        "name": "startedAt",
+        "storageKey": null
+      },
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
         "name": "endedAt",
+        "storageKey": null
+      },
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
+        "name": "locationRevealIntervalMinutes",
+        "storageKey": null
+      },
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
+        "name": "shrinkFinalRadiusInMeters",
+        "storageKey": null
+      },
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
+        "name": "isEventGame",
+        "storageKey": null
+      },
+      {
+        "alias": null,
+        "args": null,
+        "kind": "ScalarField",
+        "name": "hostUserId",
         "storageKey": null
       },
       {
@@ -342,16 +390,16 @@ return {
     "selections": (v3/*:: as any*/)
   },
   "params": {
-    "cacheID": "32a1c13dbefcf6cdeced418d5d934d3e",
+    "cacheID": "07eee34726f706964c781264624f02c8",
     "id": null,
     "metadata": {},
     "name": "AdminGameHistory",
     "operationKind": "query",
-    "text": "query AdminGameHistory(\n  $id: ID!\n) {\n  adminGameHistory(id: $id) {\n    id\n    gameId\n    winnerTeam\n    endReason\n    totalPoliceCount\n    totalRobberCount\n    arrestedRobberCount\n    totalArrestCount\n    durationSeconds\n    areaType\n    createdAt\n    endedAt\n    area {\n      areaType\n      playgroundCenterLat\n      playgroundCenterLng\n      playgroundRadiusInMeters\n      jailCenterLat\n      jailCenterLng\n      jailRadiusInMeters\n      playgroundPolygon {\n        latitude\n        longitude\n      }\n      jailPolygon {\n        latitude\n        longitude\n      }\n    }\n    participants {\n      userId\n      nickname\n      team\n      status\n      leftAt\n      arrestCount\n      arrestedCount\n    }\n  }\n}\n"
+    "text": "query AdminGameHistory(\n  $id: ID!\n) {\n  adminGameHistory(id: $id) {\n    id\n    gameId\n    roundNumber\n    winnerTeam\n    endReason\n    totalPoliceCount\n    totalRobberCount\n    arrestedRobberCount\n    totalArrestCount\n    durationSeconds\n    areaType\n    createdAt\n    startedAt\n    endedAt\n    locationRevealIntervalMinutes\n    shrinkFinalRadiusInMeters\n    isEventGame\n    hostUserId\n    area {\n      areaType\n      playgroundCenterLat\n      playgroundCenterLng\n      playgroundRadiusInMeters\n      jailCenterLat\n      jailCenterLng\n      jailRadiusInMeters\n      playgroundPolygon {\n        latitude\n        longitude\n      }\n      jailPolygon {\n        latitude\n        longitude\n      }\n    }\n    participants {\n      userId\n      nickname\n      team\n      status\n      leftAt\n      arrestCount\n      arrestedCount\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "b85738d646eb68a61f16ae14c25d71ee";
+(node as any).hash = "77d04d68d23672282d05d1efdff184d0";
 
 export default node;

@@ -72,7 +72,7 @@ export function DemoVictory({
       {intro ? (
         <DemoGameOver team={team} onDone={() => setIntro(false)} />
       ) : (
-      <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+      <div className="fixed inset-0 flex items-center justify-center bg-black/50">
         <div className="relative mt-[28px] w-[320px]">
           {/* 캐릭터 몸통 - 카드 뒤에서 솟아올라 머리만 보인다 (높이 118, 겹침 14) */}
           <div className="absolute inset-x-0 top-[-104px] flex justify-center overflow-hidden pb-[14px]">

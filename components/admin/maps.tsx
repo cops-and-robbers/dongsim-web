@@ -154,7 +154,8 @@ function areaCenter(area: Area): google.maps.LatLngLiteral {
   return { lat: 36.5, lng: 127.8 };
 }
 
-export function GameAreaMap({ area }: { area: Area }) {
+// height, flush 는 두 칸 화면의 위치 카드(#315)가 카드 가장자리까지 지도를 채울 때 쓴다
+export function GameAreaMap({ area, height = 300, flush = false }: { area: Area; height?: number; flush?: boolean }) {
   if (!KEY) {
     // 지난 게임 기록에는 감옥 좌표가 없을 수 있어, 있을 때만 덧붙인다.
     const detail =
@@ -168,10 +169,10 @@ export function GameAreaMap({ area }: { area: Area }) {
           ]
             .filter(Boolean)
             .join(" · ");
-    return <MapFallback height={300} title="게임 구역" detail={detail} />;
+    return <MapFallback height={height} title="게임 구역" detail={detail} />;
   }
   return (
-    <div className="overflow-hidden rounded-xl" style={{ height: 300 }}>
+    <div className={`overflow-hidden ${flush ? "" : "rounded-xl"}`} style={{ height }}>
       <APIProvider apiKey={KEY}>
         <Map
           defaultCenter={areaCenter(area)}

@@ -3,7 +3,7 @@
  * 역할은 카드 키만 들고 있고(admin_roles.cards), 카드가 무엇을 어디서 읽는지는 여기가 정본이다.
  */
 
-export type CardKey = "newu" | "ig" | "views" | "ad" | "site" | "fun" | "ret" | "d7" | "post" | "week" | "win" | "end" | "games" | "crash" | "anr" | "rel" | "bug" | "rep" | "rv" | "chk" | "ev" | "frame" | "draft";
+export type CardKey = "newu" | "ig" | "views" | "ad" | "site" | "fun" | "ret" | "d7" | "post" | "week" | "win" | "dur" | "end" | "games" | "crash" | "anr" | "rel" | "bug" | "rep" | "rv" | "chk" | "ev" | "frame" | "draft";
 export type CardGroup = "성장" | "게임" | "안정성" | "운영" | "준비";
 /** server 는 개요 요약 API 가 계산하고, live 는 화면이 백엔드에서 바로 읽는다 */
 export type CardSource = "server" | "live";
@@ -33,8 +33,10 @@ export const CARDS: Record<CardKey, CardDef> = {
   ret: { title: "다음 날 재방문", group: "게임", size: 1, source: "server", fresh: "최근 4주", href: "/admin/metrics" },
   d7: { title: "7일 뒤 재방문", group: "게임", size: 1, source: "server", fresh: "최근 4주", href: "/admin/metrics" },
   week: { title: "이번 주 게임", group: "게임", size: 1, source: "live", fresh: "실시간", href: "/admin/games" },
-  win: { title: "팀별 승률", group: "게임", size: 1, source: "live", fresh: "실시간", href: "/admin/games/history" },
-  end: { title: "게임 종료 사유", group: "게임", size: 2, source: "live", fresh: "실시간", href: "/admin/games/history" },
+  win: { title: "팀별 승률", group: "게임", size: 1, source: "live", fresh: "실시간", href: "/admin/games" },
+  // 백엔드가 끝난 판 전체의 진행 시간 평균(avg(GameResult.durationSeconds))을 준다. 기간을 나누지 않는다
+  dur: { title: "평균 게임 시간", group: "게임", size: 1, source: "live", fresh: "끝난 판 전체", href: "/admin/games" },
+  end: { title: "게임 종료 사유", group: "게임", size: 2, source: "live", fresh: "실시간", href: "/admin/games" },
   games: { title: "최근 게임", group: "게임", size: 2, source: "live", fresh: "실시간", href: "/admin/games" },
   crash: { title: "Android 비정상 종료율", group: "안정성", size: 1, source: "server", fresh: "최근 28일", href: "/admin/store-check" },
   anr: { title: "응답 없음 비율", group: "안정성", size: 1, source: "server", fresh: "최근 28일", href: "/admin/store-check" },
@@ -133,6 +135,8 @@ export function pack(keys: CardKey[], cols: number): Placed[] {
 export type LiveValues = {
   weeklyGames: number;
   win: { police: number; robber: number };
+  /** 끝난 판 한 판의 평균 진행 시간(초). 백엔드 평균이라 소수다 */
+  avgGameSeconds: number;
   ends: { endReason: string; count: number }[];
   games: { id: string; inviteCode: string; status: string; participantCount: number; maxParticipants: number }[];
   pending: { reports: number; bugs: number; reviews: number } | null;
