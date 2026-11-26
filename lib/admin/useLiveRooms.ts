@@ -24,6 +24,8 @@ export type LiveRoom = {
   /** 방 상세를 못 읽었으면 null. 그래도 목록 줄은 요약 값으로 그린다 */
   people: LiveRoomPerson[] | null;
   placeName: string | null;
+  /** 플레이 구역의 국가(BE #241). 모르면 null */
+  countryCode: string | null;
 };
 
 // 방은 하루 평균 4.6개만 만들어진다(10/13~11/8). 한 번에 열린 방이 이보다 많을 일은 거의 없어 쪽을 넘기지 않는다
@@ -51,8 +53,8 @@ export function useLiveRooms(refreshKey: number) {
       // 동네 이름은 운영에 아직 없을 수 있다(BE #241). 없으면 비워 두고 나머지는 그대로
       const places = await fetchQuery<AdminGamesPlaceNames>(environment, AdminGamesPlaceNamesQuery, vars, { fetchPolicy: "network-only" })
         .toPromise()
-        .then((d) => new Map((d?.adminGames.content ?? []).map((g) => [g.id, g.placeName ?? null])))
-        .catch(() => new Map<string, string | null>());
+        .then((d) => new Map((d?.adminGames.content ?? []).map((g) => [g.id, { name: g.placeName ?? null, country: g.countryCode ?? null }])))
+        .catch(() => new Map<string, { name: string | null; country: string | null }>());
       const details = await Promise.all(
         open.map((g) =>
           fetchQuery<AdminGame>(environment, AdminGameQuery, { id: g.id }, { fetchPolicy: "network-only" })
@@ -74,7 +76,8 @@ export function useLiveRooms(refreshKey: number) {
           createdAt: g.createdAt,
           startedAt: d?.startedAt ?? null,
           people: d ? d.participants.map((p) => ({ userId: p.userId, nickname: p.nickname, team: p.team, status: p.status, isHost: p.isHost })) : null,
-          placeName: places.get(g.id) ?? null,
+          placeName: places.get(g.id)?.name ?? null,
+          countryCode: places.get(g.id)?.country ?? null,
         };
       });
       // 게임 중인 방을 위로, 같은 상태끼리는 최근에 만든 방을 위로

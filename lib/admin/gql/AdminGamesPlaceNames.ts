@@ -18,6 +18,7 @@ export const AdminGamesPlaceNamesQuery = graphql`
       content {
         id
         placeName
+        countryCode
       }
     }
   }

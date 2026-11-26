@@ -3,6 +3,8 @@
 import type { ComponentProps } from "react";
 import { GameAreaMap } from "@/components/admin/maps";
 import { Panel } from "@/components/admin/split/SplitParts";
+import { CountryFlag } from "@/components/admin/CountryFlag";
+import { countryName } from "@/lib/admin/country";
 
 type Area = ComponentProps<typeof GameAreaMap>["area"];
 
@@ -10,7 +12,19 @@ type Area = ComponentProps<typeof GameAreaMap>["area"];
  * 위치 카드 (#315). 게임은 실제 장소에서 해서 어디서 했는지가 가장 먼저 확인하는 정보라 상세 맨 위에 크게 둔다.
  * 지도 위에 동네 이름, 구역 크기, 감옥을 칩으로 얹는다. 동네 이름은 BE #241 이 나가기 전이거나 아직 못 찾았으면 칩만 빠진다
  */
-export function AreaCard({ area, placeName, shrinkTo, emptyText = "위치 기록이 없어요." }: { area: Area | null | undefined; placeName: string | null; shrinkTo?: number | null; emptyText?: string }) {
+export function AreaCard({
+  area,
+  placeName,
+  countryCode = null,
+  shrinkTo,
+  emptyText = "위치 기록이 없어요.",
+}: {
+  area: Area | null | undefined;
+  placeName: string | null;
+  countryCode?: string | null;
+  shrinkTo?: number | null;
+  emptyText?: string;
+}) {
   if (!area)
     return (
       <Panel title="위치">
@@ -23,7 +37,16 @@ export function AreaCard({ area, placeName, shrinkTo, emptyText = "위치 기록
     <section aria-label={placeName ? `${placeName} 게임 구역` : "게임 구역"} className="relative overflow-hidden rounded-[18px] bg-sd-surface shadow-[0_1px_2px_rgba(2,32,71,0.04)]">
       <GameAreaMap area={area} height={260} flush />
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap gap-1.5">
-        {placeName && <MapChip strong>{placeName}</MapChip>}
+        {placeName && (
+          <MapChip strong>
+            {countryCode && (
+              <span className="mr-1.5 inline-flex align-[-1px]" title={countryName(countryCode)}>
+                <CountryFlag code={countryCode} size={11} />
+              </span>
+            )}
+            {placeName}
+          </MapChip>
+        )}
         <MapChip>{size}</MapChip>
         {shrinkTo != null && <MapChip>끝에는 {shrinkTo}m 로 줄어듦</MapChip>}
         {hasJail ? (
