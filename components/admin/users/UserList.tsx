@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchQuery, useRelayEnvironment } from "react-relay";
 import type { AdminUsers, AdminUsers$data } from "@/__generated__/AdminUsers.graphql";
+import type { AdminUsersPlayCountries } from "@/__generated__/AdminUsersPlayCountries.graphql";
 import { AdminUsersQuery } from "@/lib/admin/gql/AdminUsers";
+import { AdminUsersPlayCountriesQuery } from "@/lib/admin/gql/AdminUsersPlayCountries";
+import { isAbroad } from "@/lib/admin/country";
+import { CountryTag } from "@/components/admin/CountryFlag";
 import { DEVICE_LABEL, SOCIAL_LABEL, labelOf } from "@/lib/admin/format";
 import { dayName, groupInOrder, kstClock, kstDay } from "@/lib/admin/people";
 import { usePagedQuery } from "@/lib/admin/usePagedQuery";
@@ -12,7 +16,8 @@ import { RecentMenu } from "@/components/admin/RecentViewed";
 import { ListViewSwitch } from "@/components/admin/ListViewSwitch";
 import { EmptyRow, GroupHead, ListHead, ListRow, LiveDot, LoadMore, PersonAvatar, SearchIcon, SortIcon, Tag } from "@/components/admin/split/SplitParts";
 
-type User = AdminUsers$data["adminUsers"]["content"][number];
+// country: 주로 플레이하는 국가(BE #241). 운영에 아직 없거나 판이 없으면 null
+type User = AdminUsers$data["adminUsers"]["content"][number] & { country: string | null };
 const PAGE = 30;
 
 /**
@@ -42,13 +47,19 @@ export function UserList({
 }) {
   const environment = useRelayEnvironment();
   const fetchPage = useCallback(
-    (page: number) =>
-      fetchQuery<AdminUsers>(environment, AdminUsersQuery, { page, size: PAGE, nickname: query || undefined, sortDirection: sort }, { fetchPolicy: "network-only" })
-        .toPromise()
-        .then((d) => {
-          if (!d) throw new Error("no data");
-          return d.adminUsers;
-        }),
+    async (page: number) => {
+      const vars = { page, size: PAGE, nickname: query || undefined, sortDirection: sort };
+      const [d, countries] = await Promise.all([
+        fetchQuery<AdminUsers>(environment, AdminUsersQuery, vars, { fetchPolicy: "network-only" }).toPromise(),
+        // 주로 플레이하는 국가(BE #241)는 운영에 아직 없을 수 있어 같은 조건으로 따로 묻는다. 없으면 표시만 빠진다
+        fetchQuery<AdminUsersPlayCountries>(environment, AdminUsersPlayCountriesQuery, vars, { fetchPolicy: "network-only" })
+          .toPromise()
+          .then((c) => new Map((c?.adminUsers.content ?? []).map((u) => [u.id, u.playCountries.find((p) => p.countryCode)?.countryCode ?? null])))
+          .catch(() => new Map<string, string | null>()),
+      ]);
+      if (!d) throw new Error("no data");
+      return { ...d.adminUsers, content: d.adminUsers.content.map((u) => ({ ...u, country: countries.get(u.id) ?? null })) };
+    },
     [environment, query, sort],
   );
   const list = usePagedQuery<User>(`${query}|${sort}`, fetchPage);
@@ -137,6 +148,8 @@ function UserRow({ user, href, current, staff, room }: { user: User; href: strin
         )}
       </span>
       <span className="flex shrink-0 flex-col items-end gap-1">
+        {/* 주로 해외에서 플레이하는 사람만. 한국은 대부분이라 붙이지 않는다(예외일 때만 표시) */}
+        {isAbroad(user.country) && <CountryTag code={user.country} />}
         {user.role === "ADMIN" && <Tag tone="acc">운영자</Tag>}
         {staff && user.role !== "ADMIN" && <Tag>운영진</Tag>}
         {!user.locationTermsAgreed && <Tag tone="crit">위치 미동의</Tag>}

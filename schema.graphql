@@ -535,10 +535,24 @@ type AdminUser {
   """
   radioSeconds: Int!
   """
+  끝까지 마친 게임을 플레이 구역의 국가로 묶어 센 것. 많이 한 국가가 앞이고 같으면 최근에 한 국가가 앞이다. BE #241.
+  국가를 아직 못 찾은 판은 countryCode 가 null 인 줄 하나로 맨 뒤에 온다. 좌표가 없는 옛 기록은 세지 않는다.
+  """
+  playCountries: [PlayCountry!]!
+  """
   끝난 게임 기록 (최신순). limit 은 1~100. BE #227 이라 운영 서버에 아직 없을 수 있다.
   같은 판에 기록이 여러 개면(이벤트 게임에서 나갔다 다시 들어온 경우) 가장 최근 하나만 온다.
   """
   gameHistories(limit: Int = 20): [UserGameHistory!]!
+}
+
+"""유저가 한 국가에서 한 판 수 (BE #241)"""
+type PlayCountry {
+  """ISO 3166-1 alpha-2 대문자. 아직 국가를 못 찾은 판을 묶은 줄이면 null"""
+  countryCode: String
+  games: Int!
+  """그 국가에서 마지막으로 끝난 판의 시각"""
+  lastPlayedAt: String
 }
 
 type UserDevice {
@@ -687,6 +701,8 @@ type AdminGameSummary {
   처음 보는 곳은 한 번 조회에 5곳까지만 찾아서, 목록을 다시 열면 채워질 수 있다.
   """
   placeName: String
+  """플레이 구역의 국가(ISO 3166-1 alpha-2 대문자, 예: KR, JP). 아직 못 찾았거나 국가를 모르면 null. BE #241"""
+  countryCode: String
 }
 
 type AdminGame {
@@ -756,6 +772,8 @@ type GameArea {
   플레이 구역의 동네 이름. 원형은 중심, 다각형은 무게중심(오목하면 구역 안 한 점) 기준. 못 찾으면 null. BE #241.
   """
   placeName: String
+  """플레이 구역의 국가(ISO 3166-1 alpha-2 대문자). 아직 못 찾았거나 국가를 모르면 null. BE #241"""
+  countryCode: String
 }
 
 type Coordinate {

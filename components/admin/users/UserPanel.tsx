@@ -6,9 +6,13 @@ import { fetchQuery, useLazyLoadQuery, useRelayEnvironment } from "react-relay";
 import type { AdminUser } from "@/__generated__/AdminUser.graphql";
 import type { AdminUserGameHistories, AdminUserGameHistories$data } from "@/__generated__/AdminUserGameHistories.graphql";
 import type { AdminUserRadio } from "@/__generated__/AdminUserRadio.graphql";
+import type { AdminUserPlayCountries } from "@/__generated__/AdminUserPlayCountries.graphql";
 import { AdminUserQuery } from "@/lib/admin/gql/AdminUser";
 import { AdminUserGameHistoriesQuery } from "@/lib/admin/gql/AdminUserGameHistories";
 import { AdminUserRadioQuery } from "@/lib/admin/gql/AdminUserRadio";
+import { AdminUserPlayCountriesQuery } from "@/lib/admin/gql/AdminUserPlayCountries";
+import { CountryFlag, CountryTag } from "@/components/admin/CountryFlag";
+import { countryName, summarizeCountries } from "@/lib/admin/country";
 import { useRecordRecent } from "@/components/admin/RecentViewed";
 import { DEVICE_LABEL, END_REASON_LABEL, SOCIAL_LABEL, TEAM_LABEL, labelOf } from "@/lib/admin/format";
 import { formatRadio } from "@/lib/admin/gameExtras";
@@ -86,12 +90,59 @@ export function UserPanel({ id, page = false, gamesHref }: { id: string; page?: 
             { label: "마지막 게임", value: last?.endedAt ? ago(last.endedAt) : view ? "아직 안 함" : "…" },
           ]}
         />
+        <PlayCountryRow userId={user.id} />
       </Panel>
 
       <GamesCard games={games} gamesHref={gamesHref} />
 
       <AccountCard user={user} />
     </>
+  );
+}
+
+/* ─── 주로 플레이하는 국가 ─── */
+
+// 해외 유저 문의가 오면 어느 나라에서 플레이하는 사람인지가 먼저 필요하다(#319). 국가는 플레이 구역에서 나온 값이라 국적이 아니다.
+// 운영에 아직 없으면(BE #241) 이 줄만 빠지고, 판이 끝날 때만 바뀌어 1분마다 다시 읽는다
+function PlayCountryRow({ userId }: { userId: string }) {
+  const live = useLiveRefresh(60_000);
+  const { data, status } = useOptionalQuery<AdminUserPlayCountries>(AdminUserPlayCountriesQuery, { id: userId }, "playCountries", live);
+  if (status === "not-deployed" || (status === "error" && !data)) return null;
+  const list = data?.adminUser?.playCountries;
+  const s = list ? summarizeCountries(list) : null;
+  return (
+    <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-sd-hairline pt-3.5">
+      <span className="text-[12.5px] text-sd-fg-subtle">주로 플레이하는 국가</span>
+      {!s ? (
+        <span aria-busy className="inline-block h-4 w-28 animate-pulse rounded bg-sd-gray-200 align-middle" />
+      ) : s.main ? (
+        <>
+          <span className="inline-flex items-center gap-1.5 text-[15px] font-bold text-sd-fg">
+            <CountryFlag code={s.main.countryCode} size={14} />
+            {countryName(s.main.countryCode)}
+          </span>
+          <span className="text-[13px] tabular-nums text-sd-fg-subtle">
+            {s.known === s.main.games ? `${s.main.games}판 모두` : `${s.known}판 중 ${s.main.games}판`}
+          </span>
+          {(s.others.length > 0 || s.pending > 0) && (
+            <span className="flex w-full flex-wrap items-center gap-x-2.5 gap-y-1 text-[12.5px] text-sd-fg-subtle">
+              {s.others.length > 0 && <span>그 외</span>}
+              {s.others.slice(0, 2).map((c) => (
+                <span key={c.countryCode} className="inline-flex items-center gap-1 tabular-nums">
+                  <CountryTag code={c.countryCode} variant="inline" /> {c.games}판
+                </span>
+              ))}
+              {s.others.length > 2 && <span>외 {s.others.length - 2}개국</span>}
+              {s.pending > 0 && <span className="tabular-nums" title="처음 보는 구역은 나라를 찾는 데 시간이 걸려요. 다시 열면 채워져요">확인 중 {s.pending}판</span>}
+            </span>
+          )}
+        </>
+      ) : s.pending > 0 ? (
+        <span className="text-[13.5px] text-sd-fg-muted">확인 중이에요 ({s.pending}판)</span>
+      ) : (
+        <span className="text-[13.5px] text-sd-fg-subtle">아직 끝난 게임이 없어요</span>
+      )}
+    </div>
   );
 }
 
